@@ -234,17 +234,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     var completedOnThisThread = state.NotePartComplete(CompletionPart.EndDefaultSyntaxValue);
                     Debug.Assert(completedOnThisThread);
 
-                    if (parameterEqualsValue is not null)
+                    if (parameterEqualsValue is not null && !_lazyDefaultSyntaxValue.IsBad)
                     {
+                        // Nullable analysis must be avoided for non-constant values to avoid cycles
+                        // (lambda referencing itself as default parameter value).
                         if (binder is not null &&
                             GetDefaultValueSyntaxForIsNullableAnalysisEnabled(CSharpSyntaxNode) is { } valueSyntax)
                         {
                             NullableWalker.AnalyzeIfNeeded(binder, parameterEqualsValue, valueSyntax, diagnostics.DiagnosticBag);
                         }
-                        if (!_lazyDefaultSyntaxValue.IsBad)
-                        {
-                            VerifyParamDefaultValueMatchesAttributeIfAny(_lazyDefaultSyntaxValue, parameterEqualsValue.Value.Syntax, diagnostics);
-                        }
+                        VerifyParamDefaultValueMatchesAttributeIfAny(_lazyDefaultSyntaxValue, parameterEqualsValue.Value.Syntax, diagnostics);
                     }
 
                     AddDeclarationDiagnostics(diagnostics);
