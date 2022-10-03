@@ -10175,8 +10175,8 @@ You should consider suppressing the warning only if you're sure that you don't w
         <note />
       </trans-unit>
       <trans-unit id="ERR_NoCorrespondingArgument">
-        <source>There is no argument given that corresponds to the required parameter '{0}' of '{1}'</source>
-        <target state="translated">'{0}' の必要なパラメーター '{1}' に対応する特定の引数がありません</target>
+        <source>There is no argument given that corresponds to the required parameter {0} of '{1}'</source>
+        <target state="needs-review-translation">'{0}' の必要なパラメーター '{1}' に対応する特定の引数がありません</target>
         <note />
       </trans-unit>
       <trans-unit id="WRN_UnimplementedCommandLineSwitch">

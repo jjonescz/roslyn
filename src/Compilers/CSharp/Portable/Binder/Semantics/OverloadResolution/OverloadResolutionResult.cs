@@ -887,13 +887,17 @@ namespace Microsoft.CodeAnalysis.CSharp
                 badParamName = parameters[badParamIndex].Name;
             }
 
-            // There is no argument given that corresponds to the required parameter '{0}' of '{1}'
+            // Use parameter index instead of empty parameter name
+            // (this can happen for anonymous delegate types, for example).
+            var badParamArg = badParamName.Length == 0 ? $"{badParamIndex}" : $"'{badParamName}'";
+
+            // There is no argument given that corresponds to the required parameter {0} of '{1}'
 
             object obj = (object)delegateTypeBeingInvoked ?? badMember;
 
             diagnostics.Add(new DiagnosticInfoWithSymbols(
                 ErrorCode.ERR_NoCorrespondingArgument,
-                new object[] { badParamName, obj },
+                new object[] { badParamArg, obj },
                 symbols), location);
         }
 

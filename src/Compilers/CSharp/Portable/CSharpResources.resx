@@ -4107,7 +4107,7 @@ You should consider suppressing the warning only if you're sure that you don't w
     <value>Executables cannot be satellite assemblies; culture should always be empty</value>
   </data>
   <data name="ERR_NoCorrespondingArgument" xml:space="preserve">
-    <value>There is no argument given that corresponds to the required parameter '{0}' of '{1}'</value>
+    <value>There is no argument given that corresponds to the required parameter {0} of '{1}'</value>
   </data>
   <data name="WRN_UnimplementedCommandLineSwitch" xml:space="preserve">
     <value>The command line switch '{0}' is not yet implemented and was ignored.</value>

@@ -10175,8 +10175,8 @@ Pominięcie ostrzeżenia należy wziąć pod uwagę tylko w sytuacji, gdy na pew
         <note />
       </trans-unit>
       <trans-unit id="ERR_NoCorrespondingArgument">
-        <source>There is no argument given that corresponds to the required parameter '{0}' of '{1}'</source>
-        <target state="translated">Nie podano argumentu odpowiadającego wymaganemu parametrowi „{0}” z „{1}”</target>
+        <source>There is no argument given that corresponds to the required parameter {0} of '{1}'</source>
+        <target state="needs-review-translation">Nie podano argumentu odpowiadającego wymaganemu parametrowi „{0}” z „{1}”</target>
         <note />
       </trans-unit>
       <trans-unit id="WRN_UnimplementedCommandLineSwitch">

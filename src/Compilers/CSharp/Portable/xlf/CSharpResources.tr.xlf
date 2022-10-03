@@ -10175,8 +10175,8 @@ Yalnızca asenkron çağrının tamamlanmasını beklemek istemediğinizden ve �
         <note />
       </trans-unit>
       <trans-unit id="ERR_NoCorrespondingArgument">
-        <source>There is no argument given that corresponds to the required parameter '{0}' of '{1}'</source>
-        <target state="translated">'{1}'nin gerekli '{0}' parametresine karşılık gelen herhangi bir argüman yok</target>
+        <source>There is no argument given that corresponds to the required parameter {0} of '{1}'</source>
+        <target state="needs-review-translation">'{1}'nin gerekli '{0}' parametresine karşılık gelen herhangi bir argüman yok</target>
         <note />
       </trans-unit>
       <trans-unit id="WRN_UnimplementedCommandLineSwitch">
