@@ -810,5 +810,194 @@ i = 2;
 @"
 ", CSharpParseOptions.Default);
         }
+
+        [Fact, Trait(Traits.Feature, Traits.Features.CodeActionsRemoveUnusedVariable)]
+        [WorkItem(63892, "https://github.com/dotnet/roslyn/issues/63892")]
+        public async Task LocalMethod_DefaultParameterValues()
+        {
+            await TestMissingInRegularAndScriptAsync("""
+                class Program
+                {
+                    static void Main()
+                    {
+                        const int [|N|] = 10;
+                        int F(int x = N) => x;
+                        F();
+                    }
+                }
+                """);
+        }
+
+        [Theory, Trait(Traits.Feature, Traits.Features.CodeActionsRemoveUnusedVariable)]
+        [WorkItem(63892, "https://github.com/dotnet/roslyn/issues/63892")]
+        [InlineData(""), InlineData("return: ")]
+        public async Task LocalMethod_Attribute_ConstructorArguments(string prefix)
+        {
+            await TestMissingInRegularAndScriptAsync($$"""
+                class A : System.Attribute
+                {
+                    public A(int param) { }
+                }
+                class Program
+                {
+                    static void Main()
+                    {
+                        const int [|N|] = 10;
+                        [{{prefix}}A(N)] int F() => 100;
+                        F();
+                    }
+                }
+                """);
+        }
+
+        [Theory, Trait(Traits.Feature, Traits.Features.CodeActionsRemoveUnusedVariable)]
+        [WorkItem(63892, "https://github.com/dotnet/roslyn/issues/63892")]
+        [InlineData(""), InlineData("return: ")]
+        public async Task LocalMethod_Attribute_NamedArguments(string prefix)
+        {
+            await TestMissingInRegularAndScriptAsync($$"""
+                class A : System.Attribute
+                {
+                    public int Prop { get; set; }
+                }
+                class Program
+                {
+                    static void Main()
+                    {
+                        const int [|N|] = 10;
+                        [{{prefix}}A(Prop = N)] int F() => 100;
+                        F();
+                    }
+                }
+                """);
+        }
+
+        [Fact, Trait(Traits.Feature, Traits.Features.CodeActionsRemoveUnusedVariable)]
+        [WorkItem(63892, "https://github.com/dotnet/roslyn/issues/63892")]
+        public async Task LocalMethod_ParameterAttribute_ConstructorArguments()
+        {
+            await TestMissingInRegularAndScriptAsync("""
+                class A : System.Attribute
+                {
+                    public A(int param) { }
+                }
+                class Program
+                {
+                    static void Main()
+                    {
+                        const int [|N|] = 10;
+                        int F([A(N)] int x) => x;
+                        F(100);
+                    }
+                }
+                """);
+        }
+
+        [Fact, Trait(Traits.Feature, Traits.Features.CodeActionsRemoveUnusedVariable)]
+        [WorkItem(63892, "https://github.com/dotnet/roslyn/issues/63892")]
+        public async Task LocalMethod_ParameterAttribute_NamedArguments()
+        {
+            await TestMissingInRegularAndScriptAsync("""
+                class A : System.Attribute
+                {
+                    public int Prop { get; set; }
+                }
+                class Program
+                {
+                    static void Main()
+                    {
+                        const int [|N|] = 10;
+                        int F([A(Prop = N)] int x) => x;
+                        F(100);
+                    }
+                }
+                """);
+        }
+
+        [Theory, Trait(Traits.Feature, Traits.Features.CodeActionsRemoveUnusedVariable)]
+        [WorkItem(63892, "https://github.com/dotnet/roslyn/issues/63892")]
+        [InlineData(""), InlineData("return: ")]
+        public async Task Lambda_Attribute_ConstructorArguments(string prefix)
+        {
+            await TestMissingInRegularAndScriptAsync($$"""
+                class A : System.Attribute
+                {
+                    public A(int param) { }
+                }
+                class Program
+                {
+                    static void Main()
+                    {
+                        const int [|N|] = 10;
+                        var lam = [{{prefix}}A(N)] () => 100;
+                        lam();
+                    }
+                }
+                """);
+        }
+
+        [Theory, Trait(Traits.Feature, Traits.Features.CodeActionsRemoveUnusedVariable)]
+        [WorkItem(63892, "https://github.com/dotnet/roslyn/issues/63892")]
+        [InlineData(""), InlineData("return: ")]
+        public async Task Lambda_Attribute_NamedArguments(string prefix)
+        {
+            await TestMissingInRegularAndScriptAsync($$"""
+                class A : System.Attribute
+                {
+                    public int Prop { get; set; }
+                }
+                class Program
+                {
+                    static void Main()
+                    {
+                        const int [|N|] = 10;
+                        var lam = [{{prefix}}A(Prop = N)] () => 100;
+                        F();
+                    }
+                }
+                """);
+        }
+
+        [Fact, Trait(Traits.Feature, Traits.Features.CodeActionsRemoveUnusedVariable)]
+        [WorkItem(63892, "https://github.com/dotnet/roslyn/issues/63892")]
+        public async Task Lambda_ParameterAttribute_ConstructorArguments()
+        {
+            await TestMissingInRegularAndScriptAsync("""
+                class A : System.Attribute
+                {
+                    public A(int param) { }
+                }
+                class Program
+                {
+                    static void Main()
+                    {
+                        const int [|N|] = 10;
+                        var lam = ([A(N)] int x) => x;
+                        lam(100);
+                    }
+                }
+                """);
+        }
+
+        [Fact, Trait(Traits.Feature, Traits.Features.CodeActionsRemoveUnusedVariable)]
+        [WorkItem(63892, "https://github.com/dotnet/roslyn/issues/63892")]
+        public async Task Lambda_ParameterAttribute_NamedArguments()
+        {
+            await TestMissingInRegularAndScriptAsync("""
+                class A : System.Attribute
+                {
+                    public int Prop { get; set; }
+                }
+                class Program
+                {
+                    static void Main()
+                    {
+                        const int [|N|] = 10;
+                        var lam = ([A(Prop = N)] int x) => x;
+                        lam(100);
+                    }
+                }
+                """);
+        }
     }
 }
