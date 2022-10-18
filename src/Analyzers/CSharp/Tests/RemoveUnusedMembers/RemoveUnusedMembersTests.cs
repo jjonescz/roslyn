@@ -883,6 +883,115 @@ class MyClass
         }
 
         [Fact]
+        public async Task FieldIsRead_Attribute_LocalMethod()
+        {
+            var code = """
+                using System;
+                [AttributeUsage(AttributeTargets.All)]
+                class MyAttribute : Attribute
+                {
+                    public MyAttribute(int _) { }
+                    public int Prop { get; set; }
+                }
+                class C
+                {
+                    const int N1 = 10;
+                    const int N2 = 20;
+                    const int N3 = 30;
+                    const int N4 = 40;
+                    public static void M()
+                    {
+                        [My(N1, Prop = N2)][return: My(N3, Prop = N4)]
+                        static void L() { }
+                        L();
+                    }
+                }
+                """;
+            await new VerifyCS.Test
+            {
+                TestCode = code,
+                FixedCode = code,
+                LanguageVersion = LanguageVersion.CSharp9
+            }.RunAsync();
+        }
+
+        [Fact]
+        public async Task FieldIsRead_Attribute_Lambda()
+        {
+            var code = """
+                using System;
+                [AttributeUsage(AttributeTargets.All)]
+                class MyAttribute : Attribute
+                {
+                    public MyAttribute(int _) { }
+                    public int Prop { get; set; }
+                }
+                class C
+                {
+                    const int N1 = 10;
+                    const int N2 = 20;
+                    const int N3 = 30;
+                    const int N4 = 40;
+                    public static void M()
+                    {
+                        var lam = [My(N1, Prop = N2)][return: My(N3, Prop = N4)] () => { };
+                        lam();
+                    }
+                }
+                """;
+            await new VerifyCS.Test
+            {
+                TestCode = code,
+                FixedCode = code,
+                LanguageVersion = LanguageVersion.CSharp10
+            }.RunAsync();
+        }
+
+        [Fact]
+        public async Task FieldIsRead_ParameterDefaultValue_LocalMethod()
+        {
+            var code = """
+                class C
+                {
+                    const int N = 10;
+                    public static void M()
+                    {
+                        static void L(int x = N) { }
+                        L();
+                    }
+                }
+                """;
+            await new VerifyCS.Test
+            {
+                TestCode = code,
+                FixedCode = code,
+                LanguageVersion = LanguageVersion.CSharp9
+            }.RunAsync();
+        }
+
+        [Fact]
+        public async Task FieldIsRead_ParameterDefaultValue_Lambda()
+        {
+            var code = """
+                class C
+                {
+                    const int N = 10;
+                    public static void M()
+                    {
+                        var lam = (int x = N) => { };
+                        lam();
+                    }
+                }
+                """;
+            await new VerifyCS.Test
+            {
+                TestCode = code,
+                FixedCode = code,
+                LanguageVersion = LanguageVersion.CSharp10
+            }.RunAsync();
+        }
+
+        [Fact]
         public async Task MethodIsInvoked()
         {
             var code = @"class MyClass
