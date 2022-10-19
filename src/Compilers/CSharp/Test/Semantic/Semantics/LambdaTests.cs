@@ -7874,7 +7874,10 @@ class Program
             var source = """
                 var lam = (params int[] xs, int y) => xs.Length + y;
                 """;
-            CreateCompilation(source).VerifyDiagnostics();
+            CreateCompilation(source).VerifyDiagnostics(
+                // (1,12): error CS0231: A params parameter must be the last parameter in a parameter list
+                // var lam = (params int[] xs, int y) => xs.Length + y;
+                Diagnostic(ErrorCode.ERR_ParamsLast, "params int[] xs").WithLocation(1, 12));
         }
 
         [Fact]
@@ -7883,7 +7886,22 @@ class Program
             var source = """
                 var lam = (params int[] xs, params int[] ys) => xs.Length + ys.Length;
                 """;
-            CreateCompilation(source).VerifyDiagnostics();
+            CreateCompilation(source).VerifyDiagnostics(
+                // (1,12): error CS0231: A params parameter must be the last parameter in a parameter list
+                // var lam = (params int[] xs, params int[] ys) => xs.Length + ys.Length;
+                Diagnostic(ErrorCode.ERR_ParamsLast, "params int[] xs").WithLocation(1, 12));
+        }
+
+        [Fact]
+        public void ParamsArray_NotArray()
+        {
+            var source = """
+                var lam = (params int x) => x;
+                """;
+            CreateCompilation(source).VerifyDiagnostics(
+                // (1,12): error CS0225: The params parameter must be a single dimensional array
+                // var lam = (params int x) => x;
+                Diagnostic(ErrorCode.ERR_ParamsMustBeArray, "params").WithLocation(1, 12));
         }
     }
 }
