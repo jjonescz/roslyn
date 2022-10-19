@@ -228,15 +228,6 @@ class C
                 // (62,44): warning CS0162: Unreachable code detected
                 //         Func<double> q15 = ()=>{if (false) return 1m; else return 0; };
                 Diagnostic(ErrorCode.WRN_UnreachableCode, "return").WithLocation(62, 44),
-                // (66,39): error CS1670: params is not valid in this context
-                //         Action<int[]> q16 = delegate (params int[] p) { };
-                Diagnostic(ErrorCode.ERR_IllegalParams, "params").WithLocation(66, 39),
-                // (67,33): error CS1670: params is not valid in this context
-                //         Action<string[]> q17 = (params string[] s)=>{};
-                Diagnostic(ErrorCode.ERR_IllegalParams, "params").WithLocation(67, 33),
-                // (68,45): error CS1670: params is not valid in this context
-                //         Action<int, double[]> q18 = (int x, params double[] s)=>{};
-                Diagnostic(ErrorCode.ERR_IllegalParams, "params").WithLocation(68, 45),
                 // (70,34): error CS1593: Delegate 'Action' does not take 1 arguments
                 //         object q19 = new Action( (int x)=>{} );
                 Diagnostic(ErrorCode.ERR_BadDelArgCount, "(int x)=>{}").WithArguments("System.Action", "1").WithLocation(70, 34),
@@ -7828,9 +7819,6 @@ class Program
 }
 """;
             CreateCompilation(source).VerifyDiagnostics(
-                // (5,31): error CS1670: params is not valid in this context
-                //         var lam = (int i = 3, params int[] args) => i;
-                Diagnostic(ErrorCode.ERR_IllegalParams, "params").WithLocation(5, 31),
                 // (5,48): error CS1737: Optional parameters must appear after all required parameters
                 //         var lam = (int i = 3, params int[] args) => i;
                 Diagnostic(ErrorCode.ERR_DefaultValueBeforeRequiredValue, ")").WithLocation(5, 48));
@@ -7853,6 +7841,49 @@ class Program
                 // (6,9): error CS7036: There is no argument given that corresponds to the required parameter 'arg2' of '<anonymous delegate>'
                 //         lam(5);
                 Diagnostic(ErrorCode.ERR_NoCorrespondingArgument, "lam").WithArguments("arg2", "<anonymous delegate>").WithLocation(6, 9));
+        }
+
+        [Fact]
+        public void ParamsArray_Call()
+        {
+            var source = """
+                var lam = (params int[] xs) => xs.Length;
+                lam();
+                lam(1);
+                lam(1, 2, 3);
+                lam(new[] { 1, 2, 3 });
+                """;
+            CreateCompilation(source).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void ParamsArray_WithDefaultValue()
+        {
+            var source = """
+                var lam = (params int[] xs = null) => xs.Length;
+                """;
+            CreateCompilation(source).VerifyDiagnostics(
+                // (1,12): error CS1751: Cannot specify a default value for a parameter array
+                // var lam = (params int[] xs = null) => xs.Length;
+                Diagnostic(ErrorCode.ERR_DefaultValueForParamsParameter, "params").WithLocation(1, 12));
+        }
+
+        [Fact]
+        public void ParamsArray_NotLast()
+        {
+            var source = """
+                var lam = (params int[] xs, int y) => xs.Length + y;
+                """;
+            CreateCompilation(source).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void ParamsArray_Multiple()
+        {
+            var source = """
+                var lam = (params int[] xs, params int[] ys) => xs.Length + ys.Length;
+                """;
+            CreateCompilation(source).VerifyDiagnostics();
         }
     }
 }

@@ -8921,8 +8921,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             var parameterDefaultValues = parameters.Any(p => p.HasExplicitDefaultValue) ?
                 parameters.SelectAsArray(p => p.ExplicitDefaultConstantValue) :
                 default;
+            var hasParamsArray = !parameters.IsEmpty && parameters[^1].IsParams;
 
-            return GetMethodGroupOrLambdaDelegateType(node.Syntax, method.RefKind, method.ReturnTypeWithAnnotations, method.ParameterRefKinds, parameterScopes, method.ParameterTypesWithAnnotations, parameterDefaultValues: parameterDefaultValues);
+            return GetMethodGroupOrLambdaDelegateType(node.Syntax, method.RefKind, method.ReturnTypeWithAnnotations, method.ParameterRefKinds, parameterScopes, method.ParameterTypesWithAnnotations, parameterDefaultValues, hasParamsArray);
         }
 
         /// <summary>
@@ -9009,7 +9010,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<RefKind> parameterRefKinds,
             ImmutableArray<DeclarationScope> parameterScopes,
             ImmutableArray<TypeWithAnnotations> parameterTypes,
-            ImmutableArray<ConstantValue?> parameterDefaultValues)
+            ImmutableArray<ConstantValue?> parameterDefaultValues,
+            bool hasParamsArray)
         {
             Debug.Assert(ContainingMemberOrLambda is { });
             Debug.Assert(parameterRefKinds.IsDefault || parameterRefKinds.Length == parameterTypes.Length);
@@ -9032,7 +9034,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // Use System.Action<...> or System.Func<...> if possible.
-            if (returnRefKind == RefKind.None &&
+            if (!hasParamsArray &&
+                returnRefKind == RefKind.None &&
                 parameterDefaultValues.IsDefault &&
                 (parameterRefKinds.IsDefault || parameterRefKinds.All(refKind => refKind == RefKind.None)) &&
                 (parameterScopes.IsDefault || parameterScopes.All(scope => scope == DeclarationScope.Unscoped)))
@@ -9069,7 +9072,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                         parameterTypes[i],
                         parameterRefKinds.IsDefault ? RefKind.None : parameterRefKinds[i],
                         parameterScopes.IsDefault ? DeclarationScope.Unscoped : parameterScopes[i],
-                        parameterDefaultValues.IsDefault ? null : parameterDefaultValues[i])
+                        parameterDefaultValues.IsDefault ? null : parameterDefaultValues[i],
+                        isParams: hasParamsArray && i == parameterTypes.Length - 1)
                     );
             }
             fieldsBuilder.Add(new AnonymousTypeField(name: "", location, returnType, returnRefKind, DeclarationScope.Unscoped));
