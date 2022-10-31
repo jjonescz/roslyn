@@ -177,6 +177,9 @@ namespace Microsoft.CodeAnalysis.RemoveUnusedMembers
                     symbolStartContext.RegisterOperationAction(AnalyzeInvocationOperation, OperationKind.Invocation);
                     symbolStartContext.RegisterOperationAction(AnalyzeNameOfOperation, OperationKind.NameOf);
                     symbolStartContext.RegisterOperationAction(AnalyzeObjectCreationOperation, OperationKind.ObjectCreation);
+                    symbolStartContext.RegisterOperationAction(AnalyzeLocalFunctionOperation, OperationKind.LocalFunction);
+                    symbolStartContext.RegisterOperationAction(AnalyzeParameterInitializerOperation, OperationKind.ParameterInitializer);
+                    symbolStartContext.RegisterOperationAction(AnalyzeAttributeOperation, OperationKind.Attribute);
 
                     // We bail out reporting diagnostics for named types if it contains following kind of operations:
                     //  1. Invalid operations, i.e. erroneous code:
@@ -375,6 +378,25 @@ namespace Microsoft.CodeAnalysis.RemoveUnusedMembers
                 // An object creation is considered as a read reference to the constructor
                 // to ensure that we consider the constructor as "used".
                 OnSymbolUsage(constructor, ValueUsageInfo.Read);
+            }
+
+            private void AnalyzeLocalFunctionOperation(OperationAnalysisContext operationContext)
+            {
+                var op = ((ILocalFunctionOperation)operationContext.Operation);
+                // TODO: Walk parameter initializers and attribute arguments.
+                _ = op;
+            }
+
+            private void AnalyzeParameterInitializerOperation(OperationAnalysisContext operationContext)
+            {
+                var op = ((IParameterInitializerOperation)operationContext.Operation);
+                _ = op;
+            }
+
+            private void AnalyzeAttributeOperation(OperationAnalysisContext operationContext)
+            {
+                var op = ((IAttributeOperation)operationContext.Operation);
+                _ = op;
             }
 
             private void OnSymbolEnd(SymbolAnalysisContext symbolEndContext, bool hasUnsupportedOperation)
