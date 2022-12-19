@@ -411,6 +411,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 delegateType = CreateErrorType();
             }
+            else if (expr is UnboundLambda unboundLambda)
+            {
+                BoundLambda boundLambda = unboundLambda.Bind(delegateType, isExpressionTree: false);
+                CheckLambdaConversion(boundLambda.Symbol, delegateType, diagnostics);
+            }
 
             return GenerateConversionForAssignment(delegateType, expr, diagnostics);
         }
