@@ -24,6 +24,61 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
         }
 
         [Fact]
+        public void SimplerTest()
+        {
+            var source1a = """
+                class C111 { }
+                """;
+            var source1b = """
+                [X] class C111 { }
+                """;
+            var source2 = """
+                [Y] class C2 { }
+                """;
+
+            var parseOptions = TestOptions.Regular;
+            var comp = CreateCompilation(new[] { source1a, source2 }, parseOptions: parseOptions);
+
+            var counter1 = 0;
+            var counter2 = 0;
+
+            var generator = new IncrementalGeneratorWrapper(new PipelineCallbackGenerator(ctx =>
+            {
+                var className = ctx.SyntaxProvider.CreateSyntaxProvider(
+                    static (node, _) => node is ClassDeclarationSyntax { Identifier.ValueText: "C2" },
+                    static (c, _) => ((ClassDeclarationSyntax)c.Node).Identifier.ValueText.Length);
+
+                var attribute = ctx.SyntaxProvider.ForAttributeWithMetadataName("Y",
+                    static (node, _) => node is ClassDeclarationSyntax { Identifier.ValueText: "C2" },
+                    static (c, _) => ((ClassDeclarationSyntax)c.TargetNode).Identifier.ValueText.Length);
+
+                ctx.RegisterSourceOutput(className, (ctx, value) =>
+                {
+                    counter1++;
+                    Assert.Equal(2, value);
+                });
+
+                ctx.RegisterSourceOutput(attribute, (ctx, value) =>
+                {
+                    counter2++;
+                    Assert.Equal(2, value);
+                });
+            }));
+
+            GeneratorDriver driver = CSharpGeneratorDriver.Create(new[] { generator }, parseOptions: parseOptions);
+
+            driver = driver.RunGeneratorsAndUpdateCompilation(comp, out _, out var diagnostics);
+            diagnostics.Verify();
+
+            comp = comp.ReplaceSyntaxTree(comp.SyntaxTrees[0], CSharpSyntaxTree.ParseText(source1b, parseOptions));
+            driver = driver.RunGeneratorsAndUpdateCompilation(comp, out _, out diagnostics);
+            diagnostics.Verify();
+
+            Assert.Equal(1, counter1);
+            Assert.Equal(1, counter2);
+        }
+
+        [Fact]
         public void NoRelevantChangeTest()
         {
             (string original, string changed) testClassSource = (
