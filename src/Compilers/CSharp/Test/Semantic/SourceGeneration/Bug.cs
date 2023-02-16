@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
+using Microsoft.CodeAnalysis.CSharp.UnitTests;
 using Microsoft.CodeAnalysis.Text;
 using Roslyn.Test.Utilities.TestGenerators;
 using Xunit;
@@ -70,7 +71,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
             driver = driver.RunGeneratorsAndUpdateCompilation(comp, out _, out var diagnostics);
             diagnostics.Verify();
 
-            comp = comp.ReplaceSyntaxTree(comp.SyntaxTrees[0], CSharpSyntaxTree.ParseText(source1b, parseOptions));
+            var tree = comp.GetMember("C111").DeclaringSyntaxReferences.Single().SyntaxTree;
+
+            comp = comp.ReplaceSyntaxTree(tree, CSharpSyntaxTree.ParseText(source1b, parseOptions));
             driver = driver.RunGeneratorsAndUpdateCompilation(comp, out _, out diagnostics);
             diagnostics.Verify();
 
