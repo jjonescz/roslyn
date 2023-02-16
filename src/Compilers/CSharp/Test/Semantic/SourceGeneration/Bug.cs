@@ -89,9 +89,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
             driver = driver.RunGeneratorsAndUpdateCompilation(comp, out _, out diagnostics);
             diagnostics.Verify();
 
-            Assert.Equal(1, counter1);
-            Assert.Equal(1, counter2);
-            Assert.Equal(1, counter3);
+            Assert.Equal((1, 1, 1), (counter1, counter2, counter3));
         }
 
         [Fact]
