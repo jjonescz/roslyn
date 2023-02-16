@@ -32,7 +32,7 @@ public partial struct SyntaxValueProvider
     private static readonly ObjectPool<Stack<SyntaxNode>> s_nodeStackPool = new ObjectPool<Stack<SyntaxNode>>(static () => new Stack<SyntaxNode>());
 
     /// <summary>
-    /// Returns all syntax nodes of that match <paramref name="predicate"/> if that node has an attribute on it that
+    /// Returns all syntax nodes that match <paramref name="predicate"/> if that node has an attribute on it that
     /// could possibly bind to the provided <paramref name="simpleName"/>. <paramref name="simpleName"/> should be the
     /// simple, non-qualified, name of the attribute, including the <c>Attribute</c> suffix, and not containing any
     /// generics, containing types, or namespaces.  For example <c>CLSCompliantAttribute</c> for <see
