@@ -42,6 +42,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
 
             var counter1 = 0;
             var counter2 = 0;
+            var counter3 = 0;
 
             var generator = new IncrementalGeneratorWrapper(new PipelineCallbackGenerator(ctx =>
             {
@@ -49,7 +50,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
                     static (node, _) => node is ClassDeclarationSyntax { Identifier.ValueText: "C2" },
                     static (c, _) => ((ClassDeclarationSyntax)c.Node).Identifier.ValueText.Length);
 
-                var attribute = ctx.SyntaxProvider.ForAttributeWithMetadataName("Y",
+                var simple = ctx.SyntaxProvider.ForAttributeWithSimpleName("Y",
+                    static (node, _) => node is ClassDeclarationSyntax { Identifier.ValueText: "C2" })
+                    .SelectMany(static (t, _) => t.matches)
+                    .Select(static (n, _) => ((ClassDeclarationSyntax)n).Identifier.ValueText.Length);
+
+                var metadata = ctx.SyntaxProvider.ForAttributeWithMetadataName("Y",
                     static (node, _) => node is ClassDeclarationSyntax { Identifier.ValueText: "C2" },
                     static (c, _) => ((ClassDeclarationSyntax)c.TargetNode).Identifier.ValueText.Length);
 
@@ -59,9 +65,15 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
                     Assert.Equal(2, value);
                 });
 
-                ctx.RegisterSourceOutput(attribute, (ctx, value) =>
+                ctx.RegisterSourceOutput(simple, (ctx, value) =>
                 {
                     counter2++;
+                    Assert.Equal(2, value);
+                });
+
+                ctx.RegisterSourceOutput(metadata, (ctx, value) =>
+                {
+                    counter3++;
                     Assert.Equal(2, value);
                 });
             }));
@@ -79,6 +91,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
 
             Assert.Equal(1, counter1);
             Assert.Equal(1, counter2);
+            Assert.Equal(1, counter3);
         }
 
         [Fact]
