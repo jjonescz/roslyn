@@ -50,8 +50,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
                     static (node, _) => node is ClassDeclarationSyntax { Identifier.ValueText: "C2" },
                     static (c, _) => ((ClassDeclarationSyntax)c.Node).Identifier.ValueText.Length);
 
-                var simple = ctx.SyntaxProvider.ForAttributeWithSimpleName("Y",
-                    static (node, _) => node is ClassDeclarationSyntax { Identifier.ValueText: "C2" })
+                var simple = ctx.SyntaxProvider
+                    .ForAttributeWithSimpleName("Y",
+                        static (node, _) => node is ClassDeclarationSyntax { Identifier.ValueText: "C2" })
                     .SelectMany(static (t, _) => t.matches)
                     .Select(static (n, _) => ((ClassDeclarationSyntax)n).Identifier.ValueText.Length);
 
