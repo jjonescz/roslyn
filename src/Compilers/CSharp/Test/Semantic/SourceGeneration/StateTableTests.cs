@@ -1086,13 +1086,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
             AssertTableEntries(table4.AsCached(), new[] { ("E", EntryState.Cached, 0), ("D", EntryState.Cached, 0) });
         }
 
-        [Fact, WorkItem(66451, "https://github.com/dotnet/roslyn/issues/66451")]
-        public void Node_Table_Transform_Twice()
+        [Theory, CombinatorialData]
+        [WorkItem(66451, "https://github.com/dotnet/roslyn/issues/66451")]
+        public void Node_Table_Transform_Twice(bool track)
         {
             // [A, B]
             var input = ImmutableArray.Create("A", "B");
             var inputNode = new InputNode<string>(_ => input);
-            var dstBuilder = GetBuilder(DriverStateTable.Empty);
+            var dstBuilder = GetBuilder(DriverStateTable.Empty, trackIncrementalGeneratorSteps: track);
             var table = dstBuilder.GetLatestStateTableForNode(inputNode);
             AssertTableEntries(table, new[] { ("A", EntryState.Added, 0), ("B", EntryState.Added, 0) });
             AssertTableEntries(table.AsCached(), new[] { ("A", EntryState.Cached, 0), ("B", EntryState.Cached, 0) });
@@ -1111,7 +1112,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
 
             // [C, B]
             input = ImmutableArray.Create("C", "B");
-            dstBuilder = GetBuilder(dstBuilder.ToImmutable());
+            dstBuilder = GetBuilder(dstBuilder.ToImmutable(), trackIncrementalGeneratorSteps: track);
             table = dstBuilder.GetLatestStateTableForNode(inputNode);
             AssertTableEntries(table, new[] { ("C", EntryState.Modified, 0), ("B", EntryState.Cached, 0) });
             AssertTableEntries(table.AsCached(), new[] { ("C", EntryState.Cached, 0), ("B", EntryState.Cached, 0) });
