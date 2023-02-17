@@ -65,7 +65,6 @@ public partial struct SyntaxValueProvider
         var syntaxTreesProvider = _context.CompilationProvider
             .SelectMany(static (comp, _) => comp.CommonSyntaxTrees)
             .Select((tree, ct) => (Tree: tree, Info: tree.GetSourceGeneratorInfo(syntaxHelper, ct)))
-            .Where(static t => (t.Info & SourceGeneratorSyntaxTreeInfo.ContainsGlobalAliasesOrAttributeList) != 0)
             .WithTrackingName("compilationUnit_ForAttribute");
 
         // Create a provider that provides (and updates) the global aliases for any particular file when it is edited.
