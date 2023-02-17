@@ -81,14 +81,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
 
             GeneratorDriver driver = CSharpGeneratorDriver.Create(new[] { generator }, parseOptions: parseOptions);
 
-            driver = driver.RunGeneratorsAndUpdateCompilation(comp, out _, out var diagnostics);
-            diagnostics.Verify();
+            driver = driver.RunGenerators(comp);
 
             var tree = comp.GetMember("C111").DeclaringSyntaxReferences.Single().SyntaxTree;
 
             comp = comp.ReplaceSyntaxTree(tree, CSharpSyntaxTree.ParseText(source1b, parseOptions));
-            driver = driver.RunGeneratorsAndUpdateCompilation(comp, out _, out diagnostics);
-            diagnostics.Verify();
+            driver = driver.RunGenerators(comp);
 
             Assert.Equal((1, 1, 1), (counter1, counter2, counter3));
         }
