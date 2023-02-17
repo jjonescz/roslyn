@@ -1126,6 +1126,23 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
             table = dstBuilder.GetLatestStateTableForNode(transformNode2);
             AssertTableEntries(table, new[] { ("C", EntryState.Added, 0), ("B", EntryState.Added, 0) });
             AssertTableEntries(table.AsCached(), new[] { ("C", EntryState.Cached, 0), ("B", EntryState.Cached, 0) });
+
+            // [A, B]
+            input = ImmutableArray.Create("A", "B");
+            dstBuilder = GetBuilder(dstBuilder.ToImmutable(), trackIncrementalGeneratorSteps: track);
+            table = dstBuilder.GetLatestStateTableForNode(inputNode);
+            AssertTableEntries(table, new[] { ("A", EntryState.Modified, 0), ("B", EntryState.Cached, 0) });
+            AssertTableEntries(table.AsCached(), new[] { ("A", EntryState.Cached, 0), ("B", EntryState.Cached, 0) });
+
+            // filter out A => [B]
+            table = dstBuilder.GetLatestStateTableForNode(transformNode1);
+            AssertTableEntries(table, new[] { ("C", EntryState.Removed, 0), ("B", EntryState.Cached, 0) });
+            AssertTableEntries(table.AsCached(), new[] { ("B", EntryState.Cached, 0) });
+
+            // no-op => [B]
+            table = dstBuilder.GetLatestStateTableForNode(transformNode2);
+            AssertTableEntries(table, new[] { ("C", EntryState.Removed, 0), ("B", EntryState.Cached, 0) });
+            AssertTableEntries(table.AsCached(), new[] { ("B", EntryState.Cached, 0) });
         }
 
         private void AssertTableEntries<T>(NodeStateTable<T> table, IList<(T Item, EntryState State, int OutputIndex)> expected)
