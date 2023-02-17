@@ -63,7 +63,9 @@ public partial struct SyntaxValueProvider
         // changed. CreateSyntaxProvider will have to rerun all incremental nodes since it passes along the
         // SemanticModel, and that model is updated whenever any tree changes (since it is tied to the compilation).
         var syntaxTreesProvider = _context.CompilationProvider
-            .SelectMany((compilation, cancellationToken) => GetSourceGeneratorInfo(syntaxHelper, compilation, cancellationToken))
+            .SelectMany(static (comp, _) => comp.CommonSyntaxTrees)
+            .Select((tree, ct) => (Tree: tree, Info: tree.GetSourceGeneratorInfo(syntaxHelper, ct)))
+            .Where(static t => (t.Info & SourceGeneratorSyntaxTreeInfo.ContainsGlobalAliasesOrAttributeList) != 0)
             .WithTrackingName("compilationUnit_ForAttribute");
 
         // Create a provider that provides (and updates) the global aliases for any particular file when it is edited.
@@ -121,32 +123,6 @@ public partial struct SyntaxValueProvider
 
             return GlobalAliases.Create(globalAliases.ToImmutableAndFree());
         }
-    }
-
-    private static ImmutableArray<(SyntaxTree Tree, SourceGeneratorSyntaxTreeInfo Info)> GetSourceGeneratorInfo(
-        ISyntaxHelper syntaxHelper, Compilation compilation, CancellationToken cancellationToken)
-    {
-        // Get the count up front so we can allocate without waste.
-        var count = 0;
-        foreach (var tree in compilation.CommonSyntaxTrees)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var info = tree.GetSourceGeneratorInfo(syntaxHelper, cancellationToken);
-            if ((info & SourceGeneratorSyntaxTreeInfo.ContainsGlobalAliasesOrAttributeList) != 0)
-                count++;
-        }
-
-        var builder = ImmutableArray.CreateBuilder<(SyntaxTree Tree, SourceGeneratorSyntaxTreeInfo Info)>(count);
-
-        // Iterate again.  This will be free as the values from before will already be cached on the syntax tree.
-        foreach (var tree in compilation.CommonSyntaxTrees)
-        {
-            var info = tree.GetSourceGeneratorInfo(syntaxHelper, cancellationToken);
-            if ((info & SourceGeneratorSyntaxTreeInfo.ContainsGlobalAliasesOrAttributeList) != 0)
-                builder.Add((tree, info));
-        }
-
-        return builder.MoveToImmutable();
     }
 
     private static ImmutableArray<SyntaxNode> GetMatchingNodes(
