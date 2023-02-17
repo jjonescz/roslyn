@@ -11,6 +11,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.CSharp.UnitTests;
 using Microsoft.CodeAnalysis.Text;
+using Roslyn.Test.Utilities;
 using Roslyn.Test.Utilities.TestGenerators;
 using Roslyn.Utilities;
 using Xunit;
@@ -1637,11 +1638,13 @@ class C { }
         Assert.Equal(IncrementalStepRunReason.New, runResult.TrackedSteps["result_ForAttributeWithMetadataName"].Single().Outputs.Single().Reason);
     }
 
-    [Fact]
-    public void RerunWithChangedFileIrrelevant()
+    [Theory, CombinatorialData]
+    [WorkItem(66324, "https://github.com/dotnet/roslyn/issues/66324")]
+    public void RerunWithChangedFileThatNowReferencesDifferentAttribute(bool reverse)
     {
         var source0 = """
             class XAttribute : System.Attribute { }
+            class YAttribute : System.Attribute { }
             """;
         var source1 = """
             [X] class C { }
@@ -1650,18 +1653,26 @@ class C { }
             class D { }
             """;
         var parseOptions = TestOptions.RegularPreview;
-        Compilation compilation = CreateCompilation(new[] { source0, source1, source2 }, options: TestOptions.DebugDllThrowing, parseOptions: parseOptions);
+        var sources = new[] { source0, source1, source2 };
+        if (reverse) Array.Reverse(sources);
+        Compilation compilation = CreateCompilation(sources, options: TestOptions.DebugDllThrowing, parseOptions: parseOptions);
+
+        var counter = 0;
 
         var generator = new IncrementalGeneratorWrapper(new PipelineCallbackGenerator(ctx =>
         {
             var input = ctx.ForAttributeWithMetadataName<ClassDeclarationSyntax>("XAttribute");
-            ctx.RegisterSourceOutput(input, (spc, node) => { });
+            ctx.RegisterSourceOutput(input, (spc, node) =>
+            {
+                counter++;
+            });
         }));
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(new ISourceGenerator[] { generator }, parseOptions: parseOptions, driverOptions: new GeneratorDriverOptions(IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true));
         driver = driver.RunGenerators(compilation);
-        var runResult = driver.GetRunResult().Results[0];
+        var runResult = driver.GetRunResult().Results.Single();
 
+        Assert.Equal(1, counter);
         Assert.Collection(runResult.TrackedSteps["result_ForAttributeWithMetadataName"],
             step => Assert.True(step.Outputs.Single().Value is ClassDeclarationSyntax { Identifier.ValueText: "C" }));
 
@@ -1670,10 +1681,11 @@ class C { }
         driver = driver.RunGenerators(compilation.ReplaceSyntaxTree(
             tree,
             tree.WithChangedText(SourceText.From("""
-                class D2 { }
+                [Y] class D { }
                 """))));
-        runResult = driver.GetRunResult().Results[0];
+        runResult = driver.GetRunResult().Results.Single();
 
+        Assert.Equal(1, counter);
         Assert.Collection(runResult.TrackedSteps["result_ForAttributeWithMetadataName"],
             step => Assert.True(step.Outputs.Single().Value is ClassDeclarationSyntax { Identifier.ValueText: "C" }));
 
