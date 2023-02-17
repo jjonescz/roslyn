@@ -1050,7 +1050,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
         }
 
         [Fact, WorkItem(66451, "https://github.com/dotnet/roslyn/issues/66451")]
-        public void Node_Table_Transform_1()
+        public void Node_Table_Transform_Once()
         {
             var input = ImmutableArray.Create("A", "B");
             var inputNode = new InputNode<string>(_ => input);
@@ -1087,45 +1087,44 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
         }
 
         [Fact, WorkItem(66451, "https://github.com/dotnet/roslyn/issues/66451")]
-        public void Node_Table_Transform_2()
+        public void Node_Table_Transform_Twice()
         {
+            // [A, B]
             var input = ImmutableArray.Create("A", "B");
             var inputNode = new InputNode<string>(_ => input);
             var dstBuilder = GetBuilder(DriverStateTable.Empty);
+            var table = dstBuilder.GetLatestStateTableForNode(inputNode);
+            AssertTableEntries(table, new[] { ("A", EntryState.Added, 0), ("B", EntryState.Added, 0) });
+            AssertTableEntries(table.AsCached(), new[] { ("A", EntryState.Cached, 0), ("B", EntryState.Cached, 0) });
 
-            // filter out C
-            var transformNodeC = new TransformNode<string, string>(inputNode, (x, _) => x != "C" ? ImmutableArray.Create(x) : ImmutableArray<string>.Empty);
+            // filter out A => [B]
+            var transformNode1 = new TransformNode<string, string>(inputNode, (x, _) => x != "A" ? ImmutableArray.Create(x) : ImmutableArray<string>.Empty);
+            table = dstBuilder.GetLatestStateTableForNode(transformNode1);
+            AssertTableEntries(table, new[] { ("B", EntryState.Added, 0) });
+            AssertTableEntries(table.AsCached(), new[] { ("B", EntryState.Cached, 0) });
 
-            // filter out D
-            var transformNodeD = new TransformNode<string, string>(transformNodeC, (x, _) => x != "D" ? ImmutableArray.Create(x) : ImmutableArray<string>.Empty);
+            // no-op => [B]
+            var transformNode2 = new TransformNode<string, string>(transformNode1, (x, _) => ImmutableArray.Create(x));
+            table = dstBuilder.GetLatestStateTableForNode(transformNode2);
+            AssertTableEntries(table, new[] { ("B", EntryState.Added, 0) });
+            AssertTableEntries(table.AsCached(), new[] { ("B", EntryState.Cached, 0) });
 
-            // [A, B] -> [A, B] -> [A, B]
-            var table1 = dstBuilder.GetLatestStateTableForNode(transformNodeC);
-            AssertTableEntries(table1, new[] { ("A", EntryState.Added, 0), ("B", EntryState.Added, 0) });
-            AssertTableEntries(table1.AsCached(), new[] { ("A", EntryState.Cached, 0), ("B", EntryState.Cached, 0) });
-            table1 = dstBuilder.GetLatestStateTableForNode(transformNodeD);
-            AssertTableEntries(table1, new[] { ("A", EntryState.Added, 0), ("B", EntryState.Added, 0) });
-            AssertTableEntries(table1.AsCached(), new[] { ("A", EntryState.Cached, 0), ("B", EntryState.Cached, 0) });
-
-            // [C, B] -> [B] -> [B]
+            // [C, B]
             input = ImmutableArray.Create("C", "B");
             dstBuilder = GetBuilder(dstBuilder.ToImmutable());
-            var table2 = dstBuilder.GetLatestStateTableForNode(transformNodeC);
-            AssertTableEntries(table2, new[] { ("A", EntryState.Removed, 0), ("B", EntryState.Cached, 0) });
-            AssertTableEntries(table2.AsCached(), new[] { ("B", EntryState.Cached, 0) });
-            table2 = dstBuilder.GetLatestStateTableForNode(transformNodeD);
-            AssertTableEntries(table2, new[] { ("A", EntryState.Removed, 0), ("B", EntryState.Cached, 0) });
-            AssertTableEntries(table2.AsCached(), new[] { ("B", EntryState.Cached, 0) });
+            table = dstBuilder.GetLatestStateTableForNode(inputNode);
+            AssertTableEntries(table, new[] { ("C", EntryState.Modified, 0), ("B", EntryState.Cached, 0) });
+            AssertTableEntries(table.AsCached(), new[] { ("C", EntryState.Cached, 0), ("B", EntryState.Cached, 0) });
 
-            // [C, D] -> [D] -> []
-            input = ImmutableArray.Create("C", "D");
-            dstBuilder = GetBuilder(dstBuilder.ToImmutable());
-            var table3 = dstBuilder.GetLatestStateTableForNode(transformNodeC);
-            AssertTableEntries(table3, new[] { ("D", EntryState.Modified, 0) });
-            AssertTableEntries(table3.AsCached(), new[] { ("D", EntryState.Cached, 0) });
-            table3 = dstBuilder.GetLatestStateTableForNode(transformNodeD);
-            AssertTableEntries(table3, new[] { ("B", EntryState.Removed, 0) });
-            AssertTableEntries(table3.AsCached(), Array.Empty<(string, EntryState, int)>());
+            // filter out A => [C, B]
+            table = dstBuilder.GetLatestStateTableForNode(transformNode1);
+            AssertTableEntries(table, new[] { ("C", EntryState.Added, 0), ("B", EntryState.Cached, 0) });
+            AssertTableEntries(table.AsCached(), new[] { ("C", EntryState.Cached, 0), ("B", EntryState.Cached, 0) });
+
+            // no-op => [C, B]
+            table = dstBuilder.GetLatestStateTableForNode(transformNode2);
+            AssertTableEntries(table, new[] { ("C", EntryState.Added, 0), ("B", EntryState.Added, 0) });
+            AssertTableEntries(table.AsCached(), new[] { ("C", EntryState.Cached, 0), ("B", EntryState.Cached, 0) });
         }
 
         private void AssertTableEntries<T>(NodeStateTable<T> table, IList<(T Item, EntryState State, int OutputIndex)> expected)
