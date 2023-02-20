@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Text;
+using Roslyn.Test.Utilities;
 using Roslyn.Test.Utilities.TestGenerators;
 using Roslyn.Utilities;
 using Xunit;
@@ -1005,6 +1006,66 @@ class Outer2
         var runResult = driver.GetRunResult().Results[0];
 
         Assert.False(runResult.TrackedSteps.ContainsKey("result_ForAttributeWithMetadataName"));
+    }
+
+    [Fact, WorkItem(66383, "https://github.com/dotnet/roslyn/issues/66383")]
+    public void GenericAttributes()
+    {
+        var source0 = """
+            using System;
+            namespace MyAttributes;
+            class X : Attribute { }
+            class X<T> : Attribute { }
+            """;
+
+        var source1 = """
+            using MyAttributes;
+            [X, X<int>, X<string>] class C { }
+            """;
+
+        var parseOptions = TestOptions.RegularPreview;
+        var compilation = CreateCompilation(new[] { source0, source1 }, options: TestOptions.DebugDllThrowing, parseOptions: parseOptions);
+
+        var nonGenericPredicateCounter = 0;
+        var nonGenericSourceCounter = 0;
+        var genericPredicateCounter = 0;
+        var genericSourceCounter = 0;
+        var generator = new IncrementalGeneratorWrapper(new PipelineCallbackGenerator(ctx =>
+        {
+            var nonGeneric = ctx.SyntaxProvider.ForAttributeWithMetadataName(
+                "MyAttributes.X",
+                (n, _) =>
+                {
+                    nonGenericPredicateCounter++;
+                    return true;
+                },
+                static (c, _) =>
+                {
+                    Assert.Equal(1, c.Attributes.Length);
+                    return (ClassDeclarationSyntax)c.TargetNode;
+                });
+            var generic = ctx.SyntaxProvider.ForAttributeWithMetadataName(
+                "MyAttributes.X`1",
+                (n, _) =>
+                {
+                    genericPredicateCounter++;
+                    return true;
+                },
+                static (c, _) =>
+                {
+                    Assert.Equal(2, c.Attributes.Length);
+                    return (ClassDeclarationSyntax)c.TargetNode;
+                });
+
+            ctx.RegisterSourceOutput(nonGeneric, (_, _) => nonGenericSourceCounter++);
+            ctx.RegisterSourceOutput(generic, (_, _) => genericSourceCounter++);
+        }));
+
+        var driver = CSharpGeneratorDriver.Create(new[] { generator }, parseOptions: parseOptions);
+        driver.RunGenerators(compilation);
+
+        Assert.Equal((1, 1), (nonGenericSourceCounter, genericSourceCounter));
+        Assert.Equal((1, 1), (nonGenericPredicateCounter, genericPredicateCounter));
     }
 
     [Fact]
