@@ -286,20 +286,17 @@ namespace Microsoft.CodeAnalysis
 
             public void CopyEmpty<TPrevious>(NodeStateTable<TPrevious> source)
             {
-                if (source._states.Length <= _states.Count)
+                while (_states.Count < source._states.Length)
                 {
-                    return;
-                }
+                    var sourceEntry = source._states[_states.Count];
+                    if (sourceEntry.Count != 0)
+                    {
+                        return;
+                    }
 
-                var sourceEntry = source._states[_states.Count];
-                if (sourceEntry.Count != 0)
-                {
-                    return;
+                    _states.Add(new TableEntry(OneOrMany<T>.Empty, EntryState.Added));
+                    RecordStepInfoForLastEntry(TimeSpan.Zero, TrackIncrementalSteps ? ImmutableArray.Create((source.Steps[_states.Count], 0)) : default, EntryState.Added);
                 }
-
-                // TODO: Do for all empty entries, not just the first one.
-                _states.Add(new TableEntry(OneOrMany<T>.Empty, EntryState.Added));
-                RecordStepInfoForLastEntry(TimeSpan.Zero, TrackIncrementalSteps ? ImmutableArray.Create((source.Steps[_states.Count], 0)) : default, EntryState.Added);
             }
 
             public bool TryModifyEntries(ImmutableArray<T> outputs, IEqualityComparer<T> comparer, TimeSpan elapsedTime, ImmutableArray<(IncrementalGeneratorRunStep InputStep, int OutputIndex)> stepInputs, EntryState overallInputState)
