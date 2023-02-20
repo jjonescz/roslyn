@@ -1049,43 +1049,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
             AssertTableEntries(table.AsCached(), ImmutableArray.Create(("class1", EntryState.Cached, 0), ("class1.1", EntryState.Cached, 1)));
         }
 
-        [Fact, WorkItem(66451, "https://github.com/dotnet/roslyn/issues/66451")]
-        public void Node_Table_Transform_Once()
-        {
-            var input = ImmutableArray.Create("A", "B");
-            var inputNode = new InputNode<string>(_ => input);
-            var dstBuilder = GetBuilder(DriverStateTable.Empty);
-
-            // filter out C
-            var transformNode = new TransformNode<string, string>(inputNode, (x, _) => x != "C" ? ImmutableArray.Create(x) : ImmutableArray<string>.Empty);
-
-            // [A, B] -> [A, B]
-            var table1 = dstBuilder.GetLatestStateTableForNode(transformNode);
-            AssertTableEntries(table1, new[] { ("A", EntryState.Added, 0), ("B", EntryState.Added, 0) });
-            AssertTableEntries(table1.AsCached(), new[] { ("A", EntryState.Cached, 0), ("B", EntryState.Cached, 0) });
-
-            // [C, B] -> [B]
-            input = ImmutableArray.Create("C", "B");
-            dstBuilder = GetBuilder(dstBuilder.ToImmutable());
-            var table2 = dstBuilder.GetLatestStateTableForNode(transformNode);
-            AssertTableEntries(table2, new[] { ("A", EntryState.Removed, 0), ("B", EntryState.Cached, 0) });
-            AssertTableEntries(table2.AsCached(), new[] { ("B", EntryState.Cached, 0) });
-
-            // [C, D] -> [D]
-            input = ImmutableArray.Create("C", "D");
-            dstBuilder = GetBuilder(dstBuilder.ToImmutable());
-            var table3 = dstBuilder.GetLatestStateTableForNode(transformNode);
-            AssertTableEntries(table3, new[] { ("D", EntryState.Modified, 0) });
-            AssertTableEntries(table3.AsCached(), new[] { ("D", EntryState.Cached, 0) });
-
-            // [E, D] -> [E, D]
-            input = ImmutableArray.Create("E", "D");
-            dstBuilder = GetBuilder(dstBuilder.ToImmutable());
-            var table4 = dstBuilder.GetLatestStateTableForNode(transformNode);
-            AssertTableEntries(table4, new[] { ("E", EntryState.Added, 0), ("D", EntryState.Cached, 0) });
-            AssertTableEntries(table4.AsCached(), new[] { ("E", EntryState.Cached, 0), ("D", EntryState.Cached, 0) });
-        }
-
         [Theory, CombinatorialData]
         [WorkItem(66451, "https://github.com/dotnet/roslyn/issues/66451")]
         public void Node_Table_Transform_Twice(bool track)
