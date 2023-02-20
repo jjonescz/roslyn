@@ -91,7 +91,24 @@ namespace Microsoft.CodeAnalysis
             => _states.Sum(static e => e.Count);
 
         public int GetTotalEntryItemCountPlusEmpty()
-            => _states.Sum(static e => e.Count == 0 ? 1 : e.Count);
+        {
+            int sum = 0;
+            int trailingEmpty = 0;
+            foreach (var entry in _states)
+            {
+                if (entry.Count == 0)
+                {
+                    sum++;
+                    trailingEmpty++;
+                }
+                else
+                {
+                    sum += entry.Count;
+                    trailingEmpty = 0;
+                }
+            }
+            return sum - trailingEmpty;
+        }
 
         public IEnumerator<NodeStateEntry<T>> GetEnumerator()
         {
@@ -280,8 +297,9 @@ namespace Microsoft.CodeAnalysis
                     return;
                 }
 
+                // TODO: Do for all empty entries, not just the first one.
                 _states.Add(new TableEntry(OneOrMany<T>.Empty, EntryState.Added));
-                // TODO: Do for all empty entries.
+                RecordStepInfoForLastEntry(TimeSpan.Zero, TrackIncrementalSteps ? ImmutableArray.Create((source.Steps[_states.Count], 0)) : default, EntryState.Added);
             }
 
             public bool TryModifyEntries(ImmutableArray<T> outputs, IEqualityComparer<T> comparer, TimeSpan elapsedTime, ImmutableArray<(IncrementalGeneratorRunStep InputStep, int OutputIndex)> stepInputs, EntryState overallInputState)
