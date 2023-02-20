@@ -1044,6 +1044,7 @@ class Outer2
                     Assert.Equal(1, c.Attributes.Length);
                     return (ClassDeclarationSyntax)c.TargetNode;
                 });
+
             var generic = ctx.SyntaxProvider.ForAttributeWithMetadataName(
                 "MyAttributes.X`1",
                 (n, _) =>
@@ -1061,11 +1062,16 @@ class Outer2
             ctx.RegisterSourceOutput(generic, (_, _) => genericSourceCounter++);
         }));
 
-        var driver = CSharpGeneratorDriver.Create(new[] { generator }, parseOptions: parseOptions);
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(new[] { generator }, parseOptions: parseOptions);
         driver.RunGenerators(compilation);
 
         Assert.Equal((1, 1), (nonGenericSourceCounter, genericSourceCounter));
         Assert.Equal((1, 1), (nonGenericPredicateCounter, genericPredicateCounter));
+
+        driver = driver.RunGenerators(compilation);
+
+        Assert.Equal((2, 2), (nonGenericSourceCounter, genericSourceCounter));
+        Assert.Equal((2, 2), (nonGenericPredicateCounter, genericPredicateCounter));
     }
 
     [Fact]
