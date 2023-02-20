@@ -1124,7 +1124,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
 
             // no-op => [C, B]
             table = dstBuilder.GetLatestStateTableForNode(transformNode2);
-            AssertTableEntries(table, new[] { ("C", EntryState.Added, 0), ("B", EntryState.Added, 0) });
+            AssertTableEntries(table, new[] { ("C", EntryState.Added, 0), ("B", EntryState.Cached, 0) });
             AssertTableEntries(table.AsCached(), new[] { ("C", EntryState.Cached, 0), ("B", EntryState.Cached, 0) });
 
             // [A, B]
