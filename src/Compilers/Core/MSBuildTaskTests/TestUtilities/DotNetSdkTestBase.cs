@@ -215,7 +215,7 @@ $@"<Project>
             uploadUtil.SetSucceeded();
         }
 
-        protected void VerifyValues(string? customProps, string? customTargets, string[] targets, string[] expressions, string[] expectedResults)
+        protected void VerifyValues(string? customProps, string? customTargets, string[] targets, string[] expressions, string[] expectedResults, string? additionalMsbuildArguments = null)
         {
             using var uploadUtil = new ArtifactUploadUtil(TestOutputHelper);
             var evaluationResultsFile = Path.Combine(OutDir.Path, "EvaluationResult.txt");
@@ -227,11 +227,11 @@ $@"<Project>
             var testBinDirectory = Path.GetDirectoryName(typeof(DotNetSdkTests).Assembly.Location);
 
             // RoslynTargetsPath is a path to the built-in Roslyn compilers in the .NET SDK.
-            // For testing we are using compilers from custom location (this emulates usage of Microsoft.Net.Compilers package.
+            // For testing we are using compilers from custom location (this emulates usage of Microsoft.Net.Compilers package).
             // The core targets should be imported from CSharpCoreTargetsPath and VisualBasicCoreTargetsPath and the compiler tasks from the same location.
             RunMSBuild(
                 Project.Path,
-                arguments: $@"/t:{targetsArg} /p:RoslynTargetsPath=""<nonexistent directory>"" /p:Configuration={Configuration}",
+                arguments: $@"/t:{targetsArg} /p:RoslynTargetsPath=""<nonexistent directory>"" /p:Configuration={Configuration} {additionalMsbuildArguments}",
                 additionalEnvironmentVars: EnvironmentVariables);
 
             var evaluationResult = File.ReadAllLines(evaluationResultsFile).Select(l => (l != EmptyValueMarker) ? l : "");
