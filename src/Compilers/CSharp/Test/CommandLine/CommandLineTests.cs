@@ -13569,6 +13569,53 @@ public class TestGenerator : ISourceGenerator
             });
         }
 
+        [Fact, WorkItem(60744, "https://github.com/dotnet/roslyn/issues/60744")]
+        public void SourceGenerators_CrossCompilation()
+        {
+            var dir = Temp.CreateDirectory();
+
+            // Compile the source generator.
+            var generatorSource = """
+                using Microsoft.CodeAnalysis;
+
+                [Generator]
+                class MyGenerator : IIncrementalGenerator
+                {
+                    public void Initialize(IncrementalGeneratorInitializationContext ctx)
+                    {
+                        ctx.RegisterSourceOutput(ctx.CompilationProvider, static (spc, _) =>
+                        {
+                            spc.AddSource("GeneratedFile.cs", "class GeneratedClass { }");
+                        });
+                    }
+                }
+                """;
+            var generatorDll = Path.Combine(dir.Path, "MyGeneratorAssembly.dll");
+            var compilation = CreateCompilation(generatorSource,
+                new[] { MetadataReference.CreateFromAssemblyInternal(typeof(IIncrementalGenerator).Assembly) },
+                TestOptions.DebugDllThrowing.WithPlatform(Platform.Arm64),
+                targetFramework: TargetFramework.NetStandard20,
+                assemblyName: "MyGeneratorAssembly");
+            compilation.VerifyDiagnostics();
+            Assert.True(compilation.Emit(generatorDll).Success);
+
+            // Compile a library using the source generator.
+            var librarySource = dir.CreateFile("library.cs").WriteAllText("""
+                public static class MyClass
+                {
+                    public static void M(GeneratedClass c)
+                    {
+                        c.ToString();
+                    }
+                }
+                """);
+            VerifyOutput(dir, librarySource, includeCurrentAssemblyAsAnalyzerReference: false,
+                additionalFlags: new[] { "/langversion:preview", "/platform:arm64", "/analyzer:MyGeneratorAssembly.dll" });
+
+            // Clean up temp files.
+            Directory.Delete(dir.Path, recursive: true);
+        }
+
         [Fact]
         public void SourceGenerators_DoNotWriteGeneratedSources_When_No_Directory_Supplied()
         {
