@@ -654,5 +654,38 @@ some_prop = some_val");
                     "mycustom.config"
                 }));
         }
+
+        [Fact, WorkItem(60744, "https://github.com/dotnet/roslyn/issues/60744")]
+        public void SourceGenerators_CrossCompilation()
+        {
+            var dir = Temp.CreateDirectory();
+
+            var generatorDir = dir.CreateDirectory("MyGenerator");
+            generatorDir.CreateFile("MyGenerator.csproj").WriteAllText("""
+                <Project Sdk="Microsoft.NET.Sdk">
+                    <PropertyGroup>
+                        <TargetFramework>netstandard2.0</TargetFramework>
+                		<RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
+                    </PropertyGroup>
+                </Project>
+                """);
+
+            var libraryDir = dir.CreateDirectory("MyLibrary");
+            var libraryProjFile = libraryDir.CreateFile("MyLibrary.csproj").WriteAllText("""
+                <Project Sdk="Microsoft.NET.Sdk">
+                    <PropertyGroup>
+                        <TargetFramework>netstandard2.0</TargetFramework>
+                		<RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
+                    </PropertyGroup>
+                    <ItemGroup>
+                        <ProjectReference Include="..\MyGenerator\MyGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+                    </ItemGroup>
+                </Project>
+                """);
+
+            RunMSBuild(libraryProjFile.Path, "/t:Restore;Build /p:Configuration=Release /p:RuntimeIdentifier=win-arm64 /p:PublishSingleFile=True");
+
+            Directory.Delete(dir.Path, recursive: true);
+        }
     }
 }
