@@ -24,8 +24,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
             {
                 var invokedMethodsProvider = ctx.SyntaxProvider.CreateSyntaxProvider(
                         predicate: (node, _) => node is InvocationExpressionSyntax,
-                        transform: (ctx, _) => (ctx.SemanticModel.GetSymbolInfo(ctx.Node).Symbol)?.Name ?? "<< method not found >>")
-                    .Where(m => m != null)
+                        transform: (ctx, ct) => ctx.SemanticModel.GetSymbolInfo(ctx.Node, ct).Symbol?.Name ?? "<< method not found >>")
                     .Collect();
 
                 ctx.RegisterSourceOutput(invokedMethodsProvider, (SourceProductionContext spc, ImmutableArray<string> invokedMethods) =>
