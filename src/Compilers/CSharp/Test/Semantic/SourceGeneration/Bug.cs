@@ -66,6 +66,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.SourceGeneration
 
                 """);
 
+            replace(ref compilation, parseOptions, "_ = 0;");
+            verify(ref driver, compilation, """
+
+                """);
+
             static void verify(ref GeneratorDriver driver, Compilation compilation, string generatedContent)
             {
                 driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var generatorDiagnostics);
