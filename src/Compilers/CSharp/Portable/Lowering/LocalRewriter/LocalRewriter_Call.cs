@@ -160,6 +160,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 argumentRefKindsOpt: argRefKindsOpt,
                 expanded: node.Expanded,
                 invokedAsExtensionMethod: node.InvokedAsExtensionMethod,
+                receiverCloned: node.ReceiverCloned,
                 argsToParamsOpt: node.ArgsToParamsOpt,
                 resultKind: node.ResultKind,
                 type: node.Type,
@@ -182,6 +183,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<RefKind> argumentRefKindsOpt,
             bool expanded,
             bool invokedAsExtensionMethod,
+            bool receiverCloned,
             ImmutableArray<int> argsToParamsOpt,
             LookupResultKind resultKind,
             TypeSymbol type,
@@ -198,7 +200,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ref temps,
                 invokedAsExtensionMethod);
 
-            return MakeCall(nodeOpt, syntax, rewrittenReceiver, method, arguments, argumentRefKindsOpt, invokedAsExtensionMethod, resultKind, type, temps.ToImmutableAndFree());
+            return MakeCall(nodeOpt, syntax, rewrittenReceiver, method, arguments, argumentRefKindsOpt, invokedAsExtensionMethod, receiverCloned, resultKind, type, temps.ToImmutableAndFree());
         }
 
         private BoundExpression MakeCall(
@@ -209,6 +211,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<BoundExpression> rewrittenArguments,
             ImmutableArray<RefKind> argumentRefKinds,
             bool invokedAsExtensionMethod,
+            bool receiverCloned,
             LookupResultKind resultKind,
             TypeSymbol type,
             ImmutableArray<LocalSymbol> temps)
@@ -249,6 +252,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     isDelegateCall: false,
                     expanded: false,
                     invokedAsExtensionMethod: invokedAsExtensionMethod,
+                    receiverCloned: receiverCloned,
                     argsToParamsOpt: default(ImmutableArray<int>),
                     defaultArguments: default(BitVector),
                     resultKind: resultKind,
@@ -265,6 +269,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     node.IsDelegateCall,
                     false,
                     node.InvokedAsExtensionMethod,
+                    node.ReceiverCloned,
                     default(ImmutableArray<int>),
                     default(BitVector),
                     node.ResultKind,
@@ -294,6 +299,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 rewrittenArguments: rewrittenArguments,
                 argumentRefKinds: default(ImmutableArray<RefKind>),
                 invokedAsExtensionMethod: false,
+                receiverCloned: false,
                 resultKind: LookupResultKind.Viable,
                 type: type,
                 temps: default);
@@ -1300,6 +1306,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         isDelegateCall: false,
                         expanded: false,
                         invokedAsExtensionMethod: false,
+                        receiverCloned: false,
                         argsToParamsOpt: default(ImmutableArray<int>),
                         defaultArguments: default(BitVector),
                         resultKind: LookupResultKind.Viable,

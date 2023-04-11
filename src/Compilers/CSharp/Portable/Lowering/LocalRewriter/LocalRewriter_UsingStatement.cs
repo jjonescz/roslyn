@@ -517,6 +517,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 argumentRefKindsOpt: default,
                 expanded: methodArgumentInfo.Expanded,
                 invokedAsExtensionMethod: method.IsExtensionMethod,
+                receiverCloned: false,
                 methodArgumentInfo.ArgsToParamsOpt,
                 resultKind: LookupResultKind.Viable,
                 type: method.ReturnType,
