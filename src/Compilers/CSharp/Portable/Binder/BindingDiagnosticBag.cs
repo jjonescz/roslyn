@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.PooledObjects;
 
 namespace Microsoft.CodeAnalysis.CSharp
 {
-    internal sealed class BindingDiagnosticBag : BindingDiagnosticBag<AssemblySymbol>
+    internal readonly ref struct BindingDiagnosticBag : BindingDiagnosticBag<AssemblySymbol>
     {
         public static readonly BindingDiagnosticBag Discarded = new BindingDiagnosticBag(null, null);
 
