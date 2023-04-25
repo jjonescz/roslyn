@@ -1795,7 +1795,10 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
             EmitCallCleanup(call.Syntax, useKind, method);
 
-            FreeOptTemp(tempOpt);
+            if (method.RefKind == RefKind.None)
+            {
+                FreeOptTemp(tempOpt);
+            }
 
             [MethodImpl(MethodImplOptions.NoInlining)]
             LocalDefinition emitGenericReceiver(BoundCall call, out CallKind callKind)
