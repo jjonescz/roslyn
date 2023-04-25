@@ -21783,6 +21783,102 @@ using @scoped = System.Int32;
                 );
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void UnscopedRefAttribute_NestedAccess_Struct()
+        {
+            var source = """
+                class C
+                {
+                    static S M1() => new S() { F = 111 };
+
+                    static int M2(ref int x, S y)
+                    {
+                        return x;
+                    }
+
+                    static int M3()
+                    {
+                        return M2(ref M1().Ref(), default);
+                    }
+
+                    static int M4()
+                    {
+                        return M2(ref M1().Ref(), new S() { F = 123 });
+                    }
+
+                    static int M5()
+                    {
+                        var x = new S() { F = 124 };
+                        return M2(ref M1().Ref(), x);
+                    }
+
+                    static void Main()
+                    {
+                        System.Console.WriteLine(M3());
+                        System.Console.WriteLine(M4());
+                        System.Console.WriteLine(M5());
+                    }
+                }
+
+                struct S
+                {
+                    public int F;
+
+                    [System.Diagnostics.CodeAnalysis.UnscopedRef]
+                    public ref int Ref()
+                    {
+                        return ref F;
+                    }
+                }
+                """;
+            var comp = CreateCompilation(new[] { source, UnscopedRefAttributeDefinition }, options: TestOptions.ReleaseExe).VerifyDiagnostics();
+            var verifier = CompileAndVerify(comp, verify: Verification.Fails, expectedOutput: """
+                111
+                111
+                111
+                """);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyMethodBody("C.M3", """
+                {
+                  // Code size       28 (0x1c)
+                  .maxstack  2
+                  .locals init (S V_0,
+                                S V_1)
+                  // sequence point: return M2(ref M1().Ref(), default);
+                  IL_0000:  call       "S C.M1()"
+                  IL_0005:  stloc.0
+                  IL_0006:  ldloca.s   V_0
+                  IL_0008:  call       "ref int S.Ref()"
+                  IL_000d:  ldloca.s   V_1
+                  IL_000f:  initobj    "S"
+                  IL_0015:  ldloc.1
+                  IL_0016:  call       "int C.M2(ref int, S)"
+                  IL_001b:  ret
+                }
+                """);
+            verifier.VerifyMethodBody("C.M4", """
+                {
+                  // Code size       37 (0x25)
+                  .maxstack  3
+                  .locals init (S V_0,
+                                S V_1)
+                  // sequence point: return M2(ref M1().Ref(), new S() { F = 123 });
+                  IL_0000:  call       "S C.M1()"
+                  IL_0005:  stloc.0
+                  IL_0006:  ldloca.s   V_0
+                  IL_0008:  call       "ref int S.Ref()"
+                  IL_000d:  ldloca.s   V_1
+                  IL_000f:  initobj    "S"
+                  IL_0015:  ldloca.s   V_1
+                  IL_0017:  ldc.i4.s   123
+                  IL_0019:  stfld      "int S.F"
+                  IL_001e:  ldloc.1
+                  IL_001f:  call       "int C.M2(ref int, S)"
+                  IL_0024:  ret
+                }
+                """);
+        }
+
         [Theory]
         [InlineData("struct")]
         [InlineData("ref struct")]
