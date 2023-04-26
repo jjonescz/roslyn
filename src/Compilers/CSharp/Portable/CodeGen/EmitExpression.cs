@@ -1795,6 +1795,8 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
             EmitCallCleanup(call.Syntax, useKind, method);
 
+            // We cannot free (and later reuse) receiver temp if the method itself is ref
+            // and hence could return reference to the temp.
             if (method.RefKind == RefKind.None)
             {
                 FreeOptTemp(tempOpt);
