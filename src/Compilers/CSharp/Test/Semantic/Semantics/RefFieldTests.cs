@@ -22054,6 +22054,90 @@ using @scoped = System.Int32;
                 """);
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void UnscopedRefAttribute_NestedAccess_Struct_BothReadOnly_Static()
+        {
+            var source = """
+                class C
+                {
+                    static S M1() => new S() { F = 111 };
+
+                    static S2 M2(in int x)
+                    {
+                        return new S2(x);
+                    }
+
+                    static int M3()
+                    {
+                        S2 s2 = M2(in RefStatic(M1()));
+                        (new S()).ToString();
+                        return s2.F2;
+                    }
+
+                    static int M4()
+                    {
+                        S2 s2 = M2(in RefStatic(M1()));
+                        return s2.F2;
+                    }
+
+                    static void Main()
+                    {
+                        System.Console.WriteLine(M3());
+                        System.Console.WriteLine(M4());
+                    }
+
+                    static ref readonly int RefStatic(in S s) => ref s.F;
+                }
+
+                public struct S
+                {
+                    public int F;
+                }
+
+                ref struct S2
+                {
+                    public ref readonly int F2;
+
+                    public S2(in int x)
+                    {
+                        F2 = ref x;
+                    }
+                }
+                """;
+            var comp = CreateCompilation(new[] { source, UnscopedRefAttributeDefinition },
+                targetFramework: TargetFramework.Net70,
+                options: TestOptions.ReleaseExe);
+            var verifier = CompileAndVerify(comp, verify: Verification.Fails, expectedOutput: """
+                0
+                111
+                """);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyMethodBody("C.M3", """
+                {
+                  // Code size       46 (0x2e)
+                  .maxstack  3
+                  .locals init (S V_0)
+                  // sequence point: S2 s2 = M2(in RefStatic(M1()));
+                  IL_0000:  call       "S C.M1()"
+                  IL_0005:  stloc.0
+                  IL_0006:  ldloca.s   V_0
+                  IL_0008:  call       "ref readonly int C.RefStatic(in S)"
+                  IL_000d:  call       "S2 C.M2(in int)"
+                  // sequence point: (new S()).ToString();
+                  IL_0012:  ldloca.s   V_0
+                  IL_0014:  dup
+                  IL_0015:  initobj    "S"
+                  IL_001b:  constrained. "S"
+                  IL_0021:  callvirt   "string object.ToString()"
+                  IL_0026:  pop
+                  // sequence point: return s2.F2;
+                  IL_0027:  ldfld      "ref readonly int S2.F2"
+                  IL_002c:  ldind.i4
+                  IL_002d:  ret
+                }
+                """);
+        }
+
         [Theory]
         [InlineData("struct")]
         [InlineData("ref struct")]
