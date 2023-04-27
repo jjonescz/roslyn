@@ -21798,18 +21798,18 @@ using @scoped = System.Int32;
 
                     static int M3()
                     {
-                        return M2(ref M1().Ref(), default);
+                        return M2(ref M1().Ref(), default); // 1
                     }
 
                     static int M4()
                     {
-                        return M2(ref M1().Ref(), new S() { F = 123 });
+                        return M2(ref M1().Ref(), new S() { F = 123 }); // 2
                     }
 
                     static int M5()
                     {
                         var x = new S() { F = 124 };
-                        return M2(ref M1().Ref(), x);
+                        return M2(ref M1().Ref(), x); // 3
                     }
 
                     static void Main()
@@ -21832,51 +21832,16 @@ using @scoped = System.Int32;
                 }
                 """;
             var comp = CreateCompilation(new[] { source, UnscopedRefAttributeDefinition }, options: TestOptions.ReleaseExe);
-            var verifier = CompileAndVerify(comp, verify: Verification.Fails, expectedOutput: """
-                111
-                111
-                111
-                """);
-            verifier.VerifyDiagnostics();
-            verifier.VerifyMethodBody("C.M3", """
-                {
-                  // Code size       28 (0x1c)
-                  .maxstack  2
-                  .locals init (S V_0,
-                                S V_1)
-                  // sequence point: return M2(ref M1().Ref(), default);
-                  IL_0000:  call       "S C.M1()"
-                  IL_0005:  stloc.0
-                  IL_0006:  ldloca.s   V_0
-                  IL_0008:  call       "ref int S.Ref()"
-                  IL_000d:  ldloca.s   V_1
-                  IL_000f:  initobj    "S"
-                  IL_0015:  ldloc.1
-                  IL_0016:  call       "int C.M2(ref int, S)"
-                  IL_001b:  ret
-                }
-                """);
-            verifier.VerifyMethodBody("C.M4", """
-                {
-                  // Code size       37 (0x25)
-                  .maxstack  3
-                  .locals init (S V_0,
-                                S V_1)
-                  // sequence point: return M2(ref M1().Ref(), new S() { F = 123 });
-                  IL_0000:  call       "S C.M1()"
-                  IL_0005:  stloc.0
-                  IL_0006:  ldloca.s   V_0
-                  IL_0008:  call       "ref int S.Ref()"
-                  IL_000d:  ldloca.s   V_1
-                  IL_000f:  initobj    "S"
-                  IL_0015:  ldloca.s   V_1
-                  IL_0017:  ldc.i4.s   123
-                  IL_0019:  stfld      "int S.F"
-                  IL_001e:  ldloc.1
-                  IL_001f:  call       "int C.M2(ref int, S)"
-                  IL_0024:  ret
-                }
-                """);
+            comp.VerifyDiagnostics(
+                // 0.cs(12,23): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                //         return M2(ref M1().Ref(), default); // 1
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "M1()").WithLocation(12, 23),
+                // 0.cs(17,23): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                //         return M2(ref M1().Ref(), new S() { F = 123 }); // 2
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "M1()").WithLocation(17, 23),
+                // 0.cs(23,23): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                //         return M2(ref M1().Ref(), x); // 3
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "M1()").WithLocation(23, 23));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
@@ -21915,30 +21880,13 @@ using @scoped = System.Int32;
                 }
                 """;
             var comp = CreateCompilation(new[] { source, UnscopedRefAttributeDefinition }, options: TestOptions.ReleaseExe);
-            var verifier = CompileAndVerify(comp, verify: Verification.Fails, expectedOutput: "111");
-            verifier.VerifyDiagnostics(
+            comp.VerifyDiagnostics(
                 // 0.cs(23,23): warning CS8656: Call to non-readonly member 'S.Ref()' from a 'readonly' member results in an implicit copy of 'this'.
                 //         return M2(ref Ref(), default);
-                Diagnostic(ErrorCode.WRN_ImplicitCopyInReadOnlyMember, "Ref").WithArguments("S.Ref()", "this").WithLocation(23, 23));
-            verifier.VerifyMethodBody("S.M3", """
-                {
-                  // Code size       29 (0x1d)
-                  .maxstack  2
-                  .locals init (S V_0,
-                                S V_1)
-                  // sequence point: return M2(ref Ref(), default);
-                  IL_0000:  ldarg.0
-                  IL_0001:  ldobj      "S"
-                  IL_0006:  stloc.0
-                  IL_0007:  ldloca.s   V_0
-                  IL_0009:  call       "ref int S.Ref()"
-                  IL_000e:  ldloca.s   V_1
-                  IL_0010:  initobj    "S"
-                  IL_0016:  ldloc.1
-                  IL_0017:  call       "int S.M2(ref int, S)"
-                  IL_001c:  ret
-                }
-                """);
+                Diagnostic(ErrorCode.WRN_ImplicitCopyInReadOnlyMember, "Ref").WithArguments("S.Ref()", "this").WithLocation(23, 23),
+                // 0.cs(23,23): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                //         return M2(ref Ref(), default);
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "Ref").WithLocation(23, 23));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
@@ -21977,26 +21925,10 @@ using @scoped = System.Int32;
                 }
                 """;
             var comp = CreateCompilation(new[] { source, UnscopedRefAttributeDefinition }, options: TestOptions.ReleaseExe);
-            var verifier = CompileAndVerify(comp, verify: Verification.Fails, expectedOutput: "111");
-            verifier.VerifyDiagnostics();
-            verifier.VerifyMethodBody("C.M3", """
-                {
-                  // Code size       28 (0x1c)
-                  .maxstack  2
-                  .locals init (S V_0,
-                                S V_1)
-                  // sequence point: return M2(in M1().Ref(), default);
-                  IL_0000:  call       "S C.M1()"
-                  IL_0005:  stloc.0
-                  IL_0006:  ldloca.s   V_0
-                  IL_0008:  call       "readonly ref readonly int S.Ref()"
-                  IL_000d:  ldloca.s   V_1
-                  IL_000f:  initobj    "S"
-                  IL_0015:  ldloc.1
-                  IL_0016:  call       "int C.M2(in int, S)"
-                  IL_001b:  ret
-                }
-                """);
+            comp.VerifyDiagnostics(
+                // 0.cs(12,22): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                //         return M2(in M1().Ref(), default);
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "M1()").WithLocation(12, 22));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
@@ -22035,23 +21967,10 @@ using @scoped = System.Int32;
                 }
                 """;
             var comp = CreateCompilation(new[] { source, UnscopedRefAttributeDefinition }, options: TestOptions.ReleaseExe);
-            var verifier = CompileAndVerify(comp, verify: Verification.Fails, expectedOutput: "111");
-            verifier.VerifyDiagnostics();
-            verifier.VerifyMethodBody("S.M3", """
-                {
-                  // Code size       21 (0x15)
-                  .maxstack  2
-                  .locals init (S V_0)
-                  // sequence point: return M2(in Ref(), default);
-                  IL_0000:  ldarg.0
-                  IL_0001:  call       "readonly ref readonly int S.Ref()"
-                  IL_0006:  ldloca.s   V_0
-                  IL_0008:  initobj    "S"
-                  IL_000e:  ldloc.0
-                  IL_000f:  call       "int S.M2(in int, S)"
-                  IL_0014:  ret
-                }
-                """);
+            comp.VerifyDiagnostics(
+                // 0.cs(23,22): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                //         return M2(in Ref(), default);
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "Ref").WithLocation(23, 22));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
@@ -22069,14 +21988,14 @@ using @scoped = System.Int32;
 
                     static int M3()
                     {
-                        S2 s2 = M2(in RefStatic(M1()));
+                        S2 s2 = M2(in RefStatic(M1())); // 1
                         (new S()).ToString();
                         return s2.F2;
                     }
 
                     static int M4()
                     {
-                        S2 s2 = M2(in RefStatic(M1()));
+                        S2 s2 = M2(in RefStatic(M1())); // 2
                         return s2.F2;
                     }
 
@@ -22107,36 +22026,13 @@ using @scoped = System.Int32;
             var comp = CreateCompilation(new[] { source, UnscopedRefAttributeDefinition },
                 targetFramework: TargetFramework.Net70,
                 options: TestOptions.ReleaseExe);
-            var verifier = CompileAndVerify(comp, verify: Verification.Fails, expectedOutput: """
-                111
-                111
-                """);
-            verifier.VerifyDiagnostics();
-            verifier.VerifyMethodBody("C.M3", """
-                {
-                  // Code size       46 (0x2e)
-                  .maxstack  3
-                  .locals init (S V_0,
-                                S V_1)
-                  // sequence point: S2 s2 = M2(in RefStatic(M1()));
-                  IL_0000:  call       "S C.M1()"
-                  IL_0005:  stloc.0
-                  IL_0006:  ldloca.s   V_0
-                  IL_0008:  call       "ref readonly int C.RefStatic(in S)"
-                  IL_000d:  call       "S2 C.M2(in int)"
-                  // sequence point: (new S()).ToString();
-                  IL_0012:  ldloca.s   V_1
-                  IL_0014:  dup
-                  IL_0015:  initobj    "S"
-                  IL_001b:  constrained. "S"
-                  IL_0021:  callvirt   "string object.ToString()"
-                  IL_0026:  pop
-                  // sequence point: return s2.F2;
-                  IL_0027:  ldfld      "ref readonly int S2.F2"
-                  IL_002c:  ldind.i4
-                  IL_002d:  ret
-                }
-                """);
+            comp.VerifyDiagnostics(
+                // 0.cs(12,33): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                //         S2 s2 = M2(in RefStatic(M1())); // 1
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "M1()").WithLocation(12, 33),
+                // 0.cs(19,33): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                //         S2 s2 = M2(in RefStatic(M1())); // 2
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "M1()").WithLocation(19, 33));
         }
 
         [Theory]

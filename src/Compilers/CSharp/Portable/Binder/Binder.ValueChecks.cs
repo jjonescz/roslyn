@@ -2056,6 +2056,16 @@ namespace Microsoft.CodeAnalysis.CSharp
             return result;
         }
 
+        private static MethodSymbol? GetUnderlyingMethod(Symbol symbol)
+        {
+            return symbol switch
+            {
+                MethodSymbol m => m,
+                PropertySymbol p => p.GetMethod ?? p.SetMethod,
+                _ => throw ExceptionUtilities.UnexpectedValue(symbol)
+            };
+        }
+
         /// <summary>
         /// Returns the set of arguments to be considered for escape analysis of a method invocation.
         /// Each argument is returned with the correponding parameter and ref kind. Arguments are not
@@ -2076,12 +2086,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (receiver is { })
             {
-                var method = symbol switch
-                {
-                    MethodSymbol m => m,
-                    PropertySymbol p => p.GetMethod ?? p.SetMethod,
-                    _ => throw ExceptionUtilities.UnexpectedValue(symbol)
-                };
+                var method = GetUnderlyingMethod(symbol);
 
                 Debug.Assert(receiver.Type is { });
                 if (receiver is not BoundValuePlaceholderBase && method is not null && receiver.Type?.IsValueType == true)
@@ -2588,9 +2593,25 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
+            mixableArguments.Free();
+
             inferDeclarationExpressionValEscape();
 
-            mixableArguments.Free();
+            if (valid && GetUnderlyingMethod(symbol) is { RefKind: not RefKind.None })
+            {
+                foreach (var (_, fromArg, escapeKind, isRefEscape) in escapeValues)
+                {
+                    var escape = isRefEscape
+                        ? GetRefEscape(fromArg, scopeOfTheContainingExpression)
+                        : GetValEscape(fromArg, scopeOfTheContainingExpression);
+                    if (escape > (uint)escapeKind)
+                    {
+                        Error(diagnostics, ErrorCode.ERR_RefReturnLvalueExpected, fromArg.Syntax);
+                        valid = false;
+                    }
+                }
+            }
+
             escapeValues.Free();
             return valid;
 
