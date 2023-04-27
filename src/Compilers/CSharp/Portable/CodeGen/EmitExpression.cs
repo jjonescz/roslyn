@@ -696,11 +696,11 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             {
                 BoundExpression argument = expression.Arguments[i];
                 RefKind refKind = expression.ArgumentRefKindsOpt.IsDefaultOrEmpty ? RefKind.None : expression.ArgumentRefKindsOpt[i];
-                EmitArgument(argument, refKind, callerRefKind: RefKind.None);
+                EmitArgument(argument, refKind);
             }
         }
 
-        private void EmitArgument(BoundExpression argument, RefKind refKind, RefKind callerRefKind)
+        private void EmitArgument(BoundExpression argument, RefKind refKind)
         {
             switch (refKind)
             {
@@ -710,13 +710,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
                 case RefKind.In:
                     var temp = EmitAddress(argument, AddressKind.ReadOnly);
-
-                    // We can never free (and later reuse) the temp if the method itself is ref
-                    // and hence could return reference to the temp.
-                    if (callerRefKind == RefKind.None)
-                    {
-                        AddExpressionTemp(temp);
-                    }
+                    AddExpressionTemp(temp);
                     break;
 
                 default:
@@ -935,7 +929,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             }
         }
 
-        private void EmitArguments(ImmutableArray<BoundExpression> arguments, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<RefKind> argRefKindsOpt, RefKind callerRefKind)
+        private void EmitArguments(ImmutableArray<BoundExpression> arguments, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<RefKind> argRefKindsOpt)
         {
             // We might have an extra argument for the __arglist() of a varargs method.
             Debug.Assert(arguments.Length == parameters.Length || arguments.Length == parameters.Length + 1, "argument count must match parameter count");
@@ -945,7 +939,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             for (int i = 0; i < arguments.Length; i++)
             {
                 RefKind argRefKind = GetArgumentRefKind(arguments, parameters, argRefKindsOpt, i);
-                EmitArgument(arguments[i], argRefKind, callerRefKind: callerRefKind);
+                EmitArgument(arguments[i], argRefKind);
             }
         }
 
@@ -1626,7 +1620,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
             Debug.Assert(method.IsStatic);
 
-            EmitArguments(arguments, method.Parameters, call.ArgumentRefKindsOpt, method.RefKind);
+            EmitArguments(arguments, method.Parameters, call.ArgumentRefKindsOpt);
             int stackBehavior = GetCallStackBehavior(method, arguments);
 
             if (method.IsAbstract || method.IsVirtual)
@@ -1777,7 +1771,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 }
             }
 
-            EmitArguments(arguments, method.Parameters, call.ArgumentRefKindsOpt, method.RefKind);
+            EmitArguments(arguments, method.Parameters, call.ArgumentRefKindsOpt);
             int stackBehavior = GetCallStackBehavior(method, arguments);
             switch (callKind)
             {
@@ -1801,12 +1795,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
             EmitCallCleanup(call.Syntax, useKind, method);
 
-            // We cannot free (and later reuse) receiver temp if the method itself is ref
-            // and hence could return reference to the temp.
-            if (method.RefKind == RefKind.None)
-            {
-                FreeOptTemp(tempOpt);
-            }
+            FreeOptTemp(tempOpt);
 
             [MethodImpl(MethodImplOptions.NoInlining)]
             LocalDefinition emitGenericReceiver(BoundCall call, out CallKind callKind)
@@ -2240,7 +2229,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 }
 
                 // none of the above cases, so just create an instance
-                EmitArguments(expression.Arguments, constructor.Parameters, expression.ArgumentRefKindsOpt, constructor.RefKind);
+                EmitArguments(expression.Arguments, constructor.Parameters, expression.ArgumentRefKindsOpt);
 
                 var stackAdjustment = GetObjCreationStackBehavior(expression);
                 _builder.EmitOpCode(ILOpCode.Newobj, stackAdjustment);
@@ -2498,7 +2487,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             Debug.Assert(temp == null, "in-place ctor target should not create temps");
 
             var constructor = objCreation.Constructor;
-            EmitArguments(objCreation.Arguments, constructor.Parameters, objCreation.ArgumentRefKindsOpt, constructor.RefKind);
+            EmitArguments(objCreation.Arguments, constructor.Parameters, objCreation.ArgumentRefKindsOpt);
             // -2 to adjust for consumed target address and not produced value.
             var stackAdjustment = GetObjCreationStackBehavior(objCreation) - 2;
             _builder.EmitOpCode(ILOpCode.Call, stackAdjustment);
@@ -3811,7 +3800,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             }
 
             FunctionPointerMethodSymbol method = ptrInvocation.FunctionPointer.Signature;
-            EmitArguments(ptrInvocation.Arguments, method.Parameters, ptrInvocation.ArgumentRefKindsOpt, method.RefKind);
+            EmitArguments(ptrInvocation.Arguments, method.Parameters, ptrInvocation.ArgumentRefKindsOpt);
             var stackBehavior = GetCallStackBehavior(ptrInvocation.FunctionPointer.Signature, ptrInvocation.Arguments);
 
             if (temp is object)
