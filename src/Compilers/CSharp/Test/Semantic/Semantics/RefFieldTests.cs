@@ -22108,7 +22108,7 @@ using @scoped = System.Int32;
                 targetFramework: TargetFramework.Net70,
                 options: TestOptions.ReleaseExe);
             var verifier = CompileAndVerify(comp, verify: Verification.Fails, expectedOutput: """
-                0
+                111
                 111
                 """);
             verifier.VerifyDiagnostics();
@@ -22116,7 +22116,8 @@ using @scoped = System.Int32;
                 {
                   // Code size       46 (0x2e)
                   .maxstack  3
-                  .locals init (S V_0)
+                  .locals init (S V_0,
+                                S V_1)
                   // sequence point: S2 s2 = M2(in RefStatic(M1()));
                   IL_0000:  call       "S C.M1()"
                   IL_0005:  stloc.0
@@ -22124,7 +22125,7 @@ using @scoped = System.Int32;
                   IL_0008:  call       "ref readonly int C.RefStatic(in S)"
                   IL_000d:  call       "S2 C.M2(in int)"
                   // sequence point: (new S()).ToString();
-                  IL_0012:  ldloca.s   V_0
+                  IL_0012:  ldloca.s   V_1
                   IL_0014:  dup
                   IL_0015:  initobj    "S"
                   IL_001b:  constrained. "S"
