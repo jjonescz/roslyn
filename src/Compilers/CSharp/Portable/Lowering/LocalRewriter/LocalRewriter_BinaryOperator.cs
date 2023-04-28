@@ -973,8 +973,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression? xNonNull = NullableAlwaysHasValue(loweredLeft);
             BoundExpression? yNonNull = NullableAlwaysHasValue(loweredRight);
 
-            BoundLocal boundTempX = _factory.StoreToTemp(xNonNull ?? loweredLeft, out BoundAssignmentOperator tempAssignmentX);
-            BoundLocal boundTempY = _factory.StoreToTemp(yNonNull ?? loweredRight, out BoundAssignmentOperator tempAssignmentY);
+            var locals = ArrayBuilder<LocalSymbol>.GetInstance();
+            var sideEffects = ArrayBuilder<BoundExpression>.GetInstance();
+            BoundExpression boundTempX = _factory.StoreToTempUnlessConstant(xNonNull ?? loweredLeft, locals, sideEffects);
+            BoundExpression boundTempY = _factory.StoreToTempUnlessConstant(yNonNull ?? loweredRight, locals, sideEffects);
 
             BoundExpression callX_GetValueOrDefault = MakeOptimizedGetValueOrDefault(syntax, boundTempX);
             BoundExpression callY_GetValueOrDefault = MakeOptimizedGetValueOrDefault(syntax, boundTempY);
@@ -1044,8 +1046,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             //          (tempx.HasValue == tempy.HasValue);
             return new BoundSequence(
                 syntax: syntax,
-                locals: ImmutableArray.Create<LocalSymbol>(boundTempX.LocalSymbol, boundTempY.LocalSymbol),
-                sideEffects: ImmutableArray.Create<BoundExpression>(tempAssignmentX, tempAssignmentY),
+                locals: locals.ToImmutableAndFree(),
+                sideEffects: sideEffects.ToImmutableAndFree(),
                 value: binaryExpression,
                 type: boolType);
         }

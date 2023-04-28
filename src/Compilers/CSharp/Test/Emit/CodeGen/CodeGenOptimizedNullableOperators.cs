@@ -2443,76 +2443,69 @@ class Program
             verifier.VerifyDiagnostics();
             verifier.VerifyMethodBody("C.M", """
                 {
-                  // Code size      151 (0x97)
+                  // Code size      144 (0x90)
                   .maxstack  2
-                  .locals init (bool? V_0,
-                                bool V_1)
+                  .locals init (bool? V_0)
                   // sequence point: Write(b == true);
                   IL_0000:  ldarg.0
                   IL_0001:  stloc.0
-                  IL_0002:  ldc.i4.1
-                  IL_0003:  stloc.1
-                  IL_0004:  ldloca.s   V_0
-                  IL_0006:  call       "bool bool?.GetValueOrDefault()"
-                  IL_000b:  ldloc.1
-                  IL_000c:  ceq
-                  IL_000e:  ldloca.s   V_0
-                  IL_0010:  call       "bool bool?.HasValue.get"
-                  IL_0015:  and
-                  IL_0016:  call       "void C.Write(bool)"
+                  IL_0002:  ldloca.s   V_0
+                  IL_0004:  call       "bool bool?.GetValueOrDefault()"
+                  IL_0009:  ldloca.s   V_0
+                  IL_000b:  call       "bool bool?.HasValue.get"
+                  IL_0010:  and
+                  IL_0011:  call       "void C.Write(bool)"
                   // sequence point: Write(b is true);
-                  IL_001b:  ldarga.s   V_0
-                  IL_001d:  call       "bool bool?.HasValue.get"
-                  IL_0022:  brfalse.s  IL_002d
-                  IL_0024:  ldarga.s   V_0
-                  IL_0026:  call       "bool bool?.GetValueOrDefault()"
-                  IL_002b:  br.s       IL_002e
-                  IL_002d:  ldc.i4.0
-                  IL_002e:  call       "void C.Write(bool)"
+                  IL_0016:  ldarga.s   V_0
+                  IL_0018:  call       "bool bool?.HasValue.get"
+                  IL_001d:  brfalse.s  IL_0028
+                  IL_001f:  ldarga.s   V_0
+                  IL_0021:  call       "bool bool?.GetValueOrDefault()"
+                  IL_0026:  br.s       IL_0029
+                  IL_0028:  ldc.i4.0
+                  IL_0029:  call       "void C.Write(bool)"
                   // sequence point: Write(b == false);
-                  IL_0033:  ldarg.0
-                  IL_0034:  stloc.0
-                  IL_0035:  ldc.i4.0
-                  IL_0036:  stloc.1
-                  IL_0037:  ldloca.s   V_0
-                  IL_0039:  call       "bool bool?.GetValueOrDefault()"
-                  IL_003e:  ldloc.1
-                  IL_003f:  ceq
-                  IL_0041:  ldloca.s   V_0
-                  IL_0043:  call       "bool bool?.HasValue.get"
-                  IL_0048:  and
-                  IL_0049:  call       "void C.Write(bool)"
+                  IL_002e:  ldarg.0
+                  IL_002f:  stloc.0
+                  IL_0030:  ldloca.s   V_0
+                  IL_0032:  call       "bool bool?.GetValueOrDefault()"
+                  IL_0037:  ldc.i4.0
+                  IL_0038:  ceq
+                  IL_003a:  ldloca.s   V_0
+                  IL_003c:  call       "bool bool?.HasValue.get"
+                  IL_0041:  and
+                  IL_0042:  call       "void C.Write(bool)"
                   // sequence point: Write(b is false);
-                  IL_004e:  ldarga.s   V_0
-                  IL_0050:  call       "bool bool?.HasValue.get"
-                  IL_0055:  brfalse.s  IL_0063
-                  IL_0057:  ldarga.s   V_0
-                  IL_0059:  call       "bool bool?.GetValueOrDefault()"
-                  IL_005e:  ldc.i4.0
-                  IL_005f:  ceq
-                  IL_0061:  br.s       IL_0064
-                  IL_0063:  ldc.i4.0
-                  IL_0064:  call       "void C.Write(bool)"
+                  IL_0047:  ldarga.s   V_0
+                  IL_0049:  call       "bool bool?.HasValue.get"
+                  IL_004e:  brfalse.s  IL_005c
+                  IL_0050:  ldarga.s   V_0
+                  IL_0052:  call       "bool bool?.GetValueOrDefault()"
+                  IL_0057:  ldc.i4.0
+                  IL_0058:  ceq
+                  IL_005a:  br.s       IL_005d
+                  IL_005c:  ldc.i4.0
+                  IL_005d:  call       "void C.Write(bool)"
                   // sequence point: Write(b ?? true);
-                  IL_0069:  ldarg.0
-                  IL_006a:  stloc.0
-                  IL_006b:  ldloca.s   V_0
-                  IL_006d:  call       "bool bool?.HasValue.get"
-                  IL_0072:  brtrue.s   IL_0077
-                  IL_0074:  ldc.i4.1
-                  IL_0075:  br.s       IL_007e
-                  IL_0077:  ldloca.s   V_0
-                  IL_0079:  call       "bool bool?.GetValueOrDefault()"
-                  IL_007e:  call       "void C.Write(bool)"
+                  IL_0062:  ldarg.0
+                  IL_0063:  stloc.0
+                  IL_0064:  ldloca.s   V_0
+                  IL_0066:  call       "bool bool?.HasValue.get"
+                  IL_006b:  brtrue.s   IL_0070
+                  IL_006d:  ldc.i4.1
+                  IL_006e:  br.s       IL_0077
+                  IL_0070:  ldloca.s   V_0
+                  IL_0072:  call       "bool bool?.GetValueOrDefault()"
+                  IL_0077:  call       "void C.Write(bool)"
                   // sequence point: Write(b ?? false);
-                  IL_0083:  ldarga.s   V_0
-                  IL_0085:  call       "bool bool?.GetValueOrDefault()"
-                  IL_008a:  call       "void C.Write(bool)"
+                  IL_007c:  ldarga.s   V_0
+                  IL_007e:  call       "bool bool?.GetValueOrDefault()"
+                  IL_0083:  call       "void C.Write(bool)"
                   // sequence point: System.Console.Write(' ');
-                  IL_008f:  ldc.i4.s   32
-                  IL_0091:  call       "void System.Console.Write(char)"
+                  IL_0088:  ldc.i4.s   32
+                  IL_008a:  call       "void System.Console.Write(char)"
                   // sequence point: }
-                  IL_0096:  ret
+                  IL_008f:  ret
                 }
                 """);
         }

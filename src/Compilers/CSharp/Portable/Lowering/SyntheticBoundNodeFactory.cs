@@ -1499,6 +1499,27 @@ namespace Microsoft.CodeAnalysis.CSharp
             return new BoundUnaryOperator(expression.Syntax, UnaryOperatorKind.BoolLogicalNegation, expression, null, null, constrainedToTypeOpt: null, LookupResultKind.Viable, expression.Type);
         }
 
+        internal BoundExpression StoreToTempUnlessConstant(
+            BoundExpression expression,
+            ArrayBuilder<LocalSymbol> locals,
+            ArrayBuilder<BoundExpression> sideEffects
+#if DEBUG
+            , [CallerLineNumber] int callerLineNumber = 0
+            , [CallerFilePath] string? callerFilePath = null
+#endif
+            )
+        {
+            if (expression.ConstantValueOpt is not null)
+            {
+                return expression;
+            }
+
+            var result = StoreToTemp(expression, out var store, callerLineNumber: callerLineNumber, callerFilePath: callerFilePath);
+            locals.Add(result.LocalSymbol);
+            sideEffects.Add(store);
+            return result;
+        }
+
         /// <summary>
         /// Takes an expression and returns the bound local expression "temp"
         /// and the bound assignment expression "temp = expr".
