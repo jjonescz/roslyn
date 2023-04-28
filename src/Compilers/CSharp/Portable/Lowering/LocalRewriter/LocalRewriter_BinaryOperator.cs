@@ -1012,8 +1012,17 @@ namespace Microsoft.CodeAnalysis.CSharp
                 method: null,
                 constrainedToTypeOpt: null);
 
+            // Optimization: if the expression is `x != default` or `x == <non-default-constant>`, checking HasValue is not needed.
+            ConstantValue? operatorConstant = xNonNull?.ConstantValueOpt ?? yNonNull?.ConstantValueOpt;
+            bool skipHasValue = operatorConstant is not null && operatorKind switch
+            {
+                BinaryOperatorKind.NotEqual => operatorConstant.IsDefaultValue,
+                BinaryOperatorKind.Equal => !operatorConstant.IsDefaultValue,
+                _ => true
+            };
+
             // (tempx.HasValue OP tempy.HasValue)
-            BoundExpression rightExpression = MakeBinaryOperator(
+            BoundExpression? rightExpression = skipHasValue ? null : MakeBinaryOperator(
                 syntax: syntax,
                 operatorKind: rightOperator,
                 loweredLeft: callX_HasValue,
@@ -1024,7 +1033,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // result = (tempx.GetValueOrDefault() OP tempy.GetValueOrDefault()) &
             //          (tempx.HasValue OP tempy.HasValue)
-            BoundExpression binaryExpression = MakeBinaryOperator(
+            BoundExpression binaryExpression = rightExpression is null ? leftExpression : MakeBinaryOperator(
                 syntax: syntax,
                 operatorKind: BinaryOperatorKind.BoolAnd,
                 loweredLeft: leftExpression,
