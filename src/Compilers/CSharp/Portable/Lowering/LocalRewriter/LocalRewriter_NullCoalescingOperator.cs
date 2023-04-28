@@ -134,11 +134,22 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // Optimize left ?? right to left.GetValueOrDefault() when left is T? and right is the default value of T
             if (rewrittenLeft.Type.IsNullableType()
-                && RemoveIdentityConversions(rewrittenRight).IsDefaultValue()
                 && rewrittenRight.Type.Equals(rewrittenLeft.Type.GetNullableUnderlyingType(), TypeCompareKind.AllIgnoreOptions)
                 && TryGetNullableMethod(rewrittenLeft.Syntax, rewrittenLeft.Type, SpecialMember.System_Nullable_T_GetValueOrDefault, out MethodSymbol getValueOrDefault))
             {
-                return BoundCall.Synthesized(rewrittenLeft.Syntax, rewrittenLeft, getValueOrDefault);
+                if (RemoveIdentityConversions(rewrittenRight).IsDefaultValue())
+                {
+                    return BoundCall.Synthesized(rewrittenLeft.Syntax, rewrittenLeft, getValueOrDefault);
+                }
+
+                // Optimize `left ?? true` to `left.GetValueOrDefault() | !left.HasValue`.
+                if (rewrittenRight.ConstantValueOpt == ConstantValue.True
+                    && TryGetNullableMethod(rewrittenLeft.Syntax, rewrittenLeft.Type, SpecialMember.System_Nullable_T_get_HasValue, out MethodSymbol hasValue))
+                {
+                    return _factory.Binary(BinaryOperatorKind.Or, rewrittenRight.Type,
+                        BoundCall.Synthesized(rewrittenLeft.Syntax, rewrittenLeft, getValueOrDefault),
+                        _factory.Not(BoundCall.Synthesized(rewrittenLeft.Syntax, rewrittenLeft, hasValue)));
+                }
             }
 
             // We lower left ?? right to

@@ -2443,8 +2443,8 @@ class Program
             verifier.VerifyDiagnostics();
             verifier.VerifyMethodBody("C.M", """
                 {
-                  // Code size      136 (0x88)
-                  .maxstack  2
+                  // Code size      133 (0x85)
+                  .maxstack  3
                   .locals init (bool? V_0)
                   // sequence point: Write(b == true);
                   IL_0000:  ldarg.0
@@ -2484,25 +2484,23 @@ class Program
                   IL_0054:  ldc.i4.0
                   IL_0055:  call       "void C.Write(bool)"
                   // sequence point: Write(b ?? true);
-                  IL_005a:  ldarg.0
-                  IL_005b:  stloc.0
-                  IL_005c:  ldloca.s   V_0
-                  IL_005e:  call       "bool bool?.HasValue.get"
-                  IL_0063:  brtrue.s   IL_0068
-                  IL_0065:  ldc.i4.1
-                  IL_0066:  br.s       IL_006f
-                  IL_0068:  ldloca.s   V_0
-                  IL_006a:  call       "bool bool?.GetValueOrDefault()"
-                  IL_006f:  call       "void C.Write(bool)"
+                  IL_005a:  ldarga.s   V_0
+                  IL_005c:  call       "bool bool?.GetValueOrDefault()"
+                  IL_0061:  ldarga.s   V_0
+                  IL_0063:  call       "bool bool?.HasValue.get"
+                  IL_0068:  ldc.i4.0
+                  IL_0069:  ceq
+                  IL_006b:  or
+                  IL_006c:  call       "void C.Write(bool)"
                   // sequence point: Write(b ?? false);
-                  IL_0074:  ldarga.s   V_0
-                  IL_0076:  call       "bool bool?.GetValueOrDefault()"
-                  IL_007b:  call       "void C.Write(bool)"
+                  IL_0071:  ldarga.s   V_0
+                  IL_0073:  call       "bool bool?.GetValueOrDefault()"
+                  IL_0078:  call       "void C.Write(bool)"
                   // sequence point: System.Console.Write(' ');
-                  IL_0080:  ldc.i4.s   32
-                  IL_0082:  call       "void System.Console.Write(char)"
+                  IL_007d:  ldc.i4.s   32
+                  IL_007f:  call       "void System.Console.Write(char)"
                   // sequence point: }
-                  IL_0087:  ret
+                  IL_0084:  ret
                 }
                 """);
         }
