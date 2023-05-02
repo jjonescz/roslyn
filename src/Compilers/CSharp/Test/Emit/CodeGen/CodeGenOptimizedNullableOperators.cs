@@ -2448,7 +2448,7 @@ class Program
             verifier.VerifyDiagnostics();
             verifier.VerifyMethodBody("C.M", """
                 {
-                  // Code size      133 (0x85)
+                  // Code size      242 (0xf2)
                   .maxstack  3
                   .locals init (bool? V_0)
                   // sequence point: Write(b == true);
@@ -2504,8 +2504,56 @@ class Program
                   // sequence point: System.Console.Write(' ');
                   IL_007d:  ldc.i4.s   32
                   IL_007f:  call       "void System.Console.Write(char)"
+                  // sequence point: Write(b != true);
+                  IL_0084:  ldarg.0
+                  IL_0085:  stloc.0
+                  IL_0086:  ldloca.s   V_0
+                  IL_0088:  call       "bool bool?.GetValueOrDefault()"
+                  IL_008d:  ldc.i4.0
+                  IL_008e:  ceq
+                  IL_0090:  call       "void C.Write(bool)"
+                  // sequence point: Write(b is not true);
+                  IL_0095:  ldarga.s   V_0
+                  IL_0097:  call       "bool bool?.HasValue.get"
+                  IL_009c:  brfalse.s  IL_00a7
+                  IL_009e:  ldarga.s   V_0
+                  IL_00a0:  call       "bool bool?.GetValueOrDefault()"
+                  IL_00a5:  br.s       IL_00a8
+                  IL_00a7:  ldc.i4.0
+                  IL_00a8:  ldc.i4.0
+                  IL_00a9:  ceq
+                  IL_00ab:  call       "void C.Write(bool)"
+                  // sequence point: Write(b != false);
+                  IL_00b0:  ldarg.0
+                  IL_00b1:  stloc.0
+                  IL_00b2:  ldloca.s   V_0
+                  IL_00b4:  call       "bool bool?.GetValueOrDefault()"
+                  IL_00b9:  ldc.i4.0
+                  IL_00ba:  ceq
+                  IL_00bc:  ldloca.s   V_0
+                  IL_00be:  call       "bool bool?.HasValue.get"
+                  IL_00c3:  and
+                  IL_00c4:  ldc.i4.0
+                  IL_00c5:  ceq
+                  IL_00c7:  call       "void C.Write(bool)"
+                  // sequence point: Write(b is not false);
+                  IL_00cc:  ldarga.s   V_0
+                  IL_00ce:  call       "bool bool?.HasValue.get"
+                  IL_00d3:  brfalse.s  IL_00e1
+                  IL_00d5:  ldarga.s   V_0
+                  IL_00d7:  call       "bool bool?.GetValueOrDefault()"
+                  IL_00dc:  ldc.i4.0
+                  IL_00dd:  ceq
+                  IL_00df:  br.s       IL_00e2
+                  IL_00e1:  ldc.i4.0
+                  IL_00e2:  ldc.i4.0
+                  IL_00e3:  ceq
+                  IL_00e5:  call       "void C.Write(bool)"
+                  // sequence point: System.Console.Write(' ');
+                  IL_00ea:  ldc.i4.s   32
+                  IL_00ec:  call       "void System.Console.Write(char)"
                   // sequence point: }
-                  IL_0084:  ret
+                  IL_00f1:  ret
                 }
                 """);
         }
