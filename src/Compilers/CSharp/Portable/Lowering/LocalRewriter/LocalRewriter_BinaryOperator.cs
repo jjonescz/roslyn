@@ -869,6 +869,31 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
+            // Optimization #5: If one side is non-default constant, checking HasValue is not needed.
+            if (leftNonNull?.ConstantValueOpt is { IsDefaultValue: false })
+            {
+                return MakeBinaryOperator(
+                    syntax: syntax,
+                    operatorKind: kind.Unlifted(),
+                    loweredLeft: leftNonNull,
+                    loweredRight: MakeOptimizedGetValueOrDefault(syntax, right),
+                    type: boolType,
+                    method: method,
+                    constrainedToTypeOpt: constrainedToTypeOpt);
+            }
+
+            if (rightNonNull?.ConstantValueOpt is { IsDefaultValue: false })
+            {
+                return MakeBinaryOperator(
+                    syntax: syntax,
+                    operatorKind: kind.Unlifted(),
+                    loweredLeft: MakeOptimizedGetValueOrDefault(syntax, left),
+                    loweredRight: rightNonNull,
+                    type: boolType,
+                    method: method,
+                    constrainedToTypeOpt: constrainedToTypeOpt);
+            }
+
             return null;
         }
 
@@ -1012,12 +1037,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 method: null,
                 constrainedToTypeOpt: null);
 
-            // Optimization: if one operand is non-default constant, checking HasValue is not needed.
-            ConstantValue? constantOperand = xNonNull?.ConstantValueOpt ?? yNonNull?.ConstantValueOpt;
-            bool skipHasValue = !constantOperand.IsDefaultValue;
-
             // (tempx.HasValue OP tempy.HasValue)
-            BoundExpression? rightExpression = skipHasValue ? null : MakeBinaryOperator(
+            BoundExpression rightExpression = MakeBinaryOperator(
                 syntax: syntax,
                 operatorKind: rightOperator,
                 loweredLeft: callX_HasValue,
@@ -1028,7 +1049,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // result = (tempx.GetValueOrDefault() OP tempy.GetValueOrDefault()) &
             //          (tempx.HasValue OP tempy.HasValue)
-            BoundExpression binaryExpression = rightExpression is null ? leftExpression : MakeBinaryOperator(
+            BoundExpression binaryExpression = MakeBinaryOperator(
                 syntax: syntax,
                 operatorKind: BinaryOperatorKind.BoolAnd,
                 loweredLeft: leftExpression,
