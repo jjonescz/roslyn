@@ -450,9 +450,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             SyntaxNode syntax,
             TypeSymbol type,
             bool isExplicitTest,
-            ArrayBuilder<Tests> tests)
+            ArrayBuilder<Tests> tests,
+            bool skipNullCheck = false)
         {
-            MakeCheckNotNull(input, syntax, isExplicitTest, tests);
+            if (!skipNullCheck)
+            {
+                MakeCheckNotNull(input, syntax, isExplicitTest, tests);
+            }
+
             if (!input.Type.Equals(type, TypeCompareKind.AllIgnoreOptions))
             {
                 TypeSymbol inputType = input.Type.StrippedType(); // since a null check has already been done
@@ -496,9 +501,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
+                // Optimization: if comparing nullable value type to a non-default constant, it's enough to call `GetValueOrDefault()`.
+                var skipNullCheck = input.Type.IsNullableType() && !constant.ConstantValue.IsDefaultValue;
+
                 var tests = ArrayBuilder<Tests>.GetInstance(2);
                 Debug.Assert(constant.Value.Type is not null || constant.HasErrors);
-                output = input = constant.Value.Type is { } type ? MakeConvertToType(input, constant.Syntax, type, isExplicitTest: false, tests) : input;
+                output = input = constant.Value.Type is { } type ? MakeConvertToType(input, constant.Syntax, type, isExplicitTest: false, tests, skipNullCheck: skipNullCheck) : input;
                 if (ValueSetFactory.ForInput(input)?.Related(BinaryOperatorKind.Equal, constant.ConstantValue).IsEmpty == true)
                 {
                     // This could only happen for a length input where the permitted value domain (>=0) is a strict subset of possible values for the type (int)
