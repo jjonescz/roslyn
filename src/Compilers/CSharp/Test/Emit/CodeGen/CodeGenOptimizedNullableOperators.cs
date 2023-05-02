@@ -2436,10 +2436,15 @@ class Program
                         Write(b ?? true);
                         Write(b ?? false);
                         System.Console.Write(' ');
+                        Write(b != true);
+                        Write(b is not true);
+                        Write(b != false);
+                        Write(b is not false);
+                        System.Console.Write(' ');
                     }
                 }
                 """;
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: "110011 001100 000010");
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: "110011 0011 001100 1100 000010 1111");
             verifier.VerifyDiagnostics();
             verifier.VerifyMethodBody("C.M", """
                 {
