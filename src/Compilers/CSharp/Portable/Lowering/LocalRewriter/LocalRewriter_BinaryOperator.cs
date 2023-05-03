@@ -869,31 +869,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            // Optimization #5: If one side is non-default constant, checking HasValue is not needed.
-            if (leftNonNull?.ConstantValueOpt is { IsDefaultValue: false })
-            {
-                return MakeBinaryOperator(
-                    syntax: syntax,
-                    operatorKind: kind.Unlifted(),
-                    loweredLeft: leftNonNull,
-                    loweredRight: MakeOptimizedGetValueOrDefault(syntax, right),
-                    type: boolType,
-                    method: method,
-                    constrainedToTypeOpt: constrainedToTypeOpt);
-            }
-
-            if (rightNonNull?.ConstantValueOpt is { IsDefaultValue: false })
-            {
-                return MakeBinaryOperator(
-                    syntax: syntax,
-                    operatorKind: kind.Unlifted(),
-                    loweredLeft: MakeOptimizedGetValueOrDefault(syntax, left),
-                    loweredRight: rightNonNull,
-                    type: boolType,
-                    method: method,
-                    constrainedToTypeOpt: constrainedToTypeOpt);
-            }
-
             return null;
         }
 
@@ -998,6 +973,33 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression? xNonNull = NullableAlwaysHasValue(loweredLeft);
             BoundExpression? yNonNull = NullableAlwaysHasValue(loweredRight);
 
+            TypeSymbol boolType = _compilation.GetSpecialType(SpecialType.System_Boolean);
+
+            // Optimization: If one side is non-default constant, checking HasValue is not needed.
+            if (xNonNull?.ConstantValueOpt is { IsDefaultValue: false })
+            {
+                return MakeBinaryOperator(
+                    syntax: syntax,
+                    operatorKind: kind.Unlifted(),
+                    loweredLeft: xNonNull,
+                    loweredRight: MakeOptimizedGetValueOrDefault(syntax, loweredRight),
+                    type: boolType,
+                    method: null,
+                    constrainedToTypeOpt: null);
+            }
+
+            if (yNonNull?.ConstantValueOpt is { IsDefaultValue: false })
+            {
+                return MakeBinaryOperator(
+                    syntax: syntax,
+                    operatorKind: kind.Unlifted(),
+                    loweredLeft: MakeOptimizedGetValueOrDefault(syntax, loweredLeft),
+                    loweredRight: yNonNull,
+                    type: boolType,
+                    method: null,
+                    constrainedToTypeOpt: null);
+            }
+
             BoundLocal boundTempX = _factory.StoreToTemp(xNonNull ?? loweredLeft, out BoundAssignmentOperator tempAssignmentX);
             BoundLocal boundTempY = _factory.StoreToTemp(yNonNull ?? loweredRight, out BoundAssignmentOperator tempAssignmentY);
 
@@ -1022,8 +1024,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                     rightOperator = BinaryOperatorKind.BoolAnd;
                     break;
             }
-
-            TypeSymbol boolType = _compilation.GetSpecialType(SpecialType.System_Boolean);
 
             // (tempx.GetValueOrDefault() OP tempy.GetValueOrDefault())
             BoundExpression leftExpression = MakeBinaryOperator(
