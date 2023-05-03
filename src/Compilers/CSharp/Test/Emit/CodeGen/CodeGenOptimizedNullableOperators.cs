@@ -2415,8 +2415,41 @@ class Program
 }");
         }
 
-        [Fact]
-        public void NullableBoolean_EqualsConstant()
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/66431")]
+        public void NullableBooleanCoalesce()
+        {
+            var source = """
+                C.M(true);
+                C.M(false);
+                C.M(null);
+
+                class C
+                {
+                    static void Write(bool b) => System.Console.Write(b ? 1 : 0);
+
+                    public static void M(bool? b)
+                    {
+                        Write(b ?? true);
+                        Write(b ?? false);
+                        System.Console.Write(' ');
+                    }
+                }
+                """;
+            var expectedOutput = "11 00 10";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyMethodBody("C.M", """
+
+                """);
+            verifier = CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyMethodBody("C.M", """
+
+                """);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/66431")]
+        public void NullableOpConstant_Boolean()
         {
             var source = """
                 C.M(true);
@@ -2430,122 +2463,81 @@ class Program
                     public static void M(bool? b)
                     {
                         Write(b == true);
+                        Write(true == b);
                         Write(b is true);
                         Write(b == false);
+                        Write(false == b);
                         Write(b is false);
-                        Write(b ?? true);
-                        Write(b ?? false);
-                        System.Console.Write(' ');
+                        System.Console.Write('-');
                         Write(b != true);
+                        Write(true != b);
                         Write(b is not true);
                         Write(b != false);
+                        Write(false != b);
                         Write(b is not false);
+                        System.Console.Write('-');
+                        Write(!(b == true));
+                        Write(!(b is false));
+                        Write(!(b != true));
+                        Write(!(b is not false));
+                        Write(!!(b == true));
                         System.Console.Write(' ');
                     }
                 }
                 """;
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: "110011 0011 001100 1100 000010 1111");
+            var expectedOutput = "111000-000111-01101 000111-111000-10010 000000-111111-11000";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput);
             verifier.VerifyDiagnostics();
             verifier.VerifyMethodBody("C.M", """
+
+                """);
+            verifier = CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyMethodBody("C.M", """
+
+                """);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/66431")]
+        public void NullableOpConstant_Int()
+        {
+            var source = """
+                C.M(0);
+                C.M(1);
+                C.M(2);
+                C.M(null);
+
+                class C
                 {
-                  // Code size      218 (0xda)
-                  .maxstack  3
-                  .locals init (bool? V_0,
-                                bool V_1)
-                  // sequence point: Write(b == true);
-                  IL_0000:  ldarga.s   V_0
-                  IL_0002:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0007:  call       "void C.Write(bool)"
-                  // sequence point: Write(b is true);
-                  IL_000c:  ldarga.s   V_0
-                  IL_000e:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0013:  call       "void C.Write(bool)"
-                  // sequence point: Write(b == false);
-                  IL_0018:  ldarg.0
-                  IL_0019:  stloc.0
-                  IL_001a:  ldc.i4.0
-                  IL_001b:  stloc.1
-                  IL_001c:  ldloca.s   V_0
-                  IL_001e:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0023:  ldloc.1
-                  IL_0024:  ceq
-                  IL_0026:  ldloca.s   V_0
-                  IL_0028:  call       "bool bool?.HasValue.get"
-                  IL_002d:  and
-                  IL_002e:  call       "void C.Write(bool)"
-                  // sequence point: Write(b is false);
-                  IL_0033:  ldarga.s   V_0
-                  IL_0035:  call       "bool bool?.HasValue.get"
-                  IL_003a:  brfalse.s  IL_0048
-                  IL_003c:  ldarga.s   V_0
-                  IL_003e:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0043:  ldc.i4.0
-                  IL_0044:  ceq
-                  IL_0046:  br.s       IL_0049
-                  IL_0048:  ldc.i4.0
-                  IL_0049:  call       "void C.Write(bool)"
-                  // sequence point: Write(b ?? true);
-                  IL_004e:  ldarga.s   V_0
-                  IL_0050:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0055:  ldarga.s   V_0
-                  IL_0057:  call       "bool bool?.HasValue.get"
-                  IL_005c:  ldc.i4.0
-                  IL_005d:  ceq
-                  IL_005f:  or
-                  IL_0060:  call       "void C.Write(bool)"
-                  // sequence point: Write(b ?? false);
-                  IL_0065:  ldarga.s   V_0
-                  IL_0067:  call       "bool bool?.GetValueOrDefault()"
-                  IL_006c:  call       "void C.Write(bool)"
-                  // sequence point: System.Console.Write(' ');
-                  IL_0071:  ldc.i4.s   32
-                  IL_0073:  call       "void System.Console.Write(char)"
-                  // sequence point: Write(b != true);
-                  IL_0078:  ldarga.s   V_0
-                  IL_007a:  call       "bool bool?.GetValueOrDefault()"
-                  IL_007f:  ldc.i4.0
-                  IL_0080:  ceq
-                  IL_0082:  call       "void C.Write(bool)"
-                  // sequence point: Write(b is not true);
-                  IL_0087:  ldarga.s   V_0
-                  IL_0089:  call       "bool bool?.GetValueOrDefault()"
-                  IL_008e:  ldc.i4.0
-                  IL_008f:  ceq
-                  IL_0091:  call       "void C.Write(bool)"
-                  // sequence point: Write(b != false);
-                  IL_0096:  ldarg.0
-                  IL_0097:  stloc.0
-                  IL_0098:  ldc.i4.0
-                  IL_0099:  stloc.1
-                  IL_009a:  ldloca.s   V_0
-                  IL_009c:  call       "bool bool?.GetValueOrDefault()"
-                  IL_00a1:  ldloc.1
-                  IL_00a2:  ceq
-                  IL_00a4:  ldloca.s   V_0
-                  IL_00a6:  call       "bool bool?.HasValue.get"
-                  IL_00ab:  and
-                  IL_00ac:  ldc.i4.0
-                  IL_00ad:  ceq
-                  IL_00af:  call       "void C.Write(bool)"
-                  // sequence point: Write(b is not false);
-                  IL_00b4:  ldarga.s   V_0
-                  IL_00b6:  call       "bool bool?.HasValue.get"
-                  IL_00bb:  brfalse.s  IL_00c9
-                  IL_00bd:  ldarga.s   V_0
-                  IL_00bf:  call       "bool bool?.GetValueOrDefault()"
-                  IL_00c4:  ldc.i4.0
-                  IL_00c5:  ceq
-                  IL_00c7:  br.s       IL_00ca
-                  IL_00c9:  ldc.i4.0
-                  IL_00ca:  ldc.i4.0
-                  IL_00cb:  ceq
-                  IL_00cd:  call       "void C.Write(bool)"
-                  // sequence point: System.Console.Write(' ');
-                  IL_00d2:  ldc.i4.s   32
-                  IL_00d4:  call       "void System.Console.Write(char)"
-                  // sequence point: }
-                  IL_00d9:  ret
+                    static void Write(bool b) => System.Console.Write(b ? 1 : 0);
+
+                    public static void M(int? x)
+                    {
+                        Write(x == 1);
+                        Write(1 == x);
+                        Write(x is 1);
+                        Write(x < 1);
+                        Write(x != 1);
+                        Write(x == 0);
+                        Write(0 == x);
+                        Write(x < 0);
+                        Write(x <= 0);
+                        Write(x > 0);
+                        Write(x >= 0);
+                        System.Console.Write(' ');
+                    }
                 }
+                """;
+            var expectedOutput = "00011110101 11100000011 00001000011 00001000000";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyMethodBody("C.M", """
+
+                """);
+            verifier = CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyMethodBody("C.M", """
+
                 """);
         }
     }
