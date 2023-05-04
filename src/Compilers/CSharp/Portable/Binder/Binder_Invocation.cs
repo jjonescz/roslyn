@@ -1189,6 +1189,23 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
+            // Warn for `ref`/`in` mismatch.
+            for (var arg = 0; arg < args.Length; arg++)
+            {
+                var argRefKind = argRefKinds.IsDefault ? RefKind.None : argRefKinds[arg];
+                if (argRefKind == RefKind.Ref &&
+                    GetCorrespondingParameter(arg, method.Parameters, argsToParams, expanded) is { } parameter &&
+                    parameter.RefKind == RefKind.In)
+                {
+                    // Argument {0} should not be passed with the '{1}' keyword
+                    diagnostics.Add(
+                        ErrorCode.WRN_BadArgRef,
+                        args[arg].Syntax,
+                        arg + 1,
+                        argRefKind.ToArgumentDisplayString());
+                }
+            }
+
             return new BoundCall(node, receiver, method, args, argNames, argRefKinds, isDelegateCall: isDelegateCall,
                         expanded: expanded, invokedAsExtensionMethod: invokedAsExtensionMethod,
                         argsToParamsOpt: argsToParams, defaultArguments, resultKind: LookupResultKind.Viable, type: returnType, hasErrors: gotError);
