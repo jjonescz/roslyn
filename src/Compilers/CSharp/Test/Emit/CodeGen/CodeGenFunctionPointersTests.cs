@@ -7351,12 +7351,12 @@ unsafe class Test
                 // (9,19): error CS1620: Argument 1 must be passed with the 'ref' keyword
                 //         param1(in s);
                 Diagnostic(ErrorCode.ERR_BadArgRef, "s").WithArguments("1", "ref").WithLocation(9, 19),
-                // (14,20): error CS1615: Argument 1 may not be passed with the 'out' keyword
+                // (14,20): warning CS9501: Argument 1 should not be passed with the 'out' keyword
                 //         param2(out var l);
-                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "var l").WithArguments("1", "out").WithLocation(14, 20),
-                // (17,20): error CS1615: Argument 1 may not be passed with the 'ref' keyword
+                Diagnostic(ErrorCode.WRN_BadArgRef, "var l").WithArguments("1", "out").WithLocation(14, 20),
+                // (17,20): warning CS9501: Argument 1 should not be passed with the 'ref' keyword
                 //         param2(ref s);
-                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "s").WithArguments("1", "ref").WithLocation(17, 20),
+                Diagnostic(ErrorCode.WRN_BadArgRef, "s").WithArguments("1", "ref").WithLocation(17, 20),
                 // (23,16): error CS1620: Argument 1 must be passed with the 'out' keyword
                 //         param3(s);
                 Diagnostic(ErrorCode.ERR_BadArgRef, "s").WithArguments("1", "out").WithLocation(23, 16),
