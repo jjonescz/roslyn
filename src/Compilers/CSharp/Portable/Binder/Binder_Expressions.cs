@@ -3212,6 +3212,32 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
 #nullable enable
+        private void CheckRefArguments<TMember>(
+            MemberResolutionResult<TMember> methodResult,
+            AnalyzedArguments analyzedArguments,
+            BindingDiagnosticBag diagnostics)
+            where TMember : Symbol
+        {
+            var result = methodResult.Result;
+            var parameters = methodResult.LeastOverriddenMember.GetParameters();
+
+            for (int arg = 0; arg < analyzedArguments.Arguments.Count; arg++)
+            {
+                // Warn for `ref`/`in` mismatch.
+                if (analyzedArguments.RefKind(arg) is RefKind.Ref and var argRefKind &&
+                    GetCorrespondingParameter(ref result, parameters, arg) is { } parameter &&
+                    parameter.RefKind == RefKind.In)
+                {
+                    // Argument {0} should not be passed with the '{1}' keyword
+                    diagnostics.Add(
+                        ErrorCode.WRN_BadArgRef,
+                        analyzedArguments.Arguments[arg].Syntax,
+                        arg + 1,
+                        argRefKind.ToArgumentDisplayString());
+                }
+            }
+        }
+
         private void CoerceArguments<TMember>(
             MemberResolutionResult<TMember> methodResult,
             ArrayBuilder<BoundExpression> arguments,

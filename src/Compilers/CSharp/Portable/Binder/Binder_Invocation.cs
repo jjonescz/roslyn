@@ -1072,6 +1072,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             var receiver = ReplaceTypeOrValueReceiver(methodGroup.Receiver, !method.RequiresInstanceReceiver && !invokedAsExtensionMethod, diagnostics);
 
+            this.CheckRefArguments(methodResult, analyzedArguments, diagnostics);
+
             this.CoerceArguments(methodResult, analyzedArguments.Arguments, diagnostics, receiver);
 
             var expanded = methodResult.Result.Kind == MemberResolutionKind.ApplicableInExpandedForm;
@@ -1186,23 +1188,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                                                 node,
                                              receiver,
                                              diagnostics);
-                }
-            }
-
-            // Warn for `ref`/`in` mismatch.
-            for (var arg = 0; arg < args.Length; arg++)
-            {
-                var argRefKind = argRefKinds.IsDefault ? RefKind.None : argRefKinds[arg];
-                if (argRefKind == RefKind.Ref &&
-                    GetCorrespondingParameter(arg, method.Parameters, argsToParams, expanded) is { } parameter &&
-                    parameter.RefKind == RefKind.In)
-                {
-                    // Argument {0} should not be passed with the '{1}' keyword
-                    diagnostics.Add(
-                        ErrorCode.WRN_BadArgRef,
-                        args[arg].Syntax,
-                        arg + 1,
-                        argRefKind.ToArgumentDisplayString());
                 }
             }
 
@@ -2119,6 +2104,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             methodsBuilder.Free();
 
             MemberResolutionResult<FunctionPointerMethodSymbol> methodResult = overloadResolutionResult.ValidResult;
+            CheckRefArguments(methodResult, analyzedArguments, diagnostics);
             CoerceArguments(methodResult, analyzedArguments.Arguments, diagnostics, receiver: null);
 
             var args = analyzedArguments.Arguments.ToImmutable();
