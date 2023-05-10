@@ -3218,6 +3218,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             BindingDiagnosticBag diagnostics)
             where TMember : Symbol
         {
+            if (analyzedArguments.HasErrors)
+            {
+                return;
+            }
+
             var result = methodResult.Result;
             var parameters = methodResult.LeastOverriddenMember.GetParameters();
 
