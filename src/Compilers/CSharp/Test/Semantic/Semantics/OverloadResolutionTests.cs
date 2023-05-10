@@ -9478,7 +9478,31 @@ public static class Program
         }
 
         [Fact]
-        public void InParameter_RefArgument_01()
+        public void PassingArgumentsToInParameters_RefKind_Ref_Ctor()
+        {
+            var source = """
+                class C
+                {
+                    private C(in int p)
+                    {
+                        System.Console.WriteLine(p);
+                    }
+
+                    static void Main()
+                    {
+                        int x = 5;
+                        new C(ref x);
+                    }
+                }
+                """;
+            CompileAndVerify(source, expectedOutput: "5").VerifyDiagnostics(
+                // (8,58): warning CS9501: Argument 2 should not be passed with the 'ref' keyword
+                //         System.Console.WriteLine(M1(default(object), ref i));
+                Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2", "ref").WithLocation(8, 58));
+        }
+
+        [Fact]
+        public void PassingArgumentsToInParameters_RefKind_Ref_01()
         {
             var source = """
                 class C
@@ -9496,7 +9520,25 @@ public static class Program
         }
 
         [Fact]
-        public void InParameter_RefArgument_02()
+        public void PassingArgumentsToInParameters_RefKind_Ref_01_Ctor()
+        {
+            var source = """
+                class C
+                {
+                    private C(string s, ref int i) => System.Console.WriteLine("string" + i);
+                    private C(object o, in int i) => System.Console.WriteLine("object" + i);
+                    static void Main()
+                    {
+                        int i = 5;
+                        new C(null, ref i);
+                    }
+                }
+                """;
+            CompileAndVerify(source, expectedOutput: "string5").VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void PassingArgumentsToInParameters_RefKind_Ref_02()
         {
             var source = """
                 class C
@@ -9507,6 +9549,27 @@ public static class Program
                     {
                         int i = 5;
                         System.Console.WriteLine(M1(default(object), ref i));
+                    }
+                }
+                """;
+            CompileAndVerify(source, expectedOutput: "object5").VerifyDiagnostics(
+                // (8,58): warning CS9501: Argument 2 should not be passed with the 'ref' keyword
+                //         System.Console.WriteLine(M1(default(object), ref i));
+                Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2", "ref").WithLocation(8, 58));
+        }
+
+        [Fact]
+        public void PassingArgumentsToInParameters_RefKind_Ref_02_Ctor()
+        {
+            var source = """
+                class C
+                {
+                    private C(string s, ref int i) => System.Console.WriteLine("string" + i);
+                    private C(object o, in int i) => System.Console.WriteLine("object" + i);
+                    static void Main()
+                    {
+                        int i = 5;
+                        new C(default(object), ref i);
                     }
                 }
                 """;
