@@ -9478,6 +9478,45 @@ public static class Program
         }
 
         [Fact]
+        public void InParameter_RefArgument_01()
+        {
+            var source = """
+                class C
+                {
+                    static string M1(string s, ref int i) => "string" + i;
+                    static string M1(object o, in int i) => "object" + i;
+                    static void Main()
+                    {
+                        int i = 5;
+                        System.Console.WriteLine(M1(null, ref i));
+                    }
+                }
+                """;
+            CompileAndVerify(source, expectedOutput: "string5").VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void InParameter_RefArgument_02()
+        {
+            var source = """
+                class C
+                {
+                    static string M1(string s, ref int i) => "string" + i;
+                    static string M1(object o, in int i) => "object" + i;
+                    static void Main()
+                    {
+                        int i = 5;
+                        System.Console.WriteLine(M1(default(object), ref i));
+                    }
+                }
+                """;
+            CompileAndVerify(source, expectedOutput: "object5").VerifyDiagnostics(
+                // (8,58): warning CS9501: Argument 2 should not be passed with the 'ref' keyword
+                //         System.Console.WriteLine(M1(default(object), ref i));
+                Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2", "ref").WithLocation(8, 58));
+        }
+
+        [Fact]
         public void PassingArgumentsToInParameters_RefKind_Out()
         {
             var code = @"
