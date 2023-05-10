@@ -3770,7 +3770,8 @@ outerDefault:
             // This is a bug in Dev11 which we also implement. 
             //       The spec is correct, this is not an intended behavior. We don't fix the bug to avoid a breaking change.
             if (!(argRefKind == parRefKind ||
-                 (argRefKind == RefKind.Ref && parRefKind == RefKind.In) || // PROTOTYPE: Gate on langversion.
+                 (((CSharpParseOptions)argument.SyntaxTree.Options).IsFeatureEnabled(MessageID.IDS_FeatureWarnForRefAtIn) &&
+                    argRefKind == RefKind.Ref && parRefKind == RefKind.In) ||
                  (argRefKind == RefKind.None && argument.HasDynamicType())))
             {
                 return Conversion.NoConversion;

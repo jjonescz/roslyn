@@ -9471,10 +9471,20 @@ public static class Program
     }
 }";
 
-            CompileAndVerify(code, expectedOutput: "5").VerifyDiagnostics(
+            CreateCompilation(code, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+                // (11,20): error CS1615: Argument 1 may not be passed with the 'ref' keyword
+                //         Method(ref x);
+                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "ref").WithLocation(11, 20));
+
+            var expectedDiagnostics = new[]
+            {
                 // (11,20): warning CS9501: Argument 1 should not be passed with the 'ref' keyword
                 //         Method(ref x);
-                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(11, 20));
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(11, 20)
+            };
+
+            CompileAndVerify(code, expectedOutput: "5", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CompileAndVerify(code, expectedOutput: "5").VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]

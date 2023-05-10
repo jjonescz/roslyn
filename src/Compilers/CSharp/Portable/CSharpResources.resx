@@ -2866,6 +2866,9 @@ A catch() block after a catch (System.Exception e) block can catch non-CLS excep
   <data name="WRN_BadArgRef_Title" xml:space="preserve">
     <value>Argument should not be passed with the keyword</value>
   </data>
+  <data name="IDS_FeatureWarnForRefAtIn" xml:space="preserve">
+    <value>allow 'ref' callsite modifier for 'in' parameters</value>
+  </data>
   <data name="WRN_CmdOptionConflictsSource" xml:space="preserve">
     <value>Option '{0}' overrides attribute '{1}' given in a source file or added module</value>
   </data>

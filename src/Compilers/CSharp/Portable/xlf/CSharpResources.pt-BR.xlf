@@ -2007,6 +2007,11 @@
         <target state="translated">usando tipo alias</target>
         <note />
       </trans-unit>
+      <trans-unit id="IDS_FeatureWarnForRefAtIn">
+        <source>allow 'ref' callsite modifier for 'in' parameters</source>
+        <target state="new">allow 'ref' callsite modifier for 'in' parameters</target>
+        <note />
+      </trans-unit>
       <trans-unit id="IDS_FeatureWithOnAnonymousTypes">
         <source>with on anonymous types</source>
         <target state="translated">com tipos anônimos</target>
