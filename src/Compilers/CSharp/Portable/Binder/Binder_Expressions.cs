@@ -6167,6 +6167,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (succeededIgnoringAccessibility)
             {
+                this.CheckRefArguments(result.ValidResult, analyzedArguments, diagnostics);
                 this.CoerceArguments<MethodSymbol>(result.ValidResult, analyzedArguments.Arguments, diagnostics, receiver: null);
             }
 

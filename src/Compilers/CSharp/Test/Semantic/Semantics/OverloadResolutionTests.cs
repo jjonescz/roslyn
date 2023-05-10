@@ -9496,9 +9496,9 @@ public static class Program
                 }
                 """;
             CompileAndVerify(source, expectedOutput: "5").VerifyDiagnostics(
-                // (8,58): warning CS9501: Argument 2 should not be passed with the 'ref' keyword
-                //         System.Console.WriteLine(M1(default(object), ref i));
-                Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2", "ref").WithLocation(8, 58));
+                // (11,19): warning CS9501: Argument 1 should not be passed with the 'ref' keyword
+                //         new C(ref x);
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(11, 19));
         }
 
         [Fact]
@@ -9574,9 +9574,9 @@ public static class Program
                 }
                 """;
             CompileAndVerify(source, expectedOutput: "object5").VerifyDiagnostics(
-                // (8,58): warning CS9501: Argument 2 should not be passed with the 'ref' keyword
-                //         System.Console.WriteLine(M1(default(object), ref i));
-                Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2", "ref").WithLocation(8, 58));
+                // (8,36): warning CS9501: Argument 2 should not be passed with the 'ref' keyword
+                //         new C(default(object), ref i);
+                Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2", "ref").WithLocation(8, 36));
         }
 
         [Fact]
