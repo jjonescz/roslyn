@@ -22,29 +22,29 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
             verifier.VerifyDiagnostics();
             verifier.VerifyTypeIL("C", """
                 .class private auto ansi beforefieldinit C
-                    extends [netstandard]System.Object
+                	extends [netstandard]System.Object
                 {
-                    // Methods
-                    .method private hidebysig 
-                        instance void M (
-                            int32& p
-                        ) cil managed 
-                    {
-                        // Method begins at RVA 0x2067
-                        // Code size 1 (0x1)
-                        .maxstack 8
-                        IL_0000: ret
-                    } // end of method C::M
-                    .method public hidebysig specialname rtspecialname 
-                        instance void .ctor () cil managed 
-                    {
-                        // Method begins at RVA 0x2069
-                        // Code size 7 (0x7)
-                        .maxstack 8
-                        IL_0000: ldarg.0
-                        IL_0001: call instance void [netstandard]System.Object::.ctor()
-                        IL_0006: ret
-                    } // end of method C::.ctor
+                	// Methods
+                	.method private hidebysig 
+                		instance void M (
+                			[in] int32& p
+                		) cil managed 
+                	{
+                		// Method begins at RVA 0x2067
+                		// Code size 1 (0x1)
+                		.maxstack 8
+                		IL_0000: ret
+                	} // end of method C::M
+                	.method public hidebysig specialname rtspecialname 
+                		instance void .ctor () cil managed 
+                	{
+                		// Method begins at RVA 0x2069
+                		// Code size 7 (0x7)
+                		.maxstack 8
+                		IL_0000: ldarg.0
+                		IL_0001: call instance void [netstandard]System.Object::.ctor()
+                		IL_0006: ret
+                	} // end of method C::.ctor
                 } // end of class C
                 """);
         }
