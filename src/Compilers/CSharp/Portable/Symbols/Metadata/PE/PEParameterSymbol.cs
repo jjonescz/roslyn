@@ -284,6 +284,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     {
                         refKind = RefKind.In;
                     }
+                    else if (moduleSymbol.Module.HasRequiresLocationAttribute(handle))
+                    {
+                        refKind = RefKind.RefReadOnlyParameter;
+                    }
                     else
                     {
                         refKind = RefKind.Ref;

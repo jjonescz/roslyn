@@ -2,8 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Linq;
+using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
-using Microsoft.CodeAnalysis.Test.Utilities;
 using Roslyn.Test.Utilities;
 using Xunit;
 
@@ -17,17 +18,18 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
             var source = """
                 class C
                 {
-                    void M(ref readonly int p) { }
+                    public void M(ref readonly int p) { }
                 }
                 """;
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetStandard20);
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetStandard20,
+                sourceSymbolValidator: verify, symbolValidator: verify);
             verifier.VerifyDiagnostics();
             verifier.VerifyTypeIL("C", """
                 .class private auto ansi beforefieldinit C
                 	extends [netstandard]System.Object
                 {
                 	// Methods
-                	.method private hidebysig 
+                	.method public hidebysig 
                 		instance void M (
                 			[in] int32& p
                 		) cil managed 
@@ -53,6 +55,12 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
                 	} // end of method C::.ctor
                 } // end of class C
                 """);
+
+            static void verify(ModuleSymbol m)
+            {
+                var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
+                Assert.Equal(RefKind.RefReadOnlyParameter, p.RefKind);
+            }
         }
     }
 }
