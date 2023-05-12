@@ -3,6 +3,8 @@
 // See the LICENSE file in the project root for more information.
 
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
+using Microsoft.CodeAnalysis.Test.Utilities;
+using Roslyn.Test.Utilities;
 using Xunit;
 
 namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
@@ -18,7 +20,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
                     void M(ref readonly int p) { }
                 }
                 """;
-            var verifier = CompileAndVerify(source);
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetStandard20);
             verifier.VerifyDiagnostics();
             verifier.VerifyTypeIL("C", """
                 .class private auto ansi beforefieldinit C
