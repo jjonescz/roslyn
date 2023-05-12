@@ -354,6 +354,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 }
 
                 ParameterHelpers.EnsureNullableAttributeExists(compilation, this, Parameters, diagnostics, modifyCompilation: true);
+                ParameterHelpers.EnsureRequiresLocationAttributeExists(compilation, Parameters, diagnostics, modifyCompilation: true, moduleBuilder: null);
             }
 
             public override ImmutableArray<CustomModifier> RefCustomModifiers => _refCustomModifiers;

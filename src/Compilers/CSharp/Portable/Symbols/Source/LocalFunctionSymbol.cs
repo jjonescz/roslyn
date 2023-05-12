@@ -117,6 +117,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             ParameterHelpers.EnsureNativeIntegerAttributeExists(compilation, Parameters, addTo, modifyCompilation: false);
             ParameterHelpers.EnsureScopedRefAttributeExists(compilation, Parameters, addTo, modifyCompilation: false);
             ParameterHelpers.EnsureNullableAttributeExists(compilation, this, Parameters, addTo, modifyCompilation: false);
+            ParameterHelpers.EnsureRequiresLocationAttributeExists(compilation, Parameters, addTo, modifyCompilation: false, moduleBuilder: null);
 
             addTo.AddRange(_declarationDiagnostics, allowMismatchInDependencyAccumulation: true);
 

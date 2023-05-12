@@ -30,6 +30,10 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
                 			[in] int32& p
                 		) cil managed 
                 	{
+                		.param [1]
+                			.custom instance void System.Runtime.CompilerServices.RequiresLocationAttribute::.ctor() = (
+                				01 00 00 00
+                			)
                 		// Method begins at RVA 0x2067
                 		// Code size 1 (0x1)
                 		.maxstack 8
