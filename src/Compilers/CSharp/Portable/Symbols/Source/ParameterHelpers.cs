@@ -996,8 +996,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         isScoped = true;
                         break;
                     case SyntaxKind.ReadOnlyKeyword:
-                        Debug.Assert(refKind == RefKind.Ref);
-                        refKind = RefKind.RefReadOnlyParameter;
+                        if (refKind == RefKind.Ref)
+                        {
+                            refKind = RefKind.RefReadOnlyParameter;
+                        }
                         break;
                 }
             }
