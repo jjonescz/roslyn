@@ -1935,7 +1935,7 @@ unsafe class C
 
             Assert.Equal("delegate*<System.Int32> ptr1", model.GetDeclaredSymbol(decls[0]).ToTestDisplayString());
             Assert.Equal("delegate*<System.Int32> ptr2", model.GetDeclaredSymbol(decls[1]).ToTestDisplayString());
-            Assert.Equal("delegate*<ref readonly System.Int32, System.Void> ptr3", model.GetDeclaredSymbol(decls[2]).ToTestDisplayString());
+            Assert.Equal("delegate*<ref readonly modreq(System.Runtime.InteropServices.InAttribute) System.Int32, System.Void> ptr3", model.GetDeclaredSymbol(decls[2]).ToTestDisplayString());
             Assert.Equal("delegate*<System.Void, System.Void> ptr4", model.GetDeclaredSymbol(decls[3]).ToTestDisplayString());
             Assert.Equal("delegate*<ref System.Void> ptr5", model.GetDeclaredSymbol(decls[4]).ToTestDisplayString());
         }
