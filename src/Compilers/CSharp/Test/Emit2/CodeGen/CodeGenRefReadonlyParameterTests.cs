@@ -113,5 +113,69 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
                 Assert.Equal(RefKind.RefReadOnlyParameter, p.RefKind);
             }
         }
+
+        [Fact]
+        public void Delegate()
+        {
+            var source = """
+                delegate void D(ref readonly int p);
+                """;
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetStandard20,
+                sourceSymbolValidator: verify, symbolValidator: verify);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyTypeIL("D", """
+                .class private auto ansi sealed D
+                	extends [netstandard]System.MulticastDelegate
+                {
+                	// Methods
+                	.method public hidebysig specialname rtspecialname 
+                		instance void .ctor (
+                			object 'object',
+                			native int 'method'
+                		) runtime managed 
+                	{
+                	} // end of method D::.ctor
+                	.method public hidebysig newslot virtual 
+                		instance void Invoke (
+                			[in] int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) p
+                		) runtime managed 
+                	{
+                		.param [1]
+                			.custom instance void System.Runtime.CompilerServices.RequiresLocationAttribute::.ctor() = (
+                				01 00 00 00
+                			)
+                	} // end of method D::Invoke
+                	.method public hidebysig newslot virtual 
+                		instance class [netstandard]System.IAsyncResult BeginInvoke (
+                			[in] int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) p,
+                			class [netstandard]System.AsyncCallback callback,
+                			object 'object'
+                		) runtime managed 
+                	{
+                		.param [1]
+                			.custom instance void System.Runtime.CompilerServices.RequiresLocationAttribute::.ctor() = (
+                				01 00 00 00
+                			)
+                	} // end of method D::BeginInvoke
+                	.method public hidebysig newslot virtual 
+                		instance void EndInvoke (
+                			[in] int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) p,
+                			class [netstandard]System.IAsyncResult result
+                		) runtime managed 
+                	{
+                		.param [1]
+                			.custom instance void System.Runtime.CompilerServices.RequiresLocationAttribute::.ctor() = (
+                				01 00 00 00
+                			)
+                	} // end of method D::EndInvoke
+                } // end of class D
+                """);
+
+            static void verify(ModuleSymbol m)
+            {
+                var p = m.GlobalNamespace.GetMember<MethodSymbol>("D.Invoke").Parameters.Single();
+                Assert.Equal(RefKind.RefReadOnlyParameter, p.RefKind);
+            }
+        }
     }
 }
