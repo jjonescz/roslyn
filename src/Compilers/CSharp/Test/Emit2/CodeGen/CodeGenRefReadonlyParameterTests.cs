@@ -115,6 +115,49 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
         }
 
         [Fact]
+        public void Constructor()
+        {
+            var source = """
+                class C
+                {
+                    public C(ref readonly int p) { }
+                }
+                """;
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetStandard20,
+                sourceSymbolValidator: verify, symbolValidator: verify);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyTypeIL("C", """
+                .class private auto ansi beforefieldinit C
+                	extends [netstandard]System.Object
+                {
+                	// Methods
+                	.method public hidebysig specialname rtspecialname 
+                		instance void .ctor (
+                			[in] int32& p
+                		) cil managed 
+                	{
+                		.param [1]
+                			.custom instance void System.Runtime.CompilerServices.RequiresLocationAttribute::.ctor() = (
+                				01 00 00 00
+                			)
+                		// Method begins at RVA 0x2067
+                		// Code size 7 (0x7)
+                		.maxstack 8
+                		IL_0000: ldarg.0
+                		IL_0001: call instance void [netstandard]System.Object::.ctor()
+                		IL_0006: ret
+                	} // end of method C::.ctor
+                } // end of class C
+                """);
+
+            static void verify(ModuleSymbol m)
+            {
+                var p = m.GlobalNamespace.GetMember<MethodSymbol>("C..ctor").Parameters.Single();
+                Assert.Equal(RefKind.RefReadOnlyParameter, p.RefKind);
+            }
+        }
+
+        [Fact]
         public void Delegate()
         {
             var source = """
