@@ -384,6 +384,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             bool hasInAttributeModifier = parameter.RefCustomModifiers.HasInAttributeModifier();
 
+            // PROTOTYPE: Check also RefReadOnlyParameters.
             if (isReturn)
             {
                 // A RefReadOnly return parameter should always have this modreq, and vice versa.
