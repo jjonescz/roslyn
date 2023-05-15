@@ -1390,6 +1390,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 switch (RefKind)
                 {
+                    // PROTOTYPE: case RefKind.RefReadOnlyParameter
                     case RefKind.Ref:
                         if (data.HasOutAttribute && !data.HasInAttribute)
                         {

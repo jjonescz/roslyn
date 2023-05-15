@@ -221,9 +221,13 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
                 	} // end of method '<>c'::.ctor
                 	.method assembly hidebysig 
                 		instance void '<<Main>$>b__0_0' (
-                			int32& p
+                			[in] int32& p
                 		) cil managed 
                 	{
+                		.param [1]
+                			.custom instance void System.Runtime.CompilerServices.RequiresLocationAttribute::.ctor() = (
+                				01 00 00 00
+                			)
                 		// Method begins at RVA 0x20a6
                 		// Code size 1 (0x1)
                 		.maxstack 8
@@ -279,12 +283,16 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
                 	} // end of method Program::.ctor
                 	.method assembly hidebysig static 
                 		void '<<Main>$>g__local|0_0' (
-                			int32& p
+                			[in] int32& p
                 		) cil managed 
                 	{
                 		.custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
                 			01 00 00 00
                 		)
+                		.param [1]
+                			.custom instance void System.Runtime.CompilerServices.RequiresLocationAttribute::.ctor() = (
+                				01 00 00 00
+                			)
                 		// Method begins at RVA 0x2087
                 		// Code size 1 (0x1)
                 		.maxstack 8
@@ -323,9 +331,13 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
                 	} // end of method '<>f__AnonymousDelegate0`1'::.ctor
                 	.method public hidebysig newslot virtual 
                 		instance void Invoke (
-                			!T1& arg
+                			[in] !T1& arg
                 		) runtime managed 
                 	{
+                		.param [1]
+                			.custom instance void System.Runtime.CompilerServices.RequiresLocationAttribute::.ctor() = (
+                				01 00 00 00
+                			)
                 	} // end of method '<>f__AnonymousDelegate0`1'::Invoke
                 } // end of class <>f__AnonymousDelegate0`1
                 """);

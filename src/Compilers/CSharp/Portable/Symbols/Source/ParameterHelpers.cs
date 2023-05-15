@@ -356,12 +356,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal static void EnsureRequiresLocationAttributeExists(CSharpCompilation? compilation, ImmutableArray<ParameterSymbol> parameters, BindingDiagnosticBag? diagnostics, bool modifyCompilation, PEModuleBuilder? moduleBuilder)
         {
-            // These parameters might not come from a compilation (example: lambdas evaluated in EE).
-            // During rewriting, lowering will take care of flagging the appropriate PEModuleBuilder instead.
-            if (compilation == null)
-            {
-                return;
-            }
+            Debug.Assert(compilation is not null || moduleBuilder is not null);
 
             foreach (var parameter in parameters)
             {
@@ -373,7 +368,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     }
                     else
                     {
-                        compilation.EnsureRequiresLocationAttributeExists(diagnostics, GetParameterLocation(parameter), modifyCompilation);
+                        compilation!.EnsureRequiresLocationAttributeExists(diagnostics, GetParameterLocation(parameter), modifyCompilation);
                     }
                 }
             }
