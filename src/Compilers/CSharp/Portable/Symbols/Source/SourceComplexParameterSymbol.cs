@@ -1481,6 +1481,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         }
 
         internal sealed override bool IsMetadataIn
+            // PROTOTYPE: or HasRequiresLocationAttribute
             => base.IsMetadataIn || GetDecodedWellKnownAttributeData()?.HasInAttribute == true;
 
         internal sealed override bool IsMetadataOut
