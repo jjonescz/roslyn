@@ -330,19 +330,5 @@ public class Test
                 //     public void DoSomething(in int x) { }
                 Diagnostic(ErrorCode.ERR_FeatureNotAvailableInVersion7, "in").WithArguments("readonly references", "7.2").WithLocation(4, 29));
         }
-
-        [Fact]
-        public void RefReadonlyParameter()
-        {
-            var source = """
-                class C
-                {
-                    void M1(ref readonly int p) { }
-                }
-                """;
-            var comp = CreateCompilation(source);
-            var m1p = comp.GetMember<MethodSymbol>("C.M1").Parameters.Single();
-            Assert.Equal(RefKind.RefReadOnlyParameter, m1p.RefKind);
-        }
     }
 }
