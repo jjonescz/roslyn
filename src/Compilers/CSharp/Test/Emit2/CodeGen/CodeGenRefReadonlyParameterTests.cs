@@ -82,7 +82,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
                 	// Methods
                 	.method public hidebysig newslot virtual 
                 		instance void M (
-                			[in] int32& p modreq([netstandard]System.Runtime.InteropServices.InAttribute) p
+                			[in] int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) p
                 		) cil managed 
                 	{
                 		.param [1]
