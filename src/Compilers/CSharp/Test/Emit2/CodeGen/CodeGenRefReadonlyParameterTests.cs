@@ -177,5 +177,158 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
                 Assert.Equal(RefKind.RefReadOnlyParameter, p.RefKind);
             }
         }
+
+        [Fact]
+        public void Lambda()
+        {
+            var source = """
+                var lam = (ref readonly int p) => { };
+                System.Console.WriteLine(lam.GetType());
+                """;
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetStandard20,
+                expectedOutput: "<>f__AnonymousDelegate0`1[System.Int32]");
+            verifier.VerifyDiagnostics();
+            verifier.VerifyTypeIL("<>c", """
+                .class nested private auto ansi sealed serializable beforefieldinit '<>c'
+                	extends [netstandard]System.Object
+                {
+                	.custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+                		01 00 00 00
+                	)
+                	// Fields
+                	.field public static initonly class Program/'<>c' '<>9'
+                	.field public static class '<>f__AnonymousDelegate0`1'<int32> '<>9__0_0'
+                	// Methods
+                	.method private hidebysig specialname rtspecialname static 
+                		void .cctor () cil managed 
+                	{
+                		// Method begins at RVA 0x209a
+                		// Code size 11 (0xb)
+                		.maxstack 8
+                		IL_0000: newobj instance void Program/'<>c'::.ctor()
+                		IL_0005: stsfld class Program/'<>c' Program/'<>c'::'<>9'
+                		IL_000a: ret
+                	} // end of method '<>c'::.cctor
+                	.method public hidebysig specialname rtspecialname 
+                		instance void .ctor () cil managed 
+                	{
+                		// Method begins at RVA 0x2092
+                		// Code size 7 (0x7)
+                		.maxstack 8
+                		IL_0000: ldarg.0
+                		IL_0001: call instance void [netstandard]System.Object::.ctor()
+                		IL_0006: ret
+                	} // end of method '<>c'::.ctor
+                	.method assembly hidebysig 
+                		instance void '<<Main>$>b__0_0' (
+                			int32& p
+                		) cil managed 
+                	{
+                		// Method begins at RVA 0x20a6
+                		// Code size 1 (0x1)
+                		.maxstack 8
+                		IL_0000: ret
+                	} // end of method '<>c'::'<<Main>$>b__0_0'
+                } // end of class <>c
+                """);
+        }
+
+        [Fact]
+        public void LocalFunction()
+        {
+            var source = """
+                void local(ref readonly int p) { }
+                System.Console.WriteLine(((object)local).GetType());
+                """;
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetStandard20,
+                expectedOutput: "<>f__AnonymousDelegate0`1[System.Int32]");
+            verifier.VerifyDiagnostics();
+            verifier.VerifyTypeIL("Program", """
+                .class private auto ansi beforefieldinit Program
+                	extends [netstandard]System.Object
+                {
+                	.custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+                		01 00 00 00
+                	)
+                	// Methods
+                	.method private hidebysig static 
+                		void '<Main>$' (
+                			string[] args
+                		) cil managed 
+                	{
+                		// Method begins at RVA 0x2067
+                		// Code size 23 (0x17)
+                		.maxstack 8
+                		.entrypoint
+                		IL_0000: ldnull
+                		IL_0001: ldftn void Program::'<<Main>$>g__local|0_0'(int32&)
+                		IL_0007: newobj instance void class '<>f__AnonymousDelegate0`1'<int32>::.ctor(object, native int)
+                		IL_000c: call instance class [netstandard]System.Type [netstandard]System.Object::GetType()
+                		IL_0011: call void [netstandard]System.Console::WriteLine(object)
+                		IL_0016: ret
+                	} // end of method Program::'<Main>$'
+                	.method public hidebysig specialname rtspecialname 
+                		instance void .ctor () cil managed 
+                	{
+                		// Method begins at RVA 0x207f
+                		// Code size 7 (0x7)
+                		.maxstack 8
+                		IL_0000: ldarg.0
+                		IL_0001: call instance void [netstandard]System.Object::.ctor()
+                		IL_0006: ret
+                	} // end of method Program::.ctor
+                	.method assembly hidebysig static 
+                		void '<<Main>$>g__local|0_0' (
+                			int32& p
+                		) cil managed 
+                	{
+                		.custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+                			01 00 00 00
+                		)
+                		// Method begins at RVA 0x2087
+                		// Code size 1 (0x1)
+                		.maxstack 8
+                		IL_0000: ret
+                	} // end of method Program::'<<Main>$>g__local|0_0'
+                } // end of class Program
+                """);
+        }
+
+        [Theory]
+        [InlineData("var x = (ref readonly int p) => { };")]
+        [InlineData("var x = local; void local(ref readonly int p) { }")]
+        public void AnonymousDelegate(string def)
+        {
+            var source = $"""
+                {def}
+                System.Console.WriteLine(((object)x).GetType());
+                """;
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetStandard20,
+                expectedOutput: "<>f__AnonymousDelegate0`1[System.Int32]");
+            verifier.VerifyDiagnostics();
+            verifier.VerifyTypeIL("<>f__AnonymousDelegate0`1", """
+                .class private auto ansi sealed '<>f__AnonymousDelegate0`1'<T1>
+                	extends [netstandard]System.MulticastDelegate
+                {
+                	.custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+                		01 00 00 00
+                	)
+                	// Methods
+                	.method public hidebysig specialname rtspecialname 
+                		instance void .ctor (
+                			object 'object',
+                			native int 'method'
+                		) runtime managed 
+                	{
+                	} // end of method '<>f__AnonymousDelegate0`1'::.ctor
+                	.method public hidebysig newslot virtual 
+                		instance void Invoke (
+                			!T1& arg
+                		) runtime managed 
+                	{
+                	} // end of method '<>f__AnonymousDelegate0`1'::Invoke
+                } // end of class <>f__AnonymousDelegate0`1
+                """);
+        }
     }
 }
