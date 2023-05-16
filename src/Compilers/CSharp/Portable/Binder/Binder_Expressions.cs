@@ -3213,6 +3213,37 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
 #nullable enable
+        private void CheckRefArguments<TMember>(
+            MemberResolutionResult<TMember> methodResult,
+            AnalyzedArguments analyzedArguments,
+            BindingDiagnosticBag diagnostics)
+            where TMember : Symbol
+        {
+            if (analyzedArguments.HasErrors)
+            {
+                return;
+            }
+
+            var result = methodResult.Result;
+            var parameters = methodResult.LeastOverriddenMember.GetParameters();
+
+            for (int arg = 0; arg < analyzedArguments.Arguments.Count; arg++)
+            {
+                // Warn for `ref`/`in` or None/`ref readonly` mismatch.
+                if (analyzedArguments.RefKind(arg) is (RefKind.Ref or RefKind.None) and var argRefKind &&
+                    GetCorrespondingParameter(ref result, parameters, arg) is { } parameter &&
+                    parameter.RefKind == (argRefKind == RefKind.Ref ? RefKind.In : RefKind.RefReadOnlyParameter))
+                {
+                    // Argument {0} should not be passed with the '{1}' keyword
+                    diagnostics.Add(
+                        ErrorCode.WRN_BadArgRef,
+                        analyzedArguments.Arguments[arg].Syntax,
+                        arg + 1,
+                        argRefKind.ToArgumentDisplayString());
+                }
+            }
+        }
+
         private void CoerceArguments<TMember>(
             MemberResolutionResult<TMember> methodResult,
             ArrayBuilder<BoundExpression> arguments,
@@ -6137,6 +6168,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (succeededIgnoringAccessibility)
             {
+                this.CheckRefArguments<MethodSymbol>(result.ValidResult, analyzedArguments, diagnostics);
                 this.CoerceArguments<MethodSymbol>(result.ValidResult, analyzedArguments.Arguments, diagnostics, receiver: null);
             }
 

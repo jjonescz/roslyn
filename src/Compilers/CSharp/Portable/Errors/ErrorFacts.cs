@@ -207,6 +207,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             switch (code)
             {
                 case ErrorCode.WRN_AddressOfInAsync:
+                case ErrorCode.WRN_BadArgRef:
                     // Warning level 8 is exclusively for warnings introduced in the compiler
                     // shipped with dotnet 8 (C# 12) and that can be reported for pre-existing code.
                     return 8;
@@ -2311,6 +2312,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ErrorCode.ERR_ConstantValueOfTypeExpected:
                 case ErrorCode.ERR_UnsupportedPrimaryConstructorParameterCapturingRefAny:
                 case ErrorCode.ERR_RefReadOnlyWrongOrdering:
+                case ErrorCode.WRN_BadArgRef:
                     return false;
                 default:
                     // NOTE: All error codes must be explicitly handled in this switch statement
