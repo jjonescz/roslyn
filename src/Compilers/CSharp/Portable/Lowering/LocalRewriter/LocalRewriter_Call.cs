@@ -939,6 +939,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                     fillRefKindsBuilder(argumentRefKindsOpt, parameters, ref refKindsBuilder);
                     refKindsBuilder[i] = argRefKind == RefKind.None ? paramRefKind : RefKindExtensions.StrictIn;
                 }
+                else if (paramRefKind == RefKind.RefReadOnlyParameter)
+                {
+                    fillRefKindsBuilder(argumentRefKindsOpt, parameters, ref refKindsBuilder);
+                    refKindsBuilder[i] = RefKind.RefReadOnlyParameter;
+                }
                 else if (paramRefKind == RefKind.Ref)
                 {
                     var argRefKind = argumentRefKindsOpt.IsDefault ? RefKind.None : argumentRefKindsOpt[i];

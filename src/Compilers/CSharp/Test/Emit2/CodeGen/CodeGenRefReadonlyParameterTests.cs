@@ -473,7 +473,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
         }
 
         [Fact]
-        public void InArgument_RefReadonlyParameter()
+        public void RefReadonlyParameter_InArgument()
         {
             var source = """
                 class C
@@ -497,6 +497,75 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
                   IL_0000:  ldc.i4.s   111
                   IL_0002:  stloc.0
                   // sequence point: M(in x);
+                  IL_0003:  ldloca.s   V_0
+                  IL_0005:  call       "void C.M(ref readonly int)"
+                  // sequence point: }
+                  IL_000a:  ret
+                }
+                """);
+        }
+
+        [Fact]
+        public void RefReadonlyParameter_RefArgument()
+        {
+            var source = """
+                class C
+                {
+                    static void M(ref readonly int p) => System.Console.WriteLine(p);
+                    static void Main()
+                    {
+                        int x = 111;
+                        M(ref x);
+                    }
+                }
+                """;
+            var verifier = CompileAndVerify(source, expectedOutput: "111");
+            verifier.VerifyDiagnostics();
+            verifier.VerifyMethodBody("C.Main", """
+                {
+                  // Code size       11 (0xb)
+                  .maxstack  1
+                  .locals init (int V_0) //x
+                  // sequence point: int x = 111;
+                  IL_0000:  ldc.i4.s   111
+                  IL_0002:  stloc.0
+                  // sequence point: M(ref x);
+                  IL_0003:  ldloca.s   V_0
+                  IL_0005:  call       "void C.M(ref readonly int)"
+                  // sequence point: }
+                  IL_000a:  ret
+                }
+                """);
+        }
+
+        [Fact]
+        public void RefReadonlyParameter_PlainArgument()
+        {
+            var source = """
+                class C
+                {
+                    static void M(ref readonly int p) => System.Console.WriteLine(p);
+                    static void Main()
+                    {
+                        int x = 111;
+                        M(x);
+                    }
+                }
+                """;
+            var verifier = CompileAndVerify(source, expectedOutput: "111");
+            verifier.VerifyDiagnostics(
+                // (7,11): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+                //         M(x);
+                Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(7, 11));
+            verifier.VerifyMethodBody("C.Main", """
+                {
+                  // Code size       11 (0xb)
+                  .maxstack  1
+                  .locals init (int V_0) //x
+                  // sequence point: int x = 111;
+                  IL_0000:  ldc.i4.s   111
+                  IL_0002:  stloc.0
+                  // sequence point: M(x);
                   IL_0003:  ldloca.s   V_0
                   IL_0005:  call       "void C.M(ref readonly int)"
                   // sequence point: }
