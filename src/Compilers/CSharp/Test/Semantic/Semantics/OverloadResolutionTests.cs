@@ -9557,6 +9557,44 @@ public static class Program
         }
 
         [Fact]
+        public void PassingArgumentsToInParameters_RefKind_Ref_FunctionPointer()
+        {
+            var source = """
+                class C
+                {
+                    static void M(in int p)
+                    {
+                        System.Console.WriteLine(p);
+                    }
+
+                    static unsafe void Main()
+                    {
+                        delegate*<in int, void> f = &M;
+                        int x = 5;
+                        f(ref x);
+                    }
+                }
+                """;
+            CreateCompilation(source, options: TestOptions.UnsafeReleaseExe, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+                // (12,15): error CS1615: Argument 1 may not be passed with the 'ref' keyword
+                //         f(ref x);
+                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "ref").WithLocation(12, 15));
+
+            var expectedDiagnostics = new[]
+            {
+                // (12,15): warning CS9502: Argument 1 should not be passed with the 'ref' keyword
+                //         f(ref x);
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(12, 15)
+            };
+
+            CompileAndVerify(source, expectedOutput: "5", options: TestOptions.UnsafeReleaseExe,
+                parseOptions: TestOptions.RegularNext, verify: Verification.Fails).VerifyDiagnostics(expectedDiagnostics);
+
+            CompileAndVerify(source, expectedOutput: "5", options: TestOptions.UnsafeReleaseExe,
+                verify: Verification.Fails).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
         public void PassingArgumentsToInParameters_RefKind_Ref_01()
         {
             var source = """
