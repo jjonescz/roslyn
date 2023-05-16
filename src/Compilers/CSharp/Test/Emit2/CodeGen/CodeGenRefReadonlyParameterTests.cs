@@ -471,5 +471,38 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
                 } // end of class System.Runtime.CompilerServices.RequiresLocationAttribute
                 """);
         }
+
+        [Fact]
+        public void InArgument_RefReadonlyParameter()
+        {
+            var source = """
+                class C
+                {
+                    static void M(ref readonly int p) => System.Console.WriteLine(p);
+                    static void Main()
+                    {
+                        int x = 111;
+                        M(in x);
+                    }
+                }
+                """;
+            var verifier = CompileAndVerify(source, expectedOutput: "111");
+            verifier.VerifyDiagnostics();
+            verifier.VerifyMethodBody("C.Main", """
+                {
+                  // Code size       11 (0xb)
+                  .maxstack  1
+                  .locals init (int V_0) //x
+                  // sequence point: int x = 111;
+                  IL_0000:  ldc.i4.s   111
+                  IL_0002:  stloc.0
+                  // sequence point: M(in x);
+                  IL_0003:  ldloca.s   V_0
+                  IL_0005:  call       "void C.M(ref readonly int)"
+                  // sequence point: }
+                  IL_000a:  ret
+                }
+                """);
+        }
     }
 }
