@@ -12,6 +12,8 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
 {
     public class CodeGenRefReadonlyParameterTests : CSharpTestBase
     {
+        private const string RequiresLocationAttributeName = "RequiresLocationAttribute";
+
         [Fact]
         public void Method()
         {
@@ -432,6 +434,42 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
                 var ptr = (FunctionPointerTypeSymbol)p.Type;
                 Assert.Equal(RefKind.RefReadOnlyParameter, ptr.Signature.Parameters.Single().RefKind);
             }
+        }
+
+        [Fact]
+        public void AttributeIL()
+        {
+            var source = """
+                class C
+                {
+                    public void M(ref readonly int p) { }
+                }
+                """;
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetStandard20);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyTypeIL(RequiresLocationAttributeName, """
+                .class private auto ansi sealed beforefieldinit System.Runtime.CompilerServices.RequiresLocationAttribute
+                	extends [netstandard]System.Attribute
+                {
+                	.custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+                		01 00 00 00
+                	)
+                	.custom instance void Microsoft.CodeAnalysis.EmbeddedAttribute::.ctor() = (
+                		01 00 00 00
+                	)
+                	// Methods
+                	.method public hidebysig specialname rtspecialname 
+                		instance void .ctor () cil managed 
+                	{
+                		// Method begins at RVA 0x2050
+                		// Code size 7 (0x7)
+                		.maxstack 8
+                		IL_0000: ldarg.0
+                		IL_0001: call instance void [netstandard]System.Attribute::.ctor()
+                		IL_0006: ret
+                	} // end of method RequiresLocationAttribute::.ctor
+                } // end of class System.Runtime.CompilerServices.RequiresLocationAttribute
+                """);
         }
     }
 }
