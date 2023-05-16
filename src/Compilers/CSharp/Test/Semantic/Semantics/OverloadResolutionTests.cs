@@ -9488,6 +9488,41 @@ public static class Program
         }
 
         [Fact]
+        public void PassingArgumentsToInParameters_RefKind_Ref_CrossAssembly()
+        {
+            var source1 = """
+                public class C
+                {
+                    public void M(in int p) { }
+                    void M2()
+                    {
+                        int x = 5;
+                        M(ref x);
+                    }
+                }
+                """;
+            var comp1 = CreateCompilation(source1).VerifyDiagnostics(
+                // (7,15): warning CS9502: Argument 1 should not be passed with the 'ref' keyword
+                //         M(ref x);
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(7, 15));
+
+            var source2 = """
+                class D
+                {
+                    void M(C c)
+                    {
+                        int x = 6;
+                        c.M(ref x);
+                    }
+                }
+                """;
+            CreateCompilation(source2, new[] { comp1.ToMetadataReference() }, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+                // (6,17): error CS1615: Argument 1 may not be passed with the 'ref' keyword
+                //         c.M(ref x);
+                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "ref").WithLocation(6, 17));
+        }
+
+        [Fact]
         public void PassingArgumentsToInParameters_RefKind_Ref_Ctor()
         {
             var source = """
