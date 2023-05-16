@@ -2072,6 +2072,16 @@
         <target state="translated">分析程式組件參考的編譯器版本比目前執行的版本新。</target>
         <note />
       </trans-unit>
+      <trans-unit id="WRN_ArgExpectedRefOrIn">
+        <source>Argument {0} should be passed with 'ref' or 'in' keyword</source>
+        <target state="new">Argument {0} should be passed with 'ref' or 'in' keyword</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WRN_ArgExpectedRefOrIn_Title">
+        <source>Argument should be passed with 'ref' or 'in' keyword</source>
+        <target state="new">Argument should be passed with 'ref' or 'in' keyword</target>
+        <note />
+      </trans-unit>
       <trans-unit id="WRN_AttrDependentTypeNotAllowed">
         <source>Type '{0}' cannot be used in this context because it cannot be represented in metadata.</source>
         <target state="translated">無法在此內容中使用類型 '{0}'，因為它無法在中繼資料中表示。</target>
