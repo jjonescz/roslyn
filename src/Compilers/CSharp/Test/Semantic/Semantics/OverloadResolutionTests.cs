@@ -9595,6 +9595,31 @@ public static class Program
         }
 
         [Fact]
+        public void PassingArgumentsToInParameters_RefKind_Ref_NamedArguments()
+        {
+            var source = """
+                class C
+                {
+                    static void M(in int a, ref int b)
+                    {
+                        System.Console.Write(a);
+                        System.Console.Write(b);
+                    }
+                    static void Main()
+                    {
+                        int x = 5;
+                        int y = 6;
+                        M(b: ref x, a: y);
+                        M(b: ref x, a: ref y);
+                        M(a: x, ref y);
+                        M(a: ref x, ref y);
+                    }
+                }
+                """;
+            CompileAndVerify(source, expectedOutput: "65655656").VerifyDiagnostics();
+        }
+
+        [Fact]
         public void PassingArgumentsToInParameters_RefKind_Ref_01()
         {
             var source = """
