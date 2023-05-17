@@ -9609,14 +9609,20 @@ public static class Program
                     {
                         int x = 5;
                         int y = 6;
-                        M(b: ref x, a: y);
-                        M(b: ref x, a: ref y);
-                        M(a: x, ref y);
-                        M(a: ref x, ref y);
+                        M(b: ref x, a: y); // 1
+                        M(b: ref x, a: ref y); // 2
+                        M(a: x, ref y); // 3
+                        M(a: ref x, ref y); // 4
                     }
                 }
                 """;
-            CompileAndVerify(source, expectedOutput: "65655656").VerifyDiagnostics();
+            CompileAndVerify(source, expectedOutput: "65655656").VerifyDiagnostics(
+                // (13,28): warning CS9502: Argument 2 should not be passed with the 'ref' keyword
+                //         M(b: ref x, a: ref y); // 2
+                Diagnostic(ErrorCode.WRN_BadArgRef, "y").WithArguments("2", "ref").WithLocation(13, 28),
+                // (15,18): warning CS9502: Argument 1 should not be passed with the 'ref' keyword
+                //         M(a: ref x, ref y); // 4
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(15, 18));
         }
 
         [Fact]

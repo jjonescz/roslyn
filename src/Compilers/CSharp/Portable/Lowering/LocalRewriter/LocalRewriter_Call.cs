@@ -1159,16 +1159,22 @@ namespace Microsoft.CodeAnalysis.CSharp
                     arguments[p] = temp;
                 }
 
-                // Patch refKinds for arguments that match 'In' parameters to have effective RefKind
+                // Patch refKinds for arguments that match 'in' or 'ref readonly' parameters to have effective RefKind
                 // For the purpose of further analysis we will mark the arguments as -
-                // - In        if was originally passed as None
-                // - StrictIn  if was originally passed as In
+                // - In                    if was originally passed as None
+                // - StrictIn              if was originally passed as In or Ref
+                // - RefReadOnlyParameter  if was originally passed as None, In, or Ref
                 // Here and in the layers after the lowering we only care about None/notNone differences for the arguments
                 // Except for async stack spilling which needs to know whether arguments were originally passed as "In" and must obey "no copying" rule.
                 if (paramRefKind == RefKind.In)
                 {
-                    Debug.Assert(argRefKind == RefKind.None || argRefKind == RefKind.In);
+                    Debug.Assert(argRefKind is RefKind.None or RefKind.In or RefKind.Ref);
                     argRefKind = argRefKind == RefKind.None ? RefKind.In : RefKindExtensions.StrictIn;
+                }
+                else if (paramRefKind == RefKind.RefReadOnlyParameter)
+                {
+                    Debug.Assert(argRefKind is RefKind.None or RefKind.In or RefKind.Ref);
+                    argRefKind = RefKind.RefReadOnlyParameter;
                 }
 
                 refKinds[p] = argRefKind;

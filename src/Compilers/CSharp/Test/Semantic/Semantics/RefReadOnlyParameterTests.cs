@@ -206,14 +206,23 @@ namespace Microsoft.CodeAnalysis.CSharp.Semantic.UnitTests.Semantics
                     {
                         int x = 5;
                         int y = 6;
-                        M(b: x, a: y);
-                        M(b: x, a: in y);
-                        M(a: x, y);
-                        M(a: x, in y);
+                        M(b: x, a: y); // 1
+                        M(b: x, a: in y); // 2
+                        M(a: x, y); // 3
+                        M(a: x, in y); // 4
                     }
                 }
                 """;
-            CompileAndVerify(source, expectedOutput: "65655656").VerifyDiagnostics();
+            CompileAndVerify(source, expectedOutput: "65655656").VerifyDiagnostics(
+                // (12,14): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+                //         M(b: x, a: y); // 1
+                Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(12, 14),
+                // (13,14): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+                //         M(b: x, a: in y); // 2
+                Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(13, 14),
+                // (14,17): warning CS9503: Argument 2 should be passed with 'ref' or 'in' keyword
+                //         M(a: x, y); // 3
+                Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "y").WithArguments("2").WithLocation(14, 17));
         }
 
         [Fact]
