@@ -3229,27 +3229,37 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             for (int arg = 0; arg < analyzedArguments.Arguments.Count; arg++)
             {
-                // Warn for `ref`/`in` or None/`ref readonly` mismatch.
-                if (analyzedArguments.RefKind(arg) is (RefKind.Ref or RefKind.None) and var argRefKind &&
-                    GetCorrespondingParameter(ref result, parameters, arg) is { } parameter &&
-                    parameter.RefKind == (argRefKind == RefKind.Ref ? RefKind.In : RefKind.RefReadOnlyParameter))
+                if (arg >= parameters.Length)
                 {
-                    if (argRefKind == RefKind.None)
+                    // We can run out of parameters before arguments. For example: `M(__arglist(x))`.
+                    break;
+                }
+
+                // Warn for `ref`/`in` or None/`ref readonly` mismatch.
+                var argRefKind = analyzedArguments.RefKind(arg);
+                if (argRefKind is RefKind.Ref or RefKind.None)
+                {
+                    var warnParameterKind = argRefKind == RefKind.Ref ? RefKind.In : RefKind.RefReadOnlyParameter;
+                    var parameter = GetCorrespondingParameter(ref result, parameters, arg);
+                    if (parameter.RefKind == warnParameterKind)
                     {
-                        // Argument {0} should be passed with 'ref' or 'in' keyword
-                        diagnostics.Add(
-                            ErrorCode.WRN_ArgExpectedRefOrIn,
-                            analyzedArguments.Arguments[arg].Syntax,
-                            arg + 1);
-                    }
-                    else
-                    {
-                        // Argument {0} should not be passed with the '{1}' keyword
-                        diagnostics.Add(
-                            ErrorCode.WRN_BadArgRef,
-                            analyzedArguments.Arguments[arg].Syntax,
-                            arg + 1,
-                            argRefKind.ToArgumentDisplayString());
+                        if (argRefKind == RefKind.None)
+                        {
+                            // Argument {0} should be passed with 'ref' or 'in' keyword
+                            diagnostics.Add(
+                                ErrorCode.WRN_ArgExpectedRefOrIn,
+                                analyzedArguments.Arguments[arg].Syntax,
+                                arg + 1);
+                        }
+                        else
+                        {
+                            // Argument {0} should not be passed with the '{1}' keyword
+                            diagnostics.Add(
+                                ErrorCode.WRN_BadArgRef,
+                                analyzedArguments.Arguments[arg].Syntax,
+                                arg + 1,
+                                argRefKind.ToArgumentDisplayString());
+                        }
                     }
                 }
             }
