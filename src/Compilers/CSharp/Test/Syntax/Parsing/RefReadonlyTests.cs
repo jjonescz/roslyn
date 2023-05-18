@@ -955,13 +955,19 @@ class Test
                 Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(3, 12),
                 // (3,12): error CS9501: 'readonly' modifier must be specified after 'ref'.
                 //     void M(readonly params int[] p) => throw null;
-                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12));
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12),
+                // (3,21): error CS8328:  The parameter modifier 'params' cannot be used with 'readonly'
+                //     void M(readonly params int[] p) => throw null;
+                Diagnostic(ErrorCode.ERR_BadParameterModifiers, "params").WithArguments("params", "readonly").WithLocation(3, 21));
 
             var expectedDiagnostics = new[]
             {
                 // (3,12): error CS9501: 'readonly' modifier must be specified after 'ref'.
                 //     void M(readonly params int[] p) => throw null;
-                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12)
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12),
+                // (3,21): error CS8328:  The parameter modifier 'params' cannot be used with 'readonly'
+                //     void M(readonly params int[] p) => throw null;
+                Diagnostic(ErrorCode.ERR_BadParameterModifiers, "params").WithArguments("params", "readonly").WithLocation(3, 21)
             };
 
             CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
