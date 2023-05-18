@@ -1397,6 +1397,68 @@ class Test
         }
 
         [Fact]
+        public void RefReadonlyWithScoped_02_Nodes()
+        {
+            var source = "void M(ref scoped readonly int p);";
+            var expectedDiagnostics = new[]
+            {
+                // (1,19): error CS1001: Identifier expected
+                // void M(ref scoped readonly int p);
+                Diagnostic(ErrorCode.ERR_IdentifierExpected, "readonly").WithLocation(1, 19),
+                // (1,19): error CS1003: Syntax error, ',' expected
+                // void M(ref scoped readonly int p);
+                Diagnostic(ErrorCode.ERR_SyntaxError, "readonly").WithArguments(",").WithLocation(1, 19)
+            };
+
+            UsingDeclaration(source, TestOptions.Regular11, expectedDiagnostics);
+            verifyNodes();
+
+            UsingDeclaration(source, TestOptions.RegularNext, expectedDiagnostics);
+            verifyNodes();
+
+            UsingDeclaration(source, TestOptions.RegularPreview, expectedDiagnostics);
+            verifyNodes();
+
+            void verifyNodes()
+            {
+                N(SyntaxKind.MethodDeclaration);
+                {
+                    N(SyntaxKind.PredefinedType);
+                    {
+                        N(SyntaxKind.VoidKeyword);
+                    }
+                    N(SyntaxKind.IdentifierToken, "M");
+                    N(SyntaxKind.ParameterList);
+                    {
+                        N(SyntaxKind.OpenParenToken);
+                        N(SyntaxKind.Parameter);
+                        {
+                            N(SyntaxKind.RefKeyword);
+                            N(SyntaxKind.IdentifierName);
+                            {
+                                N(SyntaxKind.IdentifierToken, "scoped");
+                            }
+                            M(SyntaxKind.IdentifierToken);
+                        }
+                        M(SyntaxKind.CommaToken);
+                        N(SyntaxKind.Parameter);
+                        {
+                            N(SyntaxKind.ReadOnlyKeyword);
+                            N(SyntaxKind.PredefinedType);
+                            {
+                                N(SyntaxKind.IntKeyword);
+                            }
+                            N(SyntaxKind.IdentifierToken, "p");
+                        }
+                        N(SyntaxKind.CloseParenToken);
+                    }
+                    N(SyntaxKind.SemicolonToken);
+                }
+                EOF();
+            }
+        }
+
+        [Fact]
         public void RefReadonlyWithScoped_03()
         {
             var source = """
@@ -1443,6 +1505,68 @@ class Test
         }
 
         [Fact]
+        public void RefReadonlyWithScoped_03_Nodes()
+        {
+            var source = "void M(readonly scoped ref int p);";
+            var expectedDiagnostics = new[]
+            {
+                // (1,24): error CS1001: Identifier expected
+                // void M(readonly scoped ref int p);
+                Diagnostic(ErrorCode.ERR_IdentifierExpected, "ref").WithLocation(1, 24),
+                // (1,24): error CS1003: Syntax error, ',' expected
+                // void M(readonly scoped ref int p);
+                Diagnostic(ErrorCode.ERR_SyntaxError, "ref").WithArguments(",").WithLocation(1, 24)
+            };
+
+            UsingDeclaration(source, TestOptions.Regular11, expectedDiagnostics);
+            verifyNodes();
+
+            UsingDeclaration(source, TestOptions.RegularNext, expectedDiagnostics);
+            verifyNodes();
+
+            UsingDeclaration(source, TestOptions.RegularPreview, expectedDiagnostics);
+            verifyNodes();
+
+            void verifyNodes()
+            {
+                N(SyntaxKind.MethodDeclaration);
+                {
+                    N(SyntaxKind.PredefinedType);
+                    {
+                        N(SyntaxKind.VoidKeyword);
+                    }
+                    N(SyntaxKind.IdentifierToken, "M");
+                    N(SyntaxKind.ParameterList);
+                    {
+                        N(SyntaxKind.OpenParenToken);
+                        N(SyntaxKind.Parameter);
+                        {
+                            N(SyntaxKind.ReadOnlyKeyword);
+                            N(SyntaxKind.IdentifierName);
+                            {
+                                N(SyntaxKind.IdentifierToken, "scoped");
+                            }
+                            M(SyntaxKind.IdentifierToken);
+                        }
+                        M(SyntaxKind.CommaToken);
+                        N(SyntaxKind.Parameter);
+                        {
+                            N(SyntaxKind.RefKeyword);
+                            N(SyntaxKind.PredefinedType);
+                            {
+                                N(SyntaxKind.IntKeyword);
+                            }
+                            N(SyntaxKind.IdentifierToken, "p");
+                        }
+                        N(SyntaxKind.CloseParenToken);
+                    }
+                    N(SyntaxKind.SemicolonToken);
+                }
+                EOF();
+            }
+        }
+
+        [Fact]
         public void ReadonlyWithScoped()
         {
             var source = """
@@ -1486,6 +1610,129 @@ class Test
 
             CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
             CreateCompilation(source).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
+        public void ReadonlyWithScoped_Nodes()
+        {
+            var source = "void M(scoped readonly int p);";
+            var expectedDiagnostics = new[]
+            {
+                // (1,15): error CS1001: Identifier expected
+                // void M(scoped readonly int p);
+                Diagnostic(ErrorCode.ERR_IdentifierExpected, "readonly").WithLocation(1, 15),
+                // (1,15): error CS1003: Syntax error, ',' expected
+                // void M(scoped readonly int p);
+                Diagnostic(ErrorCode.ERR_SyntaxError, "readonly").WithArguments(",").WithLocation(1, 15)
+            };
+
+            UsingDeclaration(source, TestOptions.Regular11, expectedDiagnostics);
+            verifyNodes();
+
+            UsingDeclaration(source, TestOptions.RegularNext, expectedDiagnostics);
+            verifyNodes();
+
+            UsingDeclaration(source, TestOptions.RegularPreview, expectedDiagnostics);
+            verifyNodes();
+
+            void verifyNodes()
+            {
+                N(SyntaxKind.MethodDeclaration);
+                {
+                    N(SyntaxKind.PredefinedType);
+                    {
+                        N(SyntaxKind.VoidKeyword);
+                    }
+                    N(SyntaxKind.IdentifierToken, "M");
+                    N(SyntaxKind.ParameterList);
+                    {
+                        N(SyntaxKind.OpenParenToken);
+                        N(SyntaxKind.Parameter);
+                        {
+                            N(SyntaxKind.IdentifierName);
+                            {
+                                N(SyntaxKind.IdentifierToken, "scoped");
+                            }
+                            M(SyntaxKind.IdentifierToken);
+                        }
+                        M(SyntaxKind.CommaToken);
+                        N(SyntaxKind.Parameter);
+                        {
+                            N(SyntaxKind.ReadOnlyKeyword);
+                            N(SyntaxKind.PredefinedType);
+                            {
+                                N(SyntaxKind.IntKeyword);
+                            }
+                            N(SyntaxKind.IdentifierToken, "p");
+                        }
+                        N(SyntaxKind.CloseParenToken);
+                    }
+                    N(SyntaxKind.SemicolonToken);
+                }
+                EOF();
+            }
+        }
+
+        [Fact]
+        public void ReadonlyWithScoped_02()
+        {
+            var source = "void M(scoped readonly ref int p);";
+            var expectedDiagnostics = new[]
+            {
+                // (1,15): error CS1001: Identifier expected
+                // void M(scoped readonly ref int p);
+                Diagnostic(ErrorCode.ERR_IdentifierExpected, "readonly").WithLocation(1, 15),
+                // (1,15): error CS1003: Syntax error, ',' expected
+                // void M(scoped readonly ref int p);
+                Diagnostic(ErrorCode.ERR_SyntaxError, "readonly").WithArguments(",").WithLocation(1, 15)
+            };
+
+            UsingDeclaration(source, TestOptions.Regular11, expectedDiagnostics);
+            verifyNodes();
+
+            UsingDeclaration(source, TestOptions.RegularNext, expectedDiagnostics);
+            verifyNodes();
+
+            UsingDeclaration(source, TestOptions.RegularPreview, expectedDiagnostics);
+            verifyNodes();
+
+            void verifyNodes()
+            {
+                N(SyntaxKind.MethodDeclaration);
+                {
+                    N(SyntaxKind.PredefinedType);
+                    {
+                        N(SyntaxKind.VoidKeyword);
+                    }
+                    N(SyntaxKind.IdentifierToken, "M");
+                    N(SyntaxKind.ParameterList);
+                    {
+                        N(SyntaxKind.OpenParenToken);
+                        N(SyntaxKind.Parameter);
+                        {
+                            N(SyntaxKind.IdentifierName);
+                            {
+                                N(SyntaxKind.IdentifierToken, "scoped");
+                            }
+                            M(SyntaxKind.IdentifierToken);
+                        }
+                        M(SyntaxKind.CommaToken);
+                        N(SyntaxKind.Parameter);
+                        {
+                            N(SyntaxKind.ReadOnlyKeyword);
+                            N(SyntaxKind.RefKeyword);
+                            N(SyntaxKind.PredefinedType);
+                            {
+                                N(SyntaxKind.IntKeyword);
+                            }
+                            N(SyntaxKind.IdentifierToken, "p");
+                        }
+                        N(SyntaxKind.CloseParenToken);
+                    }
+                    N(SyntaxKind.SemicolonToken);
+                }
+                EOF();
+            }
         }
 
         [Fact]
