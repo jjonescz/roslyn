@@ -583,21 +583,24 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         break;
 
                     case SyntaxKind.ReadOnlyKeyword:
-                        Binder.CheckFeatureAvailability(modifier, MessageID.IDS_FeatureRefReadonlyParameters, diagnostics);
+                        if (!seenReadonly)
+                        {
+                            Binder.CheckFeatureAvailability(modifier, MessageID.IDS_FeatureRefReadonlyParameters, diagnostics);
+                        }
 
                         if (seenReadonly)
                         {
                             addERR_DupParamMod(diagnostics, modifier);
                         }
-                        if (!seenRef || previousModifier?.Kind() != SyntaxKind.RefKeyword)
+                        else if (!seenRef || previousModifier?.Kind() != SyntaxKind.RefKeyword)
                         {
                             diagnostics.Add(ErrorCode.ERR_RefReadOnlyWrongOrdering, modifier);
                         }
                         else
                         {
                             Debug.Assert(seenRef);
-                            seenReadonly = true;
                         }
+                        seenReadonly = true;
                         break;
 
                     case SyntaxKind.ParamsKeyword when parsingFunctionPointerParams:

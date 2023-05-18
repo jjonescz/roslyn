@@ -559,6 +559,360 @@ class Test
         }
 
         [Fact]
+        public void Readonly_Duplicate_01()
+        {
+            var source = "void M(ref readonly readonly int p);";
+            var fullSource = $$"""
+                abstract class C
+                {
+                    protected abstract {{source}}
+                }
+                """;
+            UsingDeclaration(source, TestOptions.Regular11);
+            verifyNodes();
+            CreateCompilation(fullSource, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+                // (3,35): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     protected abstract void M(ref readonly readonly int p);
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(3, 35),
+                // (3,44): error CS1107: A parameter can only have one 'readonly' modifier
+                //     protected abstract void M(ref readonly readonly int p);
+                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 44));
+
+            var expectedDiagnostics = new[]
+            {
+                // (3,44): error CS1107: A parameter can only have one 'readonly' modifier
+                //     protected abstract void M(ref readonly readonly int p);
+                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 44)
+            };
+
+            UsingDeclaration(source, TestOptions.RegularNext);
+            verifyNodes();
+            CreateCompilation(fullSource, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+
+            UsingDeclaration(source);
+            verifyNodes();
+            CreateCompilation(fullSource).VerifyDiagnostics(expectedDiagnostics);
+
+            void verifyNodes()
+            {
+                N(SyntaxKind.MethodDeclaration);
+                {
+                    N(SyntaxKind.PredefinedType);
+                    {
+                        N(SyntaxKind.VoidKeyword);
+                    }
+                    N(SyntaxKind.IdentifierToken, "M");
+                    N(SyntaxKind.ParameterList);
+                    {
+                        N(SyntaxKind.OpenParenToken);
+                        N(SyntaxKind.Parameter);
+                        {
+                            N(SyntaxKind.RefKeyword);
+                            N(SyntaxKind.ReadOnlyKeyword);
+                            N(SyntaxKind.ReadOnlyKeyword);
+                            N(SyntaxKind.PredefinedType);
+                            {
+                                N(SyntaxKind.IntKeyword);
+                            }
+                            N(SyntaxKind.IdentifierToken, "p");
+                        }
+                        N(SyntaxKind.CloseParenToken);
+                    }
+                    N(SyntaxKind.SemicolonToken);
+                }
+                EOF();
+            }
+        }
+
+        [Fact]
+        public void Readonly_Duplicate_02()
+        {
+            var source = "void M(readonly readonly int p);";
+            var fullSource = $$"""
+                abstract class C
+                {
+                    protected abstract {{source}}
+                }
+                """;
+            UsingDeclaration(source, TestOptions.Regular11);
+            verifyNodes();
+            CreateCompilation(fullSource, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+                // (3,31): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     protected abstract void M(readonly readonly int p);
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(3, 31),
+                // (3,31): error CS9501: 'readonly' modifier must be specified after 'ref'.
+                //     protected abstract void M(readonly readonly int p);
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 31),
+                // (3,40): error CS1107: A parameter can only have one 'readonly' modifier
+                //     protected abstract void M(readonly readonly int p);
+                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 40));
+
+            var expectedDiagnostics = new[]
+            {
+                // (3,31): error CS9501: 'readonly' modifier must be specified after 'ref'.
+                //     protected abstract void M(readonly readonly int p);
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 31),
+                // (3,40): error CS1107: A parameter can only have one 'readonly' modifier
+                //     protected abstract void M(readonly readonly int p);
+                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 40)
+            };
+
+            UsingDeclaration(source, TestOptions.RegularNext);
+            verifyNodes();
+            CreateCompilation(fullSource, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+
+            UsingDeclaration(source);
+            verifyNodes();
+            CreateCompilation(fullSource).VerifyDiagnostics(expectedDiagnostics);
+
+            void verifyNodes()
+            {
+                N(SyntaxKind.MethodDeclaration);
+                {
+                    N(SyntaxKind.PredefinedType);
+                    {
+                        N(SyntaxKind.VoidKeyword);
+                    }
+                    N(SyntaxKind.IdentifierToken, "M");
+                    N(SyntaxKind.ParameterList);
+                    {
+                        N(SyntaxKind.OpenParenToken);
+                        N(SyntaxKind.Parameter);
+                        {
+                            N(SyntaxKind.ReadOnlyKeyword);
+                            N(SyntaxKind.ReadOnlyKeyword);
+                            N(SyntaxKind.PredefinedType);
+                            {
+                                N(SyntaxKind.IntKeyword);
+                            }
+                            N(SyntaxKind.IdentifierToken, "p");
+                        }
+                        N(SyntaxKind.CloseParenToken);
+                    }
+                    N(SyntaxKind.SemicolonToken);
+                }
+                EOF();
+            }
+        }
+
+        [Fact]
+        public void Readonly_Duplicate_03()
+        {
+            var source = "void M(readonly ref readonly int p);";
+            var fullSource = $$"""
+                abstract class C
+                {
+                    protected abstract {{source}}
+                }
+                """;
+            UsingDeclaration(source, TestOptions.Regular11);
+            verifyNodes();
+            CreateCompilation(fullSource, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+                // (3,31): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     protected abstract void M(readonly ref readonly int p);
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(3, 31),
+                // (3,31): error CS9501: 'readonly' modifier must be specified after 'ref'.
+                //     protected abstract void M(readonly ref readonly int p);
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 31),
+                // (3,44): error CS1107: A parameter can only have one 'readonly' modifier
+                //     protected abstract void M(readonly ref readonly int p);
+                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 44));
+
+            var expectedDiagnostics = new[]
+            {
+                // (3,31): error CS9501: 'readonly' modifier must be specified after 'ref'.
+                //     protected abstract void M(readonly ref readonly int p);
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 31),
+                // (3,44): error CS1107: A parameter can only have one 'readonly' modifier
+                //     protected abstract void M(readonly ref readonly int p);
+                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 44)
+            };
+
+            UsingDeclaration(source, TestOptions.RegularNext);
+            verifyNodes();
+            CreateCompilation(fullSource, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+
+            UsingDeclaration(source);
+            verifyNodes();
+            CreateCompilation(fullSource).VerifyDiagnostics(expectedDiagnostics);
+
+            void verifyNodes()
+            {
+                N(SyntaxKind.MethodDeclaration);
+                {
+                    N(SyntaxKind.PredefinedType);
+                    {
+                        N(SyntaxKind.VoidKeyword);
+                    }
+                    N(SyntaxKind.IdentifierToken, "M");
+                    N(SyntaxKind.ParameterList);
+                    {
+                        N(SyntaxKind.OpenParenToken);
+                        N(SyntaxKind.Parameter);
+                        {
+                            N(SyntaxKind.ReadOnlyKeyword);
+                            N(SyntaxKind.RefKeyword);
+                            N(SyntaxKind.ReadOnlyKeyword);
+                            N(SyntaxKind.PredefinedType);
+                            {
+                                N(SyntaxKind.IntKeyword);
+                            }
+                            N(SyntaxKind.IdentifierToken, "p");
+                        }
+                        N(SyntaxKind.CloseParenToken);
+                    }
+                    N(SyntaxKind.SemicolonToken);
+                }
+                EOF();
+            }
+        }
+
+        [Fact]
+        public void Readonly_Duplicate_04()
+        {
+            var source = "void M(readonly readonly ref int p);";
+            var fullSource = $$"""
+                abstract class C
+                {
+                    protected abstract {{source}}
+                }
+                """;
+            UsingDeclaration(source, TestOptions.Regular11);
+            verifyNodes();
+            CreateCompilation(fullSource, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+                // (3,31): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     protected abstract void M(readonly readonly ref int p);
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(3, 31),
+                // (3,31): error CS9501: 'readonly' modifier must be specified after 'ref'.
+                //     protected abstract void M(readonly readonly ref int p);
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 31),
+                // (3,40): error CS1107: A parameter can only have one 'readonly' modifier
+                //     protected abstract void M(readonly readonly ref int p);
+                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 40));
+
+            var expectedDiagnostics = new[]
+            {
+                // (3,31): error CS9501: 'readonly' modifier must be specified after 'ref'.
+                //     protected abstract void M(readonly readonly ref int p);
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 31),
+                // (3,40): error CS1107: A parameter can only have one 'readonly' modifier
+                //     protected abstract void M(readonly readonly ref int p);
+                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 40)
+            };
+
+            UsingDeclaration(source, TestOptions.RegularNext);
+            verifyNodes();
+            CreateCompilation(fullSource, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+
+            UsingDeclaration(source);
+            verifyNodes();
+            CreateCompilation(fullSource).VerifyDiagnostics(expectedDiagnostics);
+
+            void verifyNodes()
+            {
+                N(SyntaxKind.MethodDeclaration);
+                {
+                    N(SyntaxKind.PredefinedType);
+                    {
+                        N(SyntaxKind.VoidKeyword);
+                    }
+                    N(SyntaxKind.IdentifierToken, "M");
+                    N(SyntaxKind.ParameterList);
+                    {
+                        N(SyntaxKind.OpenParenToken);
+                        N(SyntaxKind.Parameter);
+                        {
+                            N(SyntaxKind.ReadOnlyKeyword);
+                            N(SyntaxKind.ReadOnlyKeyword);
+                            N(SyntaxKind.RefKeyword);
+                            N(SyntaxKind.PredefinedType);
+                            {
+                                N(SyntaxKind.IntKeyword);
+                            }
+                            N(SyntaxKind.IdentifierToken, "p");
+                        }
+                        N(SyntaxKind.CloseParenToken);
+                    }
+                    N(SyntaxKind.SemicolonToken);
+                }
+                EOF();
+            }
+        }
+
+        [Fact]
+        public void Readonly_Duplicate_05()
+        {
+            var source = "void M(ref readonly ref readonly int p);";
+            var fullSource = $$"""
+                abstract class C
+                {
+                    protected abstract {{source}}
+                }
+                """;
+            UsingDeclaration(source, TestOptions.Regular11);
+            verifyNodes();
+            CreateCompilation(fullSource, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+                // (3,35): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     protected abstract void M(ref readonly ref readonly int p);
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(3, 35),
+                // (3,44): error CS1107: A parameter can only have one 'ref' modifier
+                //     protected abstract void M(ref readonly ref readonly int p);
+                Diagnostic(ErrorCode.ERR_DupParamMod, "ref").WithArguments("ref").WithLocation(3, 44),
+                // (3,48): error CS1107: A parameter can only have one 'readonly' modifier
+                //     protected abstract void M(ref readonly ref readonly int p);
+                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 48));
+
+            var expectedDiagnostics = new[]
+            {
+                // (3,44): error CS1107: A parameter can only have one 'ref' modifier
+                //     protected abstract void M(ref readonly ref readonly int p);
+                Diagnostic(ErrorCode.ERR_DupParamMod, "ref").WithArguments("ref").WithLocation(3, 44),
+                // (3,48): error CS1107: A parameter can only have one 'readonly' modifier
+                //     protected abstract void M(ref readonly ref readonly int p);
+                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 48)
+            };
+
+            UsingDeclaration(source, TestOptions.RegularNext);
+            verifyNodes();
+            CreateCompilation(fullSource, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+
+            UsingDeclaration(source);
+            verifyNodes();
+            CreateCompilation(fullSource).VerifyDiagnostics(expectedDiagnostics);
+
+            void verifyNodes()
+            {
+                N(SyntaxKind.MethodDeclaration);
+                {
+                    N(SyntaxKind.PredefinedType);
+                    {
+                        N(SyntaxKind.VoidKeyword);
+                    }
+                    N(SyntaxKind.IdentifierToken, "M");
+                    N(SyntaxKind.ParameterList);
+                    {
+                        N(SyntaxKind.OpenParenToken);
+                        N(SyntaxKind.Parameter);
+                        {
+                            N(SyntaxKind.RefKeyword);
+                            N(SyntaxKind.ReadOnlyKeyword);
+                            N(SyntaxKind.RefKeyword);
+                            N(SyntaxKind.ReadOnlyKeyword);
+                            N(SyntaxKind.PredefinedType);
+                            {
+                                N(SyntaxKind.IntKeyword);
+                            }
+                            N(SyntaxKind.IdentifierToken, "p");
+                        }
+                        N(SyntaxKind.CloseParenToken);
+                    }
+                    N(SyntaxKind.SemicolonToken);
+                }
+                EOF();
+            }
+        }
+
+        [Fact]
         public void ReadonlyWithoutRef()
         {
             var source = """
