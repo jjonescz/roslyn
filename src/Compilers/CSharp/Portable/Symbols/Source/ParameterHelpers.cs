@@ -504,6 +504,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         break;
 
                     case SyntaxKind.ParamsKeyword when !parsingFunctionPointerParams:
+                        Debug.Assert(!seenReadonly);
+
                         if (parsingAnonymousMethodParams)
                         {
                             diagnostics.Add(ErrorCode.ERR_IllegalParams, modifier.GetLocation());
@@ -527,10 +529,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         else if (seenOut)
                         {
                             addERR_BadParameterModifiers(diagnostics, modifier, SyntaxKind.OutKeyword);
-                        }
-                        else if (seenReadonly)
-                        {
-                            addERR_BadParameterModifiers(diagnostics, modifier, SyntaxKind.ReadOnlyKeyword);
                         }
                         else
                         {
@@ -601,8 +599,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         else
                         {
                             Debug.Assert(seenRef);
+                            seenReadonly = true;
                         }
-                        seenReadonly = true;
                         break;
 
                     case SyntaxKind.ParamsKeyword when parsingFunctionPointerParams:

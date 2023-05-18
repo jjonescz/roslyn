@@ -71,18 +71,21 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.Semantics
                 // (3,12): error CS9501: 'readonly' modifier must be specified after 'ref'.
                 //     void M(readonly readonly int p) { }
                 Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12),
-                // (3,21): error CS1107: A parameter can only have one 'readonly' modifier
+                // (3,21): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //     void M(readonly readonly int p) { }
-                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 21));
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(3, 21),
+                // (3,21): error CS9501: 'readonly' modifier must be specified after 'ref'.
+                //     void M(readonly readonly int p) { }
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 21));
 
             var expectedDiagnostics = new[]
             {
                 // (3,12): error CS9501: 'readonly' modifier must be specified after 'ref'.
                 //     void M(readonly readonly int p) { }
                 Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12),
-                // (3,21): error CS1107: A parameter can only have one 'readonly' modifier
+                // (3,21): error CS9501: 'readonly' modifier must be specified after 'ref'.
                 //     void M(readonly readonly int p) { }
-                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 21)
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 21)
             };
 
             CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -105,18 +108,15 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.Semantics
                 // (3,12): error CS9501: 'readonly' modifier must be specified after 'ref'.
                 //     void M(readonly ref readonly int p) { }
                 Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12),
-                // (3,25): error CS1107: A parameter can only have one 'readonly' modifier
+                // (3,25): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //     void M(readonly ref readonly int p) { }
-                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 25));
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(3, 25));
 
             var expectedDiagnostics = new[]
             {
                 // (3,12): error CS9501: 'readonly' modifier must be specified after 'ref'.
                 //     void M(readonly ref readonly int p) { }
-                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12),
-                // (3,25): error CS1107: A parameter can only have one 'readonly' modifier
-                //     void M(readonly ref readonly int p) { }
-                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 25)
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12)
             };
 
             CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -139,18 +139,21 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.Semantics
                 // (3,12): error CS9501: 'readonly' modifier must be specified after 'ref'.
                 //     void M(readonly readonly ref int p) { }
                 Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12),
-                // (3,21): error CS1107: A parameter can only have one 'readonly' modifier
+                // (3,21): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //     void M(readonly readonly ref int p) { }
-                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 21));
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(3, 21),
+                // (3,21): error CS9501: 'readonly' modifier must be specified after 'ref'.
+                //     void M(readonly readonly ref int p) { }
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 21));
 
             var expectedDiagnostics = new[]
             {
                 // (3,12): error CS9501: 'readonly' modifier must be specified after 'ref'.
                 //     void M(readonly readonly ref int p) { }
                 Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12),
-                // (3,21): error CS1107: A parameter can only have one 'readonly' modifier
+                // (3,21): error CS9501: 'readonly' modifier must be specified after 'ref'.
                 //     void M(readonly readonly ref int p) { }
-                Diagnostic(ErrorCode.ERR_DupParamMod, "readonly").WithArguments("readonly").WithLocation(3, 21)
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 21)
             };
 
             CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -234,19 +237,13 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.Semantics
                 Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(3, 12),
                 // (3,12): error CS9501: 'readonly' modifier must be specified after 'ref'.
                 //     void M(readonly params int[] p) => throw null;
-                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12),
-                // (3,21): error CS8328:  The parameter modifier 'params' cannot be used with 'readonly'
-                //     void M(readonly params int[] p) => throw null;
-                Diagnostic(ErrorCode.ERR_BadParameterModifiers, "params").WithArguments("params", "readonly").WithLocation(3, 21));
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12));
 
             var expectedDiagnostics = new[]
             {
                 // (3,12): error CS9501: 'readonly' modifier must be specified after 'ref'.
                 //     void M(readonly params int[] p) => throw null;
-                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12),
-                // (3,21): error CS8328:  The parameter modifier 'params' cannot be used with 'readonly'
-                //     void M(readonly params int[] p) => throw null;
-                Diagnostic(ErrorCode.ERR_BadParameterModifiers, "params").WithArguments("params", "readonly").WithLocation(3, 21)
+                Diagnostic(ErrorCode.ERR_RefReadOnlyWrongOrdering, "readonly").WithLocation(3, 12)
             };
 
             CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
