@@ -589,19 +589,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         {
                             addERR_DupParamMod(diagnostics, modifier);
                         }
-                        else if (seenOut)
-                        {
-                            addERR_BadParameterModifiers(diagnostics, modifier, SyntaxKind.OutKeyword);
-                        }
-                        else if (seenIn)
-                        {
-                            addERR_BadParameterModifiers(diagnostics, modifier, SyntaxKind.InKeyword);
-                        }
-                        else if (seenParams)
-                        {
-                            addERR_ParamsCantBeWithModifier(diagnostics, modifier, SyntaxKind.ReadOnlyKeyword);
-                        }
-                        else if (!seenRef || previousModifier?.Kind() != SyntaxKind.RefKeyword)
+                        if (!seenRef || previousModifier?.Kind() != SyntaxKind.RefKeyword)
                         {
                             diagnostics.Add(ErrorCode.ERR_RefReadOnlyWrongOrdering, modifier);
                         }
