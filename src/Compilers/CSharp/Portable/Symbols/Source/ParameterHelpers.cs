@@ -475,6 +475,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         break;
 
                     case SyntaxKind.OutKeyword:
+                        Debug.Assert(!seenReadonly);
+
                         if (seenOut)
                         {
                             addERR_DupParamMod(diagnostics, modifier);
@@ -495,10 +497,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         {
                             addERR_BadParameterModifiers(diagnostics, modifier, SyntaxKind.InKeyword);
                         }
-                        else if (seenReadonly)
-                        {
-                            addERR_BadParameterModifiers(diagnostics, modifier, SyntaxKind.ReadOnlyKeyword);
-                        }
                         else
                         {
                             seenOut = true;
@@ -506,6 +504,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         break;
 
                     case SyntaxKind.ParamsKeyword when !parsingFunctionPointerParams:
+                        Debug.Assert(!seenReadonly);
+
                         if (parsingAnonymousMethodParams)
                         {
                             diagnostics.Add(ErrorCode.ERR_IllegalParams, modifier.GetLocation());
@@ -530,10 +530,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         {
                             addERR_BadParameterModifiers(diagnostics, modifier, SyntaxKind.OutKeyword);
                         }
-                        else if (seenReadonly)
-                        {
-                            addERR_BadParameterModifiers(diagnostics, modifier, SyntaxKind.ReadOnlyKeyword);
-                        }
                         else
                         {
                             seenParams = true;
@@ -546,6 +542,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         break;
 
                     case SyntaxKind.InKeyword:
+                        Debug.Assert(!seenReadonly);
                         Binder.CheckFeatureAvailability(modifier, MessageID.IDS_FeatureReadOnlyReferences, diagnostics);
 
                         if (seenThis)
@@ -568,10 +565,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         else if (seenParams)
                         {
                             addERR_ParamsCantBeWithModifier(diagnostics, modifier, SyntaxKind.InKeyword);
-                        }
-                        else if (seenReadonly)
-                        {
-                            addERR_BadParameterModifiers(diagnostics, modifier, SyntaxKind.ReadOnlyKeyword);
                         }
                         else
                         {
@@ -614,6 +607,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         }
                         else
                         {
+                            Debug.Assert(seenRef);
                             seenReadonly = true;
                         }
                         break;
