@@ -631,5 +631,161 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.Semantics
                 //     public static void M(ref readonly scoped scoped) => throw null;
                 Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(4, 30));
         }
+
+        [Fact]
+        public void RefReadonlyParameter_InArgument_RValue()
+        {
+            var source = """
+                class C
+                {
+                    void M1(ref readonly int p) { }
+                    void M2()
+                    {
+                        M1(in 111);
+                    }
+                }
+                """;
+            CreateCompilation(source).VerifyDiagnostics(
+                // (6,15): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                //         M1(in 111);
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "111").WithLocation(6, 15));
+        }
+
+        [Fact]
+        public void RefReadonlyParameter_RefArgument_RValue()
+        {
+            var source = """
+                class C
+                {
+                    void M1(ref readonly int p) { }
+                    void M2()
+                    {
+                        M1(ref 111);
+                    }
+                }
+                """;
+            CreateCompilation(source).VerifyDiagnostics(
+                // (6,16): error CS1510: A ref or out value must be an assignable variable
+                //         M1(ref 111);
+                Diagnostic(ErrorCode.ERR_RefLvalueExpected, "111").WithLocation(6, 16));
+        }
+
+        [Fact]
+        public void RefReadonlyParameter_PlainArgument_RValue()
+        {
+            var source = """
+                class C
+                {
+                    void M1(ref readonly int p) { }
+                    void M2()
+                    {
+                        M1(111);
+                    }
+                }
+                """;
+            CreateCompilation(source).VerifyDiagnostics(
+                // (6,12): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+                //         M1(111);
+                Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "111").WithArguments("1").WithLocation(6, 12));
+        }
+
+        [Fact]
+        public void RefReadonlyParameter_OutArgument_RValue()
+        {
+            var source = """
+                class C
+                {
+                    void M1(ref readonly int p) { }
+                    void M2()
+                    {
+                        M1(out 111);
+                    }
+                }
+                """;
+            CreateCompilation(source).VerifyDiagnostics(
+                // (6,16): error CS1510: A ref or out value must be an assignable variable
+                //         M1(out 111);
+                Diagnostic(ErrorCode.ERR_RefLvalueExpected, "111").WithLocation(6, 16));
+        }
+
+        [Fact]
+        public void RefReadonlyParameter_InArgument_ReadonlyField()
+        {
+            var source = """
+                class C
+                {
+                    private readonly int x;
+                    void M1(ref readonly int p) { }
+                    void M2()
+                    {
+                        M1(in x);
+                    }
+                }
+                """;
+            CreateCompilation(source).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void RefReadonlyParameter_RefArgument_ReadonlyField()
+        {
+            var source = """
+                class C
+                {
+                    private readonly int x;
+                    void M1(ref readonly int p) { }
+                    void M2()
+                    {
+                        M1(ref x);
+                    }
+                }
+                """;
+            CreateCompilation(source).VerifyDiagnostics(
+                // (7,16): error CS0192: A readonly field cannot be used as a ref or out value (except in a constructor)
+                //         M1(ref x);
+                Diagnostic(ErrorCode.ERR_RefReadonly, "x").WithLocation(7, 16));
+        }
+
+        [Fact]
+        public void RefReadonlyParameter_PlainArgument_ReadonlyField()
+        {
+            var source = """
+                class C
+                {
+                    private readonly int x;
+                    void M1(ref readonly int p) { }
+                    void M2()
+                    {
+                        M1(x);
+                    }
+                }
+                """;
+            CreateCompilation(source).VerifyDiagnostics(
+                // (3,26): warning CS0649: Field 'C.x' is never assigned to, and will always have its default value 0
+                //     private readonly int x;
+                Diagnostic(ErrorCode.WRN_UnassignedInternalField, "x").WithArguments("C.x", "0").WithLocation(3, 26),
+                // (7,12): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+                //         M1(x);
+                Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(7, 12));
+        }
+
+        [Fact]
+        public void RefReadonlyParameter_OutArgument_ReadonlyField()
+        {
+            var source = """
+                class C
+                {
+                    private readonly int x;
+                    void M1(ref readonly int p) { }
+                    void M2()
+                    {
+                        M1(out x);
+                    }
+                }
+                """;
+            CreateCompilation(source).VerifyDiagnostics(
+                // (7,16): error CS0192: A readonly field cannot be used as a ref or out value (except in a constructor)
+                //         M1(out x);
+                Diagnostic(ErrorCode.ERR_RefReadonly, "x").WithLocation(7, 16));
+        }
     }
 }
