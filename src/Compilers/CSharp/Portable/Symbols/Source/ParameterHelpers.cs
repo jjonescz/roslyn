@@ -589,8 +589,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         else if (seenRef)
                         {
                             Binder.CheckFeatureAvailability(modifier, MessageID.IDS_FeatureRefReadonlyParameters, diagnostics);
-                            seenReadonly = true;
                         }
+                        seenReadonly = true;
                         break;
 
                     case SyntaxKind.ParamsKeyword when parsingFunctionPointerParams:
