@@ -3228,7 +3228,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var argRefKind = analyzedArguments.RefKind(arg);
                 var parameterRefKind = GetCorrespondingParameter(ref result, parameters, arg).RefKind;
 
-                // Check value kind.
+                // Check value kind. Note that this cannot affect overload resolution, because
+                // - for other than `ref readonly` parameters, this depends solely on callsite modifiers (not resolved members),
+                // - for `ref readonly` parameters with no callsite modifier, this fails only if the argument is not an rvalue
+                //   (i.e., it's a type or a namespace) which could not possibly resolve another member,
+                // - for `ref readonly` parameters with other modifiers, this would fail if the argument is not a variable,
+                //   except it already failed earlier (ref/in callsite modifier on an rvalue is an error).
+                // Hence it's fine to perform the check here (after overload resolution already selected the best member).
                 BindValueKind valueKind = getValueKind(argRefKind: argRefKind, parameterRefKind: parameterRefKind);
                 analyzedArguments.Arguments[arg] = this.CheckValue(analyzedArguments.Argument(arg), valueKind, diagnostics);
 
