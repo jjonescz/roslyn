@@ -991,7 +991,7 @@ public class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact]
-    public void PassingArgumentsToInParameters_RefKind_Ref_02_Ctor()
+    public void RefReadonlyParameter_RefArgument_OverloadResolution_02_Ctor()
     {
         var source = """
             class C
