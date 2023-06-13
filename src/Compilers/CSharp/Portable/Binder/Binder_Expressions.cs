@@ -3248,7 +3248,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             // Argument {0} should be passed with 'ref' or 'in' keyword
                             diagnostics.Add(
                                 ErrorCode.WRN_ArgExpectedRefOrIn,
-                                analyzedArguments.Arguments[arg].Syntax,
+                                analyzedArguments.Argument(arg).Syntax,
                                 arg + 1);
                         }
                         else
@@ -3256,7 +3256,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             // Argument {0} should not be passed with the '{1}' keyword
                             diagnostics.Add(
                                 ErrorCode.WRN_BadArgRef,
-                                analyzedArguments.Arguments[arg].Syntax,
+                                analyzedArguments.Argument(arg).Syntax,
                                 arg + 1,
                                 argRefKind.ToArgumentDisplayString());
                         }
