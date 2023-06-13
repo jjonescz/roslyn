@@ -2192,7 +2192,7 @@ outerDefault:
             static bool isAcceptableRefMismatch(RefKind refKind, bool isInterpolatedStringHandlerConversion)
                 => refKind switch
                 {
-                    RefKind.In => true,
+                    RefKind.In or RefKind.RefReadOnlyParameter => true,
                     RefKind.Ref when isInterpolatedStringHandlerConversion => true,
                     _ => false
                 };

@@ -1056,4 +1056,23 @@ public class RefReadonlyParameterTests : CSharpTestBase
             """;
         CompileAndVerify(source, expectedOutput: "c5").VerifyDiagnostics();
     }
+
+    [Fact]
+    public void RefReadonlyParameter_PlainArgument_OverloadResolution()
+    {
+        var source = """
+            class C
+            {
+                static string M1(ref readonly int i) => "ref readonly" + i;
+                static string M1(int i) => "plain" + i;
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(M1(i));
+                    System.Console.Write(M1(6));
+                }
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "plain5plain6").VerifyDiagnostics();
+    }
 }
