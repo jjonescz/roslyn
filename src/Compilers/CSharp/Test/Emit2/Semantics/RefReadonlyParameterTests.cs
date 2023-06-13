@@ -747,27 +747,97 @@ public class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact]
-    public void RefReadonlyParameter_PlainArgument_Ctor()
+    public void RefReadonlyParameter_Ctor()
     {
         var source = """
             class C
             {
-                private C(ref readonly int p)
-                {
-                    System.Console.WriteLine(p);
-                }
-
+                private C(ref readonly int p) => System.Console.Write(p);
                 static void Main()
                 {
                     int x = 5;
                     new C(x);
+                    new C(ref x);
+                    new C(in x);
                 }
             }
             """;
-        CompileAndVerify(source, expectedOutput: "5").VerifyDiagnostics(
-            // (11,15): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+        CompileAndVerify(source, expectedOutput: "555").VerifyDiagnostics(
+            // (7,15): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
             //         new C(x);
-            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(11, 15));
+            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(7, 15));
+    }
+
+    [Fact]
+    public void RefReadonlyParameter_Ctor_OutArgument()
+    {
+        var source = """
+            class C
+            {
+                private C(ref readonly int p) => throw null!;
+                static void Main()
+                {
+                    int x = 5;
+                    new C(out x);
+                }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (7,19): error CS1615: Argument 1 may not be passed with the 'out' keyword
+            //         new C(out x);
+            Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "out").WithLocation(7, 19));
+    }
+
+    [Fact]
+    public void RefReadonlyParameter_Indexer()
+    {
+        var source = """
+            class C
+            {
+                int this[ref readonly int p]
+                {
+                    get
+                    {
+                        System.Console.Write(p);
+                        return p;
+                    }
+                }
+
+                static void Main()
+                {
+                    var c = new C();
+                    int x = 5;
+                    _ = c[x];
+                    _ = c[ref x];
+                    _ = c[in x];
+                }
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "555").VerifyDiagnostics(
+            // (16,15): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+            //         _ = c[x];
+            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(16, 15));
+    }
+
+    [Fact]
+    public void RefReadonlyParameter_Indexer_OutArgument()
+    {
+        var source = """
+            class C
+            {
+                int this[ref readonly int p] => throw null!;
+                static void Main()
+                {
+                    var c = new C();
+                    int x = 5;
+                    _ = c[out x];
+                }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (8,19): error CS1615: Argument 1 may not be passed with the 'out' keyword
+            //         _ = c[out x];
+            Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "out").WithLocation(8, 19));
     }
 
     [Fact]
@@ -799,7 +869,7 @@ public class RefReadonlyParameterTests : CSharpTestBase
         var source = """
             class C
             {
-                static void M(ref readonly int p) => System.Console.Write(p);
+                static void M(ref readonly int p) => throw null!;
                 static unsafe void Main()
                 {
                     delegate*<ref readonly int, void> f = &M;
