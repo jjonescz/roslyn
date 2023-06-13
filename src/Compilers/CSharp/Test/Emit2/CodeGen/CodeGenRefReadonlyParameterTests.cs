@@ -78,7 +78,7 @@ public class CodeGenRefReadonlyParameterTests : CSharpTestBase
 
             namespace {{RequiresLocationAttributeNamespace}}
             {
-                class {{RequiresLocationAttributeName}}
+                class {{RequiresLocationAttributeName}} : System.Attribute
                 {
                 }
             }
@@ -256,7 +256,8 @@ public class CodeGenRefReadonlyParameterTests : CSharpTestBase
             record C(ref readonly int p);
             """;
         var verifier = CompileAndVerify(new[] { source, IsExternalInitTypeDefinition }, targetFramework: TargetFramework.NetStandard20,
-            sourceSymbolValidator: verify, symbolValidator: verify);
+            sourceSymbolValidator: verify, symbolValidator: verify,
+            verify: Verification.FailsPEVerify);
         verifier.VerifyDiagnostics();
         verifier.VerifyMethodIL("C", ".ctor", """
             .method public hidebysig specialname rtspecialname 
@@ -298,7 +299,8 @@ public class CodeGenRefReadonlyParameterTests : CSharpTestBase
             record struct C(ref readonly int p);
             """;
         var verifier = CompileAndVerify(new[] { source, IsExternalInitTypeDefinition }, targetFramework: TargetFramework.NetStandard20,
-            sourceSymbolValidator: verify, symbolValidator: verify);
+            sourceSymbolValidator: verify, symbolValidator: verify,
+            verify: Verification.FailsPEVerify);
         verifier.VerifyDiagnostics();
         verifier.VerifyMethodIL("C", ".ctor", """
             .method public hidebysig specialname rtspecialname 
@@ -494,7 +496,7 @@ public class CodeGenRefReadonlyParameterTests : CSharpTestBase
             }
             """;
         var verifier = CompileAndVerify(source, options: TestOptions.UnsafeReleaseDll, targetFramework: TargetFramework.NetStandard20,
-            sourceSymbolValidator: verify); // PROTOTYPE:, symbolValidator: verify
+            sourceSymbolValidator: verify, symbolValidator: verifyMetadata);
         verifier.VerifyDiagnostics();
         verifier.VerifyMethodIL("C", "M", """
             .method public hidebysig 
@@ -514,7 +516,15 @@ public class CodeGenRefReadonlyParameterTests : CSharpTestBase
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
             var ptr = (FunctionPointerTypeSymbol)p.Type;
             Assert.Equal(RefKind.RefReadOnlyParameter, ptr.Signature.Parameters.Single().RefKind);
-            VerifyRequiresLocationAttributeSynthesized(m);
+            Assert.Null(m.GlobalNamespace.GetMember<NamedTypeSymbol>(RequiresLocationAttributeQualifiedName));
+        }
+
+        static void verifyMetadata(ModuleSymbol m)
+        {
+            var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
+            var ptr = (FunctionPointerTypeSymbol)p.Type;
+            Assert.Equal(RefKind.In, ptr.Signature.Parameters.Single().RefKind);
+            Assert.Null(m.GlobalNamespace.GetMember<NamedTypeSymbol>(RequiresLocationAttributeQualifiedName));
         }
     }
 
