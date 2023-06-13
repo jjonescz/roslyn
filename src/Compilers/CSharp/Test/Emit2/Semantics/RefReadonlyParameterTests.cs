@@ -1127,11 +1127,10 @@ public class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        // PROTOTYPE: Report different warning for rvalues.
         CreateCompilation(source).VerifyDiagnostics(
-            // (6,12): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+            // (6,12): warning CS9504: Argument 1 should be a variable because it is passed to a 'ref readonly' parameter
             //         M1(111);
-            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "111").WithArguments("1").WithLocation(6, 12));
+            Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "111").WithArguments("1").WithLocation(6, 12));
     }
 
     [Fact]

@@ -3225,6 +3225,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     break;
                 }
 
+                var argument = analyzedArguments.Argument(arg);
                 var argRefKind = analyzedArguments.RefKind(arg);
                 var parameterRefKind = GetCorrespondingParameter(ref result, parameters, arg).RefKind;
 
@@ -3236,7 +3237,18 @@ namespace Microsoft.CodeAnalysis.CSharp
                 //   except it already failed earlier (ref/in callsite modifier on an rvalue is an error).
                 // Hence it's fine to perform the check here (after overload resolution already selected the best member).
                 BindValueKind valueKind = getValueKind(argRefKind: argRefKind, parameterRefKind: parameterRefKind);
-                analyzedArguments.Arguments[arg] = this.CheckValue(analyzedArguments.Argument(arg), valueKind, diagnostics);
+                analyzedArguments.Arguments[arg] = this.CheckValue(argument, valueKind, diagnostics);
+
+                // Warn for rvalues passed to `ref readonly` parameters without callsite modifiers.
+                if (parameterRefKind == RefKind.RefReadOnlyParameter && argRefKind == RefKind.None &&
+                    !this.CheckValueKind(argument.Syntax, argument, BindValueKind.RefersToLocation, checkingReceiver: false, BindingDiagnosticBag.Discarded))
+                {
+                    // Argument {0} should be a variable because it is passed to a 'ref readonly' parameter
+                    diagnostics.Add(ErrorCode.WRN_RefReadonlyNotVariable, argument.Syntax, arg + 1);
+
+                    // Don't emit other warnings.
+                    continue;
+                }
 
                 // Warn for `ref`/`in` or None/`ref readonly` mismatch.
                 if (argRefKind is RefKind.Ref or RefKind.None)
@@ -3249,7 +3261,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             // Argument {0} should be passed with 'ref' or 'in' keyword
                             diagnostics.Add(
                                 ErrorCode.WRN_ArgExpectedRefOrIn,
-                                analyzedArguments.Argument(arg).Syntax,
+                                argument.Syntax,
                                 arg + 1);
                         }
                         else
@@ -3257,7 +3269,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             // Argument {0} should not be passed with the '{1}' keyword
                             diagnostics.Add(
                                 ErrorCode.WRN_BadArgRef,
-                                analyzedArguments.Argument(arg).Syntax,
+                                argument.Syntax,
                                 arg + 1,
                                 argRefKind.ToArgumentDisplayString());
                         }
