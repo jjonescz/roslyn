@@ -648,9 +648,9 @@ public class RefReadonlyParameterTests : CSharpTestBase
             }
             """;
         CreateCompilation(source).VerifyDiagnostics(
-            // (7,15): error CS1620: Argument 1 must be passed with the 'ref readonly' keyword
+            // (7,15): error CS1615: Argument 1 may not be passed with the 'out' keyword
             //         M(out x);
-            Diagnostic(ErrorCode.ERR_BadArgRef, "x").WithArguments("1", "ref readonly").WithLocation(7, 15));
+            Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "out").WithLocation(7, 15));
     }
 
     [Fact]
@@ -809,9 +809,9 @@ public class RefReadonlyParameterTests : CSharpTestBase
             }
             """;
         CreateCompilation(source, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(
-            // (8,15): error CS1620: Argument 1 must be passed with the 'ref readonly' keyword
+            // (8,15): error CS1615: Argument 1 may not be passed with the 'out' keyword
             //         f(out x);
-            Diagnostic(ErrorCode.ERR_BadArgRef, "x").WithArguments("1", "ref readonly").WithLocation(8, 15));
+            Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "out").WithLocation(8, 15));
     }
 
     [Fact]
