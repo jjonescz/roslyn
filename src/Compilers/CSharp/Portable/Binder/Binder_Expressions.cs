@@ -3226,22 +3226,17 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
 
                 var argRefKind = analyzedArguments.RefKind(arg);
+                var parameterRefKind = GetCorrespondingParameter(ref result, parameters, arg).RefKind;
 
                 // Check value kind.
-                BindValueKind valueKind =
-                    argRefKind == RefKind.None ?
-                            BindValueKind.RValue :
-                            argRefKind == RefKind.In ?
-                                BindValueKind.ReadonlyRef :
-                                BindValueKind.RefOrOut;
+                BindValueKind valueKind = getValueKind(argRefKind: argRefKind, parameterRefKind: parameterRefKind);
                 analyzedArguments.Arguments[arg] = this.CheckValue(analyzedArguments.Argument(arg), valueKind, diagnostics);
 
                 // Warn for `ref`/`in` or None/`ref readonly` mismatch.
                 if (argRefKind is RefKind.Ref or RefKind.None)
                 {
                     var warnParameterKind = argRefKind == RefKind.Ref ? RefKind.In : RefKind.RefReadOnlyParameter;
-                    var parameter = GetCorrespondingParameter(ref result, parameters, arg);
-                    if (parameter.RefKind == warnParameterKind)
+                    if (parameterRefKind == warnParameterKind)
                     {
                         if (argRefKind == RefKind.None)
                         {
@@ -3262,6 +3257,27 @@ namespace Microsoft.CodeAnalysis.CSharp
                         }
                     }
                 }
+            }
+
+            static BindValueKind getValueKind(RefKind argRefKind, RefKind parameterRefKind)
+            {
+                if (argRefKind == RefKind.None)
+                {
+                    return BindValueKind.RValue;
+                }
+
+                if (parameterRefKind == RefKind.RefReadOnlyParameter)
+                {
+                    return BindValueKind.ReadonlyRef;
+                }
+
+                if (argRefKind == RefKind.In)
+                {
+                    return BindValueKind.ReadonlyRef;
+                }
+
+                Debug.Assert(argRefKind is RefKind.Ref or RefKind.Out);
+                return BindValueKind.RefOrOut;
             }
         }
 
