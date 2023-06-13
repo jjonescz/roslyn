@@ -417,12 +417,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             return GenerateConversionForAssignment(delegateType, expr, diagnostics);
         }
 
-        internal BoundExpression BindValueAllowArgList(ExpressionSyntax node, BindingDiagnosticBag diagnostics, BindValueKind valueKind)
-        {
-            var result = this.BindExpressionAllowArgList(node, diagnostics: diagnostics);
-            return CheckValue(result, valueKind, diagnostics);
-        }
-
         internal BoundFieldEqualsValue BindFieldInitializer(
             FieldSymbol field,
             EqualsValueClauseSyntax initializerOpt,
@@ -2894,7 +2888,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // For compatibility we implement the same bug except in strict mode.
             // Note: Some others should still be rejected when ref/out present. See RefMustBeObeyed.
             RefKind refKind = origRefKind == RefKind.None || RefMustBeObeyed(isDelegateCreation, argumentSyntax) ? origRefKind : RefKind.None;
-            BoundExpression boundArgument = BindArgumentValue(diagnostics, argumentSyntax, allowArglist, refKind);
+            BoundExpression boundArgument = BindArgumentValue(diagnostics, argumentSyntax, allowArglist);
 
             BindArgumentAndName(
                 result,
@@ -2925,7 +2919,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
-        private BoundExpression BindArgumentValue(BindingDiagnosticBag diagnostics, ArgumentSyntax argumentSyntax, bool allowArglist, RefKind refKind)
+        private BoundExpression BindArgumentValue(BindingDiagnosticBag diagnostics, ArgumentSyntax argumentSyntax, bool allowArglist)
         {
             if (argumentSyntax.RefKindKeyword.IsKind(SyntaxKind.InKeyword))
                 MessageID.IDS_FeatureReadOnlyReferences.CheckFeatureAvailability(diagnostics, argumentSyntax.RefKindKeyword);
@@ -2942,7 +2936,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            return BindArgumentExpression(diagnostics, argumentSyntax.Expression, refKind, allowArglist);
+            return BindArgumentExpression(diagnostics, argumentSyntax.Expression, allowArglist);
         }
 
         private BoundExpression BindOutDeclarationArgument(DeclarationExpressionSyntax declarationExpression, BindingDiagnosticBag diagnostics)
@@ -3188,31 +3182,27 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
         /// <summary>
-        /// Bind argument and verify argument matches rvalue or out param requirements.
+        /// Binds argument.
         /// </summary>
-        private BoundExpression BindArgumentExpression(BindingDiagnosticBag diagnostics, ExpressionSyntax argumentExpression, RefKind refKind, bool allowArglist)
+        private BoundExpression BindArgumentExpression(BindingDiagnosticBag diagnostics, ExpressionSyntax argumentExpression, bool allowArglist)
         {
-            BindValueKind valueKind =
-                refKind == RefKind.None ?
-                        BindValueKind.RValue :
-                        refKind == RefKind.In ?
-                            BindValueKind.ReadonlyRef :
-                            BindValueKind.RefOrOut;
-
             BoundExpression argument;
             if (allowArglist)
             {
-                argument = this.BindValueAllowArgList(argumentExpression, diagnostics, valueKind);
+                argument = this.BindExpressionAllowArgList(argumentExpression, diagnostics);
             }
             else
             {
-                argument = this.BindValue(argumentExpression, diagnostics, valueKind);
+                argument = this.BindExpression(argumentExpression, diagnostics, invoked: false, indexed: false);
             }
 
             return argument;
         }
 
 #nullable enable
+        /// <summary>
+        /// Verifies ref/in/out modifiers and value kind requirements.
+        /// </summary>
         private void CheckRefArguments<TMember>(
             MemberResolutionResult<TMember> methodResult,
             AnalyzedArguments analyzedArguments,
@@ -3235,8 +3225,18 @@ namespace Microsoft.CodeAnalysis.CSharp
                     break;
                 }
 
-                // Warn for `ref`/`in` or None/`ref readonly` mismatch.
                 var argRefKind = analyzedArguments.RefKind(arg);
+
+                // Check value kind.
+                BindValueKind valueKind =
+                    argRefKind == RefKind.None ?
+                            BindValueKind.RValue :
+                            argRefKind == RefKind.In ?
+                                BindValueKind.ReadonlyRef :
+                                BindValueKind.RefOrOut;
+                analyzedArguments.Arguments[arg] = this.CheckValue(analyzedArguments.Argument(arg), valueKind, diagnostics);
+
+                // Warn for `ref`/`in` or None/`ref readonly` mismatch.
                 if (argRefKind is RefKind.Ref or RefKind.None)
                 {
                     var warnParameterKind = argRefKind == RefKind.Ref ? RefKind.In : RefKind.RefReadOnlyParameter;
