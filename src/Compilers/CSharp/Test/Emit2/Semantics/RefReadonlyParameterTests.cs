@@ -1058,9 +1058,9 @@ public class RefReadonlyParameterTests : CSharpTestBase
             }
             """;
         CreateCompilation(source).VerifyDiagnostics(
-            // (6,16): error CS1510: A ref or out value must be an assignable variable
+            // (6,16): error CS1615: Argument 1 may not be passed with the 'out' keyword
             //         M1(out 111);
-            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "111").WithLocation(6, 16));
+            Diagnostic(ErrorCode.ERR_BadArgExtraRef, "111").WithArguments("1", "out").WithLocation(6, 16));
     }
 
     [Fact]
@@ -1138,8 +1138,8 @@ public class RefReadonlyParameterTests : CSharpTestBase
             }
             """;
         CreateCompilation(source).VerifyDiagnostics(
-            // (7,16): error CS0192: A readonly field cannot be used as a ref or out value (except in a constructor)
+            // (7,16): error CS1615: Argument 1 may not be passed with the 'out' keyword
             //         M1(out x);
-            Diagnostic(ErrorCode.ERR_RefReadonly, "x").WithLocation(7, 16));
+            Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "out").WithLocation(7, 16));
     }
 }
