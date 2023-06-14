@@ -2584,4 +2584,20 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             }
             """);
     }
+
+    [Fact]
+    public void Overridden()
+    {
+        var source = """
+            class B
+            {
+                protected virtual void M(in int x) { }
+            }
+            class C : B
+            {
+                protected override void M(ref readonly int x) { }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics();
+    }
 }
