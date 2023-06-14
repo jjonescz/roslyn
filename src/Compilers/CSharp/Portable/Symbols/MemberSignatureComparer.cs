@@ -151,7 +151,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             considerTypeConstraints: false,
             considerCallingConvention: false, //ignore static-ness
             considerRefKindDifferences: true,
-            typeComparison: TypeCompareKind.AllIgnoreOptions);
+            typeComparison: TypeCompareKind.AllIgnoreOptions)
+        {
+            RelaxRefReadonlyParameters = true
+        };
 
         /// <summary>
         /// This instance checks whether two signatures match including tuples names, in both return type and parameters.
@@ -204,7 +207,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             considerTypeConstraints: false,
             considerCallingConvention: false, //ignore static-ness
             considerRefKindDifferences: true,
-            typeComparison: TypeCompareKind.IgnoreDynamicAndTupleNames | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes | TypeCompareKind.IgnoreNativeIntegers);
+            typeComparison: TypeCompareKind.IgnoreDynamicAndTupleNames | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes | TypeCompareKind.IgnoreNativeIntegers)
+        {
+            RelaxRefReadonlyParameters = true
+        };
 
         /// <summary>
         /// If this returns false, then the real override comparer (whichever one is appropriate for the scenario)
@@ -217,7 +223,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             considerTypeConstraints: false,
             considerCallingConvention: false, //ignore static-ness
             considerRefKindDifferences: false,
-            typeComparison: TypeCompareKind.IgnoreCustomModifiersAndArraySizesAndLowerBounds | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes | TypeCompareKind.IgnoreDynamicAndTupleNames);
+            typeComparison: TypeCompareKind.IgnoreCustomModifiersAndArraySizesAndLowerBounds | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes | TypeCompareKind.IgnoreDynamicAndTupleNames)
+        {
+            RelaxRefReadonlyParameters = true
+        };
 
         /// <summary>
         /// This instance is intended to reflect the definition of signature equality used by the runtime 
@@ -371,6 +380,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
+        // True to consider `ref readonly` and `in` parameters the same, false to be strict.
+        private bool RelaxRefReadonlyParameters { get; init; }
+
         #region IEqualityComparer<Symbol> Members
 
         public bool Equals(Symbol member1, Symbol member2)
@@ -420,7 +432,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
 
             if (member1.GetParameterCount() > 0 && !HaveSameParameterTypes(member1.GetParameters(), typeMap1, member2.GetParameters(), typeMap2,
-                                                                           _considerRefKindDifferences, _typeComparison))
+                                                                           _considerRefKindDifferences, RelaxRefReadonlyParameters, _typeComparison))
             {
                 return false;
             }
@@ -710,7 +722,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         }
 
         private static bool HaveSameParameterTypes(ImmutableArray<ParameterSymbol> params1, TypeMap typeMap1, ImmutableArray<ParameterSymbol> params2, TypeMap typeMap2,
-                                                   bool considerRefKindDifferences, TypeCompareKind typeComparison)
+                                                   bool considerRefKindDifferences, bool relaxRefReadonlyParameters, TypeCompareKind typeComparison)
         {
             Debug.Assert(params1.Length == params2.Length);
 
@@ -739,16 +751,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var refKind2 = param2.RefKind;
 
                 // Metadata signatures don't distinguish ref/out, but C# does - even when comparing metadata method signatures.
+                // PROTOTYPE: Implement rules that come with ref readonly feature.
                 if (considerRefKindDifferences)
                 {
-                    if (refKind1 != refKind2)
+                    if (!relaxRefReadonlyParameters && refKind1 != refKind2)
                     {
                         return false;
                     }
                 }
                 else
                 {
-                    if ((refKind1 == RefKind.None) != (refKind2 == RefKind.None))
+                    if (!relaxRefReadonlyParameters && (refKind1 == RefKind.None) != (refKind2 == RefKind.None))
                     {
                         return false;
                     }
