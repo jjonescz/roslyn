@@ -2586,7 +2586,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact]
-    public void Overridden()
+    public void Overridden_In_RefReadonly()
     {
         var source = """
             class B
@@ -2596,6 +2596,118 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             class C : B
             {
                 protected override void M(ref readonly int x) { }
+            }
+            """;
+        var verifier = CompileAndVerify(source).VerifyDiagnostics();
+        verifier.VerifyMethodIL("B", "M", """
+            .method family hidebysig newslot virtual 
+            	instance void M (
+            		[in] int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) x
+            	) cil managed 
+            {
+            	.param [1]
+            		.custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = (
+            			01 00 00 00
+            		)
+            	// Method begins at RVA 0x2067
+            	// Code size 1 (0x1)
+            	.maxstack 8
+            	IL_0000: ret
+            } // end of method B::M
+            """);
+        verifier.VerifyMethodIL("C", "M", """
+            .method family hidebysig virtual 
+            	instance void M (
+            		[in] int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) x
+            	) cil managed 
+            {
+            	.param [1]
+            		.custom instance void System.Runtime.CompilerServices.RequiresLocationAttribute::.ctor() = (
+            			01 00 00 00
+            		)
+            	// Method begins at RVA 0x2067
+            	// Code size 1 (0x1)
+            	.maxstack 8
+            	IL_0000: ret
+            } // end of method C::M
+            """);
+    }
+
+    [Fact]
+    public void Overridden_RefReadonly_In()
+    {
+        var source = """
+            class B
+            {
+                protected virtual void M(ref readonly int x) { }
+            }
+            class C : B
+            {
+                protected override void M(in int x) { }
+            }
+            """;
+        var verifier = CompileAndVerify(source).VerifyDiagnostics();
+        verifier.VerifyMethodIL("B", "M", """
+            .method family hidebysig newslot virtual 
+            	instance void M (
+            		[in] int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) x
+            	) cil managed 
+            {
+            	.param [1]
+            		.custom instance void System.Runtime.CompilerServices.RequiresLocationAttribute::.ctor() = (
+            			01 00 00 00
+            		)
+            	// Method begins at RVA 0x2067
+            	// Code size 1 (0x1)
+            	.maxstack 8
+            	IL_0000: ret
+            } // end of method B::M
+            """);
+        verifier.VerifyMethodIL("C", "M", """
+            .method family hidebysig virtual 
+            	instance void M (
+            		[in] int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) x
+            	) cil managed 
+            {
+            	.param [1]
+            		.custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = (
+            			01 00 00 00
+            		)
+            	// Method begins at RVA 0x2067
+            	// Code size 1 (0x1)
+            	.maxstack 8
+            	IL_0000: ret
+            } // end of method C::M
+            """);
+    }
+
+    [Fact]
+    public void Overridden_Ref_RefReadonly()
+    {
+        var source = """
+            class B
+            {
+                protected virtual void M(ref int x) { }
+            }
+            class C : B
+            {
+                protected override void M(ref readonly int x) { }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Overridden_RefReadonly_Ref()
+    {
+        var source = """
+            class B
+            {
+                protected virtual void M(ref readonly int x) { }
+            }
+            class C : B
+            {
+                protected override void M(ref int x) { }
             }
             """;
         CreateCompilation(source).VerifyDiagnostics();
