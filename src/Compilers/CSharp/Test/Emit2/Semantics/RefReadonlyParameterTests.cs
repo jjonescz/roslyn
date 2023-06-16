@@ -2940,4 +2940,21 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             //     void I.M2(ref int x) => throw null;
             Diagnostic(ErrorCode.ERR_InterfaceMemberNotFound, "M2").WithArguments($"C.M2({modifier} int)").WithLocation(9, 12));
     }
+
+    [Theory, CombinatorialData]
+    public void DuplicateMembers([CombinatorialValues("in", "ref", "out")] string modifier)
+    {
+        var source = $$"""
+            class C
+            {
+                void M(ref readonly int x) { }
+                void M({{modifier}} int x) => throw null;
+                void M(int x) { }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (4,10): error CS0663: 'C' cannot define an overloaded method that differs only on parameter modifiers 'in' and 'ref readonly'
+            //     void M(in int x) => throw null;
+            Diagnostic(ErrorCode.ERR_OverloadRefKind, "M").WithArguments("C", "method", modifier, "ref readonly").WithLocation(4, 10));
+    }
 }
