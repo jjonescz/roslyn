@@ -3237,7 +3237,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                 //   except it already failed earlier (ref/in callsite modifier on an rvalue is an error).
                 // Hence it's fine to perform the check here (after overload resolution already selected the best member).
                 BindValueKind valueKind = getValueKind(argRefKind: argRefKind, parameterRefKind: parameterRefKind);
-                analyzedArguments.Arguments[arg] = this.CheckValue(argument, valueKind, diagnostics);
+                analyzedArguments.Arguments[arg] = argument = this.CheckValue(argument, valueKind, diagnostics);
+
+                if (argument.HasAnyErrors)
+                {
+                    // Don't emit other warnings.
+                    continue;
+                }
 
                 // Warn for rvalues passed to `ref readonly` parameters without callsite modifiers.
                 if (parameterRefKind == RefKind.RefReadOnlyParameter && argRefKind == RefKind.None &&
