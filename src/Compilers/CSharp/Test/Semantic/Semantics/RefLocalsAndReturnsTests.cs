@@ -1447,7 +1447,7 @@ class C
                 // (9,19): error CS8329: Cannot use variable 'y' as a ref or out value because it is a readonly variable
                 //             L(ref y, x);
                 Diagnostic(ErrorCode.ERR_RefReadonlyNotField, "y").WithArguments("variable", "y").WithLocation(9, 19),
-                // (10,26): warning CS9501: Argument 2 should not be passed with the 'ref' keyword
+                // (10,26): warning CS9502: Argument 2 should not be passed with the 'ref' keyword
                 //             L(ref x, ref x);
                 Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("2", "ref").WithLocation(10, 26),
                 // (14,26): error CS1510: A ref or out value must be an assignable variable
