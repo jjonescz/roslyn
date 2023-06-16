@@ -135,7 +135,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             considerTypeConstraints: false,
             considerCallingConvention: false,
             considerRefKindDifferences: true,
-            typeComparison: TypeCompareKind.AllIgnoreOptions);
+            typeComparison: TypeCompareKind.AllIgnoreOptions)
+        {
+            RelaxRefReadonlyParameters = true
+        };
 
         /// <summary>
         /// This instance is used to determine if a partial method implementation matches the definition,
@@ -148,7 +151,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             considerTypeConstraints: false,
             considerCallingConvention: false,
             considerRefKindDifferences: true,
-            typeComparison: TypeCompareKind.ObliviousNullableModifierMatchesAny);
+            typeComparison: TypeCompareKind.ObliviousNullableModifierMatchesAny)
+        {
+            RelaxRefReadonlyParameters = true
+        };
 
         /// <summary>
         /// This instance is used to check whether one member overrides another, according to the C# definition.

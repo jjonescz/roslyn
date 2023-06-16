@@ -2957,4 +2957,86 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             //     void M(in int x) => throw null;
             Diagnostic(ErrorCode.ERR_OverloadRefKind, "M").WithArguments("C", "method", modifier, "ref readonly").WithLocation(4, 10));
     }
+
+    [Fact]
+    public void PartialMembers_In()
+    {
+        var source = """
+            partial class C
+            {
+                public partial void M(ref readonly int x);
+            }
+            partial class C
+            {
+                public partial void M(in int x) => throw null;
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void PartialMembers_In_DifferentReturnType()
+    {
+        var source = """
+            partial class C
+            {
+                public partial string M(ref readonly int x);
+            }
+            partial class C
+            {
+                public partial string? M(in int x) => throw null;
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (7,26): warning CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+            //     public partial string? M(in int x) => throw null;
+            Diagnostic(ErrorCode.WRN_MissingNonNullTypesContextForAnnotation, "?").WithLocation(7, 26));
+    }
+
+    [Theory, CombinatorialData]
+    public void PartialMembers_NotIn([CombinatorialValues("ref", "out")] string modifier)
+    {
+        var source = $$"""
+            partial class C
+            {
+                public partial void M(ref readonly int x);
+            }
+            partial class C
+            {
+                public partial void M({{modifier}} int x) => throw null;
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (3,25): error CS8795: Partial method 'C.M(ref readonly int)' must have an implementation part because it has accessibility modifiers.
+            //     public partial void M(ref readonly int x);
+            Diagnostic(ErrorCode.ERR_PartialMethodWithAccessibilityModsMustHaveImplementation, "M").WithArguments("C.M(ref readonly int)").WithLocation(3, 25),
+            // (7,25): error CS0759: No defining declaration found for implementing declaration of partial method 'C.M(ref int)'
+            //     public partial void M(ref int x) => throw null;
+            Diagnostic(ErrorCode.ERR_PartialMethodMustHaveLatent, "M").WithArguments($"C.M({modifier} int)").WithLocation(7, 25));
+    }
+
+    [Theory, CombinatorialData]
+    public void PartialMembers_NotIn_DifferentReturnType([CombinatorialValues("ref", "out")] string modifier)
+    {
+        var source = $$"""
+            partial class C
+            {
+                public partial string M(ref readonly int x);
+            }
+            partial class C
+            {
+                public partial string? M({{modifier}} int x) => throw null;
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (3,27): error CS8795: Partial method 'C.M(ref readonly int)' must have an implementation part because it has accessibility modifiers.
+            //     public partial string M(ref readonly int x);
+            Diagnostic(ErrorCode.ERR_PartialMethodWithAccessibilityModsMustHaveImplementation, "M").WithArguments("C.M(ref readonly int)").WithLocation(3, 27),
+            // (7,26): warning CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+            //     public partial string? M(ref int x) => throw null;
+            Diagnostic(ErrorCode.WRN_MissingNonNullTypesContextForAnnotation, "?").WithLocation(7, 26),
+            // (7,28): error CS0759: No defining declaration found for implementing declaration of partial method 'C.M(ref int)'
+            //     public partial string? M(ref int x) => throw null;
+            Diagnostic(ErrorCode.ERR_PartialMethodMustHaveLatent, "M").WithArguments($"C.M({modifier} int)").WithLocation(7, 28));
+    }
 }
