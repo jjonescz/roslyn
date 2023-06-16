@@ -2718,4 +2718,136 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             //     protected override void M(ref int x) { }
             Diagnostic(ErrorCode.ERR_OverrideNotExpected, "M").WithArguments($"C.M({modifier} int)").WithLocation(7, 29));
     }
+
+    [Fact]
+    public void Hiding_In_RefReadonly()
+    {
+        var source = """
+            class B
+            {
+                public void M(in int x) => System.Console.Write("B" + x);
+            }
+            class C : B
+            {
+                public void M(ref readonly int x) => System.Console.Write("C" + x);
+                static void Main()
+                {
+                    var x = 111;
+                    new C().M(in x);
+                }
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "C111").VerifyDiagnostics(
+            // (7,17): warning CS0108: 'C.M(ref readonly int)' hides inherited member 'B.M(in int)'. Use the new keyword if hiding was intended.
+            //     public void M(ref readonly int x) { }
+            Diagnostic(ErrorCode.WRN_NewRequired, "M").WithArguments("C.M(ref readonly int)", "B.M(in int)").WithLocation(7, 17));
+    }
+
+    [Fact]
+    public void Hiding_In_RefReadonly_New()
+    {
+        var source = """
+            class B
+            {
+                public void M(in int x) => System.Console.Write("B" + x);
+            }
+            class C : B
+            {
+                public new void M(ref readonly int x) => System.Console.Write("C" + x);
+                static void Main()
+                {
+                    var x = 111;
+                    new C().M(in x);
+                }
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "C111").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Hiding_RefReadonly_In()
+    {
+        var source = """
+            class B
+            {
+                public void M(ref readonly int x) => System.Console.Write("B" + x);
+            }
+            class C : B
+            {
+                public void M(in int x) => System.Console.Write("C" + x);
+                static void Main()
+                {
+                    var x = 111;
+                    new C().M(in x);
+                }
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "C111").VerifyDiagnostics(
+            // (7,17): warning CS0108: 'C.M(in int)' hides inherited member 'B.M(ref readonly int)'. Use the new keyword if hiding was intended.
+            //     public void M(in int x) { }
+            Diagnostic(ErrorCode.WRN_NewRequired, "M").WithArguments("C.M(in int)", "B.M(ref readonly int)").WithLocation(7, 17));
+    }
+
+    [Fact]
+    public void Hiding_RefReadonly_In_New()
+    {
+        var source = """
+            class B
+            {
+                public void M(ref readonly int x) => System.Console.Write("B" + x);
+            }
+            class C : B
+            {
+                public new void M(in int x) => System.Console.Write("C" + x);
+                static void Main()
+                {
+                    var x = 111;
+                    new C().M(in x);
+                }
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "C111").VerifyDiagnostics();
+    }
+
+    [Theory, CombinatorialData]
+    public void Hiding_RefReadonly_NotIn([CombinatorialValues("ref", "out")] string modifier)
+    {
+        var source = $$"""
+            class B
+            {
+                public void M1({{modifier}} int x) => throw null!;
+                public void M2(ref readonly int x) { }
+            }
+            class C : B
+            {
+                public void M1(ref readonly int x) { }
+                public void M2({{modifier}} int x) => throw null!;
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics();
+    }
+
+    [Theory, CombinatorialData]
+    public void Hiding_RefReadonly_NotIn_New([CombinatorialValues("ref", "out")] string modifier)
+    {
+        var source = $$"""
+            class B
+            {
+                public void M1({{modifier}} int x) => throw null!;
+                public void M2(ref readonly int x) { }
+            }
+            class C : B
+            {
+                public new void M1(ref readonly int x) { }
+                public new void M2({{modifier}} int x) => throw null!;
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (8,21): warning CS0109: The member 'C.M1(ref readonly int)' does not hide an accessible member. The new keyword is not required.
+            //     public new void M1(ref readonly int x) { }
+            Diagnostic(ErrorCode.WRN_NewNotRequired, "M1").WithArguments("C.M1(ref readonly int)").WithLocation(8, 21),
+            // (9,21): warning CS0109: The member 'C.M2(ref int)' does not hide an accessible member. The new keyword is not required.
+            //     public new void M2(ref int x) => throw null!;
+            Diagnostic(ErrorCode.WRN_NewNotRequired, "M2").WithArguments($"C.M2({modifier} int)").WithLocation(9, 21));
+    }
 }
