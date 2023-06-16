@@ -2681,35 +2681,41 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             """);
     }
 
-    [Fact]
-    public void Overridden_Ref_RefReadonly()
+    [Theory, CombinatorialData]
+    public void Overridden_NotIn_RefReadonly([CombinatorialValues("ref", "out")] string modifier)
     {
-        var source = """
+        var source = $$"""
             class B
             {
-                protected virtual void M(ref int x) { }
+                protected virtual void M({{modifier}} int x) => throw null!;
             }
             class C : B
             {
                 protected override void M(ref readonly int x) { }
             }
             """;
-        CreateCompilation(source).VerifyDiagnostics();
+        CreateCompilation(source).VerifyDiagnostics(
+            // (7,29): error CS0115: 'C.M(ref readonly int)': no suitable method found to override
+            //     protected override void M(ref readonly int x) { }
+            Diagnostic(ErrorCode.ERR_OverrideNotExpected, "M").WithArguments("C.M(ref readonly int)").WithLocation(7, 29));
     }
 
-    [Fact]
-    public void Overridden_RefReadonly_Ref()
+    [Theory, CombinatorialData]
+    public void Overridden_RefReadonly_NotIn([CombinatorialValues("ref", "out")] string modifier)
     {
-        var source = """
+        var source = $$"""
             class B
             {
                 protected virtual void M(ref readonly int x) { }
             }
             class C : B
             {
-                protected override void M(ref int x) { }
+                protected override void M({{modifier}} int x) => throw null!;
             }
             """;
-        CreateCompilation(source).VerifyDiagnostics();
+        CreateCompilation(source).VerifyDiagnostics(
+            // (7,29): error CS0115: 'C.M(ref int)': no suitable method found to override
+            //     protected override void M(ref int x) { }
+            Diagnostic(ErrorCode.ERR_OverrideNotExpected, "M").WithArguments($"C.M({modifier} int)").WithLocation(7, 29));
     }
 }

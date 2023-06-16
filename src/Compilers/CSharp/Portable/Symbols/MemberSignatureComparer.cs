@@ -380,7 +380,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        // True to consider `ref readonly` and `in` parameters the same, false to be strict.
+        // True to consider `ref readonly` and `in` parameters the same.
         private bool RelaxRefReadonlyParameters { get; init; }
 
         #region IEqualityComparer<Symbol> Members
@@ -751,17 +751,19 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var refKind2 = param2.RefKind;
 
                 // Metadata signatures don't distinguish ref/out, but C# does - even when comparing metadata method signatures.
-                // PROTOTYPE: Implement rules that come with ref readonly feature.
+                var refKindMismatchAllowed = relaxRefReadonlyParameters &&
+                    ((refKind1 == RefKind.RefReadOnlyParameter && refKind2 == RefKind.In) ||
+                    (refKind1 == RefKind.In && refKind2 == RefKind.RefReadOnlyParameter));
                 if (considerRefKindDifferences)
                 {
-                    if (!relaxRefReadonlyParameters && refKind1 != refKind2)
+                    if (refKind1 != refKind2 && !refKindMismatchAllowed)
                     {
                         return false;
                     }
                 }
                 else
                 {
-                    if (!relaxRefReadonlyParameters && (refKind1 == RefKind.None) != (refKind2 == RefKind.None))
+                    if ((refKind1 == RefKind.None) != (refKind2 == RefKind.None) && !refKindMismatchAllowed)
                     {
                         return false;
                     }
