@@ -1707,5 +1707,182 @@ class C { }
         Assert.Equal(IncrementalStepRunReason.New, runResult.TrackedSteps["result_ForAttributeWithMetadataName"].Single().Outputs.Single().Reason);
     }
 
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/68392")]
+    public void RerunWithAddedAttribute_MultipleFiles()
+    {
+        var source1 = @"
+//[X]
+class C1 { }
+
+class XAttribute : System.Attribute
+{
+}
+";
+        var source2 = @"
+[X]
+class C2 { }
+";
+        var source1Replacement = @"
+[X]
+class C1 { }
+
+class XAttribute : System.Attribute
+{
+}
+";
+        var parseOptions = TestOptions.RegularPreview;
+        Compilation compilation = CreateCompilation(new[] { source1, source2 }, options: TestOptions.DebugDllThrowing, parseOptions: parseOptions);
+
+        var generator = new IncrementalGeneratorWrapper(new PipelineCallbackGenerator(ctx =>
+        {
+            var input = ctx.ForAttributeWithMetadataName<ClassDeclarationSyntax>("XAttribute");
+            ctx.RegisterSourceOutput(input, (spc, node) => { });
+        }));
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(new ISourceGenerator[] { generator }, parseOptions: parseOptions, driverOptions: new GeneratorDriverOptions(IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true));
+        driver = driver.RunGenerators(compilation);
+        var runResult = driver.GetRunResult().Results[0];
+        var source1Tree = compilation.SyntaxTrees.First();
+
+        driver = driver.RunGenerators(
+            compilation
+                .ReplaceSyntaxTree(source1Tree, source1Tree.WithChangedText(SourceText.From(source1Replacement))));
+        var runResults = driver.GetRunResult().Results;
+        runResult = runResults[0];
+
+        var outputSteps = runResult.TrackedOutputSteps.Values.Single();
+        var actualReasons = string.Join("\n", outputSteps.Select(x => $"actual: {x.Outputs.Single().Reason}"));
+        Console.WriteLine(actualReasons);
+
+        Assert.Collection(runResult.TrackedOutputSteps.Values.Single(),
+            s => Assert.Equal(IncrementalStepRunReason.Unchanged, s.Outputs.Single().Reason),
+            s => Assert.Equal(IncrementalStepRunReason.New, s.Outputs.Single().Reason));
+    }
+
+    [Fact]
+    public void RerunWithRemovedAttribute_MultipleFiles()
+    {
+        var source1 = @"
+[X]
+class C1 { }
+
+class XAttribute : System.Attribute
+{
+}
+";
+        var source2 = @"
+[X]
+class C2 { }
+";
+        var source1Replacement = @"
+//[X]
+class C1 { }
+
+class XAttribute : System.Attribute
+{
+}
+";
+        var parseOptions = TestOptions.RegularPreview;
+        Compilation compilation = CreateCompilation(new[] { source1, source2 }, options: TestOptions.DebugDllThrowing, parseOptions: parseOptions);
+
+        var generator = new IncrementalGeneratorWrapper(new PipelineCallbackGenerator(ctx =>
+        {
+            var input = ctx.ForAttributeWithMetadataName<ClassDeclarationSyntax>("XAttribute");
+            ctx.RegisterSourceOutput(input, (spc, node) => spc.AddSource(node.Identifier.ValueText, $"class {node.Identifier.ValueText}1 {{ }}"));
+        }));
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(new ISourceGenerator[] { generator }, parseOptions: parseOptions, driverOptions: new GeneratorDriverOptions(default, trackIncrementalGeneratorSteps: true));
+        driver = driver.RunGenerators(compilation);
+        var runResult = driver.GetRunResult().Results[0];
+        var source1Tree = compilation.SyntaxTrees.First();
+
+        driver = driver.RunGenerators(
+            compilation
+                .ReplaceSyntaxTree(source1Tree, source1Tree.WithChangedText(SourceText.From(source1Replacement))));
+        var runResults = driver.GetRunResult().Results;
+        runResult = runResults[0];
+
+        var outputSteps = runResult.TrackedOutputSteps.Values.Single();
+        var actualReasons = string.Join(", ", outputSteps.Select(x => $"actual: {x.Outputs.Single().Reason}"));
+        AssertEx.EqualOrDiff("", actualReasons);
+
+        Assert.Collection(runResult.TrackedOutputSteps.Values.Single(),
+            s => Assert.Equal(IncrementalStepRunReason.Removed, s.Outputs.Single().Reason),
+            s => Assert.Equal(IncrementalStepRunReason.Cached, s.Outputs.Single().Reason));
+    }
+
+    [Fact]
+    public void IncrementalGenerator_WithRemovedAttribute_MultipleFiles()
+    {
+        var source1 = @"
+#pragma warning disable CS0414
+partial class C 
+{
+    //[System.Obsolete]
+    string fieldA = null;
+}";
+        var source1Replacement = @"
+#pragma warning disable CS0414
+partial class C 
+{
+    [System.Obsolete]
+    string fieldA = null;
+}";
+
+        var source2 = @"
+#pragma warning disable CS0414
+partial class D
+{
+    [System.Obsolete]
+    string fieldB = null; 
+}
+";
+        var parseOptions = TestOptions.RegularPreview;
+        Compilation compilation = CreateCompilation(new[] { source1, source2 }, options: TestOptions.DebugDll, parseOptions: parseOptions);
+        compilation.VerifyDiagnostics();
+
+        var testGenerator = new PipelineCallbackGenerator(context =>
+        {
+            var source = context.SyntaxProvider.CreateSyntaxProvider(
+                (c, _) =>
+                {
+                    return c is FieldDeclarationSyntax fds && fds.AttributeLists.Count > 0;
+                },
+                (c, _) => (ClassDeclarationSyntax)c.Node.Parent);
+            context.RegisterSourceOutput(source, (spc, cds) =>
+            {
+                spc.AddSource(cds.Identifier.ValueText, $"public partial class {cds.Identifier.ValueText} {{ }}");
+            });
+        });
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(new[] { new IncrementalGeneratorWrapper(testGenerator) }, parseOptions: parseOptions, driverOptions: new GeneratorDriverOptions(IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true));
+        driver = driver.RunGenerators(compilation);
+
+        var results = driver.GetRunResult();
+        Assert.Empty(results.Diagnostics);
+        Assert.Equal(1, results.GeneratedTrees.Length);
+        var source1Tree = compilation.SyntaxTrees.First();
+
+        // remove the second tree and re-run
+        compilation = compilation.ReplaceSyntaxTree(source1Tree, source1Tree.WithChangedText(SourceText.From(source1Replacement)));
+        driver = driver.RunGenerators(compilation);
+
+        results = driver.GetRunResult();
+        Assert.Empty(results.Diagnostics);
+        Assert.Equal(2, results.GeneratedTrees.Length);
+
+        var outputSteps = results.Results[0].TrackedOutputSteps.Values.Single();
+        var actualReasons = string.Join(", ", outputSteps.Select(x => $"actual: {x.Outputs.Single().Reason}"));
+        //_testOutput.WriteLine(actualReasons);
+        AssertEx.EqualOrDiff("", actualReasons);
+
+        var trackedOutputSteps = results.Results[0].TrackedOutputSteps;
+        Assert.Collection(trackedOutputSteps["SourceOutput"],
+            step => Assert.Collection(step.Outputs,
+                output => Assert.Equal(IncrementalStepRunReason.New, output.Reason)),
+            step => Assert.Collection(step.Outputs,
+                output => Assert.Equal(IncrementalStepRunReason.Cached, output.Reason)));
+    }
+
     #endregion
 }
