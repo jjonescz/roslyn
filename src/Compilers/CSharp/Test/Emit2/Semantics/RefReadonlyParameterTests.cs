@@ -2850,4 +2850,94 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             //     public new void M2(ref int x) => throw null!;
             Diagnostic(ErrorCode.WRN_NewNotRequired, "M2").WithArguments($"C.M2({modifier} int)").WithLocation(9, 21));
     }
+
+    [Fact]
+    public void Implementation_RefReadonly_In()
+    {
+        var source = """
+            interface I
+            {
+                void M1(in int x);
+                void M2(ref readonly int x);
+            }
+            class C : I
+            {
+                public void M1(ref readonly int x) { }
+                public void M2(in int x) { }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Implementation_RefReadonly_In_Explicit()
+    {
+        var source = """
+            interface I
+            {
+                void M1(in int x);
+                void M2(ref readonly int x);
+            }
+            class C : I
+            {
+                void I.M1(ref readonly int x) { }
+                void I.M2(in int x) { }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics();
+    }
+
+    [Theory, CombinatorialData]
+    public void Implementation_RefReadonly_NotIn([CombinatorialValues("ref", "out")] string modifier)
+    {
+        var source = $$"""
+            interface I
+            {
+                void M1({{modifier}} int x);
+                void M2(ref readonly int x);
+            }
+            class C : I
+            {
+                public void M1(ref readonly int x) { }
+                public void M2({{modifier}} int x) => throw null;
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (6,11): error CS0535: 'C' does not implement interface member 'I.M1(ref int)'
+            // class C : I
+            Diagnostic(ErrorCode.ERR_UnimplementedInterfaceMember, "I").WithArguments("C", $"I.M1({modifier} int)").WithLocation(6, 11),
+            // (6,11): error CS0535: 'C' does not implement interface member 'I.M2(ref readonly int)'
+            // class C : I
+            Diagnostic(ErrorCode.ERR_UnimplementedInterfaceMember, "I").WithArguments("C", "I.M2(ref readonly int)").WithLocation(6, 11));
+    }
+
+    [Theory, CombinatorialData]
+    public void Implementation_RefReadonly_NotIn_Explicit([CombinatorialValues("ref", "out")] string modifier)
+    {
+        var source = $$"""
+            interface I
+            {
+                void M1({{modifier}} int x);
+                void M2(ref readonly int x);
+            }
+            class C : I
+            {
+                void I.M1(ref readonly int x) { }
+                void I.M2({{modifier}} int x) => throw null;
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (6,11): error CS0535: 'C' does not implement interface member 'I.M1(ref int)'
+            // class C : I
+            Diagnostic(ErrorCode.ERR_UnimplementedInterfaceMember, "I").WithArguments("C", $"I.M1({modifier} int)").WithLocation(6, 11),
+            // (6,11): error CS0535: 'C' does not implement interface member 'I.M2(ref readonly int)'
+            // class C : I
+            Diagnostic(ErrorCode.ERR_UnimplementedInterfaceMember, "I").WithArguments("C", "I.M2(ref readonly int)").WithLocation(6, 11),
+            // (8,12): error CS0539: 'C.M1(ref readonly int)' in explicit interface declaration is not found among members of the interface that can be implemented
+            //     void I.M1(ref readonly int x) { }
+            Diagnostic(ErrorCode.ERR_InterfaceMemberNotFound, "M1").WithArguments("C.M1(ref readonly int)").WithLocation(8, 12),
+            // (9,12): error CS0539: 'C.M2(ref int)' in explicit interface declaration is not found among members of the interface that can be implemented
+            //     void I.M2(ref int x) => throw null;
+            Diagnostic(ErrorCode.ERR_InterfaceMemberNotFound, "M2").WithArguments($"C.M2({modifier} int)").WithLocation(9, 12));
+    }
 }

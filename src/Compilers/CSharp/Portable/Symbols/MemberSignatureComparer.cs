@@ -47,7 +47,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             considerTypeConstraints: false,
             considerRefKindDifferences: true,
             considerCallingConvention: true,
-            typeComparison: TypeCompareKind.AllIgnoreOptions);
+            typeComparison: TypeCompareKind.AllIgnoreOptions)
+        {
+            RelaxRefReadonlyParameters = true
+        };
 
         /// <summary>
         /// This instance is used when trying to determine if one member implicitly implements another,
@@ -69,7 +72,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             considerTypeConstraints: false, // constraints are checked by caller instead
             considerCallingConvention: true,
             considerRefKindDifferences: true,
-            typeComparison: TypeCompareKind.AllIgnoreOptions);
+            typeComparison: TypeCompareKind.AllIgnoreOptions)
+        {
+            RelaxRefReadonlyParameters = true
+        };
 
         /// <summary>
         /// This instance is used as a fallback when it is determined that one member does not implicitly implement
@@ -83,7 +89,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             considerTypeConstraints: false,
             considerCallingConvention: false,
             considerRefKindDifferences: true,
-            typeComparison: TypeCompareKind.AllIgnoreOptions); //shouldn't actually matter for source members
+            typeComparison: TypeCompareKind.AllIgnoreOptions) //shouldn't actually matter for source members
+        {
+            RelaxRefReadonlyParameters = true
+        };
 
         /// <summary>
         /// This instance is used to determine if two C# member declarations in source conflict with each other.
