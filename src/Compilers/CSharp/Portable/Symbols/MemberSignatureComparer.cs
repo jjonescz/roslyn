@@ -279,7 +279,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             considerTypeConstraints: false,
             considerCallingConvention: true,
             considerRefKindDifferences: true,
-            typeComparison: TypeCompareKind.IgnoreDynamicAndTupleNames | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes | TypeCompareKind.IgnoreNativeIntegers);
+            typeComparison: TypeCompareKind.IgnoreDynamicAndTupleNames | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes | TypeCompareKind.IgnoreNativeIntegers)
+        {
+            // PROTOTYPE: Figure out how to test this.
+            RelaxRefReadonlyParameters = true
+        };
 
         /// <summary>
         /// This instance is the same as RuntimeSignatureComparer.
@@ -332,6 +336,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             considerCallingConvention: false, //ignore static-ness
             considerRefKindDifferences: true,
             typeComparison: TypeCompareKind.IgnoreCustomModifiersAndArraySizesAndLowerBounds | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes | TypeCompareKind.IgnoreDynamicAndTupleNames);
+        // PROTOTYPE: RelaxRefReadonlyParameters = true?
 
         /// <summary>
         /// Compare signatures of methods from a method group.
