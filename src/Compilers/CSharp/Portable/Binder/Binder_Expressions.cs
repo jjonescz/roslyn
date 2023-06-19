@@ -3302,9 +3302,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             static BindValueKind? getValueKind(RefKind argRefKind, RefKind parameterRefKind)
             {
-                if (argRefKind is RefKind.None)
+                if (argRefKind is RefKind.None or RefKind.Out)
                 {
-                    // RValue already checked in BindArgumentExpression.
+                    // Already checked in BindArgumentExpression.
                     return null;
                 }
 
@@ -3313,7 +3313,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return BindValueKind.ReadonlyRef;
                 }
 
-                Debug.Assert(argRefKind is RefKind.Ref or RefKind.Out);
+                Debug.Assert(argRefKind is RefKind.Ref);
                 return BindValueKind.RefOrOut;
             }
         }
