@@ -467,7 +467,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             diagnostics,
                             ref hadLangVersionError,
                             argument,
-                            BindArgumentExpression(diagnostics, argument.Expression, allowArglist: false),
+                            BindArgumentExpression(diagnostics, argument.Expression, RefKind.None, allowArglist: false),
                             argument.NameColon,
                             refKind: RefKind.None);
                     }
