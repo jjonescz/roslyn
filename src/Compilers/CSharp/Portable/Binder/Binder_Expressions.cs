@@ -3197,7 +3197,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 RefKind.None => BindValueKind.RValue,
                 RefKind.Out => BindValueKind.RefOrOut,
                 // ref kind will be checked more precisely when the corresponding parameter is known
-                _ => BindValueKind.ReadonlyRef,
+                RefKind.Ref or RefKind.In => BindValueKind.RefersToLocation,
+                _ => throw ExceptionUtilities.UnexpectedValue(refKind),
             };
 
             BoundExpression argument;
@@ -3301,10 +3302,15 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             static BindValueKind? getValueKind(RefKind argRefKind, RefKind parameterRefKind)
             {
-                if (argRefKind is RefKind.None or RefKind.In || parameterRefKind is RefKind.RefReadOnlyParameter)
+                if (argRefKind is RefKind.None)
                 {
-                    // Already checked in BindArgumentExpression.
+                    // RValue already checked in BindArgumentExpression.
                     return null;
+                }
+
+                if (parameterRefKind is RefKind.RefReadOnlyParameter || argRefKind is RefKind.In)
+                {
+                    return BindValueKind.ReadonlyRef;
                 }
 
                 Debug.Assert(argRefKind is RefKind.Ref or RefKind.Out);
