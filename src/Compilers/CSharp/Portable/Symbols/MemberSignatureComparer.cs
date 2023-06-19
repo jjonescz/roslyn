@@ -364,6 +364,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             _typeComparison = typeComparison;
             Debug.Assert((_typeComparison & TypeCompareKind.FunctionPointerRefMatchesOutInRefReadonly) == 0,
                          $"Rely on the {nameof(RefKindMatching.ConsiderRefKindDifferences)} flag to set this to ensure all cases are handled.");
+            if (refKindMatching == RefKindMatching.None)
+            {
+                _typeComparison |= TypeCompareKind.FunctionPointerRefMatchesOutInRefReadonly;
+            }
         }
 
         #region IEqualityComparer<Symbol> Members
