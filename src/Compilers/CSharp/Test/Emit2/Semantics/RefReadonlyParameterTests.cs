@@ -1090,9 +1090,9 @@ public class RefReadonlyParameterTests : CSharpTestBase
             }
             """;
         CreateCompilation(source).VerifyDiagnostics(
-            // (6,15): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+            // (6,15): error CS1510: A ref or out value must be an assignable variable
             //         M1(in 111);
-            Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "111").WithLocation(6, 15));
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "111").WithLocation(6, 15));
     }
 
     [Fact]
@@ -1109,9 +1109,9 @@ public class RefReadonlyParameterTests : CSharpTestBase
             }
             """;
         CreateCompilation(source).VerifyDiagnostics(
-            // (6,16): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+            // (6,16): error CS1510: A ref or out value must be an assignable variable
             //         M1(ref 111);
-            Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "111").WithLocation(6, 16));
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "111").WithLocation(6, 16));
     }
 
     [Fact]
