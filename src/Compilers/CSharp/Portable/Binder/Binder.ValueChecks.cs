@@ -732,6 +732,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case BoundKind.DeconstructValuePlaceholder:
                     break;
 
+                case BoundKind.InterpolatedStringArgumentPlaceholder:
+                    Debug.Assert(RequiresReferenceToLocation(valueKind));
+                    return true;
+
                 case BoundKind.ConditionalOperator:
                     var conditional = (BoundConditionalOperator)expr;
 
