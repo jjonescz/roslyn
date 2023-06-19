@@ -2598,7 +2598,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 protected override void M(ref readonly int x) { }
             }
             """;
-        var verifier = CompileAndVerify(source).VerifyDiagnostics();
+        var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetStandard20).VerifyDiagnostics();
         verifier.VerifyMethodIL("B", "M", """
             .method family hidebysig newslot virtual 
             	instance void M (
@@ -2646,7 +2646,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 protected override void M(in int x) { }
             }
             """;
-        var verifier = CompileAndVerify(source).VerifyDiagnostics();
+        var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetStandard20).VerifyDiagnostics();
         verifier.VerifyMethodIL("B", "M", """
             .method family hidebysig newslot virtual 
             	instance void M (
