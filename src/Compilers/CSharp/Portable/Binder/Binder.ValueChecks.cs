@@ -374,6 +374,31 @@ namespace Microsoft.CodeAnalysis.CSharp
 #nullable disable
 
         /// <summary>
+        /// Like <see cref="CheckValue"/> but puts only errors into <paramref name="diagnostics"/>.
+        /// </summary>
+        private BoundExpression CheckValueOnlyErrors(BoundExpression expr, BindValueKind valueKind, BindingDiagnosticBag diagnostics)
+        {
+            if (diagnostics.DiagnosticBag is null)
+            {
+                return CheckValue(expr, valueKind, diagnostics);
+            }
+
+            var tempDiagnostics = BindingDiagnosticBag.GetInstance(withDiagnostics: true, withDependencies: false);
+            var result = CheckValue(expr, valueKind, tempDiagnostics);
+
+            foreach (var diagnostic in tempDiagnostics.DiagnosticBag.AsEnumerable())
+            {
+                if (diagnostic.Severity == DiagnosticSeverity.Error)
+                {
+                    diagnostics.Add(diagnostic);
+                }
+            }
+
+            tempDiagnostics.Free();
+            return result;
+        }
+
+        /// <summary>
         /// Check the expression is of the required lvalue and rvalue specified by valueKind.
         /// The method returns the original expression if the expression is of the required
         /// type. Otherwise, an appropriate error is added to the diagnostics bag and the
