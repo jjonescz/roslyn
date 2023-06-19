@@ -3250,8 +3250,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // - for `ref readonly` parameters with other modifiers, this would fail if the argument is not a variable,
                 //   except it already failed earlier (ref/in callsite modifier on an rvalue is an error).
                 // Hence it's fine to perform the check here (after overload resolution already selected the best member).
-                BindValueKind valueKind = getValueKind(argRefKind: argRefKind, parameterRefKind: parameterRefKind);
-                analyzedArguments.Arguments[arg] = argument = this.CheckValue(argument, valueKind, diagnostics);
+                if (getValueKind(argRefKind: argRefKind, parameterRefKind: parameterRefKind) is { } valueKind)
+                {
+                    analyzedArguments.Arguments[arg] = argument = this.CheckValue(argument, valueKind, diagnostics);
+                }
 
                 if (argument.HasAnyErrors)
                 {
@@ -3297,21 +3299,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            static BindValueKind getValueKind(RefKind argRefKind, RefKind parameterRefKind)
+            static BindValueKind? getValueKind(RefKind argRefKind, RefKind parameterRefKind)
             {
-                if (argRefKind == RefKind.None)
+                if (argRefKind is RefKind.None or RefKind.In || parameterRefKind is RefKind.RefReadOnlyParameter)
                 {
-                    return BindValueKind.RValue;
-                }
-
-                if (parameterRefKind == RefKind.RefReadOnlyParameter)
-                {
-                    return BindValueKind.ReadonlyRef;
-                }
-
-                if (argRefKind == RefKind.In)
-                {
-                    return BindValueKind.ReadonlyRef;
+                    // Already checked in BindArgumentExpression.
+                    return null;
                 }
 
                 Debug.Assert(argRefKind is RefKind.Ref or RefKind.Out);
