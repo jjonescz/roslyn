@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -1937,5 +1938,71 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
               IL_0025:  ret
             }
             """);
+    }
+
+    [Theory]
+    [InlineData("", "", true)]
+    [InlineData("", "ref", false)]
+    [InlineData("", "in", false)]
+    [InlineData("", "out", false)]
+    [InlineData("", "ref readonly", null, false)]
+    [InlineData("ref", "in", false, true)]
+    [InlineData("ref", "out", false)]
+    [InlineData("ref", "ref readonly", null, true)]
+    [InlineData("in", "out", false)]
+    [InlineData("in", "ref readonly", null, true)]
+    [InlineData("out", "ref readonly", null, false)]
+    public void Conversions(string x, string y, bool? validInCSharp11, bool? validInCSharp12 = null)
+    {
+        var source = $$"""
+            X x = C.X;
+            Y y = C.Y;
+
+            x = C.Y;
+            y = C.X;
+
+            class C
+            {
+                public static void X({{x}} int p) => throw null;
+                public static void Y({{y}} int p) => throw null;
+            }
+
+            delegate void X({{x}} int p);
+            delegate void Y({{y}} int p);
+            """;
+
+        var expectedDiagnostics = new[]
+        {
+            // (4,7): error CS0123: No overload for 'Y' matches delegate 'X'
+            // x = C.Y;
+            Diagnostic(ErrorCode.ERR_MethDelegateMismatch, "Y").WithArguments("Y", "X").WithLocation(4, 7),
+            // (5,7): error CS0123: No overload for 'X' matches delegate 'Y'
+            // y = C.X;
+            Diagnostic(ErrorCode.ERR_MethDelegateMismatch, "X").WithArguments("X", "Y").WithLocation(5, 7)
+        };
+
+        if (validInCSharp11 == true)
+        {
+            CreateCompilation(source, parseOptions: TestOptions.Regular11).VerifyDiagnostics();
+        }
+        else if (validInCSharp11 == false)
+        {
+            CreateCompilation(source, parseOptions: TestOptions.Regular11).VerifyDiagnostics(expectedDiagnostics);
+        }
+        else
+        {
+            Assert.NotNull(validInCSharp12);
+        }
+
+        if (validInCSharp12 ?? validInCSharp11 == true)
+        {
+            CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics();
+            CreateCompilation(source, parseOptions: TestOptions.RegularPreview).VerifyDiagnostics();
+        }
+        else
+        {
+            CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(source, parseOptions: TestOptions.RegularPreview).VerifyDiagnostics(expectedDiagnostics);
+        }
     }
 }
