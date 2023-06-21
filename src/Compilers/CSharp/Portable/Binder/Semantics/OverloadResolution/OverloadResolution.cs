@@ -3193,8 +3193,7 @@ outerDefault:
             // unless this is a method group conversion where 'In' must match 'In'
             // There are even more relaxations with 'ref readonly' parameters feature:
             // - 'ref' argument is allowed to match 'in' parameter,
-            // - 'ref', 'in', none argument is allowed to match 'ref readonly' parameter,
-            // - in method group conversions, 'in' is allowed to match 'ref' and 'ref readonly' is allowed to match 'ref' or 'in'.
+            // - 'ref', 'in', none argument is allowed to match 'ref readonly' parameter.
             if (!isMethodGroupConversion)
             {
                 if (paramRefKind == RefKind.In)
@@ -3231,10 +3230,20 @@ outerDefault:
             return paramRefKind;
         }
 
+        // In method group conversions, 'in' is allowed to match 'ref' and 'ref readonly' is allowed to match 'ref' or 'in'.
         internal static bool IsRefMismatchAcceptableForMethodConversion(RefKind x, RefKind y, CSharpParseOptions options)
         {
-            return x == RefKind.RefReadOnlyParameter || y == RefKind.RefReadOnlyParameter ||
-                ((x, y) is (RefKind.In, RefKind.Ref) or (RefKind.Ref, RefKind.In) &&
+            if (x == RefKind.RefReadOnlyParameter)
+            {
+                return y is RefKind.Ref or RefKind.In;
+            }
+
+            if (y == RefKind.RefReadOnlyParameter)
+            {
+                return x is RefKind.Ref or RefKind.In;
+            }
+
+            return ((x, y) is (RefKind.In, RefKind.Ref) or (RefKind.Ref, RefKind.In) &&
                 options.IsFeatureEnabled(MessageID.IDS_FeatureRefReadonlyParameters));
         }
 
