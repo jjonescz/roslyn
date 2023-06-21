@@ -1405,7 +1405,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         var source = """
             class C
             {
-                private C(ref readonly int p) => throw null!;
+                private C(ref readonly int p) => throw null;
                 static void Main()
                 {
                     int x = 5;
@@ -1456,7 +1456,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         var source = """
             class C
             {
-                int this[ref readonly int p] => throw null!;
+                int this[ref readonly int p] => throw null;
                 static void Main()
                 {
                     var c = new C();
@@ -1500,7 +1500,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         var source = """
             class C
             {
-                static void M(ref readonly int p) => throw null!;
+                static void M(ref readonly int p) => throw null;
                 static unsafe void Main()
                 {
                     delegate*<ref readonly int, void> f = &M;
