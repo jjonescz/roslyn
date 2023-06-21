@@ -230,6 +230,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             ParameterHandle handle,
             Symbol nullableContext,
             int countOfCustomModifiers,
+            bool isReturn,
             out bool isBad)
         {
             Debug.Assert((object)moduleSymbol != null);
@@ -280,13 +281,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     {
                         refKind = RefKind.Out;
                     }
+                    else if (!isReturn && moduleSymbol.Module.HasRequiresLocationAttribute(handle))
+                    {
+                        refKind = RefKind.RefReadOnlyParameter;
+                    }
                     else if (moduleSymbol.Module.HasIsReadOnlyAttribute(handle))
                     {
                         refKind = RefKind.In;
-                    }
-                    else if (moduleSymbol.Module.HasRequiresLocationAttribute(handle))
-                    {
-                        refKind = RefKind.RefReadOnlyParameter;
                     }
                     else
                     {
@@ -379,20 +380,20 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             var typeWithModifiers = TypeWithAnnotations.Create(type, customModifiers: CSharpCustomModifier.Convert(customModifiers));
 
             PEParameterSymbol parameter = customModifiers.IsDefaultOrEmpty && refCustomModifiers.IsDefaultOrEmpty
-                ? new PEParameterSymbol(moduleSymbol, containingSymbol, ordinal, isByRef, typeWithModifiers, handle, nullableContext, 0, out isBad)
-                : new PEParameterSymbolWithCustomModifiers(moduleSymbol, containingSymbol, ordinal, isByRef, refCustomModifiers, typeWithModifiers, handle, nullableContext, out isBad);
+                ? new PEParameterSymbol(moduleSymbol, containingSymbol, ordinal, isByRef, typeWithModifiers, handle, nullableContext, 0, isReturn: isReturn, out isBad)
+                : new PEParameterSymbolWithCustomModifiers(moduleSymbol, containingSymbol, ordinal, isByRef, refCustomModifiers, typeWithModifiers, handle, nullableContext, isReturn: isReturn, out isBad);
 
             bool hasInAttributeModifier = parameter.RefCustomModifiers.HasInAttributeModifier();
 
-            // PROTOTYPE: Check also RefReadOnlyParameters.
             if (isReturn)
             {
                 // A RefReadOnly return parameter should always have this modreq, and vice versa.
+                Debug.Assert(parameter.RefKind != RefKind.RefReadOnlyParameter);
                 isBad |= (parameter.RefKind == RefKind.RefReadOnly) != hasInAttributeModifier;
             }
-            else if (parameter.RefKind == RefKind.In)
+            else if (parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter)
             {
-                // An in parameter should not have this modreq, unless the containing symbol was virtual or abstract.
+                // An in/ref readonly parameter should not have this modreq, unless the containing symbol was virtual or abstract.
                 isBad |= isContainingSymbolVirtual != hasInAttributeModifier;
             }
             else if (hasInAttributeModifier)
@@ -417,10 +418,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 TypeWithAnnotations type,
                 ParameterHandle handle,
                 Symbol nullableContext,
+                bool isReturn,
                 out bool isBad) :
                     base(moduleSymbol, containingSymbol, ordinal, isByRef, type, handle, nullableContext,
                          refCustomModifiers.NullToEmpty().Length + type.CustomModifiers.Length,
-                         out isBad)
+                         isReturn: isReturn, out isBad)
             {
                 _refCustomModifiers = CSharpCustomModifier.Convert(refCustomModifiers);
 

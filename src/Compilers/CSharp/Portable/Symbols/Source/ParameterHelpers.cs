@@ -88,6 +88,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     Debug.Assert(addRefReadOnlyModifier, "If addReadonlyRef isn't true, we must have found a different location to encode the readonlyness of a function pointer");
                     ImmutableArray<CustomModifier> customModifiers = refKind switch
                     {
+                        // PROTOTYPE: Confirm encoding of ref readonly parameters in function pointers.
                         RefKind.In or RefKind.RefReadOnlyParameter => CreateInModifiers(binder, diagnostics, syntax),
                         RefKind.Out => CreateOutModifiers(binder, diagnostics, syntax),
                         _ => ImmutableArray<CustomModifier>.Empty
@@ -216,12 +217,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         }
 
 #nullable enable
-        internal static void EnsureIsReadOnlyAttributeExists(PEModuleBuilder moduleBuilder, ImmutableArray<ParameterSymbol> parameters)
+        internal static void EnsureRefKindAttributesExist(PEModuleBuilder moduleBuilder, ImmutableArray<ParameterSymbol> parameters)
         {
-            EnsureIsReadOnlyAttributeExists(moduleBuilder.Compilation, parameters, diagnostics: null, modifyCompilation: false, moduleBuilder);
+            EnsureRefKindAttributesExist(moduleBuilder.Compilation, parameters, diagnostics: null, modifyCompilation: false, moduleBuilder);
         }
 
-        internal static void EnsureIsReadOnlyAttributeExists(CSharpCompilation? compilation, ImmutableArray<ParameterSymbol> parameters, BindingDiagnosticBag diagnostics, bool modifyCompilation)
+        internal static void EnsureRefKindAttributesExist(CSharpCompilation? compilation, ImmutableArray<ParameterSymbol> parameters, BindingDiagnosticBag diagnostics, bool modifyCompilation)
         {
             // These parameters might not come from a compilation (example: lambdas evaluated in EE).
             // During rewriting, lowering will take care of flagging the appropriate PEModuleBuilder instead.
@@ -230,10 +231,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return;
             }
 
-            EnsureIsReadOnlyAttributeExists(compilation, parameters, diagnostics, modifyCompilation, moduleBuilder: null);
+            EnsureRefKindAttributesExist(compilation, parameters, diagnostics, modifyCompilation, moduleBuilder: null);
         }
 
-        private static void EnsureIsReadOnlyAttributeExists(CSharpCompilation compilation, ImmutableArray<ParameterSymbol> parameters, BindingDiagnosticBag? diagnostics, bool modifyCompilation, PEModuleBuilder? moduleBuilder)
+        private static void EnsureRefKindAttributesExist(CSharpCompilation compilation, ImmutableArray<ParameterSymbol> parameters, BindingDiagnosticBag? diagnostics, bool modifyCompilation, PEModuleBuilder? moduleBuilder)
         {
             foreach (var parameter in parameters)
             {
@@ -246,6 +247,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     else
                     {
                         compilation.EnsureIsReadOnlyAttributeExists(diagnostics, GetParameterLocation(parameter), modifyCompilation);
+                    }
+                }
+                else if (parameter.RefKind == RefKind.RefReadOnlyParameter)
+                {
+                    if (moduleBuilder is { })
+                    {
+                        moduleBuilder.EnsureRequiresLocationAttributeExists();
+                    }
+                    else
+                    {
+                        compilation.EnsureRequiresLocationAttributeExists(diagnostics, GetParameterLocation(parameter), modifyCompilation);
                     }
                 }
             }
@@ -349,26 +361,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     else
                     {
                         compilation.EnsureScopedRefAttributeExists(diagnostics, GetParameterLocation(parameter), modifyCompilation);
-                    }
-                }
-            }
-        }
-
-        internal static void EnsureRequiresLocationAttributeExists(CSharpCompilation? compilation, ImmutableArray<ParameterSymbol> parameters, BindingDiagnosticBag? diagnostics, bool modifyCompilation, PEModuleBuilder? moduleBuilder)
-        {
-            Debug.Assert(compilation is not null || moduleBuilder is not null);
-
-            foreach (var parameter in parameters)
-            {
-                if (parameter.RefKind == RefKind.RefReadOnlyParameter)
-                {
-                    if (moduleBuilder is { })
-                    {
-                        moduleBuilder.EnsureRequiresLocationAttributeExists();
-                    }
-                    else
-                    {
-                        compilation!.EnsureRequiresLocationAttributeExists(diagnostics, GetParameterLocation(parameter), modifyCompilation);
                     }
                 }
             }
@@ -966,7 +958,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         isScoped = true;
                         break;
                     case SyntaxKind.ReadOnlyKeyword:
-                        if (refKind == RefKind.Ref)
+                        if (refKind == RefKind.Ref && refnessKeyword.GetNextToken() == modifier)
                         {
                             refKind = RefKind.RefReadOnlyParameter;
                         }
