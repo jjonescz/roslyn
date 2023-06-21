@@ -3191,7 +3191,9 @@ outerDefault:
 
             // 'None' argument is allowed to match 'In' parameter and should behave like 'None' for the purpose of overload resolution
             // unless this is a method group conversion where 'In' must match 'In'
-            // There are even more relaxations with `ref readonly` parameters feature.
+            // There are even more relaxations with 'ref readonly' parameters feature:
+            // - 'ref' argument is allowed to match 'in' parameter,
+            // - 'ref', 'in', none argument is allowed to match 'ref readonly' parameter.
             if (!isMethodGroupConversion)
             {
                 if (paramRefKind == RefKind.In)
