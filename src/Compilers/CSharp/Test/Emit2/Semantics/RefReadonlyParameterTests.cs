@@ -35,7 +35,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         bool refKind = true,
         bool metadataIn = true,
         bool attributes = true,
-        bool modreq = false,
+        bool? customModifiers = false,
         bool useSiteError = false)
     {
         Assert.Equal(refKind, RefKind.RefReadOnlyParameter == parameter.RefKind);
@@ -57,12 +57,13 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             }
         }
 
-        if (modreq)
+        if (customModifiers == true)
         {
             var mod = Assert.Single(parameter.RefCustomModifiers);
+            Assert.False(mod.IsOptional);
             Assert.Equal("System.Runtime.InteropServices.InAttribute", mod.Modifier.ToTestDisplayString());
         }
-        else
+        else if (customModifiers == false)
         {
             Assert.Empty(parameter.RefCustomModifiers);
         }
@@ -277,7 +278,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         var comp = CreateCompilationWithIL("", ilSource).VerifyDiagnostics();
 
         var p = comp.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
-        VerifyRefReadonlyParameter(p, modreq: true, useSiteError: true);
+        VerifyRefReadonlyParameter(p, customModifiers: true, useSiteError: true);
     }
 
     [Fact]
@@ -297,7 +298,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             VerifyRequiresLocationAttributeSynthesized(m);
 
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
-            VerifyRefReadonlyParameter(p, modreq: true);
+            VerifyRefReadonlyParameter(p, customModifiers: true);
         }
     }
 
@@ -318,7 +319,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             VerifyRequiresLocationAttributeSynthesized(m);
 
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
-            VerifyRefReadonlyParameter(p, modreq: true);
+            VerifyRefReadonlyParameter(p, customModifiers: true);
         }
     }
 
@@ -444,7 +445,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             VerifyRequiresLocationAttributeSynthesized(m);
 
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("D.Invoke").Parameters.Single();
-            VerifyRefReadonlyParameter(p, modreq: true);
+            VerifyRefReadonlyParameter(p, customModifiers: true);
         }
     }
 
@@ -543,7 +544,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
             var ptr = (FunctionPointerTypeSymbol)p.Type;
             var p2 = ptr.Signature.Parameters.Single();
-            VerifyRefReadonlyParameter(p2, refKind: m is SourceModuleSymbol, modreq: true, attributes: false);
+            VerifyRefReadonlyParameter(p2, refKind: m is SourceModuleSymbol, customModifiers: true, attributes: false);
             Assert.Equal(m is SourceModuleSymbol ? RefKind.RefReadOnlyParameter : RefKind.In, p2.RefKind);
             Assert.Empty(p2.GetAttributes());
         }
@@ -2140,6 +2141,75 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             // (8,15): error CS1615: Argument 1 may not be passed with the 'out' keyword
             //         f(out x);
             Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "out").WithLocation(8, 15));
+    }
+
+    /// <summary>
+    /// Demonstrates that modopt encoding of 'ref readonly' parameters in function pointers
+    /// won't break older compilers (they will see the parameter as 'in').
+    /// </summary>
+    [Fact]
+    public void FunctionPointer_Modopt_CustomAttribute()
+    {
+        // public class C
+        // {
+        //     public delegate*<in int modopt(MyAttribute), void> D;
+        // }
+        var ilSource = """
+            .class public auto ansi beforefieldinit C extends System.Object
+            {
+                .field public method void *(int32& modreq(System.Runtime.InteropServices.InAttribute) modopt(MyAttribute)) D
+            }
+
+            .class public auto ansi sealed beforefieldinit System.Runtime.InteropServices.InAttribute extends System.Object
+            {
+                .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
+                {
+                    .maxstack 8
+                    ret
+                }
+            }
+
+            .class public auto ansi sealed beforefieldinit MyAttribute extends System.Object
+            {
+                .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
+                {
+                    .maxstack 8
+                    ret
+                }
+            }
+            """;
+
+        var source = """
+            class D
+            {
+                unsafe void M(C c)
+                {
+                    delegate*<int, void> v = c.D;
+                    delegate*<in int, void> i = c.D;
+                    delegate*<ref int, void> r = c.D;
+                }
+            }
+            """;
+
+        var comp = CreateCompilationWithIL(source, ilSource, options: TestOptions.UnsafeDebugDll);
+        comp.VerifyDiagnostics(
+            // (5,34): error CS0266: Cannot implicitly convert type 'delegate*<in int, void>' to 'delegate*<int, void>'. An explicit conversion exists (are you missing a cast?)
+            //         delegate*<int, void> v = c.D;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "c.D").WithArguments("delegate*<in int, void>", "delegate*<int, void>").WithLocation(5, 34),
+            // (7,38): error CS0266: Cannot implicitly convert type 'delegate*<in int, void>' to 'delegate*<ref int, void>'. An explicit conversion exists (are you missing a cast?)
+            //         delegate*<ref int, void> r = c.D;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "c.D").WithArguments("delegate*<in int, void>", "delegate*<ref int, void>").WithLocation(7, 38));
+
+        var ptr = (FunctionPointerTypeSymbol)comp.GlobalNamespace.GetMember<FieldSymbol>("C.D").Type;
+        var p = ptr.Signature.Parameters.Single();
+        VerifyRefReadonlyParameter(p, refKind: false, attributes: false, customModifiers: null);
+        Assert.Equal(RefKind.In, p.RefKind);
+        Assert.Empty(p.GetAttributes());
+        AssertEx.SetEqual(new[]
+        {
+            (false, "System.Runtime.InteropServices.InAttribute"),
+            (true, "MyAttribute")
+        }, p.RefCustomModifiers.Select(m => (m.IsOptional, m.Modifier.ToTestDisplayString())));
     }
 
     [Fact]
