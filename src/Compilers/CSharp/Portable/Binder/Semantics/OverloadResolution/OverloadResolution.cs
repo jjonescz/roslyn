@@ -3193,7 +3193,8 @@ outerDefault:
             // unless this is a method group conversion where 'In' must match 'In'
             // There are even more relaxations with 'ref readonly' parameters feature:
             // - 'ref' argument is allowed to match 'in' parameter,
-            // - 'ref', 'in', none argument is allowed to match 'ref readonly' parameter.
+            // - 'ref', 'in', none argument is allowed to match 'ref readonly' parameter,
+            // - in method group conversions, 'in' is allowed to match 'ref' and 'ref readonly' is allowed to match 'ref' or 'in'.
             if (!isMethodGroupConversion)
             {
                 if (paramRefKind == RefKind.In)
@@ -3208,12 +3209,14 @@ outerDefault:
                         return RefKind.Ref;
                     }
                 }
-
-                // PROTOTYPE: Should this relaxation be also applied when `isMethodGroupConversion == true`?
-                if (paramRefKind == RefKind.RefReadOnlyParameter && argRefKind is RefKind.None or RefKind.Ref or RefKind.In)
+                else if (paramRefKind == RefKind.RefReadOnlyParameter && argRefKind is RefKind.None or RefKind.Ref or RefKind.In)
                 {
                     return argRefKind;
                 }
+            }
+            else if (IsRefMismatchAcceptableForMethodConversion(paramRefKind, argRefKind, (CSharpParseOptions)argument.SyntaxTree.Options))
+            {
+                return argRefKind;
             }
 
             // Omit ref feature for COM interop: We can pass arguments by value for ref parameters if we are calling a method/property on an instance of a COM imported type.
@@ -3226,6 +3229,13 @@ outerDefault:
             }
 
             return paramRefKind;
+        }
+
+        internal static bool IsRefMismatchAcceptableForMethodConversion(RefKind x, RefKind y, CSharpParseOptions options)
+        {
+            return x == RefKind.RefReadOnlyParameter || y == RefKind.RefReadOnlyParameter ||
+                ((x, y) is (RefKind.In, RefKind.Ref) or (RefKind.Ref, RefKind.In) &&
+                options.IsFeatureEnabled(MessageID.IDS_FeatureRefReadonlyParameters));
         }
 
         private EffectiveParameters GetEffectiveParametersInExpandedForm<TMember>(
