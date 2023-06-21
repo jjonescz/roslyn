@@ -1253,257 +1253,26 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact]
-    public void RefReadonlyParameter_InArgument()
+    public void RefReadonlyParameter_ArgumentModifiers()
     {
         var source = """
             class C
             {
-                static void M(ref readonly int p) => System.Console.WriteLine(p);
+                static void M(ref readonly int p) => System.Console.Write(p);
                 static void Main()
                 {
-                    int x = 111;
+                    int x = 5;
+                    M(x);
+                    M(ref x);
                     M(in x);
                 }
             }
             """;
-        var verifier = CompileAndVerify(source, expectedOutput: "111");
-        verifier.VerifyDiagnostics();
-        verifier.VerifyMethodBody("C.Main", """
-            {
-              // Code size       11 (0xb)
-              .maxstack  1
-              .locals init (int V_0) //x
-              // sequence point: int x = 111;
-              IL_0000:  ldc.i4.s   111
-              IL_0002:  stloc.0
-              // sequence point: M(in x);
-              IL_0003:  ldloca.s   V_0
-              IL_0005:  call       "void C.M(ref readonly int)"
-              // sequence point: }
-              IL_000a:  ret
-            }
-            """);
-    }
-
-    [Fact]
-    public void RefReadonlyParameter_RefArgument()
-    {
-        var source = """
-            class C
-            {
-                static void M(ref readonly int p) => System.Console.WriteLine(p);
-                static void Main()
-                {
-                    int x = 111;
-                    M(ref x);
-                }
-            }
-            """;
-        var verifier = CompileAndVerify(source, expectedOutput: "111");
-        verifier.VerifyDiagnostics();
-        verifier.VerifyMethodBody("C.Main", """
-            {
-              // Code size       11 (0xb)
-              .maxstack  1
-              .locals init (int V_0) //x
-              // sequence point: int x = 111;
-              IL_0000:  ldc.i4.s   111
-              IL_0002:  stloc.0
-              // sequence point: M(ref x);
-              IL_0003:  ldloca.s   V_0
-              IL_0005:  call       "void C.M(ref readonly int)"
-              // sequence point: }
-              IL_000a:  ret
-            }
-            """);
-    }
-
-    [Fact]
-    public void RefReadonlyParameter_PlainArgument()
-    {
-        var source = """
-            class C
-            {
-                static void M(ref readonly int p) => System.Console.WriteLine(p);
-                static void Main()
-                {
-                    int x = 111;
-                    M(x);
-                }
-            }
-            """;
-        var verifier = CompileAndVerify(source, expectedOutput: "111");
+        var verifier = CompileAndVerify(source, expectedOutput: "555");
         verifier.VerifyDiagnostics(
             // (7,11): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
             //         M(x);
             Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(7, 11));
-        verifier.VerifyMethodBody("C.Main", """
-            {
-              // Code size       11 (0xb)
-              .maxstack  1
-              .locals init (int V_0) //x
-              // sequence point: int x = 111;
-              IL_0000:  ldc.i4.s   111
-              IL_0002:  stloc.0
-              // sequence point: M(x);
-              IL_0003:  ldloca.s   V_0
-              IL_0005:  call       "void C.M(ref readonly int)"
-              // sequence point: }
-              IL_000a:  ret
-            }
-            """);
-    }
-
-    [Fact]
-    public void Invocation_VirtualMethod()
-    {
-        var source = """
-            class C
-            {
-                protected virtual void M(ref readonly int p) => System.Console.WriteLine(p);
-                static void Main()
-                {
-                    int x = 111;
-                    new C().M(ref x);
-                }
-            }
-            """;
-        var verifier = CompileAndVerify(source, expectedOutput: "111");
-        verifier.VerifyDiagnostics();
-        verifier.VerifyMethodBody("C.Main", """
-            {
-              // Code size       16 (0x10)
-              .maxstack  2
-              .locals init (int V_0) //x
-              // sequence point: int x = 111;
-              IL_0000:  ldc.i4.s   111
-              IL_0002:  stloc.0
-              // sequence point: new C().M(ref x);
-              IL_0003:  newobj     "C..ctor()"
-              IL_0008:  ldloca.s   V_0
-              IL_000a:  callvirt   "void C.M(ref readonly int)"
-              // sequence point: }
-              IL_000f:  ret
-            }
-            """);
-    }
-
-    [Fact]
-    public void Invocation_Constructor()
-    {
-        var source = """
-            class C
-            {
-                C(ref readonly int p) => System.Console.WriteLine(p);
-                static void Main()
-                {
-                    int x = 111;
-                    new C(ref x);
-                }
-            }
-            """;
-        var verifier = CompileAndVerify(source, expectedOutput: "111");
-        verifier.VerifyDiagnostics();
-        verifier.VerifyMethodBody("C.Main", """
-            {
-              // Code size       12 (0xc)
-              .maxstack  1
-              .locals init (int V_0) //x
-              // sequence point: int x = 111;
-              IL_0000:  ldc.i4.s   111
-              IL_0002:  stloc.0
-              // sequence point: new C(ref x);
-              IL_0003:  ldloca.s   V_0
-              IL_0005:  newobj     "C..ctor(ref readonly int)"
-              IL_000a:  pop
-              // sequence point: }
-              IL_000b:  ret
-            }
-            """);
-    }
-
-    [Fact]
-    public void Invocation_FunctionPointer()
-    {
-        var source = """
-            class C
-            {
-                static void M(ref readonly int p) => System.Console.WriteLine(p);
-                static unsafe void Main()
-                {
-                    delegate*<ref readonly int, void> f = &M;
-                    int x = 111;
-                    f(ref x);
-                }
-            }
-            """;
-        var verifier = CompileAndVerify(source, expectedOutput: "111", options: TestOptions.UnsafeReleaseExe, verify: Verification.Fails);
-        verifier.VerifyDiagnostics();
-        verifier.VerifyMethodBody("C.Main", """
-            {
-              // Code size       19 (0x13)
-              .maxstack  2
-              .locals init (int V_0, //x
-                            delegate*<ref readonly int, void> V_1)
-              // sequence point: delegate*<ref readonly int, void> f = &M;
-              IL_0000:  ldftn      "void C.M(ref readonly int)"
-              // sequence point: int x = 111;
-              IL_0006:  ldc.i4.s   111
-              IL_0008:  stloc.0
-              // sequence point: f(ref x);
-              IL_0009:  stloc.1
-              IL_000a:  ldloca.s   V_0
-              IL_000c:  ldloc.1
-              IL_000d:  calli      "delegate*<ref readonly int, void>"
-              // sequence point: }
-              IL_0012:  ret
-            }
-            """);
-    }
-
-    [Fact]
-    public void Invocation_Delegate()
-    {
-        var source = """
-            delegate void D(ref readonly int p);
-            class C
-            {
-                static void M(ref readonly int p) => System.Console.WriteLine(p);
-                static void Main()
-                {
-                    D d = M;
-                    int x = 111;
-                    d(ref x);
-                }
-            }
-            """;
-        var verifier = CompileAndVerify(source, expectedOutput: "111");
-        verifier.VerifyDiagnostics();
-        verifier.VerifyMethodBody("C.Main", """
-            {
-              // Code size       38 (0x26)
-              .maxstack  2
-              .locals init (int V_0) //x
-              // sequence point: D d = M;
-              IL_0000:  ldsfld     "D C.<>O.<0>__M"
-              IL_0005:  dup
-              IL_0006:  brtrue.s   IL_001b
-              IL_0008:  pop
-              IL_0009:  ldnull
-              IL_000a:  ldftn      "void C.M(ref readonly int)"
-              IL_0010:  newobj     "D..ctor(object, System.IntPtr)"
-              IL_0015:  dup
-              IL_0016:  stsfld     "D C.<>O.<0>__M"
-              // sequence point: int x = 111;
-              IL_001b:  ldc.i4.s   111
-              IL_001d:  stloc.0
-              // sequence point: d(ref x);
-              IL_001e:  ldloca.s   V_0
-              IL_0020:  callvirt   "void D.Invoke(ref readonly int)"
-              // sequence point: }
-              IL_0025:  ret
-            }
-            """);
     }
 
     [Fact]
@@ -1526,75 +1295,62 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "out").WithLocation(7, 15));
     }
 
-    [Fact]
-    public void RefReadonlyParameter_RefArgument_CrossAssembly()
+    [Fact(Skip = "https://github.com/dotnet/roslyn/issues/68714")]
+    public void RefReadonlyParameter_Arglist()
     {
-        var source1 = """
-            public class C
+        var source = """
+            class C
             {
-                public void M(ref readonly int p) { }
-                void M2()
+                static void M(ref readonly int p, __arglist) => System.Console.WriteLine(p);
+                static void Main()
                 {
-                    int x = 5;
-                    M(ref x);
+                    int x = 111;
+                    M(x, __arglist(x));
+                    M(ref x, __arglist(x));
+                    M(in x, __arglist(x));
                 }
             }
             """;
-        var comp1 = CreateCompilation(source1).VerifyDiagnostics();
-
-        var source2 = """
-            class D
-            {
-                void M(C c)
-                {
-                    int x = 6;
-                    c.M(ref x);
-                }
-            }
-            """;
-        CreateCompilation(source2, new[] { comp1.ToMetadataReference() }, parseOptions: TestOptions.Regular11).VerifyDiagnostics();
+        var verifier = CompileAndVerify(source, expectedOutput: "111");
+        verifier.VerifyDiagnostics(
+            // (7,11): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+            //         M(x, __arglist(x));
+            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(7, 11));
     }
 
     [Fact]
-    public void RefReadonlyParameter_InArgument_CrossAssembly()
+    public void RefReadonlyParameter_Arglist_OutArgument()
     {
-        var source1 = """
-            public class C
+        var source = """
+            class C
             {
-                public void M(ref readonly int p) { }
-                void M2()
+                static void M(ref readonly int p, __arglist) => System.Console.WriteLine(p);
+                static void Main()
                 {
-                    int x = 5;
-                    M(in x);
+                    int x = 111;
+                    M(out x, __arglist(x));
                 }
             }
             """;
-        var comp1 = CreateCompilation(source1).VerifyDiagnostics();
-
-        var source2 = """
-            class D
-            {
-                void M(C c)
-                {
-                    int x = 6;
-                    c.M(in x);
-                }
-            }
-            """;
-        CreateCompilation(source2, new[] { comp1.ToMetadataReference() }, parseOptions: TestOptions.Regular11).VerifyDiagnostics();
+        CreateCompilation(source).VerifyDiagnostics(
+            // (7,15): error CS1615: Argument 1 may not be passed with the 'out' keyword
+            //         M(out x, __arglist(x));
+            Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "out").WithLocation(7, 15));
     }
 
     [Fact]
-    public void RefReadonlyParameter_PlainArgument_CrossAssembly()
+    public void RefReadonlyParameter_CrossAssembly()
     {
         var source1 = """
             public class C
             {
-                public void M(ref readonly int p) { }
+                public void M(ref readonly int p) => System.Console.Write(p);
                 void M2()
                 {
                     int x = 5;
                     M(x);
+                    M(ref x);
+                    M(in x);
                 }
             }
             """;
@@ -1610,6 +1366,8 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 {
                     int x = 6;
                     c.M(x);
+                    c.M(ref x);
+                    c.M(in x);
                 }
             }
             """;
@@ -1947,5 +1705,237 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             }
             """;
         CompileAndVerify(source, expectedOutput: "plain5plain6").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Invocation_VirtualMethod()
+    {
+        var source = """
+            class C
+            {
+                protected virtual void M(ref readonly int p) => System.Console.WriteLine(p);
+                static void Main()
+                {
+                    int x = 111;
+                    new C().M(ref x);
+                }
+            }
+            """;
+        var verifier = CompileAndVerify(source, expectedOutput: "111");
+        verifier.VerifyDiagnostics();
+        verifier.VerifyMethodBody("C.Main", """
+            {
+              // Code size       16 (0x10)
+              .maxstack  2
+              .locals init (int V_0) //x
+              // sequence point: int x = 111;
+              IL_0000:  ldc.i4.s   111
+              IL_0002:  stloc.0
+              // sequence point: new C().M(ref x);
+              IL_0003:  newobj     "C..ctor()"
+              IL_0008:  ldloca.s   V_0
+              IL_000a:  callvirt   "void C.M(ref readonly int)"
+              // sequence point: }
+              IL_000f:  ret
+            }
+            """);
+    }
+
+    [Fact]
+    public void Invocation_OverriddenMethod()
+    {
+        var source = """
+            class B
+            {
+                protected virtual void M(ref readonly int p) => System.Console.WriteLine("B" + p);
+            }
+            class C : B
+            {
+                protected override void M(ref readonly int p) => System.Console.WriteLine("C" + p);
+                static void Main()
+                {
+                    int x = 111;
+                    new C().M(ref x);
+                }
+            }
+            """;
+        var verifier = CompileAndVerify(source, expectedOutput: "C111");
+        verifier.VerifyDiagnostics();
+        verifier.VerifyMethodBody("C.Main", """
+            {
+              // Code size       16 (0x10)
+              .maxstack  2
+              .locals init (int V_0) //x
+              // sequence point: int x = 111;
+              IL_0000:  ldc.i4.s   111
+              IL_0002:  stloc.0
+              // sequence point: new C().M(ref x);
+              IL_0003:  newobj     "C..ctor()"
+              IL_0008:  ldloca.s   V_0
+              IL_000a:  callvirt   "void B.M(ref readonly int)"
+              // sequence point: }
+              IL_000f:  ret
+            }
+            """);
+    }
+
+    [Fact]
+    public void Invocation_Constructor()
+    {
+        var source = """
+            class C
+            {
+                C(ref readonly int p) => System.Console.WriteLine(p);
+                static void Main()
+                {
+                    int x = 111;
+                    new C(ref x);
+                }
+            }
+            """;
+        var verifier = CompileAndVerify(source, expectedOutput: "111");
+        verifier.VerifyDiagnostics();
+        verifier.VerifyMethodBody("C.Main", """
+            {
+              // Code size       12 (0xc)
+              .maxstack  1
+              .locals init (int V_0) //x
+              // sequence point: int x = 111;
+              IL_0000:  ldc.i4.s   111
+              IL_0002:  stloc.0
+              // sequence point: new C(ref x);
+              IL_0003:  ldloca.s   V_0
+              IL_0005:  newobj     "C..ctor(ref readonly int)"
+              IL_000a:  pop
+              // sequence point: }
+              IL_000b:  ret
+            }
+            """);
+    }
+
+    [Fact]
+    public void Invocation_Indexer()
+    {
+        var source = """
+            class C
+            {
+                int this[ref readonly int p]
+                {
+                    get
+                    {
+                        System.Console.WriteLine(p);
+                        return 0;
+                    }
+                }
+                static void Main()
+                {
+                    int x = 111;
+                    _ = new C()[ref x];
+                }
+            }
+            """;
+        var verifier = CompileAndVerify(source, expectedOutput: "111");
+        verifier.VerifyDiagnostics();
+        verifier.VerifyMethodBody("C.Main", """
+            {
+              // Code size       17 (0x11)
+              .maxstack  2
+              .locals init (int V_0) //x
+              // sequence point: int x = 111;
+              IL_0000:  ldc.i4.s   111
+              IL_0002:  stloc.0
+              // sequence point: _ = new C()[ref x];
+              IL_0003:  newobj     "C..ctor()"
+              IL_0008:  ldloca.s   V_0
+              IL_000a:  call       "int C.this[ref readonly int].get"
+              IL_000f:  pop
+              // sequence point: }
+              IL_0010:  ret
+            }
+            """);
+    }
+
+    [Fact]
+    public void Invocation_FunctionPointer()
+    {
+        var source = """
+            class C
+            {
+                static void M(ref readonly int p) => System.Console.WriteLine(p);
+                static unsafe void Main()
+                {
+                    delegate*<ref readonly int, void> f = &M;
+                    int x = 111;
+                    f(ref x);
+                }
+            }
+            """;
+        var verifier = CompileAndVerify(source, expectedOutput: "111", options: TestOptions.UnsafeReleaseExe, verify: Verification.Fails);
+        verifier.VerifyDiagnostics();
+        verifier.VerifyMethodBody("C.Main", """
+            {
+              // Code size       19 (0x13)
+              .maxstack  2
+              .locals init (int V_0, //x
+                            delegate*<ref readonly int, void> V_1)
+              // sequence point: delegate*<ref readonly int, void> f = &M;
+              IL_0000:  ldftn      "void C.M(ref readonly int)"
+              // sequence point: int x = 111;
+              IL_0006:  ldc.i4.s   111
+              IL_0008:  stloc.0
+              // sequence point: f(ref x);
+              IL_0009:  stloc.1
+              IL_000a:  ldloca.s   V_0
+              IL_000c:  ldloc.1
+              IL_000d:  calli      "delegate*<ref readonly int, void>"
+              // sequence point: }
+              IL_0012:  ret
+            }
+            """);
+    }
+
+    [Fact]
+    public void Invocation_Delegate()
+    {
+        var source = """
+            delegate void D(ref readonly int p);
+            class C
+            {
+                static void M(ref readonly int p) => System.Console.WriteLine(p);
+                static void Main()
+                {
+                    D d = M;
+                    int x = 111;
+                    d(ref x);
+                }
+            }
+            """;
+        var verifier = CompileAndVerify(source, expectedOutput: "111");
+        verifier.VerifyDiagnostics();
+        verifier.VerifyMethodBody("C.Main", """
+            {
+              // Code size       38 (0x26)
+              .maxstack  2
+              .locals init (int V_0) //x
+              // sequence point: D d = M;
+              IL_0000:  ldsfld     "D C.<>O.<0>__M"
+              IL_0005:  dup
+              IL_0006:  brtrue.s   IL_001b
+              IL_0008:  pop
+              IL_0009:  ldnull
+              IL_000a:  ldftn      "void C.M(ref readonly int)"
+              IL_0010:  newobj     "D..ctor(object, System.IntPtr)"
+              IL_0015:  dup
+              IL_0016:  stsfld     "D C.<>O.<0>__M"
+              // sequence point: int x = 111;
+              IL_001b:  ldc.i4.s   111
+              IL_001d:  stloc.0
+              // sequence point: d(ref x);
+              IL_001e:  ldloca.s   V_0
+              IL_0020:  callvirt   "void D.Invoke(ref readonly int)"
+              // sequence point: }
+              IL_0025:  ret
+            }
+            """);
     }
 }
