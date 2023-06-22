@@ -1557,6 +1557,18 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             return TrySynthesizeIsReadOnlyAttribute();
         }
 
+        internal SynthesizedAttributeData SynthesizeRequiresLocationAttribute(ParameterSymbol symbol)
+        {
+            if ((object)Compilation.SourceModule != symbol.ContainingModule)
+            {
+                // For symbols that are not defined in the same compilation (like NoPia), don't synthesize this attribute.
+                Debug.Assert(false); // PROTOTYPE: Test this code path.
+                return null;
+            }
+
+            return TrySynthesizeRequiresLocationAttribute();
+        }
+
         internal SynthesizedAttributeData SynthesizeIsUnmanagedAttribute(Symbol symbol)
         {
             if ((object)Compilation.SourceModule != symbol.ContainingModule)
@@ -1737,24 +1749,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             return Compilation.TrySynthesizeAttribute(member, isOptionalUse: true);
         }
 
-        internal SynthesizedAttributeData SynthesizeRequiresLocationAttribute(ParameterSymbol symbol)
-        {
-            if ((object)Compilation.SourceModule != symbol.ContainingModule)
-            {
-                // For symbols that are not defined in the same compilation (like NoPia), don't synthesize this attribute.
-                Debug.Assert(false); // PROTOTYPE: Test this code path.
-                return null;
-            }
-
-            return SynthesizeRequiresLocationAttribute();
-        }
-
-        protected virtual SynthesizedAttributeData SynthesizeRequiresLocationAttribute()
-        {
-            // For modules, this attribute should be present. Only assemblies generate and embed this type.
-            return Compilation.TrySynthesizeAttribute(WellKnownMember.System_Runtime_CompilerServices_RequiresLocationAttribute__ctor);
-        }
-
         internal virtual SynthesizedAttributeData SynthesizeRefSafetyRulesAttribute(ImmutableArray<TypedConstant> arguments)
         {
             // For modules, this attribute should be present. Only assemblies generate and embed this type.
@@ -1779,6 +1773,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
         {
             // For modules, this attribute should be present. Only assemblies generate and embed this type.
             return Compilation.TrySynthesizeAttribute(WellKnownMember.System_Runtime_CompilerServices_IsReadOnlyAttribute__ctor);
+        }
+
+        protected virtual SynthesizedAttributeData TrySynthesizeRequiresLocationAttribute()
+        {
+            // For modules, this attribute should be present. Only assemblies generate and embed this type.
+            return Compilation.TrySynthesizeAttribute(WellKnownMember.System_Runtime_CompilerServices_RequiresLocationAttribute__ctor);
         }
 
         protected virtual SynthesizedAttributeData TrySynthesizeIsUnmanagedAttribute()
@@ -1814,6 +1814,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             EnsureEmbeddableAttributeExists(EmbeddableAttributes.IsReadOnlyAttribute);
         }
 
+        internal void EnsureRequiresLocationAttributeExists()
+        {
+            EnsureEmbeddableAttributeExists(EmbeddableAttributes.RequiresLocationAttribute);
+        }
+
         internal void EnsureIsUnmanagedAttributeExists()
         {
             EnsureEmbeddableAttributeExists(EmbeddableAttributes.IsUnmanagedAttribute);
@@ -1838,11 +1843,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
         internal void EnsureScopedRefAttributeExists()
         {
             EnsureEmbeddableAttributeExists(EmbeddableAttributes.ScopedRefAttribute);
-        }
-
-        internal void EnsureRequiresLocationAttributeExists()
-        {
-            EnsureEmbeddableAttributeExists(EmbeddableAttributes.RequiresLocationAttribute);
         }
 
 #nullable enable

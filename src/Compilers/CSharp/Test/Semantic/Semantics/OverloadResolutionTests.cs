@@ -9488,7 +9488,7 @@ public static class Program
         }
 
         [Fact]
-        public void PassingArgumentsToInParameters_RefKind_Ref_CrossAssembly()
+        public void PassingArgumentsToInParameters_CrossAssembly()
         {
             var source1 = """
                 public class C
@@ -9497,14 +9497,16 @@ public static class Program
                     void M2()
                     {
                         int x = 5;
+                        M(x);
                         M(ref x);
+                        M(in x);
                     }
                 }
                 """;
             var comp1 = CreateCompilation(source1).VerifyDiagnostics(
-                // (7,15): warning CS9502: Argument 1 should not be passed with the 'ref' keyword
+                // (8,15): warning CS9502: Argument 1 should not be passed with the 'ref' keyword
                 //         M(ref x);
-                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(7, 15));
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(8, 15));
 
             var source2 = """
                 class D
@@ -9512,86 +9514,155 @@ public static class Program
                     void M(C c)
                     {
                         int x = 6;
+                        c.M(x);
                         c.M(ref x);
+                        c.M(in x);
                     }
                 }
                 """;
             CreateCompilation(source2, new[] { comp1.ToMetadataReference() }, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
-                // (6,17): error CS1615: Argument 1 may not be passed with the 'ref' keyword
+                // (7,17): error CS1615: Argument 1 may not be passed with the 'ref' keyword
                 //         c.M(ref x);
-                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "ref").WithLocation(6, 17));
+                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "ref").WithLocation(7, 17));
         }
 
         [Fact]
-        public void PassingArgumentsToInParameters_RefKind_Ref_Ctor()
+        public void PassingArgumentsToInParameters_Ctor()
         {
             var source = """
                 class C
                 {
-                    private C(in int p)
-                    {
-                        System.Console.WriteLine(p);
-                    }
-
+                    private C(in int p) => System.Console.Write(p);
                     static void Main()
                     {
                         int x = 5;
+                        new C(x);
                         new C(ref x);
+                        new C(in x);
                     }
                 }
                 """;
             CreateCompilation(source, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
-                // (11,19): error CS1615: Argument 1 may not be passed with the 'ref' keyword
+                // (8,19): error CS1615: Argument 1 may not be passed with the 'ref' keyword
                 //         new C(ref x);
-                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "ref").WithLocation(11, 19));
+                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "ref").WithLocation(8, 19));
 
             var expectedDiagnostics = new[]
             {
-                // (11,19): warning CS9501: Argument 1 should not be passed with the 'ref' keyword
+                // (8,19): warning CS9501: Argument 1 should not be passed with the 'ref' keyword
                 //         new C(ref x);
-                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(11, 19)
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(8, 19)
             };
 
-            CompileAndVerify(source, expectedOutput: "5", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
-            CompileAndVerify(source, expectedOutput: "5").VerifyDiagnostics(expectedDiagnostics);
+            CompileAndVerify(source, expectedOutput: "555", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CompileAndVerify(source, expectedOutput: "555").VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]
-        public void PassingArgumentsToInParameters_RefKind_Ref_FunctionPointer()
+        public void PassingArgumentsToInParameters_Indexer()
         {
             var source = """
                 class C
                 {
-                    static void M(in int p)
+                    private int this[in int p]
                     {
-                        System.Console.WriteLine(p);
+                        get
+                        {
+                            System.Console.Write(p);
+                            return 0;
+                        }
                     }
+                    static void Main()
+                    {
+                        int x = 5;
+                        _ = new C()[x];
+                        _ = new C()[ref x];
+                        _ = new C()[in x];
+                    }
+                }
+                """;
+            CreateCompilation(source, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+                // (15,25): error CS1615: Argument 1 may not be passed with the 'ref' keyword
+                //         _ = new C()[ref x];
+                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "ref").WithLocation(15, 25));
 
+            var expectedDiagnostics = new[]
+            {
+                // (15,25): warning CS9501: Argument 1 should not be passed with the 'ref' keyword
+                //         _ = new C()[ref x];
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(15, 25)
+            };
+
+            CompileAndVerify(source, expectedOutput: "555", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CompileAndVerify(source, expectedOutput: "555").VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
+        public void PassingArgumentsToInParameters_FunctionPointer()
+        {
+            var source = """
+                class C
+                {
+                    static void M(in int p) => System.Console.Write(p);
                     static unsafe void Main()
                     {
                         delegate*<in int, void> f = &M;
                         int x = 5;
+                        f(x);
                         f(ref x);
+                        f(in x);
                     }
                 }
                 """;
             CreateCompilation(source, options: TestOptions.UnsafeReleaseExe, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
-                // (12,15): error CS1615: Argument 1 may not be passed with the 'ref' keyword
+                // (9,15): error CS1615: Argument 1 may not be passed with the 'ref' keyword
                 //         f(ref x);
-                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "ref").WithLocation(12, 15));
+                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "ref").WithLocation(9, 15));
 
             var expectedDiagnostics = new[]
             {
-                // (12,15): warning CS9502: Argument 1 should not be passed with the 'ref' keyword
+                // (9,15): warning CS9502: Argument 1 should not be passed with the 'ref' keyword
                 //         f(ref x);
-                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(12, 15)
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(9, 15)
             };
 
-            CompileAndVerify(source, expectedOutput: "5", options: TestOptions.UnsafeReleaseExe,
+            CompileAndVerify(source, expectedOutput: "555", options: TestOptions.UnsafeReleaseExe,
                 parseOptions: TestOptions.RegularNext, verify: Verification.Fails).VerifyDiagnostics(expectedDiagnostics);
 
-            CompileAndVerify(source, expectedOutput: "5", options: TestOptions.UnsafeReleaseExe,
+            CompileAndVerify(source, expectedOutput: "555", options: TestOptions.UnsafeReleaseExe,
                 verify: Verification.Fails).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact(Skip = "https://github.com/dotnet/roslyn/issues/68714")]
+        public void PassingArgumentsToInParameters_Arglist()
+        {
+            var source = """
+                class C
+                {
+                    static void M(in int p, __arglist) => System.Console.Write(p);
+                    static void Main()
+                    {
+                        int x = 5;
+                        M(x, __arglist(x));
+                        M(ref x, __arglist(x));
+                        M(in x, __arglist(x));
+                    }
+                }
+                """;
+            CreateCompilation(source, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+                // (8,15): error CS1615: Argument 1 may not be passed with the 'ref' keyword
+                //         M(ref x, __arglist(x));
+                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "ref").WithLocation(8, 15));
+
+            var expectedDiagnostics = new[]
+            {
+                // (8,15): warning CS9501: Argument 1 should not be passed with the 'ref' keyword
+                //         M(ref x, __arglist(x));
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(8, 15)
+            };
+
+            CompileAndVerify(source, expectedOutput: "555", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CompileAndVerify(source, expectedOutput: "555").VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]
