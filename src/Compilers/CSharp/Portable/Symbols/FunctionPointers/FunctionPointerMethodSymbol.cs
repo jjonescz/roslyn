@@ -41,7 +41,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     SyntaxToken modifier = modifiers[i];
                     switch (modifier.Kind())
                     {
-                        // PROTOTYPE: ref readonly
                         case SyntaxKind.RefKeyword when refKind == RefKind.None:
                             if (modifiers.Count > i + 1 && modifiers[i + 1].Kind() == SyntaxKind.ReadOnlyKeyword)
                             {
