@@ -232,10 +232,10 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// did not meet the requirements, the return value will be a <see cref="BoundBadExpression"/> that
         /// (typically) wraps the subexpression.
         /// </summary>
-        internal BoundExpression BindValue(ExpressionSyntax node, BindingDiagnosticBag diagnostics, BindValueKind valueKind, bool onlyErrors = false)
+        internal BoundExpression BindValue(ExpressionSyntax node, BindingDiagnosticBag diagnostics, BindValueKind valueKind, bool errorsOnly = false)
         {
             var result = this.BindExpression(node, diagnostics: diagnostics, invoked: false, indexed: false);
-            return onlyErrors ? CheckValueOnlyErrors(result, valueKind, diagnostics) : CheckValue(result, valueKind, diagnostics);
+            return errorsOnly ? CheckValueErrorsOnly(result, valueKind, diagnostics) : CheckValue(result, valueKind, diagnostics);
         }
 
         internal BoundExpression BindRValueWithoutTargetType(ExpressionSyntax node, BindingDiagnosticBag diagnostics, bool reportNoTargetType = true)
@@ -417,10 +417,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             return GenerateConversionForAssignment(delegateType, expr, diagnostics);
         }
 
-        internal BoundExpression BindValueAllowArgList(ExpressionSyntax node, BindingDiagnosticBag diagnostics, BindValueKind valueKind, bool onlyErrors = false)
+        internal BoundExpression BindValueAllowArgList(ExpressionSyntax node, BindingDiagnosticBag diagnostics, BindValueKind valueKind, bool errorsOnly = false)
         {
             var result = this.BindExpressionAllowArgList(node, diagnostics: diagnostics);
-            return onlyErrors ? CheckValueOnlyErrors(result, valueKind, diagnostics) : CheckValue(result, valueKind, diagnostics);
+            return errorsOnly ? CheckValueErrorsOnly(result, valueKind, diagnostics) : CheckValue(result, valueKind, diagnostics);
         }
 
         internal BoundFieldEqualsValue BindFieldInitializer(
@@ -3201,16 +3201,16 @@ namespace Microsoft.CodeAnalysis.CSharp
                 RefKind.Ref or RefKind.In => BindValueKind.RefersToLocation,
                 _ => throw ExceptionUtilities.UnexpectedValue(refKind),
             };
-            var onlyErrors = valueKind == BindValueKind.RefersToLocation;
+            var errorsOnly = valueKind == BindValueKind.RefersToLocation;
 
             BoundExpression argument;
             if (allowArglist)
             {
-                argument = this.BindValueAllowArgList(argumentExpression, diagnostics, valueKind, onlyErrors: onlyErrors);
+                argument = this.BindValueAllowArgList(argumentExpression, diagnostics, valueKind, errorsOnly: errorsOnly);
             }
             else
             {
-                argument = this.BindValue(argumentExpression, diagnostics, valueKind, onlyErrors: onlyErrors);
+                argument = this.BindValue(argumentExpression, diagnostics, valueKind, errorsOnly: errorsOnly);
             }
 
             return argument;

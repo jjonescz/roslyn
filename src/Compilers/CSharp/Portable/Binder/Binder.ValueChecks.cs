@@ -376,7 +376,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <summary>
         /// Like <see cref="CheckValue"/> but puts only errors into <paramref name="diagnostics"/>.
         /// </summary>
-        private BoundExpression CheckValueOnlyErrors(BoundExpression expr, BindValueKind valueKind, BindingDiagnosticBag diagnostics)
+        private BoundExpression CheckValueErrorsOnly(BoundExpression expr, BindValueKind valueKind, BindingDiagnosticBag diagnostics)
         {
             if (diagnostics.DiagnosticBag is null)
             {
