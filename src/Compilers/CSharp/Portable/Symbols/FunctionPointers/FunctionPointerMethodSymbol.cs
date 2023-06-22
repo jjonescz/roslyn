@@ -309,7 +309,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private static CustomModifier? GetCustomModifierForRefKind(RefKind refKind, CSharpCompilation compilation)
         {
-            Debug.Assert(refKind is RefKind.In or RefKind.Ref or RefKind.Out);
+            Debug.Assert(refKind is RefKind.None or RefKind.In or RefKind.Ref or RefKind.Out);
 
             var attributeType = refKind switch
             {
