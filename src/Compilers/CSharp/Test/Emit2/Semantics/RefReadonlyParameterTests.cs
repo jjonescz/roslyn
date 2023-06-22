@@ -20,6 +20,15 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     private const string RequiresLocationAttributeQualifiedName = $"{RequiresLocationAttributeNamespace}.{RequiresLocationAttributeName}";
     private const string InAttributeQualifiedName = "System.Runtime.InteropServices.InAttribute";
 
+    private const string RequiresLocationAttributeSource = $$"""
+        namespace {{RequiresLocationAttributeNamespace}}
+        {
+            class {{RequiresLocationAttributeName}} : System.Attribute
+            {
+            }
+        }
+        """;
+
     private static void VerifyRequiresLocationAttributeSynthesized(ModuleSymbol module)
     {
         var attributeType = module.GlobalNamespace.GetMember<NamedTypeSymbol>(RequiresLocationAttributeQualifiedName);
@@ -129,20 +138,14 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     [Fact]
     public void ManuallyDefinedAttribute()
     {
-        var source = $$"""
+        var source = """
             class C
             {
                 public void M(ref readonly int p) { }
             }
-
-            namespace {{RequiresLocationAttributeNamespace}}
-            {
-                class {{RequiresLocationAttributeName}} : System.Attribute
-                {
-                }
-            }
             """;
-        var verifier = CompileAndVerify(source, sourceSymbolValidator: verify, symbolValidator: verify);
+        var verifier = CompileAndVerify(new[] { source, RequiresLocationAttributeSource },
+            sourceSymbolValidator: verify, symbolValidator: verify);
         verifier.VerifyDiagnostics();
 
         static void verify(ModuleSymbol m)
@@ -555,13 +558,13 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 public unsafe void M(delegate*<ref readonly int, void> p) { }
             }
             """;
-        var verifier = CompileAndVerify(source, options: TestOptions.UnsafeReleaseDll,
+        var verifier = CompileAndVerify(new[] { source, RequiresLocationAttributeSource }, options: TestOptions.UnsafeReleaseDll,
             sourceSymbolValidator: verify, symbolValidator: verify);
         verifier.VerifyDiagnostics();
 
         static void verify(ModuleSymbol m)
         {
-            Assert.Null(m.GlobalNamespace.GetMember<NamedTypeSymbol>(RequiresLocationAttributeQualifiedName));
+            Assert.NotNull(m.GlobalNamespace.GetMember<NamedTypeSymbol>(RequiresLocationAttributeQualifiedName));
 
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
             var ptr = (FunctionPointerTypeSymbol)p.Type;
@@ -2138,7 +2141,9 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        CompileAndVerify(source, expectedOutput: "555", options: TestOptions.UnsafeReleaseExe, verify: Verification.Fails).VerifyDiagnostics(
+        var verifier = CompileAndVerify(new[] { source, RequiresLocationAttributeSource },
+            expectedOutput: "555", options: TestOptions.UnsafeReleaseExe, verify: Verification.Fails);
+        verifier.VerifyDiagnostics(
             // (8,11): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
             //         f(x);
             Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(8, 11));
@@ -2159,7 +2164,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        CreateCompilation(source, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(
+        CreateCompilation(new[] { source, RequiresLocationAttributeSource }, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(
             // (8,15): error CS1615: Argument 1 may not be passed with the 'out' keyword
             //         f(out x);
             Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "out").WithLocation(8, 15));
@@ -2232,6 +2237,40 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             (false, InAttributeQualifiedName),
             (true, "MyAttribute")
         }, p.RefCustomModifiers.Select(m => (m.IsOptional, m.Modifier.ToTestDisplayString())));
+    }
+
+    [Fact]
+    public void FunctionPointer_MissingInAttribute()
+    {
+        var source = """
+            class C
+            {
+                public unsafe void M(delegate*<ref readonly int, void> p) { }
+            }
+            """;
+        var comp = CreateCompilation(new[] { source, RequiresLocationAttributeSource }, options: TestOptions.UnsafeDebugDll);
+        comp.MakeTypeMissing(WellKnownType.System_Runtime_InteropServices_InAttribute);
+        comp.VerifyDiagnostics(
+            // (3,36): error CS0518: Predefined type 'System.Runtime.InteropServices.InAttribute' is not defined or imported
+            //     public unsafe void M(delegate*<ref readonly int, void> p) { }
+            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "ref readonly int").WithArguments("System.Runtime.InteropServices.InAttribute").WithLocation(3, 36));
+    }
+
+    [Fact]
+    public void FunctionPointer_MissingRequiresLocationAttribute()
+    {
+        var source = """
+            class C
+            {
+                public unsafe void M(delegate*<ref readonly int, void> p) { }
+            }
+            """;
+        var comp = CreateCompilation(source, options: TestOptions.UnsafeDebugDll);
+        comp.MakeTypeMissing(WellKnownType.System_Runtime_CompilerServices_RequiresLocationAttribute);
+        comp.VerifyDiagnostics(
+            // (3,36): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresLocationAttribute' is not defined or imported
+            //     public unsafe void M(delegate*<ref readonly int, void> p) { }
+            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "ref readonly int").WithArguments("System.Runtime.CompilerServices.RequiresLocationAttribute").WithLocation(3, 36));
     }
 
     [Fact]
@@ -2605,7 +2644,8 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        var verifier = CompileAndVerify(source, expectedOutput: "111", options: TestOptions.UnsafeReleaseExe, verify: Verification.Fails);
+        var verifier = CompileAndVerify(new[] { source, RequiresLocationAttributeSource },
+            expectedOutput: "111", options: TestOptions.UnsafeReleaseExe, verify: Verification.Fails);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("C.Main", """
             {
