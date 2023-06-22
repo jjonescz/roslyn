@@ -1405,7 +1405,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         }
                         else
                         {
-                            Error(diagnostics, GetStandardLvalueError(valueKind), eventSyntax, eventSymbol);
+                            Error(diagnostics, GetStandardLvalueError(valueKind), eventSyntax);
                         }
                         return false;
                     }
