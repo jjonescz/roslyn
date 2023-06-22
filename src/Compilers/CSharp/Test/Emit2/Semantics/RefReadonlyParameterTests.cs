@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities;
 using Roslyn.Test.Utilities;
+using Roslyn.Utilities;
 using Xunit;
 
 namespace Microsoft.CodeAnalysis.CSharp.UnitTests.Semantics;
@@ -17,6 +18,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     private const string RequiresLocationAttributeName = "RequiresLocationAttribute";
     private const string RequiresLocationAttributeNamespace = "System.Runtime.CompilerServices";
     private const string RequiresLocationAttributeQualifiedName = $"{RequiresLocationAttributeNamespace}.{RequiresLocationAttributeName}";
+    private const string InAttributeQualifiedName = "System.Runtime.InteropServices.InAttribute";
 
     private static void VerifyRequiresLocationAttributeSynthesized(ModuleSymbol module)
     {
@@ -31,11 +33,19 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         }
     }
 
+    private enum VerifyModifiers
+    {
+        None,
+        In,
+        InAndRequiresLocation,
+        Unknown
+    }
+
     private static void VerifyRefReadonlyParameter(ParameterSymbol parameter,
         bool refKind = true,
         bool metadataIn = true,
         bool attributes = true,
-        bool? customModifiers = false,
+        VerifyModifiers customModifiers = VerifyModifiers.None,
         bool useSiteError = false)
     {
         Assert.Equal(refKind, RefKind.RefReadOnlyParameter == parameter.RefKind);
@@ -51,21 +61,33 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             else
             {
                 var attribute = Assert.Single(parameter.GetAttributes());
-                Assert.Equal("System.Runtime.CompilerServices.RequiresLocationAttribute", attribute.AttributeClass.ToTestDisplayString());
+                Assert.Equal(RequiresLocationAttributeQualifiedName, attribute.AttributeClass.ToTestDisplayString());
                 Assert.Empty(attribute.ConstructorArguments);
                 Assert.Empty(attribute.NamedArguments);
             }
         }
 
-        if (customModifiers == true)
+        switch (customModifiers)
         {
-            var mod = Assert.Single(parameter.RefCustomModifiers);
-            Assert.False(mod.IsOptional);
-            Assert.Equal("System.Runtime.InteropServices.InAttribute", mod.Modifier.ToTestDisplayString());
-        }
-        else if (customModifiers == false)
-        {
-            Assert.Empty(parameter.RefCustomModifiers);
+            case VerifyModifiers.None:
+                Assert.Empty(parameter.RefCustomModifiers);
+                break;
+            case VerifyModifiers.In:
+                var mod = Assert.Single(parameter.RefCustomModifiers);
+                Assert.False(mod.IsOptional);
+                Assert.Equal(InAttributeQualifiedName, mod.Modifier.ToTestDisplayString());
+                break;
+            case VerifyModifiers.InAndRequiresLocation:
+                AssertEx.SetEqual(new[]
+                {
+                    (false, InAttributeQualifiedName),
+                    (true, RequiresLocationAttributeQualifiedName)
+                }, parameter.RefCustomModifiers.Select(m => (m.IsOptional, m.Modifier.ToTestDisplayString())));
+                break;
+            case VerifyModifiers.Unknown:
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(customModifiers);
         }
 
         var method = (MethodSymbol)parameter.ContainingSymbol;
@@ -188,7 +210,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         Assert.Equal(new[]
         {
             "System.Runtime.CompilerServices.IsReadOnlyAttribute",
-            "System.Runtime.CompilerServices.RequiresLocationAttribute"
+            RequiresLocationAttributeQualifiedName
         }, attributes.Select(a => a.AttributeClass.ToTestDisplayString()));
         Assert.All(attributes, a =>
         {
@@ -278,7 +300,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         var comp = CreateCompilationWithIL("", ilSource).VerifyDiagnostics();
 
         var p = comp.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
-        VerifyRefReadonlyParameter(p, customModifiers: true, useSiteError: true);
+        VerifyRefReadonlyParameter(p, customModifiers: VerifyModifiers.In, useSiteError: true);
     }
 
     [Fact]
@@ -298,7 +320,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             VerifyRequiresLocationAttributeSynthesized(m);
 
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
-            VerifyRefReadonlyParameter(p, customModifiers: true);
+            VerifyRefReadonlyParameter(p, customModifiers: VerifyModifiers.In);
         }
     }
 
@@ -319,7 +341,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             VerifyRequiresLocationAttributeSynthesized(m);
 
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
-            VerifyRefReadonlyParameter(p, customModifiers: true);
+            VerifyRefReadonlyParameter(p, customModifiers: VerifyModifiers.In);
         }
     }
 
@@ -445,7 +467,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             VerifyRequiresLocationAttributeSynthesized(m);
 
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("D.Invoke").Parameters.Single();
-            VerifyRefReadonlyParameter(p, customModifiers: true);
+            VerifyRefReadonlyParameter(p, customModifiers: VerifyModifiers.In);
         }
     }
 
@@ -544,7 +566,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
             var ptr = (FunctionPointerTypeSymbol)p.Type;
             var p2 = ptr.Signature.Parameters.Single();
-            VerifyRefReadonlyParameter(p2, refKind: m is SourceModuleSymbol, customModifiers: true, attributes: false);
+            VerifyRefReadonlyParameter(p2, refKind: m is SourceModuleSymbol, customModifiers: VerifyModifiers.InAndRequiresLocation, attributes: false);
             Assert.Equal(m is SourceModuleSymbol ? RefKind.RefReadOnlyParameter : RefKind.In, p2.RefKind);
             Assert.Empty(p2.GetAttributes());
         }
@@ -2202,12 +2224,12 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
         var ptr = (FunctionPointerTypeSymbol)comp.GlobalNamespace.GetMember<FieldSymbol>("C.D").Type;
         var p = ptr.Signature.Parameters.Single();
-        VerifyRefReadonlyParameter(p, refKind: false, attributes: false, customModifiers: null);
+        VerifyRefReadonlyParameter(p, refKind: false, attributes: false, customModifiers: VerifyModifiers.Unknown);
         Assert.Equal(RefKind.In, p.RefKind);
         Assert.Empty(p.GetAttributes());
         AssertEx.SetEqual(new[]
         {
-            (false, "System.Runtime.InteropServices.InAttribute"),
+            (false, InAttributeQualifiedName),
             (true, "MyAttribute")
         }, p.RefCustomModifiers.Select(m => (m.IsOptional, m.Modifier.ToTestDisplayString())));
     }
