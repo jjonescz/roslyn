@@ -3235,8 +3235,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var kind = result.ConversionForArg(arg);
                 BoundExpression argument = arguments[arg];
 
-                if (Compilation.IsFeatureEnabled(MessageID.IDS_FeatureRefReadonlyParameters) &&
-                    argument is not BoundArgListOperator && !argument.HasAnyErrors)
+                if (argument is not BoundArgListOperator && !argument.HasAnyErrors)
                 {
                     var argRefKind = analyzedArguments.RefKind(arg);
                     var parameterRefKind = GetCorrespondingParameter(ref result, parameters, arg).RefKind;
@@ -3264,26 +3263,29 @@ namespace Microsoft.CodeAnalysis.CSharp
                         // Argument {0} should be a variable because it is passed to a 'ref readonly' parameter
                         diagnostics.Add(ErrorCode.WRN_RefReadonlyNotVariable, argument.Syntax, arg + 1);
                     }
-                    // Warn for `ref`/`in` or None/`ref readonly` mismatch.
-                    else if (argRefKind == RefKind.Ref)
+                    else if (Compilation.IsFeatureEnabled(MessageID.IDS_FeatureRefReadonlyParameters))
                     {
-                        if (GetCorrespondingParameter(ref result, parameters, arg).RefKind == RefKind.In)
+                        // Warn for `ref`/`in` or None/`ref readonly` mismatch.
+                        if (argRefKind == RefKind.Ref)
                         {
-                            // The 'ref' modifier for argument {0} corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+                            if (GetCorrespondingParameter(ref result, parameters, arg).RefKind == RefKind.In)
+                            {
+                                // The 'ref' modifier for argument {0} corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+                                diagnostics.Add(
+                                    ErrorCode.WRN_BadArgRef,
+                                    argument.Syntax,
+                                    arg + 1);
+                            }
+                        }
+                        else if (argRefKind == RefKind.None &&
+                            GetCorrespondingParameter(ref result, parameters, arg).RefKind == RefKind.RefReadOnlyParameter)
+                        {
+                            // Argument {0} should be passed with 'ref' or 'in' keyword
                             diagnostics.Add(
-                                ErrorCode.WRN_BadArgRef,
+                                ErrorCode.WRN_ArgExpectedRefOrIn,
                                 argument.Syntax,
                                 arg + 1);
                         }
-                    }
-                    else if (argRefKind == RefKind.None &&
-                        GetCorrespondingParameter(ref result, parameters, arg).RefKind == RefKind.RefReadOnlyParameter)
-                    {
-                        // Argument {0} should be passed with 'ref' or 'in' keyword
-                        diagnostics.Add(
-                            ErrorCode.WRN_ArgExpectedRefOrIn,
-                            argument.Syntax,
-                            arg + 1);
                     }
                 }
 
