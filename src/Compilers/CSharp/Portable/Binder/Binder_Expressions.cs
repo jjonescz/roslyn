@@ -3350,7 +3350,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (argRefKind is RefKind.None)
                 {
-                    Debug.Assert(parameterRefKind is RefKind.None or RefKind.In or RefKind.RefReadOnlyParameter);
+                    // Note: None/`ref` is allowed for COM interop.
+                    Debug.Assert(parameterRefKind is RefKind.None or RefKind.Ref or RefKind.In or RefKind.RefReadOnlyParameter);
                     return null;
                 }
 
