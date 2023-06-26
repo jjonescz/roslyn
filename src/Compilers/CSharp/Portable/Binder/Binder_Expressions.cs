@@ -3345,20 +3345,40 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
+            // Returns null if already checked in BindArgumentExpression.
             static BindValueKind? getValueKind(RefKind argRefKind, RefKind parameterRefKind)
             {
-                if (argRefKind is RefKind.None or RefKind.Out)
+                if (argRefKind is RefKind.None)
                 {
-                    // Already checked in BindArgumentExpression.
+                    Debug.Assert(parameterRefKind is RefKind.None or RefKind.In or RefKind.RefReadOnlyParameter);
                     return null;
                 }
 
-                if (parameterRefKind is RefKind.RefReadOnlyParameter || argRefKind is RefKind.In)
+                if (argRefKind is RefKind.Out)
                 {
+                    Debug.Assert(parameterRefKind is RefKind.Out);
+                    return null;
+                }
+
+                if (parameterRefKind is RefKind.RefReadOnlyParameter)
+                {
+                    Debug.Assert(argRefKind is RefKind.Ref or RefKind.In);
+                    return BindValueKind.ReadonlyRef;
+                }
+
+                if (argRefKind is RefKind.In)
+                {
+                    Debug.Assert(parameterRefKind is RefKind.Ref or RefKind.In);
                     return BindValueKind.ReadonlyRef;
                 }
 
                 Debug.Assert(argRefKind is RefKind.Ref);
+                if (parameterRefKind is RefKind.In)
+                {
+                    return BindValueKind.ReadonlyRef;
+                }
+
+                Debug.Assert(parameterRefKind is RefKind.Ref);
                 return BindValueKind.RefOrOut;
             }
         }
