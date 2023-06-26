@@ -9478,13 +9478,85 @@ public static class Program
 
             var expectedDiagnostics = new[]
             {
-                // (11,20): warning CS9501: Argument 1 should not be passed with the 'ref' keyword
+                // (11,20): warning CS9501: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
                 //         Method(ref x);
-                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(11, 20)
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1").WithLocation(11, 20)
             };
 
             CompileAndVerify(code, expectedOutput: "5", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
-            CompileAndVerify(code, expectedOutput: "5").VerifyDiagnostics(expectedDiagnostics);
+            var verifier = CompileAndVerify(code, expectedOutput: "5").VerifyDiagnostics(expectedDiagnostics);
+
+            verifier.VerifyIL("Program.Main", """
+                {
+                  // Code size       10 (0xa)
+                  .maxstack  1
+                  .locals init (int V_0) //x
+                  IL_0000:  ldc.i4.5
+                  IL_0001:  stloc.0
+                  IL_0002:  ldloca.s   V_0
+                  IL_0004:  call       "void Program.Method(in int)"
+                  IL_0009:  ret
+                }
+                """);
+        }
+
+        [Fact]
+        public void PassingArgumentsToInParameters_RefKind_Ref_ReadonlyRef()
+        {
+            var code = """
+                public static class Program
+                {
+                    public static void Method(in int p)
+                    {
+                        System.Console.WriteLine(p);
+                    }
+                    static readonly int x = 5;
+                    public static void Main()
+                    {
+                        Method(ref x);
+                    }
+                }
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (10,20): error CS0199: A static readonly field cannot be used as a ref or out value (except in a static constructor)
+                //         Method(ref x);
+                Diagnostic(ErrorCode.ERR_RefReadonlyStatic, "x").WithLocation(10, 20)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular11).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
+        public void PassingArgumentsToInParameters_RefKind_Ref_RValue()
+        {
+            var code = """
+                public static class Program
+                {
+                    public static void Method(in int p)
+                    {
+                        System.Console.WriteLine(p);
+                    }
+                    public static void Main()
+                    {
+                        Method(ref 5);
+                    }
+                }
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (9,20): error CS1510: A ref or out value must be an assignable variable
+                //         Method(ref 5);
+                Diagnostic(ErrorCode.ERR_RefLvalueExpected, "5").WithLocation(9, 20)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular11).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]
@@ -9504,9 +9576,9 @@ public static class Program
                 }
                 """;
             var comp1 = CreateCompilation(source1).VerifyDiagnostics(
-                // (8,15): warning CS9502: Argument 1 should not be passed with the 'ref' keyword
+                // (8,15): warning CS9502: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
                 //         M(ref x);
-                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(8, 15));
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1").WithLocation(8, 15));
 
             var source2 = """
                 class D
@@ -9549,9 +9621,9 @@ public static class Program
 
             var expectedDiagnostics = new[]
             {
-                // (8,19): warning CS9501: Argument 1 should not be passed with the 'ref' keyword
+                // (8,19): warning CS9501: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
                 //         new C(ref x);
-                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(8, 19)
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1").WithLocation(8, 19)
             };
 
             CompileAndVerify(source, expectedOutput: "555", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -9588,9 +9660,9 @@ public static class Program
 
             var expectedDiagnostics = new[]
             {
-                // (15,25): warning CS9501: Argument 1 should not be passed with the 'ref' keyword
+                // (15,25): warning CS9501: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
                 //         _ = new C()[ref x];
-                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(15, 25)
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1").WithLocation(15, 25)
             };
 
             CompileAndVerify(source, expectedOutput: "555", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -9621,9 +9693,9 @@ public static class Program
 
             var expectedDiagnostics = new[]
             {
-                // (9,15): warning CS9502: Argument 1 should not be passed with the 'ref' keyword
+                // (9,15): warning CS9502: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
                 //         f(ref x);
-                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(9, 15)
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1").WithLocation(9, 15)
             };
 
             CompileAndVerify(source, expectedOutput: "555", options: TestOptions.UnsafeReleaseExe,
@@ -9656,9 +9728,9 @@ public static class Program
 
             var expectedDiagnostics = new[]
             {
-                // (8,15): warning CS9501: Argument 1 should not be passed with the 'ref' keyword
+                // (8,15): warning CS9501: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
                 //         M(ref x, __arglist(x));
-                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(8, 15)
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1").WithLocation(8, 15)
             };
 
             CompileAndVerify(source, expectedOutput: "555", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -9688,12 +9760,12 @@ public static class Program
                 }
                 """;
             CompileAndVerify(source, expectedOutput: "65655656").VerifyDiagnostics(
-                // (13,28): warning CS9502: Argument 2 should not be passed with the 'ref' keyword
+                // (13,28): warning CS9502: The 'ref' modifier for argument 2 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
                 //         M(b: ref x, a: ref y); // 2
-                Diagnostic(ErrorCode.WRN_BadArgRef, "y").WithArguments("2", "ref").WithLocation(13, 28),
-                // (15,18): warning CS9502: Argument 1 should not be passed with the 'ref' keyword
+                Diagnostic(ErrorCode.WRN_BadArgRef, "y").WithArguments("2").WithLocation(13, 28),
+                // (15,18): warning CS9502: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
                 //         M(a: ref x, ref y); // 4
-                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1", "ref").WithLocation(15, 18));
+                Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1").WithLocation(15, 18));
         }
 
         [Fact]
@@ -9758,9 +9830,9 @@ public static class Program
 
             var expectedDiagnostics = new[]
             {
-                // (8,58): warning CS9501: Argument 2 should not be passed with the 'ref' keyword
+                // (8,58): warning CS9501: The 'ref' modifier for argument 2 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
                 //         System.Console.WriteLine(M1(default(object), ref i));
-                Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2", "ref").WithLocation(8, 58)
+                Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2").WithLocation(8, 58)
             };
 
             CompileAndVerify(source, expectedOutput: "object5", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -9789,9 +9861,9 @@ public static class Program
 
             var expectedDiagnostics = new[]
             {
-                // (8,36): warning CS9501: Argument 2 should not be passed with the 'ref' keyword
+                // (8,36): warning CS9501: The 'ref' modifier for argument 2 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
                 //         new C(default(object), ref i);
-                Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2", "ref").WithLocation(8, 36)
+                Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2").WithLocation(8, 36)
             };
 
             CompileAndVerify(source, expectedOutput: "object5", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);

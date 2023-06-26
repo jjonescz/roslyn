@@ -3217,117 +3217,15 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
 #nullable enable
-        /// <summary>
-        /// Verifies ref/in/out modifiers and value kind requirements.
-        /// </summary>
-        private void CheckRefArguments<TMember>(
+        private void CheckAndCoerceArguments<TMember>(
             MemberResolutionResult<TMember> methodResult,
             AnalyzedArguments analyzedArguments,
-            BindingDiagnosticBag diagnostics)
-            where TMember : Symbol
-        {
-            if (analyzedArguments.HasErrors)
-            {
-                return;
-            }
-
-            var result = methodResult.Result;
-            var parameters = methodResult.LeastOverriddenMember.GetParameters();
-
-            for (int arg = 0; arg < analyzedArguments.Arguments.Count; arg++)
-            {
-                if (arg >= parameters.Length)
-                {
-                    // We can run out of parameters before arguments. For example: `M(__arglist(x))`.
-                    break;
-                }
-
-                var argument = analyzedArguments.Argument(arg);
-                var argRefKind = analyzedArguments.RefKind(arg);
-                var parameterRefKind = GetCorrespondingParameter(ref result, parameters, arg).RefKind;
-
-                // Check value kind. Note that this cannot affect overload resolution, because
-                // - for other than `ref readonly` parameters, this depends solely on callsite modifiers (not resolved members),
-                // - for `ref readonly` parameters with no callsite modifier, this fails only if the argument is not an rvalue
-                //   (i.e., it's a type or a namespace) which could not possibly resolve another member,
-                // - for `ref readonly` parameters with other modifiers, this would fail if the argument is not a variable,
-                //   except it already failed earlier (ref/in callsite modifier on an rvalue is an error).
-                // Hence it's fine to perform the check here (after overload resolution already selected the best member).
-                if (getValueKind(argRefKind: argRefKind, parameterRefKind: parameterRefKind) is { } valueKind)
-                {
-                    analyzedArguments.Arguments[arg] = argument = this.CheckValue(argument, valueKind, diagnostics);
-                }
-
-                if (argument.HasAnyErrors)
-                {
-                    // Don't emit other warnings.
-                    continue;
-                }
-
-                // Warn for rvalues passed to `ref readonly` parameters without callsite modifiers.
-                if (parameterRefKind == RefKind.RefReadOnlyParameter && argRefKind == RefKind.None &&
-                    !this.CheckValueKind(argument.Syntax, argument, BindValueKind.RefersToLocation, checkingReceiver: false, BindingDiagnosticBag.Discarded))
-                {
-                    // Argument {0} should be a variable because it is passed to a 'ref readonly' parameter
-                    diagnostics.Add(ErrorCode.WRN_RefReadonlyNotVariable, argument.Syntax, arg + 1);
-
-                    // Don't emit other warnings.
-                    continue;
-                }
-
-                // Warn for `ref`/`in` or None/`ref readonly` mismatch.
-                if (argRefKind is RefKind.Ref or RefKind.None)
-                {
-                    var warnParameterKind = argRefKind == RefKind.Ref ? RefKind.In : RefKind.RefReadOnlyParameter;
-                    if (parameterRefKind == warnParameterKind)
-                    {
-                        if (argRefKind == RefKind.None)
-                        {
-                            // Argument {0} should be passed with 'ref' or 'in' keyword
-                            diagnostics.Add(
-                                ErrorCode.WRN_ArgExpectedRefOrIn,
-                                argument.Syntax,
-                                arg + 1);
-                        }
-                        else
-                        {
-                            // Argument {0} should not be passed with the '{1}' keyword
-                            diagnostics.Add(
-                                ErrorCode.WRN_BadArgRef,
-                                argument.Syntax,
-                                arg + 1,
-                                argRefKind.ToArgumentDisplayString());
-                        }
-                    }
-                }
-            }
-
-            static BindValueKind? getValueKind(RefKind argRefKind, RefKind parameterRefKind)
-            {
-                if (argRefKind is RefKind.None or RefKind.Out)
-                {
-                    // Already checked in BindArgumentExpression.
-                    return null;
-                }
-
-                if (parameterRefKind is RefKind.RefReadOnlyParameter || argRefKind is RefKind.In)
-                {
-                    return BindValueKind.ReadonlyRef;
-                }
-
-                Debug.Assert(argRefKind is RefKind.Ref);
-                return BindValueKind.RefOrOut;
-            }
-        }
-
-        private void CoerceArguments<TMember>(
-            MemberResolutionResult<TMember> methodResult,
-            ArrayBuilder<BoundExpression> arguments,
             BindingDiagnosticBag diagnostics,
             BoundExpression? receiver)
             where TMember : Symbol
         {
             var result = methodResult.Result;
+            var arguments = analyzedArguments.Arguments;
 
             // Parameter types should be taken from the least overridden member:
             var parameters = methodResult.LeastOverriddenMember.GetParameters();
@@ -3336,6 +3234,58 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 var kind = result.ConversionForArg(arg);
                 BoundExpression argument = arguments[arg];
+
+                if (Compilation.IsFeatureEnabled(MessageID.IDS_FeatureRefReadonlyParameters) &&
+                    argument is not BoundArgListOperator && !argument.HasAnyErrors)
+                {
+                    var argRefKind = analyzedArguments.RefKind(arg);
+                    var parameterRefKind = GetCorrespondingParameter(ref result, parameters, arg).RefKind;
+
+                    // Check value kind. Note that this cannot affect overload resolution, because
+                    // - for other than `ref readonly` parameters, this depends solely on callsite modifiers (not resolved members),
+                    // - for `ref readonly` parameters with no callsite modifier, this fails only if the argument is not an rvalue
+                    //   (i.e., it's a type or a namespace) which could not possibly resolve another member,
+                    // - for `ref readonly` parameters with other modifiers, this would fail if the argument is not a variable,
+                    //   except it already failed earlier (ref/in callsite modifier on an rvalue is an error).
+                    // Hence it's fine to perform the check here (after overload resolution already selected the best member).
+                    if (getValueKind(argRefKind: argRefKind, parameterRefKind: parameterRefKind) is { } valueKind)
+                    {
+                        analyzedArguments.Arguments[arg] = argument = this.CheckValue(argument, valueKind, diagnostics);
+                    }
+
+                    if (argument.HasAnyErrors)
+                    {
+                        // Don't emit other warnings.
+                    }
+                    // Warn for rvalues passed to `ref readonly` parameters without callsite modifiers.
+                    else if (parameterRefKind == RefKind.RefReadOnlyParameter && argRefKind == RefKind.None &&
+                        !this.CheckValueKind(argument.Syntax, argument, BindValueKind.RefersToLocation, checkingReceiver: false, BindingDiagnosticBag.Discarded))
+                    {
+                        // Argument {0} should be a variable because it is passed to a 'ref readonly' parameter
+                        diagnostics.Add(ErrorCode.WRN_RefReadonlyNotVariable, argument.Syntax, arg + 1);
+                    }
+                    // Warn for `ref`/`in` or None/`ref readonly` mismatch.
+                    else if (argRefKind == RefKind.Ref)
+                    {
+                        if (GetCorrespondingParameter(ref result, parameters, arg).RefKind == RefKind.In)
+                        {
+                            // The 'ref' modifier for argument {0} corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+                            diagnostics.Add(
+                                ErrorCode.WRN_BadArgRef,
+                                argument.Syntax,
+                                arg + 1);
+                        }
+                    }
+                    else if (argRefKind == RefKind.None &&
+                        GetCorrespondingParameter(ref result, parameters, arg).RefKind == RefKind.RefReadOnlyParameter)
+                    {
+                        // Argument {0} should be passed with 'ref' or 'in' keyword
+                        diagnostics.Add(
+                            ErrorCode.WRN_ArgExpectedRefOrIn,
+                            argument.Syntax,
+                            arg + 1);
+                    }
+                }
 
                 if (kind.IsInterpolatedStringHandler)
                 {
@@ -3393,6 +3343,23 @@ namespace Microsoft.CodeAnalysis.CSharp
                     ReportUnsafeIfNotAllowed(argument.Syntax, diagnostics);
                     //CONSIDER: Return a bad expression so that HasErrors is true?
                 }
+            }
+
+            static BindValueKind? getValueKind(RefKind argRefKind, RefKind parameterRefKind)
+            {
+                if (argRefKind is RefKind.None or RefKind.Out)
+                {
+                    // Already checked in BindArgumentExpression.
+                    return null;
+                }
+
+                if (parameterRefKind is RefKind.RefReadOnlyParameter || argRefKind is RefKind.In)
+                {
+                    return BindValueKind.ReadonlyRef;
+                }
+
+                Debug.Assert(argRefKind is RefKind.Ref);
+                return BindValueKind.RefOrOut;
             }
         }
 
@@ -6244,8 +6211,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (succeededIgnoringAccessibility)
             {
-                this.CheckRefArguments<MethodSymbol>(result.ValidResult, analyzedArguments, diagnostics);
-                this.CoerceArguments<MethodSymbol>(result.ValidResult, analyzedArguments.Arguments, diagnostics, receiver: null);
+                this.CheckAndCoerceArguments<MethodSymbol>(result.ValidResult, analyzedArguments, diagnostics, receiver: null);
             }
 
             // Fill in the out parameter with the result, if there was one; it might be inaccessible.
@@ -8665,8 +8631,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 receiver = ReplaceTypeOrValueReceiver(receiver, property.IsStatic, diagnostics);
 
-                this.CheckRefArguments<PropertySymbol>(resolutionResult, analyzedArguments, diagnostics);
-                this.CoerceArguments<PropertySymbol>(resolutionResult, analyzedArguments.Arguments, diagnostics, receiver);
+                this.CheckAndCoerceArguments<PropertySymbol>(resolutionResult, analyzedArguments, diagnostics, receiver);
 
                 if (!gotError && receiver != null && receiver.Kind == BoundKind.ThisReference && receiver.WasCompilerGenerated)
                 {

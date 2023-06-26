@@ -707,11 +707,13 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                     break;
 
                 case RefKind.In:
+                case RefKind.RefReadOnlyParameter:
                     var temp = EmitAddress(argument, AddressKind.ReadOnly);
                     AddExpressionTemp(temp);
                     break;
 
                 default:
+                    Debug.Assert(refKind is RefKind.Ref or RefKind.Out or RefKindExtensions.StrictIn);
                     // NOTE: passing "ReadOnlyStrict" here. 
                     //       we should not get an address of a copy if at all possible
                     var unexpectedTemp = EmitAddress(argument, refKind == RefKindExtensions.StrictIn ? AddressKind.ReadOnlyStrict : AddressKind.Writeable);
@@ -956,8 +958,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                     argRefKind = argRefKindsOpt[i];
 
                     Debug.Assert(argRefKind == parameters[i].RefKind ||
-                            (argRefKind == RefKindExtensions.StrictIn && parameters[i].RefKind == RefKind.In) ||
-                            (parameters[i].RefKind == RefKind.RefReadOnlyParameter),
+                            argRefKind == RefKindExtensions.StrictIn && parameters[i].RefKind == RefKind.In,
                             "in Emit the argument RefKind must be compatible with the corresponding parameter");
                 }
                 else
