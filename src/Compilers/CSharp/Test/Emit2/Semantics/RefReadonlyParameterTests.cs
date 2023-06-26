@@ -1781,17 +1781,19 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 static void Out(out int p) => throw null;
             }
             """;
-        // PROTOTYPE: All invocations should be an error when value checks are implemented.
         CreateCompilation(source).VerifyDiagnostics(
             // (5,13): error CS1620: Argument 1 must be passed with the 'ref' keyword
             //         Ref(p);
             Diagnostic(ErrorCode.ERR_BadArgRef, "p").WithArguments("1", "ref").WithLocation(5, 13),
+            // (6,17): error CS8329: Cannot use variable 'p' as a ref or out value because it is a readonly variable
+            //         Ref(ref p);
+            Diagnostic(ErrorCode.ERR_RefReadonlyNotField, "p").WithArguments("variable", "p").WithLocation(6, 17),
             // (7,16): error CS1620: Argument 1 must be passed with the 'ref' keyword
             //         Ref(in p);
             Diagnostic(ErrorCode.ERR_BadArgRef, "p").WithArguments("1", "ref").WithLocation(7, 16),
-            // (8,17): error CS1620: Argument 1 must be passed with the 'ref' keyword
+            // (8,17): error CS8329: Cannot use variable 'p' as a ref or out value because it is a readonly variable
             //         Ref(out p);
-            Diagnostic(ErrorCode.ERR_BadArgRef, "p").WithArguments("1", "ref").WithLocation(8, 17),
+            Diagnostic(ErrorCode.ERR_RefReadonlyNotField, "p").WithArguments("variable", "p").WithLocation(8, 17),
             // (10,13): error CS1620: Argument 1 must be passed with the 'out' keyword
             //         Out(p);
             Diagnostic(ErrorCode.ERR_BadArgRef, "p").WithArguments("1", "out").WithLocation(10, 13),
@@ -1800,7 +1802,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_BadArgRef, "p").WithArguments("1", "out").WithLocation(11, 17),
             // (12,16): error CS1620: Argument 1 must be passed with the 'out' keyword
             //         Out(in p);
-            Diagnostic(ErrorCode.ERR_BadArgRef, "p").WithArguments("1", "out").WithLocation(12, 16));
+            Diagnostic(ErrorCode.ERR_BadArgRef, "p").WithArguments("1", "out").WithLocation(12, 16),
+            // (13,17): error CS8329: Cannot use variable 'p' as a ref or out value because it is a readonly variable
+            //         Out(out p);
+            Diagnostic(ErrorCode.ERR_RefReadonlyNotField, "p").WithArguments("variable", "p").WithLocation(13, 17));
     }
 
     [Fact(Skip = "https://github.com/dotnet/roslyn/issues/68714")]
