@@ -2179,7 +2179,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     {
         // public class C
         // {
-        //     public delegate*<in int modopt(MyAttribute), void> D;
+        //     public unsafe delegate*<in int modopt(MyAttribute), void> D;
         // }
         var ilSource = """
             .class public auto ansi beforefieldinit C extends System.Object
@@ -2271,6 +2271,39 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             // (3,36): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresLocationAttribute' is not defined or imported
             //     public unsafe void M(delegate*<ref readonly int, void> p) { }
             Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "ref readonly int").WithArguments("System.Runtime.CompilerServices.RequiresLocationAttribute").WithLocation(3, 36));
+    }
+
+    [Fact]
+    public void FunctionPointer_CrossAssembly()
+    {
+        var source1 = """
+            public class C
+            {
+                public unsafe delegate*<ref readonly int, void> D;
+            }
+            """;
+        var comp1 = CreateCompilation(new[] { source1, RequiresLocationAttributeSource }, options: TestOptions.UnsafeDebugDll);
+        comp1.VerifyDiagnostics();
+
+        var source2 = """
+            class D
+            {
+                unsafe void M(C c)
+                {
+                    int x = 6;
+                    c.D(x);
+                    c.D(ref x);
+                    c.D(in x);
+                }
+            }
+            """;
+        CreateCompilation(source2, new[] { comp1.ToMetadataReference() }, parseOptions: TestOptions.Regular11, options: TestOptions.UnsafeDebugDll).VerifyDiagnostics(
+            // (6,13): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //         c.D(x);
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "x").WithArguments("ref readonly parameters").WithLocation(6, 13),
+            // (8,16): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //         c.D(in x);
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "x").WithArguments("ref readonly parameters").WithLocation(8, 16));
     }
 
     [Fact]
