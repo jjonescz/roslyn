@@ -2102,7 +2102,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             methodsBuilder.Free();
 
             MemberResolutionResult<FunctionPointerMethodSymbol> methodResult = overloadResolutionResult.ValidResult;
-            CheckAndCoerceArguments(methodResult, analyzedArguments, diagnostics, receiver: null);
+            CheckAndCoerceArguments(methodResult, analyzedArguments, diagnostics, receiver: null, functionPointer: true);
 
             var args = analyzedArguments.Arguments.ToImmutable();
             var refKinds = analyzedArguments.RefKinds.ToImmutableOrNull();

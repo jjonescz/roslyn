@@ -3217,7 +3217,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             MemberResolutionResult<TMember> methodResult,
             AnalyzedArguments analyzedArguments,
             BindingDiagnosticBag diagnostics,
-            BoundExpression? receiver)
+            BoundExpression? receiver,
+            bool functionPointer = false)
             where TMember : Symbol
         {
             var result = methodResult.Result;
@@ -3237,9 +3238,25 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     if (!Compilation.IsFeatureEnabled(MessageID.IDS_FeatureRefReadonlyParameters))
                     {
-                        // Disallow using `ref readonly` parameters with no or `in` argument modifier,
+                        // In function pointers, disallow using `ref readonly` parameters with `ref` argument modifier,
+                        // same as older versions of the compiler would (since they would see the parameter as `in`).
+                        if (functionPointer)
+                        {
+                            if (argRefKind is RefKind.Ref &&
+                                GetCorrespondingParameter(ref result, parameters, arg).RefKind == RefKind.RefReadOnlyParameter)
+                            {
+                                //  Argument {0} may not be passed with the 'ref' keyword in language version {1}. To pass 'ref' arguments to 'in' parameters, upgrade to language version {2} or greater.
+                                diagnostics.Add(
+                                    ErrorCode.ERR_BadArgExtraRefLangVersion,
+                                    argument.Syntax,
+                                    arg + 1,
+                                    Compilation.LanguageVersion.ToDisplayString(),
+                                    new CSharpRequiredLanguageVersion(MessageID.IDS_FeatureRefReadonlyParameters.RequiredVersion()));
+                            }
+                        }
+                        // Elsewhere, disallow using `ref readonly` parameters with no or `in` argument modifier,
                         // same as older versions of the compiler would (since they would see the parameter as `ref`).
-                        if (argRefKind is RefKind.None or RefKind.In &&
+                        else if (argRefKind is RefKind.None or RefKind.In &&
                             GetCorrespondingParameter(ref result, parameters, arg).RefKind == RefKind.RefReadOnlyParameter)
                         {
                             var available = CheckFeatureAvailability(argument.Syntax, MessageID.IDS_FeatureRefReadonlyParameters, diagnostics);
