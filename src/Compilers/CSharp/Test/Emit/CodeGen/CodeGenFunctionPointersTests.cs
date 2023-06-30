@@ -6080,13 +6080,12 @@ Ref");
 ");
         }
 
-        [Theory]
-        [InlineData("ref", "out")]
-        [InlineData("ref", "in")]
-        [InlineData("out", "in")]
-        public void Overloading_InvalidParameterRefness(string refKind1, string refKind2)
+        [Theory, CombinatorialData]
+        public void Overloading_InvalidParameterRefness(
+            [CombinatorialValues("ref", "in", "out", "ref readonly")] string refKind1,
+            [CombinatorialValues("ref", "in", "out", "ref readonly")] string refKind2)
         {
-            var comp = CreateCompilationWithFunctionPointers($@"
+            var source = $@"
 unsafe class C<T>
 {{
     static void M1(delegate*<{refKind1} object, void> ptr) => throw null;
@@ -6095,7 +6094,8 @@ unsafe class C<T>
     static void M2(C<delegate*<{refKind1} object, void>[]> c) => throw null;
     static void M2(C<delegate*<{refKind2} object, void>[]> c) => throw null;
 }}
-");
+";
+            var comp = CreateCompilation(source, options: TestOptions.UnsafeDebugDll, parseOptions: TestOptions.RegularNext);
 
             comp.VerifyDiagnostics(
                 // (5,17): error CS0111: Type 'C<T>' already defines a member called 'M1' with the same parameter types
