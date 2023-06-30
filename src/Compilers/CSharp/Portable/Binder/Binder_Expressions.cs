@@ -3218,6 +3218,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             AnalyzedArguments analyzedArguments,
             BindingDiagnosticBag diagnostics,
             BoundExpression? receiver,
+            bool interpolatedStringHandler = false,
             bool functionPointer = false)
             where TMember : Symbol
         {
@@ -3268,7 +3269,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         // Warn for `ref`/`in` or None/`ref readonly` mismatch.
                         if (argRefKind == RefKind.Ref)
                         {
-                            if (GetCorrespondingParameter(ref result, parameters, arg).RefKind == RefKind.In)
+                            if (!interpolatedStringHandler && GetCorrespondingParameter(ref result, parameters, arg).RefKind == RefKind.In)
                             {
                                 // The 'ref' modifier for argument {0} corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
                                 diagnostics.Add(
@@ -4794,7 +4795,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return new BoundBadExpression(node, LookupResultKind.OverloadResolutionFailure, StaticCast<Symbol>.From(type.InstanceConstructors), childNodes, type);
         }
 
-        private BoundExpression BindClassCreationExpression(ObjectCreationExpressionSyntax node, NamedTypeSymbol type, string typeName, BindingDiagnosticBag diagnostics, TypeSymbol initializerType = null)
+        private BoundExpression BindClassCreationExpression(ObjectCreationExpressionSyntax node, NamedTypeSymbol type, string typeName, BindingDiagnosticBag diagnostics, TypeSymbol initializerType = null, bool interpolatedStringHandler = false)
         {
             // Get the bound arguments and the argument names.
             AnalyzedArguments analyzedArguments = AnalyzedArguments.GetInstance();
@@ -4816,7 +4817,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return MakeBadExpressionForObjectCreation(node, type, analyzedArguments, diagnostics);
                 }
 
-                return BindClassCreationExpression(node, typeName, node.Type, type, analyzedArguments, diagnostics, node.Initializer, initializerType);
+                return BindClassCreationExpression(node, typeName, node.Type, type, analyzedArguments, diagnostics, node.Initializer, initializerType, interpolatedStringHandler: interpolatedStringHandler);
             }
             finally
             {
@@ -4833,7 +4834,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             ArrayBuilder<BoundExpression> arguments,
             ArrayBuilder<RefKind> refKinds,
             SyntaxNode node,
-            BindingDiagnosticBag diagnostics)
+            BindingDiagnosticBag diagnostics,
+            bool interpolatedStringHandler = false)
         {
             Debug.Assert(type.TypeKind is TypeKind.Class or TypeKind.Struct);
             var analyzedArguments = AnalyzedArguments.GetInstance();
@@ -4849,7 +4851,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return MakeBadExpressionForObjectCreation(node, type, analyzedArguments, initializerOpt: null, typeSyntax: null, diagnostics, wasCompilerGenerated: true);
                 }
 
-                var creation = BindClassCreationExpression(node, type.Name, node, type, analyzedArguments, diagnostics);
+                var creation = BindClassCreationExpression(node, type.Name, node, type, analyzedArguments, diagnostics, interpolatedStringHandler: interpolatedStringHandler);
                 creation.WasCompilerGenerated = true;
                 return creation;
             }
@@ -5775,7 +5777,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             BindingDiagnosticBag diagnostics,
             InitializerExpressionSyntax initializerSyntaxOpt = null,
             TypeSymbol initializerTypeOpt = null,
-            bool wasTargetTyped = false)
+            bool wasTargetTyped = false,
+            bool interpolatedStringHandler = false)
         {
             BoundExpression result = null;
             bool hasErrors = type.IsErrorType();
@@ -5839,7 +5842,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     out MemberResolutionResult<MethodSymbol> memberResolutionResult,
                     out ImmutableArray<MethodSymbol> candidateConstructors,
                     allowProtectedConstructorsOfBaseType: false,
-                    suppressUnsupportedRequiredMembersError: false) &&
+                    suppressUnsupportedRequiredMembersError: false,
+                    interpolatedStringHandler: interpolatedStringHandler) &&
                 !type.IsAbstract)
             {
                 var method = memberResolutionResult.Member;
@@ -6163,7 +6167,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             out MemberResolutionResult<MethodSymbol> memberResolutionResult,
             out ImmutableArray<MethodSymbol> candidateConstructors,
             bool allowProtectedConstructorsOfBaseType,
-            bool suppressUnsupportedRequiredMembersError) // Last to make named arguments more convenient.
+            bool suppressUnsupportedRequiredMembersError,
+            bool interpolatedStringHandler = false)
         {
             // Get accessible constructors for performing overload resolution.
             ImmutableArray<MethodSymbol> allInstanceConstructors;
@@ -6215,7 +6220,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (succeededIgnoringAccessibility)
             {
-                this.CheckAndCoerceArguments<MethodSymbol>(result.ValidResult, analyzedArguments, diagnostics, receiver: null);
+                this.CheckAndCoerceArguments<MethodSymbol>(result.ValidResult, analyzedArguments, diagnostics, receiver: null, interpolatedStringHandler: interpolatedStringHandler);
             }
 
             // Fill in the out parameter with the result, if there was one; it might be inaccessible.
