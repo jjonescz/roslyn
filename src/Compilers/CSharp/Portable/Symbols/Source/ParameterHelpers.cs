@@ -995,11 +995,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return CreateModifiers(WellKnownType.System_Runtime_InteropServices_InAttribute, binder, diagnostics, syntax);
         }
 
+        // only for function pointers
         internal static ImmutableArray<CustomModifier> CreateRefReadonlyParameterModifiers(Binder binder, BindingDiagnosticBag diagnostics, SyntaxNode syntax)
         {
-            var inType = binder.GetWellKnownType(WellKnownType.System_Runtime_InteropServices_InAttribute, diagnostics, syntax);
             var requiresLocationType = binder.GetWellKnownType(WellKnownType.System_Runtime_CompilerServices_RequiresLocationAttribute, diagnostics, syntax);
-            return ImmutableArray.Create(CSharpCustomModifier.CreateRequired(inType), CSharpCustomModifier.CreateOptional(requiresLocationType));
+            return ImmutableArray.Create(CSharpCustomModifier.CreateOptional(requiresLocationType));
         }
 
         internal static ImmutableArray<CustomModifier> CreateOutModifiers(Binder binder, BindingDiagnosticBag diagnostics, SyntaxNode syntax)

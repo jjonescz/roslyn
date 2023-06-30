@@ -46,7 +46,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     {
         None,
         In,
-        InAndRequiresLocation,
+        RequiresLocation,
         Unknown
     }
 
@@ -82,16 +82,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 Assert.Empty(parameter.RefCustomModifiers);
                 break;
             case VerifyModifiers.In:
-                var mod = Assert.Single(parameter.RefCustomModifiers);
-                Assert.False(mod.IsOptional);
-                Assert.Equal(InAttributeQualifiedName, mod.Modifier.ToTestDisplayString());
+                verifyModifier(parameter, InAttributeQualifiedName, optional: false);
                 break;
-            case VerifyModifiers.InAndRequiresLocation:
-                AssertEx.SetEqual(new[]
-                {
-                    (false, InAttributeQualifiedName),
-                    (true, RequiresLocationAttributeQualifiedName)
-                }, parameter.RefCustomModifiers.Select(m => (m.IsOptional, m.Modifier.ToTestDisplayString())));
+            case VerifyModifiers.RequiresLocation:
+                verifyModifier(parameter, RequiresLocationAttributeQualifiedName, optional: true);
                 break;
             case VerifyModifiers.Unknown:
                 break;
@@ -111,6 +105,13 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         {
             Assert.False(method.HasUnsupportedMetadata);
             Assert.False(method.HasUseSiteError);
+        }
+
+        static void verifyModifier(ParameterSymbol parameter, string qualifiedName, bool optional)
+        {
+            var mod = Assert.Single(parameter.RefCustomModifiers);
+            Assert.Equal(optional, mod.IsOptional);
+            Assert.Equal(qualifiedName, mod.Modifier.ToTestDisplayString());
         }
     }
 
@@ -569,8 +570,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
             var ptr = (FunctionPointerTypeSymbol)p.Type;
             var p2 = ptr.Signature.Parameters.Single();
-            VerifyRefReadonlyParameter(p2, refKind: m is SourceModuleSymbol, customModifiers: VerifyModifiers.InAndRequiresLocation, attributes: false);
-            Assert.Equal(m is SourceModuleSymbol ? RefKind.RefReadOnlyParameter : RefKind.In, p2.RefKind);
+            VerifyRefReadonlyParameter(p2, customModifiers: VerifyModifiers.RequiresLocation, attributes: false);
             Assert.Empty(p2.GetAttributes());
         }
     }
@@ -2264,10 +2264,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             """;
         var comp = CreateCompilation(new[] { source, RequiresLocationAttributeSource }, options: TestOptions.UnsafeDebugDll);
         comp.MakeTypeMissing(WellKnownType.System_Runtime_InteropServices_InAttribute);
-        comp.VerifyDiagnostics(
-            // (3,36): error CS0518: Predefined type 'System.Runtime.InteropServices.InAttribute' is not defined or imported
-            //     public unsafe void M(delegate*<ref readonly int, void> p) { }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "ref readonly int").WithArguments("System.Runtime.InteropServices.InAttribute").WithLocation(3, 36));
+        comp.VerifyDiagnostics();
     }
 
     [Fact]
