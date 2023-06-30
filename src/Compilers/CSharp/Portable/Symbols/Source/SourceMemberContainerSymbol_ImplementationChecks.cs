@@ -1185,6 +1185,20 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                                  checkReturnType ? ReportBadReturn : null,
                                                  checkParameters ? ReportBadParameter : null,
                                                  overridingMemberLocation);
+
+                if (checkParameters)
+                {
+                    CheckRefReadonlyInMismatch(
+                        overriddenMethod, overridingMethod, diagnostics,
+                        static (diagnostics, overriddenMethod, overridingMethod, overridingParameter, _, arg) =>
+                        {
+                            var (overriddenParameter, location) = arg;
+                            // Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in overridden member.
+                            diagnostics.Add(ErrorCode.WRN_OverridingDifferentRefness, location, overridingParameter, overriddenParameter);
+                        },
+                        overridingMemberLocation,
+                        invokedAsExtensionMethod: false);
+                }
             }
         }
 
@@ -1481,6 +1495,44 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 }
                 return allowVariance && baseScope == ScopedKind.None;
             }
+        }
+
+        /// <returns>
+        /// <see langword="true"/> if a diagnostic was added.
+        /// </returns>
+        internal static bool CheckRefReadonlyInMismatch<TArg>(
+            MethodSymbol? baseMethod,
+            MethodSymbol? overrideMethod,
+            BindingDiagnosticBag diagnostics,
+            ReportMismatchInParameterType<(ParameterSymbol BaseParameter, TArg Arg)> reportMismatchInParameterType,
+            TArg extraArgument,
+            bool invokedAsExtensionMethod)
+        {
+            Debug.Assert(reportMismatchInParameterType is { });
+
+            if (baseMethod is null || overrideMethod is null)
+            {
+                return false;
+            }
+
+            bool hasErrors = false;
+            var baseParameters = baseMethod.Parameters;
+            var overrideParameters = overrideMethod.Parameters;
+            var overrideParameterOffset = invokedAsExtensionMethod ? 1 : 0;
+            Debug.Assert(baseMethod.ParameterCount == overrideMethod.ParameterCount - overrideParameterOffset);
+
+            for (int i = 0; i < baseParameters.Length; i++)
+            {
+                var baseParameter = baseParameters[i];
+                var overrideParameter = overrideParameters[i + overrideParameterOffset];
+                if ((baseParameter.RefKind, overrideParameter.RefKind) is (RefKind.RefReadOnlyParameter, RefKind.In) or (RefKind.In, RefKind.RefReadOnlyParameter))
+                {
+                    reportMismatchInParameterType(diagnostics, baseMethod, overrideMethod, overrideParameter, topLevel: true, (baseParameter, extraArgument));
+                    hasErrors = true;
+                }
+            }
+
+            return hasErrors;
         }
 #nullable disable
 

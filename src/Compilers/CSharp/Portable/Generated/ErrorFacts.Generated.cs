@@ -319,6 +319,7 @@
                 case ErrorCode.WRN_ArgExpectedRefOrIn:
                 case ErrorCode.WRN_RefReadonlyNotVariable:
                 case ErrorCode.WRN_ArgExpectedIn:
+                case ErrorCode.WRN_OverridingDifferentRefness:
                     return true;
                 default:
                     return false;
