@@ -2267,6 +2267,16 @@
         <target state="translated">Die Verwendung der Variablen in diesem Kontext kann dazu führen, dass referenzierte Variablen außerhalb ihres Deklarationsbereichs verfügbar gemacht werden.</target>
         <note />
       </trans-unit>
+      <trans-unit id="WRN_HidingDifferentRefness">
+        <source>Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in hidden member.</source>
+        <target state="new">Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in hidden member.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WRN_HidingDifferentRefness_Title">
+        <source>Modifier of parameter doesn't match the corresponding parameter in hidden member.</source>
+        <target state="new">Modifier of parameter doesn't match the corresponding parameter in hidden member.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="WRN_InterpolatedStringHandlerArgumentAttributeIgnoredOnLambdaParameters">
         <source>InterpolatedStringHandlerArgument has no effect when applied to lambda parameters and will be ignored at the call site.</source>
         <target state="translated">Das InterpolatedStringHandlerArgument hat bei Anwendung auf Lambdaparameter keine Auswirkungen und wird am Aufrufstandort ignoriert.</target>

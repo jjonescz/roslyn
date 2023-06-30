@@ -2267,6 +2267,16 @@
         <target state="translated">このコンテキストでの変数の使用は、参照される変数が宣言のスコープ外に公開される可能性があります</target>
         <note />
       </trans-unit>
+      <trans-unit id="WRN_HidingDifferentRefness">
+        <source>Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in hidden member.</source>
+        <target state="new">Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in hidden member.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WRN_HidingDifferentRefness_Title">
+        <source>Modifier of parameter doesn't match the corresponding parameter in hidden member.</source>
+        <target state="new">Modifier of parameter doesn't match the corresponding parameter in hidden member.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="WRN_InterpolatedStringHandlerArgumentAttributeIgnoredOnLambdaParameters">
         <source>InterpolatedStringHandlerArgument has no effect when applied to lambda parameters and will be ignored at the call site.</source>
         <target state="translated">ラムダ パラメーターに適用しても InterpolatedStringHandlerArgument は効果がありません。呼び出しサイトでは無視されます。</target>

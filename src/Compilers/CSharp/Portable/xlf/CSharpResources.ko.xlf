@@ -2267,6 +2267,16 @@
         <target state="translated">이 컨텍스트에서 변수를 사용하면 선언 범위 외부에서 참조된 변수가 노출될 수 있습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="WRN_HidingDifferentRefness">
+        <source>Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in hidden member.</source>
+        <target state="new">Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in hidden member.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WRN_HidingDifferentRefness_Title">
+        <source>Modifier of parameter doesn't match the corresponding parameter in hidden member.</source>
+        <target state="new">Modifier of parameter doesn't match the corresponding parameter in hidden member.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="WRN_InterpolatedStringHandlerArgumentAttributeIgnoredOnLambdaParameters">
         <source>InterpolatedStringHandlerArgument has no effect when applied to lambda parameters and will be ignored at the call site.</source>
         <target state="translated">InterpolatedStringHandlerArgument는 람다 매개 변수에 적용할 때 효과가 없으며 호출 사이트에서 무시됩니다.</target>

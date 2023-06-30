@@ -2721,7 +2721,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        CompileAndVerify(source, expectedOutput: "C111").VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: "C111").VerifyDiagnostics(
+            // (7,21): warning CS9508: Modifier of parameter 'ref readonly int x' doesn't match the corresponding parameter 'in int x' in hidden member.
+            //     public new void M(ref readonly int x) => System.Console.Write("C" + x);
+            Diagnostic(ErrorCode.WRN_HidingDifferentRefness, "M").WithArguments("ref readonly int x", "in int x").WithLocation(7, 21));
     }
 
     [Fact]
@@ -2766,7 +2769,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        CompileAndVerify(source, expectedOutput: "C111").VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: "C111").VerifyDiagnostics(
+            // (7,21): warning CS9508: Modifier of parameter 'in int x' doesn't match the corresponding parameter 'ref readonly int x' in hidden member.
+            //     public new void M(in int x) => System.Console.Write("C" + x);
+            Diagnostic(ErrorCode.WRN_HidingDifferentRefness, "M").WithArguments("in int x", "ref readonly int x").WithLocation(7, 21));
     }
 
     [Theory, CombinatorialData]

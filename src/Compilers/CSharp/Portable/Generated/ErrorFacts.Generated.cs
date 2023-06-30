@@ -320,6 +320,7 @@
                 case ErrorCode.WRN_RefReadonlyNotVariable:
                 case ErrorCode.WRN_ArgExpectedIn:
                 case ErrorCode.WRN_OverridingDifferentRefness:
+                case ErrorCode.WRN_HidingDifferentRefness:
                     return true;
                 default:
                     return false;

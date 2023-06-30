@@ -535,6 +535,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ErrorCode.WRN_RefReadonlyNotVariable:
                 case ErrorCode.WRN_ArgExpectedIn:
                 case ErrorCode.WRN_OverridingDifferentRefness:
+                case ErrorCode.WRN_HidingDifferentRefness:
                     return 1;
                 default:
                     return 0;
@@ -2322,6 +2323,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ErrorCode.ERR_BadArgExtraRefLangVersion:
                 case ErrorCode.WRN_ArgExpectedIn:
                 case ErrorCode.WRN_OverridingDifferentRefness:
+                case ErrorCode.WRN_HidingDifferentRefness:
                     return false;
                 default:
                     // NOTE: All error codes must be explicitly handled in this switch statement

@@ -10,6 +10,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Microsoft.CodeAnalysis.CSharp.Symbols.PublicModel;
 using Microsoft.CodeAnalysis.PooledObjects;
 using Roslyn.Utilities;
 
@@ -1631,6 +1632,19 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 if (!hidingMemberIsNew && !IsShadowingSynthesizedRecordMember(hidingMember) && !diagnosticAdded && !hidingMember.IsAccessor() && !hidingMember.IsOperator())
                 {
                     diagnostics.Add(ErrorCode.WRN_NewRequired, hidingMemberLocation, hidingMember, hiddenMembers[0]);
+                }
+                else if (hidingMember is MethodSymbol hidingMethod && hiddenMembers[0] is MethodSymbol hiddenMethod)
+                {
+                    CheckRefReadonlyInMismatch(
+                        hiddenMethod, hidingMethod, diagnostics,
+                        static (diagnostics, hiddenMethod, hidingMethod, hidingParameter, _, arg) =>
+                        {
+                            var (hiddenParameter, location) = arg;
+                            // Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in hidden member.
+                            diagnostics.Add(ErrorCode.WRN_HidingDifferentRefness, location, hidingParameter, hiddenParameter);
+                        },
+                        hidingMemberLocation,
+                        invokedAsExtensionMethod: false);
                 }
             }
         }
