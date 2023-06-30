@@ -689,6 +689,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             """;
         var comp1 = CreateCompilation(new[] { source1, RequiresLocationAttributeSource }, options: TestOptions.UnsafeDebugDll);
         comp1.VerifyDiagnostics();
+        var comp1Ref = comp1.ToMetadataReference();
 
         var source2 = """
             class D
@@ -702,10 +703,20 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        CreateCompilation(source2, new[] { comp1.ToMetadataReference() }, parseOptions: TestOptions.Regular11, options: TestOptions.UnsafeDebugDll).VerifyDiagnostics(
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.Regular11, options: TestOptions.UnsafeDebugDll).VerifyDiagnostics(
             // (7,17): error CS9505: Argument 1 may not be passed with the 'ref' keyword in language version 11.0. To pass 'ref' arguments to 'in' parameters, upgrade to language version preview or greater.
             //         c.D(ref x);
             Diagnostic(ErrorCode.ERR_BadArgExtraRefLangVersion, "x").WithArguments("1", "11.0", "preview").WithLocation(7, 17));
+
+        var expectedDiagnostics = new[]
+        {
+            // (6,13): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+            //         c.D(x);
+            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(6, 13)
+        };
+
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeDebugDll).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source2, new[] { comp1Ref }, options: TestOptions.UnsafeDebugDll).VerifyDiagnostics(expectedDiagnostics);
     }
 
     [Fact]
