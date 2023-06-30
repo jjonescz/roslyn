@@ -2598,39 +2598,16 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 protected override void M(ref readonly int x) { }
             }
             """;
-        var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetStandard20).VerifyDiagnostics();
-        verifier.VerifyMethodIL("B", "M", """
-            .method family hidebysig newslot virtual 
-            	instance void M (
-            		[in] int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) x
-            	) cil managed 
-            {
-            	.param [1]
-            		.custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = (
-            			01 00 00 00
-            		)
-            	// Method begins at RVA 0x2067
-            	// Code size 1 (0x1)
-            	.maxstack 8
-            	IL_0000: ret
-            } // end of method B::M
-            """);
-        verifier.VerifyMethodIL("C", "M", """
-            .method family hidebysig virtual 
-            	instance void M (
-            		[in] int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) x
-            	) cil managed 
-            {
-            	.param [1]
-            		.custom instance void System.Runtime.CompilerServices.RequiresLocationAttribute::.ctor() = (
-            			01 00 00 00
-            		)
-            	// Method begins at RVA 0x2067
-            	// Code size 1 (0x1)
-            	.maxstack 8
-            	IL_0000: ret
-            } // end of method C::M
-            """);
+        var verifier = CompileAndVerify(source, sourceSymbolValidator: verify, symbolValidator: verify);
+        verifier.VerifyDiagnostics();
+
+        static void verify(ModuleSymbol m)
+        {
+            VerifyRequiresLocationAttributeSynthesized(m);
+
+            var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
+            VerifyRefReadonlyParameter(p, modreq: true);
+        }
     }
 
     [Fact]
@@ -2646,39 +2623,16 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 protected override void M(in int x) { }
             }
             """;
-        var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetStandard20).VerifyDiagnostics();
-        verifier.VerifyMethodIL("B", "M", """
-            .method family hidebysig newslot virtual 
-            	instance void M (
-            		[in] int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) x
-            	) cil managed 
-            {
-            	.param [1]
-            		.custom instance void System.Runtime.CompilerServices.RequiresLocationAttribute::.ctor() = (
-            			01 00 00 00
-            		)
-            	// Method begins at RVA 0x2067
-            	// Code size 1 (0x1)
-            	.maxstack 8
-            	IL_0000: ret
-            } // end of method B::M
-            """);
-        verifier.VerifyMethodIL("C", "M", """
-            .method family hidebysig virtual 
-            	instance void M (
-            		[in] int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) x
-            	) cil managed 
-            {
-            	.param [1]
-            		.custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = (
-            			01 00 00 00
-            		)
-            	// Method begins at RVA 0x2067
-            	// Code size 1 (0x1)
-            	.maxstack 8
-            	IL_0000: ret
-            } // end of method C::M
-            """);
+        var verifier = CompileAndVerify(source, sourceSymbolValidator: verify, symbolValidator: verify);
+        verifier.VerifyDiagnostics();
+
+        static void verify(ModuleSymbol m)
+        {
+            VerifyRequiresLocationAttributeSynthesized(m);
+
+            var p = m.GlobalNamespace.GetMember<MethodSymbol>("B.M").Parameters.Single();
+            VerifyRefReadonlyParameter(p, modreq: true);
+        }
     }
 
     [Theory, CombinatorialData]
