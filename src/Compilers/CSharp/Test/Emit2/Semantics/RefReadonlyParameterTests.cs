@@ -575,6 +575,139 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         }
     }
 
+    /// <summary>
+    /// Demonstrates that modopt encoding of 'ref readonly' parameters in function pointers
+    /// won't break older compilers (they will see the parameter as 'in').
+    /// </summary>
+    [Fact]
+    public void FunctionPointer_Modopt_CustomAttribute()
+    {
+        // public class C
+        // {
+        //     public unsafe delegate*<in int modopt(MyAttribute), void> D;
+        // }
+        var ilSource = """
+            .class public auto ansi beforefieldinit C extends System.Object
+            {
+                .field public method void *(int32& modreq(System.Runtime.InteropServices.InAttribute) modopt(MyAttribute)) D
+            }
+
+            .class public auto ansi sealed beforefieldinit System.Runtime.InteropServices.InAttribute extends System.Object
+            {
+                .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
+                {
+                    .maxstack 8
+                    ret
+                }
+            }
+
+            .class public auto ansi sealed beforefieldinit MyAttribute extends System.Object
+            {
+                .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
+                {
+                    .maxstack 8
+                    ret
+                }
+            }
+            """;
+
+        var source = """
+            class D
+            {
+                unsafe void M(C c)
+                {
+                    int x = 6;
+                    c.D(x);
+                    c.D(ref x);
+                    c.D(in x);
+                }
+            }
+            """;
+
+        CreateCompilationWithIL(source, ilSource, options: TestOptions.UnsafeDebugDll, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+            // (7,17): error CS9505: Argument 1 may not be passed with the 'ref' keyword in language version 11.0. To pass 'ref' arguments to 'in' parameters, upgrade to language version preview or greater.
+            //         c.D(ref x);
+            Diagnostic(ErrorCode.ERR_BadArgExtraRefLangVersion, "x").WithArguments("1", "11.0", "preview").WithLocation(7, 17));
+
+        var comp = CreateCompilationWithIL(source, ilSource, options: TestOptions.UnsafeDebugDll);
+        comp.VerifyDiagnostics(
+            // (7,17): warning CS9502: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+            //         c.D(ref x);
+            Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1").WithLocation(7, 17));
+
+        var ptr = (FunctionPointerTypeSymbol)comp.GlobalNamespace.GetMember<FieldSymbol>("C.D").Type;
+        var p = ptr.Signature.Parameters.Single();
+        VerifyRefReadonlyParameter(p, refKind: false, attributes: false, customModifiers: VerifyModifiers.Unknown);
+        Assert.Equal(RefKind.In, p.RefKind);
+        Assert.Empty(p.GetAttributes());
+        AssertEx.SetEqual(new[]
+        {
+            (false, InAttributeQualifiedName),
+            (true, "MyAttribute")
+        }, p.RefCustomModifiers.Select(m => (m.IsOptional, m.Modifier.ToTestDisplayString())));
+    }
+
+    [Fact]
+    public void FunctionPointer_MissingInAttribute()
+    {
+        var source = """
+            class C
+            {
+                public unsafe void M(delegate*<ref readonly int, void> p) { }
+            }
+            """;
+        var comp = CreateCompilation(new[] { source, RequiresLocationAttributeSource }, options: TestOptions.UnsafeDebugDll);
+        comp.MakeTypeMissing(WellKnownType.System_Runtime_InteropServices_InAttribute);
+        comp.VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void FunctionPointer_MissingRequiresLocationAttribute()
+    {
+        var source = """
+            class C
+            {
+                public unsafe void M(delegate*<ref readonly int, void> p) { }
+            }
+            """;
+        var comp = CreateCompilation(source, options: TestOptions.UnsafeDebugDll);
+        comp.MakeTypeMissing(WellKnownType.System_Runtime_CompilerServices_RequiresLocationAttribute);
+        comp.VerifyDiagnostics(
+            // (3,36): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresLocationAttribute' is not defined or imported
+            //     public unsafe void M(delegate*<ref readonly int, void> p) { }
+            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "ref readonly int").WithArguments("System.Runtime.CompilerServices.RequiresLocationAttribute").WithLocation(3, 36));
+    }
+
+    [Fact]
+    public void FunctionPointer_CrossAssembly()
+    {
+        var source1 = """
+            public class C
+            {
+                public unsafe delegate*<ref readonly int, void> D;
+            }
+            """;
+        var comp1 = CreateCompilation(new[] { source1, RequiresLocationAttributeSource }, options: TestOptions.UnsafeDebugDll);
+        comp1.VerifyDiagnostics();
+
+        var source2 = """
+            class D
+            {
+                unsafe void M(C c)
+                {
+                    int x = 6;
+                    c.D(x);
+                    c.D(ref x);
+                    c.D(in x);
+                }
+            }
+            """;
+        CreateCompilation(source2, new[] { comp1.ToMetadataReference() }, parseOptions: TestOptions.Regular11, options: TestOptions.UnsafeDebugDll).VerifyDiagnostics(
+            // (7,17): error CS9505: Argument 1 may not be passed with the 'ref' keyword in language version 11.0. To pass 'ref' arguments to 'in' parameters, upgrade to language version preview or greater.
+            //         c.D(ref x);
+            Diagnostic(ErrorCode.ERR_BadArgExtraRefLangVersion, "x").WithArguments("1", "11.0", "preview").WithLocation(7, 17));
+    }
+
     [Fact]
     public void AttributeIL()
     {
@@ -2179,139 +2312,6 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             // (8,15): error CS1615: Argument 1 may not be passed with the 'out' keyword
             //         f(out x);
             Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "out").WithLocation(8, 15));
-    }
-
-    /// <summary>
-    /// Demonstrates that modopt encoding of 'ref readonly' parameters in function pointers
-    /// won't break older compilers (they will see the parameter as 'in').
-    /// </summary>
-    [Fact]
-    public void FunctionPointer_Modopt_CustomAttribute()
-    {
-        // public class C
-        // {
-        //     public unsafe delegate*<in int modopt(MyAttribute), void> D;
-        // }
-        var ilSource = """
-            .class public auto ansi beforefieldinit C extends System.Object
-            {
-                .field public method void *(int32& modreq(System.Runtime.InteropServices.InAttribute) modopt(MyAttribute)) D
-            }
-
-            .class public auto ansi sealed beforefieldinit System.Runtime.InteropServices.InAttribute extends System.Object
-            {
-                .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
-                {
-                    .maxstack 8
-                    ret
-                }
-            }
-
-            .class public auto ansi sealed beforefieldinit MyAttribute extends System.Object
-            {
-                .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
-                {
-                    .maxstack 8
-                    ret
-                }
-            }
-            """;
-
-        var source = """
-            class D
-            {
-                unsafe void M(C c)
-                {
-                    int x = 6;
-                    c.D(x);
-                    c.D(ref x);
-                    c.D(in x);
-                }
-            }
-            """;
-
-        CreateCompilationWithIL(source, ilSource, options: TestOptions.UnsafeDebugDll, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
-            // (7,17): error CS9505: Argument 1 may not be passed with the 'ref' keyword in language version 11.0. To pass 'ref' arguments to 'in' parameters, upgrade to language version preview or greater.
-            //         c.D(ref x);
-            Diagnostic(ErrorCode.ERR_BadArgExtraRefLangVersion, "x").WithArguments("1", "11.0", "preview").WithLocation(7, 17));
-
-        var comp = CreateCompilationWithIL(source, ilSource, options: TestOptions.UnsafeDebugDll);
-        comp.VerifyDiagnostics(
-            // (7,17): warning CS9502: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
-            //         c.D(ref x);
-            Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1").WithLocation(7, 17));
-
-        var ptr = (FunctionPointerTypeSymbol)comp.GlobalNamespace.GetMember<FieldSymbol>("C.D").Type;
-        var p = ptr.Signature.Parameters.Single();
-        VerifyRefReadonlyParameter(p, refKind: false, attributes: false, customModifiers: VerifyModifiers.Unknown);
-        Assert.Equal(RefKind.In, p.RefKind);
-        Assert.Empty(p.GetAttributes());
-        AssertEx.SetEqual(new[]
-        {
-            (false, InAttributeQualifiedName),
-            (true, "MyAttribute")
-        }, p.RefCustomModifiers.Select(m => (m.IsOptional, m.Modifier.ToTestDisplayString())));
-    }
-
-    [Fact]
-    public void FunctionPointer_MissingInAttribute()
-    {
-        var source = """
-            class C
-            {
-                public unsafe void M(delegate*<ref readonly int, void> p) { }
-            }
-            """;
-        var comp = CreateCompilation(new[] { source, RequiresLocationAttributeSource }, options: TestOptions.UnsafeDebugDll);
-        comp.MakeTypeMissing(WellKnownType.System_Runtime_InteropServices_InAttribute);
-        comp.VerifyDiagnostics();
-    }
-
-    [Fact]
-    public void FunctionPointer_MissingRequiresLocationAttribute()
-    {
-        var source = """
-            class C
-            {
-                public unsafe void M(delegate*<ref readonly int, void> p) { }
-            }
-            """;
-        var comp = CreateCompilation(source, options: TestOptions.UnsafeDebugDll);
-        comp.MakeTypeMissing(WellKnownType.System_Runtime_CompilerServices_RequiresLocationAttribute);
-        comp.VerifyDiagnostics(
-            // (3,36): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresLocationAttribute' is not defined or imported
-            //     public unsafe void M(delegate*<ref readonly int, void> p) { }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "ref readonly int").WithArguments("System.Runtime.CompilerServices.RequiresLocationAttribute").WithLocation(3, 36));
-    }
-
-    [Fact]
-    public void FunctionPointer_CrossAssembly()
-    {
-        var source1 = """
-            public class C
-            {
-                public unsafe delegate*<ref readonly int, void> D;
-            }
-            """;
-        var comp1 = CreateCompilation(new[] { source1, RequiresLocationAttributeSource }, options: TestOptions.UnsafeDebugDll);
-        comp1.VerifyDiagnostics();
-
-        var source2 = """
-            class D
-            {
-                unsafe void M(C c)
-                {
-                    int x = 6;
-                    c.D(x);
-                    c.D(ref x);
-                    c.D(in x);
-                }
-            }
-            """;
-        CreateCompilation(source2, new[] { comp1.ToMetadataReference() }, parseOptions: TestOptions.Regular11, options: TestOptions.UnsafeDebugDll).VerifyDiagnostics(
-            // (7,17): error CS9505: Argument 1 may not be passed with the 'ref' keyword in language version 11.0. To pass 'ref' arguments to 'in' parameters, upgrade to language version preview or greater.
-            //         c.D(ref x);
-            Diagnostic(ErrorCode.ERR_BadArgExtraRefLangVersion, "x").WithArguments("1", "11.0", "preview").WithLocation(7, 17));
     }
 
     [Fact]
