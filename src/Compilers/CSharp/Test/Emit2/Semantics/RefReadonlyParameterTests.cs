@@ -704,9 +704,12 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             }
             """;
         CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.Regular11, options: TestOptions.UnsafeDebugDll).VerifyDiagnostics(
-            // (7,17): error CS9505: Argument 1 may not be passed with the 'ref' keyword in language version 11.0. To pass 'ref' arguments to 'in' parameters, upgrade to language version preview or greater.
-            //         c.D(ref x);
-            Diagnostic(ErrorCode.ERR_BadArgExtraRefLangVersion, "x").WithArguments("1", "11.0", "preview").WithLocation(7, 17));
+            // (6,13): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //         c.D(x);
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "x").WithArguments("ref readonly parameters").WithLocation(6, 13),
+            // (8,16): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //         c.D(in x);
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "x").WithArguments("ref readonly parameters").WithLocation(8, 16));
 
         var expectedDiagnostics = new[]
         {
@@ -2132,13 +2135,13 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "out").WithLocation(7, 15));
     }
 
-    [Theory, CombinatorialData]
-    public void RefReadonlyParameter_CrossAssembly([CombinatorialValues("", "virtual")] string @virtual)
+    [Fact]
+    public void RefReadonlyParameter_CrossAssembly()
     {
-        var source1 = $$"""
+        var source1 = """
             public class C
             {
-                public {{@virtual}} void M(ref readonly int p) => System.Console.Write(p);
+                public void M(ref readonly int p) => System.Console.Write(p);
                 void M2()
                 {
                     int x = 5;
