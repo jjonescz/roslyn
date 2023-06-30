@@ -594,20 +594,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
             .class public auto ansi sealed beforefieldinit System.Runtime.InteropServices.InAttribute extends System.Object
             {
-                .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
-                {
-                    .maxstack 8
-                    ret
-                }
             }
 
             .class public auto ansi sealed beforefieldinit MyAttribute extends System.Object
             {
-                .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
-                {
-                    .maxstack 8
-                    ret
-                }
             }
             """;
 
@@ -645,6 +635,106 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             (false, InAttributeQualifiedName),
             (true, "MyAttribute")
         }, p.RefCustomModifiers.Select(m => (m.IsOptional, m.Modifier.ToTestDisplayString())));
+    }
+
+    [Fact]
+    public void FunctionPointer_ModreqIn_ModoptRequiresLocation()
+    {
+        // public class C
+        // {
+        //     public unsafe delegate*<in int modopt(RequiresLocation), void> D;
+        // }
+        var ilSource = """
+            .class public auto ansi beforefieldinit C extends System.Object
+            {
+                .field public method void *(int32& modreq(System.Runtime.InteropServices.InAttribute) modopt(System.Runtime.CompilerServices.RequiresLocationAttribute)) D
+            }
+
+            .class public auto ansi sealed beforefieldinit System.Runtime.InteropServices.InAttribute extends System.Object
+            {
+            }
+
+            .class public auto ansi sealed beforefieldinit System.Runtime.CompilerServices.RequiresLocationAttribute extends System.Object
+            {
+            }
+            """;
+
+        var source = """
+            class D
+            {
+                unsafe void M(C c)
+                {
+                    int x = 6;
+                    c.D(x);
+                    c.D(ref x);
+                    c.D(in x);
+                }
+            }
+            """;
+
+        // Note that older compiler versions would report an error for `c.D(ref x)` instead because they would interpret the parameter as `in`.
+        // But this is a custom IL hence we don't try to be consistent here.
+        var comp1 = CreateCompilationWithIL(source, ilSource, options: TestOptions.UnsafeDebugDll, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+            // (6,13): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //         c.D(x);
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "x").WithArguments("ref readonly parameters").WithLocation(6, 13),
+            // (8,16): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //         c.D(in x);
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "x").WithArguments("ref readonly parameters").WithLocation(8, 16));
+
+        verify(comp1);
+
+        var comp2 = CreateCompilationWithIL(source, ilSource, options: TestOptions.UnsafeDebugDll);
+        comp2.VerifyDiagnostics(
+            // (6,13): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+            //         c.D(x);
+            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(6, 13));
+
+        verify(comp2);
+
+        static void verify(CSharpCompilation comp)
+        {
+            var ptr = (FunctionPointerTypeSymbol)comp.GlobalNamespace.GetMember<FieldSymbol>("C.D").Type;
+            var p = ptr.Signature.Parameters.Single();
+            VerifyRefReadonlyParameter(p, attributes: false, customModifiers: VerifyModifiers.Unknown);
+            Assert.Empty(p.GetAttributes());
+            AssertEx.SetEqual(new[]
+            {
+                (false, InAttributeQualifiedName),
+                (true, RequiresLocationAttributeQualifiedName)
+            }, p.RefCustomModifiers.Select(m => (m.IsOptional, m.Modifier.ToTestDisplayString())));
+        }
+    }
+
+    [Fact]
+    public void FunctionPointer_ModreqRequiresLocation()
+    {
+        // public class C
+        // {
+        //     public unsafe delegate*<ref int modreq(RequiresLocation), void> D;
+        // }
+        var ilSource = """
+            .class public auto ansi beforefieldinit C extends System.Object
+            {
+                .field public method void *(int32& modreq(System.Runtime.CompilerServices.RequiresLocationAttribute)) D
+            }
+
+            .class public auto ansi sealed beforefieldinit System.Runtime.CompilerServices.RequiresLocationAttribute extends System.Object
+            {
+            }
+            """;
+
+        var comp = CreateCompilationWithIL("", ilSource, options: TestOptions.UnsafeDebugDll);
+        comp.VerifyDiagnostics();
+
+        var ptr = (FunctionPointerTypeSymbol)comp.GlobalNamespace.GetMember<FieldSymbol>("C.D").Type;
+        var p = ptr.Signature.Parameters.Single();
+        VerifyRefReadonlyParameter(p, refKind: false, metadataIn: false, attributes: false, customModifiers: VerifyModifiers.Unknown, useSiteError: true);
+        Assert.Equal(RefKind.Ref, p.RefKind);
+        Assert.Empty(p.GetAttributes());
+        var mod = Assert.Single(p.RefCustomModifiers);
+        Assert.False(mod.IsOptional);
+        Assert.Equal(RequiresLocationAttributeQualifiedName, mod.Modifier.ToTestDisplayString());
     }
 
     [Fact]
