@@ -2387,6 +2387,16 @@
         <target state="translated">Der Parameter verfügt über den Modifizierer „params“ in der Lambdafunktion, aber nicht im Delegattyp des Ziels.</target>
         <note />
       </trans-unit>
+      <trans-unit id="WRN_PartialDifferentRefness">
+        <source>Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in partial declaration.</source>
+        <target state="new">Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in partial declaration.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WRN_PartialDifferentRefness_Title">
+        <source>Modifier of parameter doesn't match the corresponding parameter in partial declaration.</source>
+        <target state="new">Modifier of parameter doesn't match the corresponding parameter in partial declaration.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="WRN_RecordEqualsWithoutGetHashCode">
         <source>'{0}' defines 'Equals' but not 'GetHashCode'</source>
         <target state="translated">"{0}" definiert "Equals", aber nicht "GetHashCode".</target>

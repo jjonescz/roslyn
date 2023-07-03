@@ -2937,7 +2937,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 public partial void M(in int x) => throw null;
             }
             """;
-        CreateCompilation(source).VerifyDiagnostics();
+        CreateCompilation(source).VerifyDiagnostics(
+            // (7,25): warning CS9509: Modifier of parameter 'ref readonly int x' doesn't match the corresponding parameter 'in int x' in partial declaration.
+            //     public partial void M(in int x) => throw null;
+            Diagnostic(ErrorCode.WRN_PartialDifferentRefness, "M").WithArguments("ref readonly int x", "in int x").WithLocation(7, 25));
     }
 
     [Fact]
@@ -2956,7 +2959,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         CreateCompilation(source).VerifyDiagnostics(
             // (7,26): warning CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
             //     public partial string? M(in int x) => throw null;
-            Diagnostic(ErrorCode.WRN_MissingNonNullTypesContextForAnnotation, "?").WithLocation(7, 26));
+            Diagnostic(ErrorCode.WRN_MissingNonNullTypesContextForAnnotation, "?").WithLocation(7, 26),
+            // (7,28): warning CS9509: Modifier of parameter 'ref readonly int x' doesn't match the corresponding parameter 'in int x' in partial declaration.
+            //     public partial string? M(in int x) => throw null;
+            Diagnostic(ErrorCode.WRN_PartialDifferentRefness, "M").WithArguments("ref readonly int x", "in int x").WithLocation(7, 28));
     }
 
     [Theory, CombinatorialData]
