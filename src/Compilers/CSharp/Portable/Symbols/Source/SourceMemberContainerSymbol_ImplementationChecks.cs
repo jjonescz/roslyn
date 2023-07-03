@@ -1507,6 +1507,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             BindingDiagnosticBag diagnostics,
             ReportMismatchInParameterType<(ParameterSymbol BaseParameter, TArg Arg)> reportMismatchInParameterType,
             TArg extraArgument,
+            // PROTOTYPE: This argument is expected to be used for method conversion warnings.
             bool invokedAsExtensionMethod)
         {
             Debug.Assert(reportMismatchInParameterType is { });
