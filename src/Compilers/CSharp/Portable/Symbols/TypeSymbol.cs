@@ -1863,6 +1863,21 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                 invokedAsExtensionMethod: false);
                         }
 
+                        if (checkParameterTypes)
+                        {
+                            SourceMemberContainerTypeSymbol.CheckRefReadonlyInMismatch(
+                                implementedMethod, implementingMethod, diagnostics,
+                                static (diagnostics, implementedMethod, implementingMethod, implementingParameter, _, arg) =>
+                                {
+                                    var (implementedParameter, implementingType) = arg;
+                                    var location = GetImplicitImplementationDiagnosticLocation(implementedMethod, implementingType, implementingMethod);
+                                    // Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in overridden or implemented member.
+                                    diagnostics.Add(ErrorCode.WRN_OverridingDifferentRefness, location, implementingParameter, implementedParameter);
+                                },
+                                implementingType,
+                                invokedAsExtensionMethod: false);
+                        }
+
                         if (implementingMethod.HasUnscopedRefAttributeOnMethodOrProperty())
                         {
                             diagnostics.Add(

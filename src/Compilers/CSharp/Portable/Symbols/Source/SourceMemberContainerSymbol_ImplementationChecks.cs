@@ -1194,7 +1194,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         static (diagnostics, _, _, overridingParameter, _, arg) =>
                         {
                             var (overriddenParameter, location) = arg;
-                            // Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in overridden member.
+                            // Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in overridden or implemented member.
                             diagnostics.Add(ErrorCode.WRN_OverridingDifferentRefness, location, overridingParameter, overriddenParameter);
                         },
                         overridingMemberLocation,
@@ -1637,7 +1637,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 {
                     CheckRefReadonlyInMismatch(
                         hiddenMethod, hidingMethod, diagnostics,
-                        static (diagnostics, hiddenMethod, hidingMethod, hidingParameter, _, arg) =>
+                        static (diagnostics, _, _, hidingParameter, _, arg) =>
                         {
                             var (hiddenParameter, location) = arg;
                             // Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in hidden member.
