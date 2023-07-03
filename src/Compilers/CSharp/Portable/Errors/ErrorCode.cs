@@ -2195,6 +2195,12 @@ namespace Microsoft.CodeAnalysis.CSharp
         ERR_RefReadOnlyWrongOrdering = 9501, // PROTOTYPE: Pack numbers
         WRN_BadArgRef = 9502,
         WRN_ArgExpectedRefOrIn = 9503,
+        WRN_RefReadonlyNotVariable = 9504,
+        ERR_BadArgExtraRefLangVersion = 9505,
+        WRN_ArgExpectedIn = 9506,
+        WRN_OverridingDifferentRefness = 9507,
+        WRN_HidingDifferentRefness = 9508,
+        WRN_PartialDifferentRefness = 9509,
 
         #endregion
 

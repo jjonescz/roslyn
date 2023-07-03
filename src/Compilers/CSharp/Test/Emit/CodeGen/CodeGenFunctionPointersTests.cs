@@ -6080,13 +6080,12 @@ Ref");
 ");
         }
 
-        [Theory]
-        [InlineData("ref", "out")]
-        [InlineData("ref", "in")]
-        [InlineData("out", "in")]
-        public void Overloading_InvalidParameterRefness(string refKind1, string refKind2)
+        [Theory, CombinatorialData]
+        public void Overloading_InvalidParameterRefness(
+            [CombinatorialValues("ref", "in", "out", "ref readonly")] string refKind1,
+            [CombinatorialValues("ref", "in", "out", "ref readonly")] string refKind2)
         {
-            var comp = CreateCompilationWithFunctionPointers($@"
+            var source = $@"
 unsafe class C<T>
 {{
     static void M1(delegate*<{refKind1} object, void> ptr) => throw null;
@@ -6095,7 +6094,8 @@ unsafe class C<T>
     static void M2(C<delegate*<{refKind1} object, void>[]> c) => throw null;
     static void M2(C<delegate*<{refKind2} object, void>[]> c) => throw null;
 }}
-");
+";
+            var comp = CreateCompilation(source, options: TestOptions.UnsafeDebugDll, parseOptions: TestOptions.RegularNext);
 
             comp.VerifyDiagnostics(
                 // (5,17): error CS0111: Type 'C<T>' already defines a member called 'M1' with the same parameter types
@@ -7355,9 +7355,9 @@ unsafe class Test
                 // (14,20): error CS1615: Argument 1 may not be passed with the 'out' keyword
                 //         param2(out var l);
                 Diagnostic(ErrorCode.ERR_BadArgExtraRef, "var l").WithArguments("1", "out").WithLocation(14, 20),
-                // (17,20): error CS1615: Argument 1 may not be passed with the 'ref' keyword
+                // (17,20): error CS9505: Argument 1 may not be passed with the 'ref' keyword in language version 9.0. To pass 'ref' arguments to 'in' parameters, upgrade to language version preview or greater.
                 //         param2(ref s);
-                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "s").WithArguments("1", "ref").WithLocation(17, 20),
+                Diagnostic(ErrorCode.ERR_BadArgExtraRefLangVersion, "s").WithArguments("1", "9.0", "preview").WithLocation(17, 20),
                 // (23,16): error CS1620: Argument 1 must be passed with the 'out' keyword
                 //         param3(s);
                 Diagnostic(ErrorCode.ERR_BadArgRef, "s").WithArguments("1", "out").WithLocation(23, 16),

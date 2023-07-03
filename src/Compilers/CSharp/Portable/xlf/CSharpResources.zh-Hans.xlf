@@ -182,6 +182,11 @@
         <target state="translated">一元运算符的参数必须是包含类型或被其约束的类型参数。</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_BadArgExtraRefLangVersion">
+        <source>Argument {0} may not be passed with the 'ref' keyword in language version {1}. To pass 'ref' arguments to 'in' parameters, upgrade to language version {2} or greater.</source>
+        <target state="new">Argument {0} may not be passed with the 'ref' keyword in language version {1}. To pass 'ref' arguments to 'in' parameters, upgrade to language version {2} or greater.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_BadBinaryReadOnlySpanConcatenation">
         <source>Operator '{0}' cannot be applied to operands of type '{1}' and '{2}' that are not UTF-8 byte representations</source>
         <target state="translated">运算符 "{0}" 不能应用于类型为 "{1}" 和 "{2}" 的非 UTF-8 字节表示形式的操作数</target>
@@ -2072,6 +2077,16 @@
         <target state="translated">分析器程序集引用的编译器版本高于当前正在运行的版本。</target>
         <note />
       </trans-unit>
+      <trans-unit id="WRN_ArgExpectedIn">
+        <source>Argument {0} should be passed with the 'in' keyword</source>
+        <target state="new">Argument {0} should be passed with the 'in' keyword</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WRN_ArgExpectedIn_Title">
+        <source>Argument should be passed with the 'in' keyword</source>
+        <target state="new">Argument should be passed with the 'in' keyword</target>
+        <note />
+      </trans-unit>
       <trans-unit id="WRN_ArgExpectedRefOrIn">
         <source>Argument {0} should be passed with 'ref' or 'in' keyword</source>
         <target state="new">Argument {0} should be passed with 'ref' or 'in' keyword</target>
@@ -2093,13 +2108,13 @@
         <note />
       </trans-unit>
       <trans-unit id="WRN_BadArgRef">
-        <source>Argument {0} should not be passed with the '{1}' keyword</source>
-        <target state="new">Argument {0} should not be passed with the '{1}' keyword</target>
+        <source>The 'ref' modifier for argument {0} corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.</source>
+        <target state="new">The 'ref' modifier for argument {0} corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="WRN_BadArgRef_Title">
-        <source>Argument should not be passed with the keyword</source>
-        <target state="new">Argument should not be passed with the keyword</target>
+        <source>The 'ref' modifier for an argument corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.</source>
+        <target state="new">The 'ref' modifier for an argument corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="WRN_CallArgMixing">
@@ -2252,6 +2267,16 @@
         <target state="translated">在此上下文中使用变量可能会在变量声明范围以外公开所引用的变量</target>
         <note />
       </trans-unit>
+      <trans-unit id="WRN_HidingDifferentRefness">
+        <source>Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in hidden member.</source>
+        <target state="new">Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in hidden member.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WRN_HidingDifferentRefness_Title">
+        <source>Modifier of parameter doesn't match the corresponding parameter in hidden member.</source>
+        <target state="new">Modifier of parameter doesn't match the corresponding parameter in hidden member.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="WRN_InterpolatedStringHandlerArgumentAttributeIgnoredOnLambdaParameters">
         <source>InterpolatedStringHandlerArgument has no effect when applied to lambda parameters and will be ignored at the call site.</source>
         <target state="translated">应用于 lambda 参数时，InterpolatedStringHandlerArgument 不起任何作用，并将在调用站点被忽略。</target>
@@ -2322,6 +2347,16 @@
         <target state="translated">默认参数值在目标委托类型中不匹配。</target>
         <note />
       </trans-unit>
+      <trans-unit id="WRN_OverridingDifferentRefness">
+        <source>Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in overridden or implemented member.</source>
+        <target state="new">Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in overridden or implemented member.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WRN_OverridingDifferentRefness_Title">
+        <source>Modifier of parameter doesn't match the corresponding parameter in overridden or implemented member.</source>
+        <target state="new">Modifier of parameter doesn't match the corresponding parameter in overridden or implemented member.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="WRN_ParameterNotNullIfNotNull">
         <source>Parameter '{0}' must have a non-null value when exiting because parameter '{1}' is non-null.</source>
         <target state="translated">退出时参数“{0}”必须具有非 null 值，因为参数“{1}”是非 null。</target>
@@ -2350,6 +2385,16 @@
       <trans-unit id="WRN_ParamsArrayInLambdaOnly_Title">
         <source>Parameter has params modifier in lambda but not in target delegate type.</source>
         <target state="translated">参数在 lambda 中具有参数修饰符，但在目标委托类型中没有参数修饰符。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WRN_PartialDifferentRefness">
+        <source>Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in partial declaration.</source>
+        <target state="new">Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in partial declaration.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WRN_PartialDifferentRefness_Title">
+        <source>Modifier of parameter doesn't match the corresponding parameter in partial declaration.</source>
+        <target state="new">Modifier of parameter doesn't match the corresponding parameter in partial declaration.</target>
         <note />
       </trans-unit>
       <trans-unit id="WRN_RecordEqualsWithoutGetHashCode">
@@ -2415,6 +2460,16 @@
       <trans-unit id="WRN_RefAssignValEscapeWider_Title">
         <source>This ref-assigns a value that has a wider value escape scope than the target allowing assignment through the target of values with narrower escapes scopes.</source>
         <target state="translated">它会 ref-assign 一个值转义范围大于目标的值，允许通过转义范围更窄的值的目标进行赋值。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WRN_RefReadonlyNotVariable">
+        <source>Argument {0} should be a variable because it is passed to a 'ref readonly' parameter</source>
+        <target state="new">Argument {0} should be a variable because it is passed to a 'ref readonly' parameter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WRN_RefReadonlyNotVariable_Title">
+        <source>Argument should be a variable because it is passed to a 'ref readonly' parameter</source>
+        <target state="new">Argument should be a variable because it is passed to a 'ref readonly' parameter</target>
         <note />
       </trans-unit>
       <trans-unit id="WRN_RefReturnLocal">
