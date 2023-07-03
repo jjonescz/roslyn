@@ -2876,7 +2876,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             VerifyRequiresLocationAttributeSynthesized(m);
 
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
-            VerifyRefReadonlyParameter(p, modreq: true);
+            VerifyRefReadonlyParameter(p, customModifiers: VerifyModifiers.In);
         }
     }
 
@@ -2904,7 +2904,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             VerifyRequiresLocationAttributeSynthesized(m);
 
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("B.M").Parameters.Single();
-            VerifyRefReadonlyParameter(p, modreq: true);
+            VerifyRefReadonlyParameter(p, customModifiers: VerifyModifiers.In);
         }
     }
 
