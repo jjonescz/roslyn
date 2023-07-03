@@ -2679,6 +2679,27 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_OverrideNotExpected, "M").WithArguments($"C.M({modifier} int)").WithLocation(7, 29));
     }
 
+    [Theory, CombinatorialData]
+    public void Overridden_GenericBase([CombinatorialValues("ref readonly", "in")] string modifier)
+    {
+        var source = $$"""
+            class B<T>
+            {
+                protected virtual void M(in T x) => throw null;
+                protected virtual void M(ref readonly int x) => throw null;
+            }
+            class C : B<int>
+            {
+                protected override void M({{modifier}} int x) => throw null;
+            }
+            """;
+
+        CreateCompilation(source, targetFramework: TargetFramework.Net50).VerifyDiagnostics(
+            // (8,29): error CS0462: The inherited members 'B<T>.M(in T)' and 'B<T>.M(ref readonly int)' have the same signature in type 'C', so they cannot be overridden
+            //     protected override void M(ref readonly int x)
+            Diagnostic(ErrorCode.ERR_AmbigOverride, "M").WithArguments("B<T>.M(in T)", "B<T>.M(ref readonly int)", "C").WithLocation(8, 29));
+    }
+
     [Fact]
     public void Hiding_In_RefReadonly()
     {
