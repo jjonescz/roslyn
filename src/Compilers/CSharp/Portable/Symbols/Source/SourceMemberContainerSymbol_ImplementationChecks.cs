@@ -1191,7 +1191,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 {
                     CheckRefReadonlyInMismatch(
                         overriddenMethod, overridingMethod, diagnostics,
-                        static (diagnostics, overriddenMethod, overridingMethod, overridingParameter, _, arg) =>
+                        static (diagnostics, _, _, overridingParameter, _, arg) =>
                         {
                             var (overriddenParameter, location) = arg;
                             // Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in overridden member.
