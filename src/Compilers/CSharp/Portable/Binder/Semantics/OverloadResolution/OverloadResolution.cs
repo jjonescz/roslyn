@@ -3212,7 +3212,7 @@ outerDefault:
                     return argRefKind;
                 }
             }
-            else if (IsRefMismatchAcceptableForMethodConversion(paramRefKind, argRefKind, (CSharpParseOptions)argument.SyntaxTree.Options))
+            else if (IsRefMismatchAcceptableForMethodConversion(paramRefKind, argRefKind, binder.Compilation))
             {
                 return argRefKind;
             }
@@ -3230,7 +3230,7 @@ outerDefault:
         }
 
         // In method group conversions, 'in' is allowed to match 'ref' and 'ref readonly' is allowed to match 'ref' or 'in'.
-        internal static bool IsRefMismatchAcceptableForMethodConversion(RefKind x, RefKind y, CSharpParseOptions options)
+        internal static bool IsRefMismatchAcceptableForMethodConversion(RefKind x, RefKind y, CSharpCompilation compilation)
         {
             if (x == RefKind.RefReadOnlyParameter)
             {
@@ -3242,8 +3242,8 @@ outerDefault:
                 return x is RefKind.Ref or RefKind.In;
             }
 
-            return ((x, y) is (RefKind.In, RefKind.Ref) or (RefKind.Ref, RefKind.In) &&
-                options.IsFeatureEnabled(MessageID.IDS_FeatureRefReadonlyParameters));
+            return (x, y) is (RefKind.In, RefKind.Ref) or (RefKind.Ref, RefKind.In) &&
+                compilation.IsFeatureEnabled(MessageID.IDS_FeatureRefReadonlyParameters);
         }
 
         private EffectiveParameters GetEffectiveParametersInExpandedForm<TMember>(
