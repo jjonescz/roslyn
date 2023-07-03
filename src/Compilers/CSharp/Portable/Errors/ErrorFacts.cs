@@ -537,6 +537,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ErrorCode.WRN_OverridingDifferentRefness:
                 case ErrorCode.WRN_HidingDifferentRefness:
                 case ErrorCode.WRN_PartialDifferentRefness:
+                case ErrorCode.WRN_TargetDifferentRefness:
                     return 1;
                 default:
                     return 0;
@@ -2326,6 +2327,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ErrorCode.WRN_OverridingDifferentRefness:
                 case ErrorCode.WRN_HidingDifferentRefness:
                 case ErrorCode.WRN_PartialDifferentRefness:
+                case ErrorCode.WRN_TargetDifferentRefness:
                     return false;
                 default:
                     // NOTE: All error codes must be explicitly handled in this switch statement

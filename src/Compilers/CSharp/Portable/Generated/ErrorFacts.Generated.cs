@@ -322,6 +322,7 @@
                 case ErrorCode.WRN_OverridingDifferentRefness:
                 case ErrorCode.WRN_HidingDifferentRefness:
                 case ErrorCode.WRN_PartialDifferentRefness:
+                case ErrorCode.WRN_TargetDifferentRefness:
                     return true;
                 default:
                     return false;

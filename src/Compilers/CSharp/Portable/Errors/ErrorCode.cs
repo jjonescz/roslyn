@@ -2201,6 +2201,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         WRN_OverridingDifferentRefness = 9507,
         WRN_HidingDifferentRefness = 9508,
         WRN_PartialDifferentRefness = 9509,
+        WRN_TargetDifferentRefness = 9510,
 
         #endregion
 
