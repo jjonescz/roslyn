@@ -3367,16 +3367,15 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
         if (validInCSharp12 ?? validInCSharp11 == true)
         {
-            // PROTOTYPE: Should also have a warning for `ref`/`in` mismatch.
-            var expectedWarnings = (x, y) is ("in", "ref readonly")
+            var expectedWarnings = (x, y) is ("in", "ref readonly") or ("ref", "in")
                 ? new[]
                 {
                     // (4,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
                     // x = C.Y;
-                    Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.Y").WithArguments("in int p", "ref readonly int p").WithLocation(4, 5),
+                    Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.Y").WithArguments($"{x} int p", $"{y} int p").WithLocation(4, 5),
                     // (5,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
                     // y = C.X;
-                    Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.X").WithArguments("ref readonly int p", "in int p").WithLocation(5, 5)
+                    Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.X").WithArguments($"{y} int p", $"{x} int p").WithLocation(5, 5)
                 }
                 : Array.Empty<DiagnosticDescription>();
 

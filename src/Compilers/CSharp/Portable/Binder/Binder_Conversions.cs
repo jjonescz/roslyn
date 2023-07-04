@@ -781,7 +781,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     diagnostics.Add(ErrorCode.WRN_TargetDifferentRefness, location, lambdaOrMethodParameter, delegateParameter);
                 },
                 syntax.Location,
-                invokedAsExtensionMethod: invokedAsExtensionMethod);
+                invokedAsExtensionMethod: invokedAsExtensionMethod,
+                methodGroupConversion: true);
         }
 
         private static void CheckLambdaConversion(LambdaSymbol lambdaSymbol, TypeSymbol targetType, BindingDiagnosticBag diagnostics)

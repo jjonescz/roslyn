@@ -549,7 +549,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     diagnostics.Add(ErrorCode.WRN_PartialDifferentRefness, location, definitionParameter, implementationParameter);
                 },
                 extraArgument: (object)null,
-                invokedAsExtensionMethod: false))
+                invokedAsExtensionMethod: false,
+                methodGroupConversion: false))
             {
                 hasTypeDifferences = true;
             }
