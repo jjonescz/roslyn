@@ -2326,6 +2326,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ErrorCode.WRN_OverridingDifferentRefness:
                 case ErrorCode.WRN_HidingDifferentRefness:
                 case ErrorCode.WRN_PartialDifferentRefness:
+                case ErrorCode.ERR_OutAttrOnRefReadonlyParam:
                     return false;
                 default:
                     // NOTE: All error codes must be explicitly handled in this switch statement
