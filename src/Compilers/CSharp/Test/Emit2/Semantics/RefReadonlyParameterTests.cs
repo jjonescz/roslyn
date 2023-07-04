@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -63,17 +63,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
         if (attributes)
         {
-            if (parameter.ContainingModule is SourceModuleSymbol)
-            {
-                Assert.Empty(parameter.GetAttributes());
-            }
-            else
-            {
-                var attribute = Assert.Single(parameter.GetAttributes());
-                Assert.Equal(RequiresLocationAttributeQualifiedName, attribute.AttributeClass.ToTestDisplayString());
-                Assert.Empty(attribute.ConstructorArguments);
-                Assert.Empty(attribute.NamedArguments);
-            }
+            Assert.Empty(parameter.GetAttributes());
         }
 
         switch (customModifiers)
@@ -156,11 +146,6 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
             VerifyRefReadonlyParameter(p);
-
-            if (m is not SourceModuleSymbol)
-            {
-                Assert.Same(attribute, p.GetAttributes().Single().AttributeClass);
-            }
         }
     }
 
@@ -210,17 +195,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
         var p = comp.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
         VerifyRefReadonlyParameter(p, attributes: false);
-        var attributes = p.GetAttributes();
-        Assert.Equal(new[]
-        {
-            "System.Runtime.CompilerServices.IsReadOnlyAttribute",
-            RequiresLocationAttributeQualifiedName
-        }, attributes.Select(a => a.AttributeClass.ToTestDisplayString()));
-        Assert.All(attributes, a =>
-        {
-            Assert.Empty(a.ConstructorArguments);
-            Assert.Empty(a.NamedArguments);
-        });
+        var attribute = Assert.Single(p.GetAttributes());
+        Assert.Equal("System.Runtime.CompilerServices.IsReadOnlyAttribute", attribute.AttributeClass.ToTestDisplayString());
+        Assert.Empty(attribute.ConstructorArguments);
+        Assert.Empty(attribute.NamedArguments);
     }
 
     [Fact]
@@ -570,8 +548,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             var p = m.GlobalNamespace.GetMember<MethodSymbol>("C.M").Parameters.Single();
             var ptr = (FunctionPointerTypeSymbol)p.Type;
             var p2 = ptr.Signature.Parameters.Single();
-            VerifyRefReadonlyParameter(p2, customModifiers: VerifyModifiers.RequiresLocation, attributes: false);
-            Assert.Empty(p2.GetAttributes());
+            VerifyRefReadonlyParameter(p2, customModifiers: VerifyModifiers.RequiresLocation);
         }
     }
 
