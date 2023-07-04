@@ -1701,7 +1701,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (!reportedAnError && implementingType.DeclaringCompilation != null)
             {
-                CheckParameterAndReturnTypeMismatchOnImplementingMember(implementingType, implicitImpl, interfaceMember, isExplicit: false, diagnostics);
+                CheckModifierMismatchOnImplementingMember(implementingType, implicitImpl, interfaceMember, isExplicit: false, diagnostics);
             }
 
             // In constructed types, it is possible to see multiple members with the same (runtime) signature.
@@ -1746,7 +1746,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        internal static void CheckParameterAndReturnTypeMismatchOnImplementingMember(TypeSymbol implementingType, Symbol implementingMember, Symbol interfaceMember, bool isExplicit, BindingDiagnosticBag diagnostics)
+        /// <summary>
+        /// Reports warnings for some mismatches in parameter or return type modifiers (nullability, scoped, refness) between implementing and implemented member.
+        /// </summary>
+        internal static void CheckModifierMismatchOnImplementingMember(TypeSymbol implementingType, Symbol implementingMember, Symbol interfaceMember, bool isExplicit, BindingDiagnosticBag diagnostics)
         {
             if (!implementingMember.IsImplicitlyDeclared && !implementingMember.IsAccessor())
             {

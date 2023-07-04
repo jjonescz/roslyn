@@ -226,7 +226,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 // Note: we delayed nullable-related checks that could pull on NonNullTypes
                 EventSymbol explicitlyImplementedEvent = _explicitInterfaceImplementations[0];
-                TypeSymbol.CheckParameterAndReturnTypeMismatchOnImplementingMember(this.ContainingType, this, explicitlyImplementedEvent, isExplicit: true, diagnostics);
+                TypeSymbol.CheckModifierMismatchOnImplementingMember(this.ContainingType, this, explicitlyImplementedEvent, isExplicit: true, diagnostics);
             }
         }
 
