@@ -151,7 +151,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             considerReturnType: true,
             considerTypeConstraints: false,
             considerCallingConvention: false,
-            considerRefKindDifferences: true,
+            refKindMatching: RefKindMatching.ConsiderRefKindDifferences,
             considerArity: false,
             typeComparison: TypeCompareKind.AllIgnoreOptions);
 
@@ -166,7 +166,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             considerReturnType: true,
             considerTypeConstraints: false,
             considerCallingConvention: false,
-            considerRefKindDifferences: true,
+            refKindMatching: RefKindMatching.ConsiderRefKindDifferences,
             considerArity: false,
             typeComparison: TypeCompareKind.AllNullableIgnoreOptions);
 
