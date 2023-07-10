@@ -83,7 +83,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             considerTypeConstraints: false,
             considerCallingConvention: false,
             refKindMatching: RefKindMatching.RefReadonlyParameterRules,
-            typeComparison: TypeCompareKind.AllIgnoreOptions); //shouldn't actually matter for source members\
+            typeComparison: TypeCompareKind.AllIgnoreOptions); //shouldn't actually matter for source members
 
         /// <summary>
         /// This instance is used to determine if two C# member declarations in source conflict with each other.
