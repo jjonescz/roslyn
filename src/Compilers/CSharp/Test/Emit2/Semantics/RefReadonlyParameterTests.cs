@@ -3023,7 +3023,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 public void M2(in int x) { }
             }
             """;
-        CreateCompilation(source).VerifyDiagnostics(
+        CreateCompilation(source).VerifyEmitDiagnostics(
             // (8,17): warning CS9507: Modifier of parameter 'ref readonly int x' doesn't match the corresponding parameter 'in int x' in overridden or implemented member.
             //     public void M1(ref readonly int x) { }
             Diagnostic(ErrorCode.WRN_OverridingDifferentRefness, "M1").WithArguments("ref readonly int x", "in int x").WithLocation(8, 17),
@@ -3047,7 +3047,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 void I.M2(in int x) { }
             }
             """;
-        CreateCompilation(source).VerifyDiagnostics(
+        CreateCompilation(source).VerifyEmitDiagnostics(
             // (8,12): warning CS9507: Modifier of parameter 'ref readonly int x' doesn't match the corresponding parameter 'in int x' in overridden or implemented member.
             //     void I.M1(ref readonly int x) { }
             Diagnostic(ErrorCode.WRN_OverridingDifferentRefness, "M1").WithArguments("ref readonly int x", "in int x").WithLocation(8, 12),
