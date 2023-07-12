@@ -3559,4 +3559,438 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             CreateCompilation(source, parseOptions: TestOptions.RegularPreview).VerifyDiagnostics(expectedDiagnostics);
         }
     }
+
+    [Fact]
+    public void Conversion_ExtensionMethod()
+    {
+        var source = """
+            var c = new C();
+            X x = c.X1;
+            Y y = c.Y1;
+
+            x = c.Y1;
+            y = c.X1;
+            
+            x = c.Y2;
+            y = c.X2;
+
+            class C
+            {
+                public void X1(ref readonly int p) => throw null;
+                public void Y1(in int p) => throw null;
+            }
+
+            static class E
+            {
+                public static void X2(this C c, ref readonly int p) => throw null;
+                public static void Y2(this C c, in int p) => throw null;
+            }
+
+            delegate void X(ref readonly int p);
+            delegate void Y(in int p);
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (5,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // x = c.Y1;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "c.Y1").WithArguments("ref readonly int p", "in int p").WithLocation(5, 5),
+            // (6,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // y = c.X1;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "c.X1").WithArguments("in int p", "ref readonly int p").WithLocation(6, 5),
+            // (8,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // x = c.Y2;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "c.Y2").WithArguments("ref readonly int p", "in int p").WithLocation(8, 5),
+            // (9,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // y = c.X2;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "c.X2").WithArguments("in int p", "ref readonly int p").WithLocation(9, 5));
+    }
+
+    [Fact]
+    public void Conversion_Explicit()
+    {
+        var source = """
+            X x = C.X;
+            Y y = C.Y;
+
+            x = (X)C.Y;
+            y = (Y)C.X;
+
+            class C
+            {
+                public static void X(ref readonly int p) => throw null;
+                public static void Y(in int p) => throw null;
+            }
+
+            delegate void X(ref readonly int p);
+            delegate void Y(in int p);
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (4,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // x = (X)C.Y;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(X)C.Y").WithArguments("ref readonly int p", "in int p").WithLocation(4, 5),
+            // (5,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // y = (Y)C.X;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(Y)C.X").WithArguments("in int p", "ref readonly int p").WithLocation(5, 5));
+    }
+
+    [Fact]
+    public void Conversion_FunctionPointer_Assignment()
+    {
+        var source = """
+            unsafe
+            {
+                delegate*<int, void> v = null;
+                delegate*<ref readonly int, void> rr = null;
+                delegate*<in int, void> i = null;
+                delegate*<ref int, void> r = null;
+                delegate*<out int, void> o = null;
+
+                v = rr;
+                i = rr;
+                r = rr;
+                o = rr;
+                r = i;
+                i = r;
+                rr = r;
+                rr = i;
+                rr = o;
+                rr = v;
+                delegate*<ref readonly int, void> rr2 = rr;
+            }
+            """;
+        CreateCompilation(new[] { source, RequiresLocationAttributeDefinition }, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(
+            // 0.cs(9,9): error CS0266: Cannot implicitly convert type 'delegate*<ref readonly int, void>' to 'delegate*<int, void>'. An explicit conversion exists (are you missing a cast?)
+            //     v = rr;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "rr").WithArguments("delegate*<ref readonly int, void>", "delegate*<int, void>").WithLocation(9, 9),
+            // 0.cs(10,9): warning CS9510: Modifier of parameter 'ref readonly int' doesn't match the corresponding parameter 'in int' in target.
+            //     i = rr;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "rr").WithArguments("ref readonly int", "in int").WithLocation(10, 9),
+            // 0.cs(12,9): error CS0266: Cannot implicitly convert type 'delegate*<ref readonly int, void>' to 'delegate*<out int, void>'. An explicit conversion exists (are you missing a cast?)
+            //     o = rr;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "rr").WithArguments("delegate*<ref readonly int, void>", "delegate*<out int, void>").WithLocation(12, 9),
+            // 0.cs(13,9): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref int' in target.
+            //     r = i;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "i").WithArguments("in int", "ref int").WithLocation(13, 9),
+            // 0.cs(14,9): warning CS9510: Modifier of parameter 'ref int' doesn't match the corresponding parameter 'in int' in target.
+            //     i = r;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "r").WithArguments("ref int", "in int").WithLocation(14, 9),
+            // 0.cs(16,10): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref readonly int' in target.
+            //     rr = i;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "i").WithArguments("in int", "ref readonly int").WithLocation(16, 10),
+            // 0.cs(17,10): error CS0266: Cannot implicitly convert type 'delegate*<out int, void>' to 'delegate*<ref readonly int, void>'. An explicit conversion exists (are you missing a cast?)
+            //     rr = o;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "o").WithArguments("delegate*<out int, void>", "delegate*<ref readonly int, void>").WithLocation(17, 10),
+            // 0.cs(18,10): error CS0266: Cannot implicitly convert type 'delegate*<int, void>' to 'delegate*<ref readonly int, void>'. An explicit conversion exists (are you missing a cast?)
+            //     rr = v;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "v").WithArguments("delegate*<int, void>", "delegate*<ref readonly int, void>").WithLocation(18, 10));
+    }
+
+    [Fact]
+    public void Conversion_FunctionPointer_Assignment_Explicit()
+    {
+        var source = """
+            unsafe
+            {
+                delegate*<int, void> v = null;
+                delegate*<ref readonly int, void> rr = null;
+                delegate*<in int, void> i = null;
+                delegate*<ref int, void> r = null;
+                delegate*<out int, void> o = null;
+
+                v = (delegate*<int, void>)rr;
+                i = (delegate*<in int, void>)rr;
+                r = (delegate*<ref int, void>)rr;
+                o = (delegate*<out int, void>)rr;
+                r = (delegate*<ref int, void>)i;
+                i = (delegate*<in int, void>)r;
+                rr = (delegate*<ref readonly int, void>)r;
+                rr = (delegate*<ref readonly int, void>)i;
+                rr = (delegate*<ref readonly int, void>)o;
+                rr = (delegate*<ref readonly int, void>)v;
+                delegate*<ref readonly int, void> rr2 = (delegate*<ref readonly int, void>)rr;
+            }
+            """;
+        CreateCompilation(new[] { source, RequiresLocationAttributeDefinition }, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(
+            // 0.cs(10,9): warning CS9510: Modifier of parameter 'ref readonly int' doesn't match the corresponding parameter 'in int' in target.
+            //     i = (delegate*<in int, void>)rr;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<in int, void>)rr").WithArguments("ref readonly int", "in int").WithLocation(10, 9),
+            // 0.cs(13,9): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref int' in target.
+            //     r = (delegate*<ref int, void>)i;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<ref int, void>)i").WithArguments("in int", "ref int").WithLocation(13, 9),
+            // 0.cs(14,9): warning CS9510: Modifier of parameter 'ref int' doesn't match the corresponding parameter 'in int' in target.
+            //     i = (delegate*<in int, void>)r;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<in int, void>)r").WithArguments("ref int", "in int").WithLocation(14, 9),
+            // 0.cs(16,10): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref readonly int' in target.
+            //     rr = (delegate*<ref readonly int, void>)i;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<ref readonly int, void>)i").WithArguments("in int", "ref readonly int").WithLocation(16, 10));
+    }
+
+    [Fact]
+    public void Conversion_FunctionPointer_MethodGroup()
+    {
+        var source = """
+            unsafe
+            {
+                delegate*<int, void> v = &V;
+                delegate*<ref readonly int, void> rr = &RR;
+                delegate*<in int, void> i = &I;
+                delegate*<ref int, void> r = &R;
+                delegate*<out int, void> o = &O;
+
+                rr = &V;
+                rr = &R;
+                rr = &I;
+                rr = &O;
+                v = &RR;
+                i = &RR;
+                r = &RR;
+                o = &RR;
+                r = &I;
+                i = &R;
+            
+                static void V(int p) => throw null;
+                static void RR(ref readonly int p) => throw null;
+                static void I(in int p) => throw null;
+                static void R(ref int p) => throw null;
+                static void O(out int p) => throw null;
+            }
+            """;
+        CreateCompilation(new[] { source, RequiresLocationAttributeDefinition }, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(
+            // 0.cs(9,10): error CS8757: No overload for 'V' matches function pointer 'delegate*<ref readonly int, void>'
+            //     rr = &V;
+            Diagnostic(ErrorCode.ERR_MethFuncPtrMismatch, "&V").WithArguments("V", "delegate*<ref readonly int, void>").WithLocation(9, 10),
+            // 0.cs(11,10): warning CS9510: Modifier of parameter 'ref readonly int' doesn't match the corresponding parameter 'in int p' in target.
+            //     rr = &I;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&I").WithArguments("ref readonly int", "in int p").WithLocation(11, 10),
+            // 0.cs(12,10): error CS8757: No overload for 'O' matches function pointer 'delegate*<ref readonly int, void>'
+            //     rr = &O;
+            Diagnostic(ErrorCode.ERR_MethFuncPtrMismatch, "&O").WithArguments("O", "delegate*<ref readonly int, void>").WithLocation(12, 10),
+            // 0.cs(13,9): error CS8757: No overload for 'RR' matches function pointer 'delegate*<int, void>'
+            //     v = &RR;
+            Diagnostic(ErrorCode.ERR_MethFuncPtrMismatch, "&RR").WithArguments("RR", "delegate*<int, void>").WithLocation(13, 9),
+            // 0.cs(14,9): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            //     i = &RR;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&RR").WithArguments("in int", "ref readonly int p").WithLocation(14, 9),
+            // 0.cs(16,9): error CS8757: No overload for 'RR' matches function pointer 'delegate*<out int, void>'
+            //     o = &RR;
+            Diagnostic(ErrorCode.ERR_MethFuncPtrMismatch, "&RR").WithArguments("RR", "delegate*<out int, void>").WithLocation(16, 9),
+            // 0.cs(17,9): warning CS9510: Modifier of parameter 'ref int' doesn't match the corresponding parameter 'in int p' in target.
+            //     r = &I;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&I").WithArguments("ref int", "in int p").WithLocation(17, 9),
+            // 0.cs(18,9): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref int p' in target.
+            //     i = &R;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&R").WithArguments("in int", "ref int p").WithLocation(18, 9));
+    }
+
+    [Fact]
+    public void Conversion_FunctionPointer_MethodGroup_Explicit()
+    {
+        var source = """
+            unsafe
+            {
+                delegate*<int, void> v = &V;
+                delegate*<ref readonly int, void> rr = &RR;
+                delegate*<in int, void> i = &I;
+                delegate*<ref int, void> r = &R;
+                delegate*<out int, void> o = &O;
+
+                rr = (delegate*<ref readonly int, void>)&V;
+                rr = (delegate*<ref readonly int, void>)&R;
+                rr = (delegate*<ref readonly int, void>)&I;
+                rr = (delegate*<ref readonly int, void>)&O;
+                v = (delegate*<int, void>)&RR;
+                i = (delegate*<in int, void>)&RR;
+                r = (delegate*<ref int, void>)&RR;
+                o = (delegate*<out int, void>)&RR;
+                r = (delegate*<ref int, void>)&I;
+                i = (delegate*<in int, void>)&R;
+            
+                static void V(int p) => throw null;
+                static void RR(ref readonly int p) => throw null;
+                static void I(in int p) => throw null;
+                static void R(ref int p) => throw null;
+                static void O(out int p) => throw null;
+            }
+            """;
+        CreateCompilation(new[] { source, RequiresLocationAttributeDefinition }, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(
+            // 0.cs(9,10): error CS8757: No overload for 'V' matches function pointer 'delegate*<ref readonly int, void>'
+            //     rr = (delegate*<ref readonly int, void>)&V;
+            Diagnostic(ErrorCode.ERR_MethFuncPtrMismatch, "(delegate*<ref readonly int, void>)&V").WithArguments("V", "delegate*<ref readonly int, void>").WithLocation(9, 10),
+            // 0.cs(11,10): warning CS9510: Modifier of parameter 'ref readonly int' doesn't match the corresponding parameter 'in int p' in target.
+            //     rr = (delegate*<ref readonly int, void>)&I;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<ref readonly int, void>)&I").WithArguments("ref readonly int", "in int p").WithLocation(11, 10),
+            // 0.cs(12,10): error CS8757: No overload for 'O' matches function pointer 'delegate*<ref readonly int, void>'
+            //     rr = (delegate*<ref readonly int, void>)&O;
+            Diagnostic(ErrorCode.ERR_MethFuncPtrMismatch, "(delegate*<ref readonly int, void>)&O").WithArguments("O", "delegate*<ref readonly int, void>").WithLocation(12, 10),
+            // 0.cs(13,9): error CS8757: No overload for 'RR' matches function pointer 'delegate*<int, void>'
+            //     v = (delegate*<int, void>)&RR;
+            Diagnostic(ErrorCode.ERR_MethFuncPtrMismatch, "(delegate*<int, void>)&RR").WithArguments("RR", "delegate*<int, void>").WithLocation(13, 9),
+            // 0.cs(14,9): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            //     i = (delegate*<in int, void>)&RR;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<in int, void>)&RR").WithArguments("in int", "ref readonly int p").WithLocation(14, 9),
+            // 0.cs(16,9): error CS8757: No overload for 'RR' matches function pointer 'delegate*<out int, void>'
+            //     o = (delegate*<out int, void>)&RR;
+            Diagnostic(ErrorCode.ERR_MethFuncPtrMismatch, "(delegate*<out int, void>)&RR").WithArguments("RR", "delegate*<out int, void>").WithLocation(16, 9),
+            // 0.cs(17,9): warning CS9510: Modifier of parameter 'ref int' doesn't match the corresponding parameter 'in int p' in target.
+            //     r = (delegate*<ref int, void>)&I;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<ref int, void>)&I").WithArguments("ref int", "in int p").WithLocation(17, 9),
+            // 0.cs(18,9): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref int p' in target.
+            //     i = (delegate*<in int, void>)&R;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<in int, void>)&R").WithArguments("in int", "ref int p").WithLocation(18, 9));
+    }
+
+    [Fact]
+    public void Conversion_Lambda()
+    {
+        var source = """
+            V v = (int x) => throw null;
+            RR rr = (ref readonly int x) => throw null;
+            I i = (in int x) => throw null;
+            R r = (ref int x) => throw null;
+            O o = (out int x) => throw null;
+
+            rr = (int x) => throw null;
+            rr = (ref int x) => throw null;
+            rr = (in int x) => throw null;
+            rr = (out int x) => throw null;
+            v = (ref readonly int x) => throw null;
+            i = (ref readonly int x) => throw null;
+            r = (ref readonly int x) => throw null;
+            o = (ref readonly int x) => throw null;
+            r = (in int x) => throw null;
+            i = (ref int x) => throw null;
+            
+            rr = (int x) => throw null;
+            rr = x => throw null;
+            
+            delegate void V(int p);
+            delegate void RR(ref readonly int p);
+            delegate void I(in int p);
+            delegate void R(ref int p);
+            delegate void O(out int p);
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (7,6): error CS1661: Cannot convert lambda expression to type 'RR' because the parameter types do not match the delegate parameter types
+            // rr = (int x) => throw null;
+            Diagnostic(ErrorCode.ERR_CantConvAnonMethParams, "(int x) => throw null").WithArguments("lambda expression", "RR").WithLocation(7, 6),
+            // (7,11): error CS1676: Parameter 1 must be declared with the 'ref readonly' keyword
+            // rr = (int x) => throw null;
+            Diagnostic(ErrorCode.ERR_BadParamRef, "x").WithArguments("1", "ref readonly").WithLocation(7, 11),
+            // (9,6): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int x' in target.
+            // rr = (in int x) => throw null;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(in int x) => throw null").WithArguments("ref readonly int p", "in int x").WithLocation(9, 6),
+            // (10,6): error CS1661: Cannot convert lambda expression to type 'RR' because the parameter types do not match the delegate parameter types
+            // rr = (out int x) => throw null;
+            Diagnostic(ErrorCode.ERR_CantConvAnonMethParams, "(out int x) => throw null").WithArguments("lambda expression", "RR").WithLocation(10, 6),
+            // (10,15): error CS1676: Parameter 1 must be declared with the 'ref readonly' keyword
+            // rr = (out int x) => throw null;
+            Diagnostic(ErrorCode.ERR_BadParamRef, "x").WithArguments("1", "ref readonly").WithLocation(10, 15),
+            // (11,5): error CS1661: Cannot convert lambda expression to type 'V' because the parameter types do not match the delegate parameter types
+            // v = (ref readonly int x) => throw null;
+            Diagnostic(ErrorCode.ERR_CantConvAnonMethParams, "(ref readonly int x) => throw null").WithArguments("lambda expression", "V").WithLocation(11, 5),
+            // (11,23): error CS1677: Parameter 1 should not be declared with the 'ref readonly' keyword
+            // v = (ref readonly int x) => throw null;
+            Diagnostic(ErrorCode.ERR_BadParamExtraRef, "x").WithArguments("1", "ref readonly").WithLocation(11, 23),
+            // (12,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int x' in target.
+            // i = (ref readonly int x) => throw null;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(ref readonly int x) => throw null").WithArguments("in int p", "ref readonly int x").WithLocation(12, 5),
+            // (14,5): error CS1661: Cannot convert lambda expression to type 'O' because the parameter types do not match the delegate parameter types
+            // o = (ref readonly int x) => throw null;
+            Diagnostic(ErrorCode.ERR_CantConvAnonMethParams, "(ref readonly int x) => throw null").WithArguments("lambda expression", "O").WithLocation(14, 5),
+            // (14,23): error CS1676: Parameter 1 must be declared with the 'out' keyword
+            // o = (ref readonly int x) => throw null;
+            Diagnostic(ErrorCode.ERR_BadParamRef, "x").WithArguments("1", "out").WithLocation(14, 23),
+            // (15,5): warning CS9510: Modifier of parameter 'ref int p' doesn't match the corresponding parameter 'in int x' in target.
+            // r = (in int x) => throw null;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(in int x) => throw null").WithArguments("ref int p", "in int x").WithLocation(15, 5),
+            // (16,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref int x' in target.
+            // i = (ref int x) => throw null;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(ref int x) => throw null").WithArguments("in int p", "ref int x").WithLocation(16, 5),
+            // (18,6): error CS1661: Cannot convert lambda expression to type 'RR' because the parameter types do not match the delegate parameter types
+            // rr = (int x) => throw null;
+            Diagnostic(ErrorCode.ERR_CantConvAnonMethParams, "(int x) => throw null").WithArguments("lambda expression", "RR").WithLocation(18, 6),
+            // (18,11): error CS1676: Parameter 1 must be declared with the 'ref readonly' keyword
+            // rr = (int x) => throw null;
+            Diagnostic(ErrorCode.ERR_BadParamRef, "x").WithArguments("1", "ref readonly").WithLocation(18, 11),
+            // (19,6): error CS1676: Parameter 1 must be declared with the 'ref readonly' keyword
+            // rr = x => throw null;
+            Diagnostic(ErrorCode.ERR_BadParamRef, "x").WithArguments("1", "ref readonly").WithLocation(19, 6));
+    }
+
+    [Fact]
+    public void Conversion_Lambda_Explicit()
+    {
+        var source = """
+            V v = (V)((int x) => throw null);
+            RR rr = (RR)((ref readonly int x) => throw null);
+            I i = (I)((in int x) => throw null);
+            R r = (R)((ref int x) => throw null);
+            O o = (O)((out int x) => throw null);
+
+            rr = (RR)((int x) => throw null);
+            rr = (RR)((ref int x) => throw null);
+            rr = (RR)((in int x) => throw null);
+            rr = (RR)((out int x) => throw null);
+            v = (V)((ref readonly int x) => throw null);
+            i = (I)((ref readonly int x) => throw null);
+            r = (R)((ref readonly int x) => throw null);
+            o = (O)((ref readonly int x) => throw null);
+            r = (R)((in int x) => throw null);
+            i = (I)((ref int x) => throw null);
+            
+            rr = (RR)((int x) => throw null);
+            rr = (RR)(x => throw null);
+            
+            delegate void V(int p);
+            delegate void RR(ref readonly int p);
+            delegate void I(in int p);
+            delegate void R(ref int p);
+            delegate void O(out int p);
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (7,11): error CS1661: Cannot convert lambda expression to type 'RR' because the parameter types do not match the delegate parameter types
+            // rr = (RR)((int x) => throw null);
+            Diagnostic(ErrorCode.ERR_CantConvAnonMethParams, "(int x) => throw null").WithArguments("lambda expression", "RR").WithLocation(7, 11),
+            // (7,16): error CS1676: Parameter 1 must be declared with the 'ref readonly' keyword
+            // rr = (RR)((int x) => throw null);
+            Diagnostic(ErrorCode.ERR_BadParamRef, "x").WithArguments("1", "ref readonly").WithLocation(7, 16),
+            // (9,6): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int x' in target.
+            // rr = (RR)((in int x) => throw null);
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(RR)((in int x) => throw null)").WithArguments("ref readonly int p", "in int x").WithLocation(9, 6),
+            // (10,11): error CS1661: Cannot convert lambda expression to type 'RR' because the parameter types do not match the delegate parameter types
+            // rr = (RR)((out int x) => throw null);
+            Diagnostic(ErrorCode.ERR_CantConvAnonMethParams, "(out int x) => throw null").WithArguments("lambda expression", "RR").WithLocation(10, 11),
+            // (10,20): error CS1676: Parameter 1 must be declared with the 'ref readonly' keyword
+            // rr = (RR)((out int x) => throw null);
+            Diagnostic(ErrorCode.ERR_BadParamRef, "x").WithArguments("1", "ref readonly").WithLocation(10, 20),
+            // (11,9): error CS1661: Cannot convert lambda expression to type 'V' because the parameter types do not match the delegate parameter types
+            // v = (V)((ref readonly int x) => throw null);
+            Diagnostic(ErrorCode.ERR_CantConvAnonMethParams, "(ref readonly int x) => throw null").WithArguments("lambda expression", "V").WithLocation(11, 9),
+            // (11,27): error CS1677: Parameter 1 should not be declared with the 'ref readonly' keyword
+            // v = (V)((ref readonly int x) => throw null);
+            Diagnostic(ErrorCode.ERR_BadParamExtraRef, "x").WithArguments("1", "ref readonly").WithLocation(11, 27),
+            // (12,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int x' in target.
+            // i = (I)((ref readonly int x) => throw null);
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(I)((ref readonly int x) => throw null)").WithArguments("in int p", "ref readonly int x").WithLocation(12, 5),
+            // (14,9): error CS1661: Cannot convert lambda expression to type 'O' because the parameter types do not match the delegate parameter types
+            // o = (O)((ref readonly int x) => throw null);
+            Diagnostic(ErrorCode.ERR_CantConvAnonMethParams, "(ref readonly int x) => throw null").WithArguments("lambda expression", "O").WithLocation(14, 9),
+            // (14,27): error CS1676: Parameter 1 must be declared with the 'out' keyword
+            // o = (O)((ref readonly int x) => throw null);
+            Diagnostic(ErrorCode.ERR_BadParamRef, "x").WithArguments("1", "out").WithLocation(14, 27),
+            // (15,5): warning CS9510: Modifier of parameter 'ref int p' doesn't match the corresponding parameter 'in int x' in target.
+            // r = (R)((in int x) => throw null);
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(R)((in int x) => throw null)").WithArguments("ref int p", "in int x").WithLocation(15, 5),
+            // (16,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref int x' in target.
+            // i = (I)((ref int x) => throw null);
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(I)((ref int x) => throw null)").WithArguments("in int p", "ref int x").WithLocation(16, 5),
+            // (18,11): error CS1661: Cannot convert lambda expression to type 'RR' because the parameter types do not match the delegate parameter types
+            // rr = (RR)((int x) => throw null);
+            Diagnostic(ErrorCode.ERR_CantConvAnonMethParams, "(int x) => throw null").WithArguments("lambda expression", "RR").WithLocation(18, 11),
+            // (18,16): error CS1676: Parameter 1 must be declared with the 'ref readonly' keyword
+            // rr = (RR)((int x) => throw null);
+            Diagnostic(ErrorCode.ERR_BadParamRef, "x").WithArguments("1", "ref readonly").WithLocation(18, 16),
+            // (19,11): error CS1676: Parameter 1 must be declared with the 'ref readonly' keyword
+            // rr = (RR)(x => throw null);
+            Diagnostic(ErrorCode.ERR_BadParamRef, "x").WithArguments("1", "ref readonly").WithLocation(19, 11));
+    }
 }
