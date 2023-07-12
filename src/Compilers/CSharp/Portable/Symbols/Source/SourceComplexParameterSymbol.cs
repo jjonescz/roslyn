@@ -370,11 +370,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             MessageID.IDS_FeatureOptionalParameter.CheckFeatureAvailability(diagnostics, defaultSyntax.EqualsToken);
 
             binder = GetDefaultParameterValueBinder(defaultSyntax);
-            Binder binderForDefault = binder.CreateBinderForParameterDefaultValue(this, defaultSyntax);
-            Debug.Assert(binderForDefault.InParameterDefaultValue);
-            Debug.Assert(binderForDefault.ContainingMemberOrLambda == ContainingSymbol);
+            binder = binder.CreateBinderForParameterDefaultValue(this, defaultSyntax);
+            Debug.Assert(binder.InParameterDefaultValue);
+            Debug.Assert(binder.ContainingMemberOrLambda == ContainingSymbol);
 
-            parameterEqualsValue = binderForDefault.BindParameterDefaultValue(defaultSyntax, this, diagnostics, out var valueBeforeConversion);
+            parameterEqualsValue = binder.BindParameterDefaultValue(defaultSyntax, this, diagnostics, out var valueBeforeConversion);
             if (valueBeforeConversion.HasErrors)
             {
                 return ConstantValue.Bad;
@@ -802,7 +802,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             else if (ReportExplicitUseOfReservedAttributes(in arguments,
                 ReservedAttributes.DynamicAttribute |
                 ReservedAttributes.IsReadOnlyAttribute |
-                // PROTOTYPE: RequiresLocationAttribute
+                ReservedAttributes.RequiresLocationAttribute |
                 ReservedAttributes.IsUnmanagedAttribute |
                 ReservedAttributes.IsByRefLikeAttribute |
                 ReservedAttributes.TupleElementNamesAttribute |
@@ -1410,6 +1410,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         {
                             // error CS8355: An in parameter cannot have the Out attribute.
                             diagnostics.Add(ErrorCode.ERR_OutAttrOnInParam, this.GetFirstLocation());
+                        }
+                        break;
+                    case RefKind.RefReadOnlyParameter:
+                        if (data.HasOutAttribute)
+                        {
+                            // error: A ref readonly parameter cannot have the Out attribute.
+                            diagnostics.Add(ErrorCode.ERR_OutAttrOnRefReadonlyParam, this.GetFirstLocation());
                         }
                         break;
                 }

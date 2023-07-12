@@ -7577,22 +7577,12 @@ class Program
 
             var comp = CreateCompilation(source);
             comp.VerifyDiagnostics(
-    // (8,28): error CS1513: } expected
-    //         var d = new int[] {[1] = 3 };
-    Diagnostic(ErrorCode.ERR_RbraceExpected, "[").WithLocation(8, 28),
-    // (8,36): error CS1002: ; expected
-    //         var d = new int[] {[1] = 3 };
-    Diagnostic(ErrorCode.ERR_SemicolonExpected, "}").WithLocation(8, 36),
-    // (8,37): error CS1597: Semicolon after method or accessor block is not valid
-    //         var d = new int[] {[1] = 3 };
-    Diagnostic(ErrorCode.ERR_UnexpectedSemicolon, ";").WithLocation(8, 37),
-    // (10,1): error CS1022: Type or namespace definition, or end-of-file expected
-    // }
-    Diagnostic(ErrorCode.ERR_EOFExpected, "}").WithLocation(10, 1),
-    // (2,1): info CS8019: Unnecessary using directive.
-    // using System.Collections.Generic;
-    Diagnostic(ErrorCode.HDN_UnusedUsingDirective, "using System.Collections.Generic;").WithLocation(2, 1)
-);
+                // (2,1): hidden CS8019: Unnecessary using directive.
+                // using System.Collections.Generic;
+                Diagnostic(ErrorCode.HDN_UnusedUsingDirective, "using System.Collections.Generic;").WithLocation(2, 1),
+                // (8,28): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                //         var d = new int[] {[1] = 3 };
+                Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "[1]").WithLocation(8, 28));
         }
 
         [Fact]
@@ -9716,7 +9706,7 @@ public static class Program
                 verify: Verification.Fails).VerifyDiagnostics(expectedDiagnostics);
         }
 
-        [Fact(Skip = "https://github.com/dotnet/roslyn/issues/68714")]
+        [ConditionalFact(typeof(WindowsOnly), Reason = ConditionalSkipReason.RestrictedTypesNeedDesktop)]
         public void PassingArgumentsToInParameters_Arglist()
         {
             var source = """
@@ -9733,9 +9723,9 @@ public static class Program
                 }
                 """;
             CreateCompilation(source, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
-                // (8,15): error CS1615: Argument 1 may not be passed with the 'ref' keyword
+                // (8,15): error CS9505: Argument 1 may not be passed with the 'ref' keyword in language version 11.0. To pass 'ref' arguments to 'in' parameters, upgrade to language version preview or greater.
                 //         M(ref x, __arglist(x));
-                Diagnostic(ErrorCode.ERR_BadArgExtraRef, "x").WithArguments("1", "ref").WithLocation(8, 15));
+                Diagnostic(ErrorCode.ERR_BadArgExtraRefLangVersion, "x").WithArguments("1", "11.0", "preview").WithLocation(8, 15));
 
             var expectedDiagnostics = new[]
             {
@@ -9744,8 +9734,8 @@ public static class Program
                 Diagnostic(ErrorCode.WRN_BadArgRef, "x").WithArguments("1").WithLocation(8, 15)
             };
 
-            CompileAndVerify(source, expectedOutput: "555", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
-            CompileAndVerify(source, expectedOutput: "555").VerifyDiagnostics(expectedDiagnostics);
+            CompileAndVerify(source, expectedOutput: "555", verify: Verification.FailsILVerify, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CompileAndVerify(source, expectedOutput: "555", verify: Verification.FailsILVerify).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]

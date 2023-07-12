@@ -1701,7 +1701,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (!reportedAnError && implementingType.DeclaringCompilation != null)
             {
-                CheckParameterAndReturnTypeMismatchOnImplementingMember(implementingType, implicitImpl, interfaceMember, isExplicit: false, diagnostics);
+                CheckModifierMismatchOnImplementingMember(implementingType, implicitImpl, interfaceMember, isExplicit: false, diagnostics);
             }
 
             // In constructed types, it is possible to see multiple members with the same (runtime) signature.
@@ -1746,7 +1746,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        internal static void CheckParameterAndReturnTypeMismatchOnImplementingMember(TypeSymbol implementingType, Symbol implementingMember, Symbol interfaceMember, bool isExplicit, BindingDiagnosticBag diagnostics)
+        /// <summary>
+        /// Reports warnings for some mismatches in parameter or return type modifiers (nullability, scoped, refness) between implementing and implemented member.
+        /// </summary>
+        internal static void CheckModifierMismatchOnImplementingMember(TypeSymbol implementingType, Symbol implementingMember, Symbol interfaceMember, bool isExplicit, BindingDiagnosticBag diagnostics)
         {
             if (!implementingMember.IsImplicitlyDeclared && !implementingMember.IsAccessor())
             {
@@ -2482,5 +2485,45 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         internal abstract bool IsRecord { get; }
 
         internal abstract bool IsRecordStruct { get; }
+
+        internal abstract bool HasInlineArrayAttribute(out int length);
+
+#nullable enable
+        internal FieldSymbol? TryGetPossiblyUnsupportedByLanguageInlineArrayElementField()
+        {
+            Debug.Assert(HasInlineArrayAttribute(out var length) && length > 0);
+
+            FieldSymbol? elementField = null;
+
+            if (this.TypeKind == TypeKind.Struct)
+            {
+                foreach (FieldSymbol field in ((NamedTypeSymbol)this).OriginalDefinition.GetFieldsToEmit())
+                {
+                    if (!field.IsStatic)
+                    {
+                        if (elementField is not null)
+                        {
+                            return null;
+                        }
+                        else
+                        {
+                            elementField = field;
+                        }
+                    }
+                }
+            }
+
+            if (elementField is not null && elementField.ContainingType.IsGenericType)
+            {
+                elementField = elementField.AsMember((NamedTypeSymbol)this);
+            }
+
+            return elementField;
+        }
+
+        internal FieldSymbol? TryGetInlineArrayElementField()
+        {
+            return TryGetPossiblyUnsupportedByLanguageInlineArrayElementField() is { RefKind: RefKind.None } field ? field : null;
+        }
     }
 }
