@@ -1057,7 +1057,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     break;
 
                 case BoundKind.UnboundLambda:
-                    if (HasAnonymousFunctionConversion(sourceExpression, destination))
+                    if (HasAnonymousFunctionConversion(sourceExpression, destination, this.Compilation))
                     {
                         return Conversion.AnonymousFunction;
                     }
@@ -1413,7 +1413,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 IsConstantNumericZero(sourceConstantValue);
         }
 
-        private static LambdaConversionResult IsAnonymousFunctionCompatibleWithDelegate(UnboundLambda anonymousFunction, TypeSymbol type, bool isTargetExpressionTree)
+        private static LambdaConversionResult IsAnonymousFunctionCompatibleWithDelegate(UnboundLambda anonymousFunction, TypeSymbol type, CSharpCompilation compilation, bool isTargetExpressionTree)
         {
             Debug.Assert((object)anonymousFunction != null);
             Debug.Assert((object)type != null);
@@ -1461,7 +1461,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     for (int p = 0; p < delegateParameters.Length; ++p)
                     {
-                        if (delegateParameters[p].RefKind != anonymousFunction.RefKind(p) ||
+                        var delegateRefKind = delegateParameters[p].RefKind;
+                        var anonymousFunctionRefKind = anonymousFunction.RefKind(p);
+                        if ((delegateRefKind != anonymousFunctionRefKind &&
+                            !OverloadResolution.IsRefMismatchAcceptableForMethodConversion(delegateRefKind, anonymousFunctionRefKind, compilation)) ||
                             !delegateParameters[p].Type.Equals(anonymousFunction.ParameterType(p), TypeCompareKind.AllIgnoreOptions))
                         {
                             return LambdaConversionResult.MismatchedParameterType;
@@ -1531,7 +1534,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return LambdaConversionResult.Success;
         }
 
-        private static LambdaConversionResult IsAnonymousFunctionCompatibleWithExpressionTree(UnboundLambda anonymousFunction, NamedTypeSymbol type)
+        private static LambdaConversionResult IsAnonymousFunctionCompatibleWithExpressionTree(UnboundLambda anonymousFunction, NamedTypeSymbol type, CSharpCompilation compilation)
         {
             Debug.Assert((object)anonymousFunction != null);
             Debug.Assert((object)type != null);
@@ -1559,7 +1562,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return LambdaConversionResult.ExpressionTreeFromAnonymousMethod;
             }
 
-            return IsAnonymousFunctionCompatibleWithDelegate(anonymousFunction, delegateType, isTargetExpressionTree: true);
+            return IsAnonymousFunctionCompatibleWithDelegate(anonymousFunction, delegateType, compilation, isTargetExpressionTree: true);
         }
 
         internal bool IsAssignableFromMulticastDelegate(TypeSymbol type, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
@@ -1569,24 +1572,24 @@ namespace Microsoft.CodeAnalysis.CSharp
             return ClassifyImplicitConversionFromType(multicastDelegateType, type, ref useSiteInfo).Exists;
         }
 
-        public static LambdaConversionResult IsAnonymousFunctionCompatibleWithType(UnboundLambda anonymousFunction, TypeSymbol type)
+        public static LambdaConversionResult IsAnonymousFunctionCompatibleWithType(UnboundLambda anonymousFunction, TypeSymbol type, CSharpCompilation compilation)
         {
             Debug.Assert((object)anonymousFunction != null);
             Debug.Assert((object)type != null);
 
             if (type.IsDelegateType())
             {
-                return IsAnonymousFunctionCompatibleWithDelegate(anonymousFunction, type, isTargetExpressionTree: false);
+                return IsAnonymousFunctionCompatibleWithDelegate(anonymousFunction, type, compilation, isTargetExpressionTree: false);
             }
             else if (type.IsExpressionTree())
             {
-                return IsAnonymousFunctionCompatibleWithExpressionTree(anonymousFunction, (NamedTypeSymbol)type);
+                return IsAnonymousFunctionCompatibleWithExpressionTree(anonymousFunction, (NamedTypeSymbol)type, compilation);
             }
 
             return LambdaConversionResult.BadTargetType;
         }
 
-        private static bool HasAnonymousFunctionConversion(BoundExpression source, TypeSymbol destination)
+        private static bool HasAnonymousFunctionConversion(BoundExpression source, TypeSymbol destination, CSharpCompilation compilation)
         {
             Debug.Assert(source != null);
             Debug.Assert((object)destination != null);
@@ -1596,7 +1599,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return false;
             }
 
-            return IsAnonymousFunctionCompatibleWithType((UnboundLambda)source, destination) == LambdaConversionResult.Success;
+            return IsAnonymousFunctionCompatibleWithType((UnboundLambda)source, destination, compilation) == LambdaConversionResult.Success;
         }
 
         internal static CollectionLiteralTypeKind GetCollectionLiteralTypeKind(CSharpCompilation compilation, TypeSymbol destination, out TypeSymbol? elementType)
