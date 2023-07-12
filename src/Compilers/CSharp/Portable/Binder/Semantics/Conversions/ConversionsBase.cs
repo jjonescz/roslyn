@@ -3292,7 +3292,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var sourceParam = sourceSig.Parameters[i];
                 var destinationParam = destinationSig.Parameters[i];
 
-                if (sourceParam.RefKind != destinationParam.RefKind)
+                if (sourceParam.RefKind != destinationParam.RefKind &&
+                    !OverloadResolution.IsRefMismatchAcceptableForMethodConversion(sourceParam.RefKind, destinationParam.RefKind, Compilation))
                 {
                     return false;
                 }
