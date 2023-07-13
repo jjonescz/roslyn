@@ -2758,4 +2758,45 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             }
             """);
     }
+
+    [Fact]
+    public void Com()
+    {
+        var source = """
+            using System;
+            using System.Runtime.InteropServices;
+
+            I i = new C();
+            i.M(42);
+            int x = 43;
+            i.M(x);
+            i.M(in x);
+            i.M(ref x);
+
+            [ComImport, Guid("96A2DE64-6D44-4DA5-BBA4-25F5F07E0E6B")]
+            interface I
+            {
+                void M(string s);
+                void M(ref readonly int i);
+            }
+
+            class C : I
+            {
+                void I.M(string s) => Console.WriteLine("string " + s);
+                void I.M(ref readonly int i) => Console.WriteLine("ref readonly int " + i);
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: """
+            ref readonly int 42
+            ref readonly int 43
+            ref readonly int 43
+            ref readonly int 43
+            """).VerifyDiagnostics(
+            // (5,5): warning CS9504: Argument 1 should be a variable because it is passed to a 'ref readonly' parameter
+            // i.M(42);
+            Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "42").WithArguments("1").WithLocation(5, 5),
+            // (7,5): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+            // i.M(x);
+            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(7, 5));
+    }
 }
