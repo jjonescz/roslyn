@@ -1127,9 +1127,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             SourceMemberContainerTypeSymbol.CheckRefReadonlyInMismatch(
                 delegateMethod, lambdaOrMethod, diagnostics,
-                static (diagnostics, delegateMethod, lambdaOrMethod, delegateParameter, _, arg) =>
+                static (diagnostics, delegateMethod, lambdaOrMethod, lambdaOrMethodParameter, _, arg) =>
                 {
-                    var (lambdaOrMethodParameter, location) = arg;
+                    var (delegateParameter, location) = arg;
                     diagnostics.Add(ErrorCode.WRN_TargetDifferentRefness, location, lambdaOrMethodParameter, delegateParameter);
                 },
                 syntax.Location,
