@@ -3661,6 +3661,91 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact]
+    public void Conversion_LangVersion()
+    {
+        var source1 = """
+            public class C
+            {
+                public static void X(ref readonly int p) => throw null;
+                public static void Y(in int p) => throw null;
+            }
+
+            public delegate void X(ref readonly int p);
+            public delegate void Y(in int p);
+            """;
+        var comp1 = CreateCompilation(source1).VerifyDiagnostics();
+        var comp1Ref = comp1.ToMetadataReference();
+
+        var source2 = """
+            X x = C.X;
+            Y y = C.Y;
+            
+            x = C.Y;
+            y = C.X;
+            """;
+
+        var expectedDiagnostics = new[]
+        {
+            // (4,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // x = C.Y;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.Y").WithArguments("in int p", "ref readonly int p").WithLocation(4, 5),
+            // (5,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // y = C.X;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.X").WithArguments("ref readonly int p", "in int p").WithLocation(5, 5)
+        };
+
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.Regular11).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source2, new[] { comp1Ref }).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact]
+    public void Conversion_LangVersion_RefIn()
+    {
+        var source1 = """
+            public class C
+            {
+                public static void X(ref int p) => throw null;
+                public static void Y(in int p) => throw null;
+            }
+
+            public delegate void X(ref int p);
+            public delegate void Y(in int p);
+            """;
+        var comp1 = CreateCompilation(source1).VerifyDiagnostics();
+        var comp1Ref = comp1.ToMetadataReference();
+
+        var source2 = """
+            X x = C.X;
+            Y y = C.Y;
+            
+            x = C.Y;
+            y = C.X;
+            """;
+
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+            // (4,7): error CS0123: No overload for 'Y' matches delegate 'X'
+            // x = C.Y;
+            Diagnostic(ErrorCode.ERR_MethDelegateMismatch, "Y").WithArguments("Y", "X").WithLocation(4, 7),
+            // (5,7): error CS0123: No overload for 'X' matches delegate 'Y'
+            // y = C.X;
+            Diagnostic(ErrorCode.ERR_MethDelegateMismatch, "X").WithArguments("X", "Y").WithLocation(5, 7));
+
+        var expectedDiagnostics = new[]
+        {
+            // (4,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref int p' in target.
+            // x = C.Y;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.Y").WithArguments("in int p", "ref int p").WithLocation(4, 5),
+            // (5,5): warning CS9510: Modifier of parameter 'ref int p' doesn't match the corresponding parameter 'in int p' in target.
+            // y = C.X;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.X").WithArguments("ref int p", "in int p").WithLocation(5, 5)
+        };
+
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source2, new[] { comp1Ref }).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact]
     public void Conversion_FunctionPointer_Assignment()
     {
         var source = """
@@ -3738,6 +3823,99 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             }
             """;
         CreateCompilation(new[] { source, RequiresLocationAttributeDefinition }, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_FunctionPointer_Assignment_LangVersion()
+    {
+        var source1 = """
+            public unsafe class C
+            {
+                public static delegate*<ref readonly int, void> X1;
+                public static delegate*<in int, void> Y1;
+            
+                public static delegate*<ref readonly int, void> X2;
+                public static delegate*<in int, void> Y2;
+            }
+            """;
+        var comp1 = CreateCompilation(new[] { source1, RequiresLocationAttributeDefinition }, options: TestOptions.UnsafeDebugDll);
+        comp1.VerifyDiagnostics();
+        var comp1Ref = comp1.ToMetadataReference();
+
+        var source2 = """
+            unsafe
+            {
+                C.X2 = C.X1;
+                C.Y2 = C.Y1;
+
+                C.Y2 = C.X1;
+                C.X2 = C.Y1;
+            }
+            """;
+
+        var expectedDiagnostics = new[]
+        {
+            // 0.cs(6,12): warning CS9510: Modifier of parameter 'ref readonly int' doesn't match the corresponding parameter 'in int' in target.
+            //     C.Y2 = C.X1;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.X1").WithArguments("ref readonly int", "in int").WithLocation(6, 12),
+            // 0.cs(7,12): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref readonly int' in target.
+            //     C.X2 = C.Y1;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.Y1").WithArguments("in int", "ref readonly int").WithLocation(7, 12)
+        };
+
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.Regular11, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source2, new[] { comp1Ref }, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact]
+    public void Conversion_FunctionPointer_Assignment_LangVersion_RefIn()
+    {
+        var source1 = """
+            public unsafe class C
+            {
+                public static delegate*<ref int, void> X1;
+                public static delegate*<in int, void> Y1;
+
+                public static delegate*<ref int, void> X2;
+                public static delegate*<in int, void> Y2;
+            }
+            """;
+        var comp1 = CreateCompilation(new[] { source1, RequiresLocationAttributeDefinition }, options: TestOptions.UnsafeDebugDll);
+        comp1.VerifyDiagnostics();
+        var comp1Ref = comp1.ToMetadataReference();
+
+        var source2 = """
+            unsafe
+            {
+                C.X2 = C.X1;
+                C.Y2 = C.Y1;
+            
+                C.Y2 = C.X1;
+                C.X2 = C.Y1;
+            }
+            """;
+
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.Regular11, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(
+            // (6,12): error CS0266: Cannot implicitly convert type 'delegate*<ref int, void>' to 'delegate*<in int, void>'. An explicit conversion exists (are you missing a cast?)
+            //     C.Y2 = C.X1;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "C.X1").WithArguments("delegate*<ref int, void>", "delegate*<in int, void>").WithLocation(6, 12),
+            // (7,12): error CS0266: Cannot implicitly convert type 'delegate*<in int, void>' to 'delegate*<ref int, void>'. An explicit conversion exists (are you missing a cast?)
+            //     C.X2 = C.Y1;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "C.Y1").WithArguments("delegate*<in int, void>", "delegate*<ref int, void>").WithLocation(7, 12));
+
+        var expectedDiagnostics = new[]
+        {
+            // (6,12): warning CS9510: Modifier of parameter 'ref int' doesn't match the corresponding parameter 'in int' in target.
+            //     C.Y2 = C.X1;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.X1").WithArguments("ref int", "in int").WithLocation(6, 12),
+            // (7,12): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref int' in target.
+            //     C.X2 = C.Y1;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.Y1").WithArguments("in int", "ref int").WithLocation(7, 12)
+        };
+
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source2, new[] { comp1Ref }, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(expectedDiagnostics);
     }
 
     [Fact]
@@ -3820,6 +3998,99 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             // 0.cs(7,9): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int' in target.
             //     y = (delegate*<in int, void>)&X;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<in int, void>)&X").WithArguments("ref readonly int p", "in int").WithLocation(7, 9));
+    }
+
+    [Fact]
+    public void Conversion_FunctionPointer_MethodGroup_LangVersion()
+    {
+        var source1 = """
+            public unsafe class C
+            {
+                public static void X1(ref readonly int p) => throw null;
+                public static void Y1(in int p) => throw null;
+            
+                public static delegate*<ref readonly int, void> X2;
+                public static delegate*<in int, void> Y2;
+            }
+            """;
+        var comp1 = CreateCompilation(new[] { source1, RequiresLocationAttributeDefinition }, options: TestOptions.UnsafeDebugDll);
+        comp1.VerifyDiagnostics();
+        var comp1Ref = comp1.ToMetadataReference();
+
+        var source2 = """
+            unsafe
+            {
+                C.X2 = &C.X1;
+                C.Y2 = &C.Y1;
+
+                C.Y2 = &C.X1;
+                C.X2 = &C.Y1;
+            }
+            """;
+
+        var expectedDiagnostics = new[]
+        {
+            // (6,12): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int' in target.
+            //     C.Y2 = &C.X1;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&C.X1").WithArguments("ref readonly int p", "in int").WithLocation(6, 12),
+            // (7,12): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int' in target.
+            //     C.X2 = &C.Y1;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&C.Y1").WithArguments("in int p", "ref readonly int").WithLocation(7, 12)
+        };
+
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.Regular11, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source2, new[] { comp1Ref }, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact]
+    public void Conversion_FunctionPointer_MethodGroup_LangVersion_RefIn()
+    {
+        var source1 = """
+            public unsafe class C
+            {
+                public static void X1(ref int p) => throw null;
+                public static void Y1(in int p) => throw null;
+            
+                public static delegate*<ref int, void> X2;
+                public static delegate*<in int, void> Y2;
+            }
+            """;
+        var comp1 = CreateCompilation(source1, options: TestOptions.UnsafeDebugDll);
+        comp1.VerifyDiagnostics();
+        var comp1Ref = comp1.ToMetadataReference();
+
+        var source2 = """
+            unsafe
+            {
+                C.X2 = &C.X1;
+                C.Y2 = &C.Y1;
+
+                C.Y2 = &C.X1;
+                C.X2 = &C.Y1;
+            }
+            """;
+
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.Regular11, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(
+            // (6,12): error CS8757: No overload for 'X1' matches function pointer 'delegate*<in int, void>'
+            //     C.Y2 = &C.X1;
+            Diagnostic(ErrorCode.ERR_MethFuncPtrMismatch, "&C.X1").WithArguments("X1", "delegate*<in int, void>").WithLocation(6, 12),
+            // (7,12): error CS8757: No overload for 'Y1' matches function pointer 'delegate*<ref int, void>'
+            //     C.X2 = &C.Y1;
+            Diagnostic(ErrorCode.ERR_MethFuncPtrMismatch, "&C.Y1").WithArguments("Y1", "delegate*<ref int, void>").WithLocation(7, 12));
+
+        var expectedDiagnostics = new[]
+        {
+            // (6,12): warning CS9510: Modifier of parameter 'ref int p' doesn't match the corresponding parameter 'in int' in target.
+            //     C.Y2 = &C.X1;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&C.X1").WithArguments("ref int p", "in int").WithLocation(6, 12),
+            // (7,12): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref int' in target.
+            //     C.X2 = &C.Y1;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&C.Y1").WithArguments("in int p", "ref int").WithLocation(7, 12)
+        };
+
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source2, new[] { comp1Ref }, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(expectedDiagnostics);
     }
 
     [Fact]
@@ -3920,5 +4191,111 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             // (5,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
             // y = (Y)((ref readonly int p) => throw null);
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(Y)((ref readonly int p) => throw null)").WithArguments("ref readonly int p", "in int p").WithLocation(5, 5));
+    }
+
+    [Fact]
+    public void Conversion_Lambda_LangVersion()
+    {
+        var source1 = """
+            public class C
+            {
+                public static void X(X x) => throw null;
+                public static void Y(Y y) => throw null;
+            }
+
+            public delegate void X(ref readonly int p);
+            public delegate void Y(in int p);
+            """;
+        var comp1 = CreateCompilation(source1);
+        comp1.VerifyDiagnostics();
+        var comp1Ref = comp1.ToMetadataReference();
+
+        var source2 = """
+            C.X((ref readonly int p) => { });
+            C.Y((in int p) => { });
+            
+            C.X((in int p) => { });
+            C.Y((ref readonly int p) => { });
+            """;
+
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+            // (1,10): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // C.X((ref readonly int p) => { });
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(1, 10),
+            // (4,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // C.X((in int p) => { });
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(in int p) => { }").WithArguments("in int p", "ref readonly int p").WithLocation(4, 5),
+            // (5,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // C.Y((ref readonly int p) => { });
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(ref readonly int p) => { }").WithArguments("ref readonly int p", "in int p").WithLocation(5, 5),
+            // (5,10): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // C.Y((ref readonly int p) => { });
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(5, 10));
+
+        var expectedDiagnostics = new[]
+        {
+            // (4,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // C.X((in int p) => { });
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(in int p) => { }").WithArguments("in int p", "ref readonly int p").WithLocation(4, 5),
+            // (5,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // C.Y((ref readonly int p) => { });
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(ref readonly int p) => { }").WithArguments("ref readonly int p", "in int p").WithLocation(5, 5)
+        };
+
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source2, new[] { comp1Ref }).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact]
+    public void Conversion_Lambda_LangVersion_RefIn()
+    {
+        var source1 = """
+            public class C
+            {
+                public static void X(X x) => throw null;
+                public static void Y(Y y) => throw null;
+            }
+
+            public delegate void X(ref int p);
+            public delegate void Y(in int p);
+            """;
+        var comp1 = CreateCompilation(source1);
+        comp1.VerifyDiagnostics();
+        var comp1Ref = comp1.ToMetadataReference();
+
+        var source2 = """
+            C.X((ref int p) => { });
+            C.Y((in int p) => { });
+            
+            C.X((in int p) => { });
+            C.Y((ref int p) => { });
+            """;
+
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+            // (4,5): error CS1661: Cannot convert lambda expression to type 'X' because the parameter types do not match the delegate parameter types
+            // C.X((in int p) => { });
+            Diagnostic(ErrorCode.ERR_CantConvAnonMethParams, "(in int p) => { }").WithArguments("lambda expression", "X").WithLocation(4, 5),
+            // (4,13): error CS1676: Parameter 1 must be declared with the 'ref' keyword
+            // C.X((in int p) => { });
+            Diagnostic(ErrorCode.ERR_BadParamRef, "p").WithArguments("1", "ref").WithLocation(4, 13),
+            // (5,5): error CS1661: Cannot convert lambda expression to type 'Y' because the parameter types do not match the delegate parameter types
+            // C.Y((ref int p) => { });
+            Diagnostic(ErrorCode.ERR_CantConvAnonMethParams, "(ref int p) => { }").WithArguments("lambda expression", "Y").WithLocation(5, 5),
+            // (5,14): error CS1676: Parameter 1 must be declared with the 'in' keyword
+            // C.Y((ref int p) => { });
+            Diagnostic(ErrorCode.ERR_BadParamRef, "p").WithArguments("1", "in").WithLocation(5, 14));
+
+        var expectedDiagnostics = new[]
+        {
+            // (4,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref int p' in target.
+            // C.X((in int p) => { });
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(in int p) => { }").WithArguments("in int p", "ref int p").WithLocation(4, 5),
+            // (5,5): warning CS9510: Modifier of parameter 'ref int p' doesn't match the corresponding parameter 'in int p' in target.
+            // C.Y((ref int p) => { });
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(ref int p) => { }").WithArguments("ref int p", "in int p").WithLocation(5, 5)
+        };
+
+        CreateCompilation(source2, new[] { comp1Ref }, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source2, new[] { comp1Ref }).VerifyDiagnostics(expectedDiagnostics);
     }
 }
