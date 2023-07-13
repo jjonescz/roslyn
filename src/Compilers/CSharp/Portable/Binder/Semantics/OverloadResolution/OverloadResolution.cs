@@ -3237,7 +3237,7 @@ outerDefault:
                     return argRefKind;
                 }
             }
-            else if (IsRefMismatchAcceptableForMethodConversion(paramRefKind, argRefKind, binder.Compilation))
+            else if (AreRefsCompatibleForMethodConversion(paramRefKind, argRefKind, binder.Compilation))
             {
                 return argRefKind;
             }
@@ -3255,8 +3255,13 @@ outerDefault:
         }
 
         // In method group conversions, 'in' is allowed to match 'ref' and 'ref readonly' is allowed to match 'ref' or 'in'.
-        internal static bool IsRefMismatchAcceptableForMethodConversion(RefKind x, RefKind y, CSharpCompilation compilation)
+        internal static bool AreRefsCompatibleForMethodConversion(RefKind x, RefKind y, CSharpCompilation compilation)
         {
+            if (x == y)
+            {
+                return true;
+            }
+
             if (x == RefKind.RefReadOnlyParameter)
             {
                 return y is RefKind.Ref or RefKind.In;

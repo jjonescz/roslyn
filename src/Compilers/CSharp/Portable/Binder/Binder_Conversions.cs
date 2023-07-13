@@ -1746,8 +1746,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             static bool hasConversion(Binder binder, TypeKind targetKind, Conversions conversions, TypeSymbol source, TypeSymbol destination,
                 RefKind sourceRefKind, RefKind destinationRefKind, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
             {
-                if (sourceRefKind != destinationRefKind &&
-                    !OverloadResolution.IsRefMismatchAcceptableForMethodConversion(sourceRefKind, destinationRefKind, binder.Compilation))
+                if (!OverloadResolution.AreRefsCompatibleForMethodConversion(sourceRefKind, destinationRefKind, binder.Compilation))
                 {
                     return false;
                 }
