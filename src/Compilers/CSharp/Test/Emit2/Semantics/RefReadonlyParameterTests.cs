@@ -3709,19 +3709,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 delegate*<ref readonly int, void> rr2 = (delegate*<ref readonly int, void>)rr;
             }
             """;
-        CreateCompilation(new[] { source, RequiresLocationAttributeDefinition }, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(
-            // 0.cs(10,9): warning CS9510: Modifier of parameter 'ref readonly int' doesn't match the corresponding parameter 'in int' in target.
-            //     i = (delegate*<in int, void>)rr;
-            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<in int, void>)rr").WithArguments("ref readonly int", "in int").WithLocation(10, 9),
-            // 0.cs(13,9): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref int' in target.
-            //     r = (delegate*<ref int, void>)i;
-            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<ref int, void>)i").WithArguments("in int", "ref int").WithLocation(13, 9),
-            // 0.cs(14,9): warning CS9510: Modifier of parameter 'ref int' doesn't match the corresponding parameter 'in int' in target.
-            //     i = (delegate*<in int, void>)r;
-            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<in int, void>)r").WithArguments("ref int", "in int").WithLocation(14, 9),
-            // 0.cs(16,10): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref readonly int' in target.
-            //     rr = (delegate*<ref readonly int, void>)i;
-            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<ref readonly int, void>)i").WithArguments("in int", "ref readonly int").WithLocation(16, 10));
+        CreateCompilation(new[] { source, RequiresLocationAttributeDefinition }, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics();
     }
 
     [Fact]

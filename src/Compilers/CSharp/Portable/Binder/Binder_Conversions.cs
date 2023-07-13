@@ -271,7 +271,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 var boundSource = BindToNaturalType(source, diagnostics);
 
-                if (!hasErrors && conversion.Kind == ConversionKind.ImplicitPointer &&
+                if (!hasErrors && !isCast && conversion.Kind == ConversionKind.ImplicitPointer &&
                     destination is FunctionPointerTypeSymbol { Signature: var destinationMethod } &&
                     boundSource.Type is FunctionPointerTypeSymbol { Signature: var sourceMethod })
                 {
