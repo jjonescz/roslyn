@@ -3605,7 +3605,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact]
-    public void Conversion_Explicit()
+    public void Conversion_Cast()
     {
         var source = """
             X x = C.X;
@@ -3630,6 +3630,34 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             // (5,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
             // y = (Y)C.X;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(Y)C.X").WithArguments("ref readonly int p", "in int p").WithLocation(5, 5));
+    }
+
+    [Fact]
+    public void Conversion_DelegateConstruction()
+    {
+        var source = """
+            X x = C.X;
+            Y y = C.Y;
+
+            x = new X(C.Y);
+            y = new Y(C.X);
+
+            class C
+            {
+                public static void X(ref readonly int p) => throw null;
+                public static void Y(in int p) => throw null;
+            }
+
+            delegate void X(ref readonly int p);
+            delegate void Y(in int p);
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (4,11): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // x = new X(C.Y);
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.Y").WithArguments("in int p", "ref readonly int p").WithLocation(4, 11),
+            // (5,11): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // y = new Y(C.X);
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.X").WithArguments("ref readonly int p", "in int p").WithLocation(5, 11));
     }
 
     [Fact]
@@ -3685,7 +3713,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact]
-    public void Conversion_FunctionPointer_Assignment_Explicit()
+    public void Conversion_FunctionPointer_Assignment_Cast()
     {
         var source = """
             unsafe
@@ -3770,7 +3798,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact]
-    public void Conversion_FunctionPointer_MethodGroup_Explicit()
+    public void Conversion_FunctionPointer_MethodGroup_Cast()
     {
         var source = """
             unsafe
@@ -3905,7 +3933,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact]
-    public void Conversion_Lambda_Explicit()
+    public void Conversion_Lambda_Cast()
     {
         var source = """
             V v = (V)((int x) => throw null);
