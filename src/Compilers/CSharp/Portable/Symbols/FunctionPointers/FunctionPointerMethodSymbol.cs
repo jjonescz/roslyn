@@ -309,8 +309,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private static CustomModifier? GetCustomModifierForRefKind(RefKind refKind, CSharpCompilation compilation)
         {
-            Debug.Assert(refKind is RefKind.None or RefKind.In or RefKind.Ref or RefKind.Out);
-
             var attributeType = refKind switch
             {
                 RefKind.In => compilation.GetWellKnownType(WellKnownType.System_Runtime_InteropServices_InAttribute),
@@ -550,7 +548,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             RefCustomModifiers = CSharpCustomModifier.Convert(retInfo.RefCustomModifiers);
             CallingConvention = callingConvention;
             ReturnTypeWithAnnotations = returnType;
-            RefKind = getRefKind(retInfo, RefCustomModifiers, RefKind.RefReadOnly, RefKind.Ref, requiresLocationAllowed: false);
+            RefKind = getRefKind(retInfo, RefCustomModifiers, RefKind.RefReadOnly, RefKind.Ref);
             Debug.Assert(RefKind != RefKind.Out);
             UseUpdatedEscapeRules = useUpdatedEscapeRules;
             _parameters = makeParametersFromMetadata(retAndParamTypes.AsSpan()[1..], this);
@@ -566,7 +564,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         ParamInfo<TypeSymbol> param = parameterTypes[i];
                         var paramRefCustomMods = CSharpCustomModifier.Convert(param.RefCustomModifiers);
                         var paramType = TypeWithAnnotations.Create(param.Type, customModifiers: CSharpCustomModifier.Convert(param.CustomModifiers));
-                        RefKind paramRefKind = getRefKind(param, paramRefCustomMods, RefKind.In, RefKind.Out, requiresLocationAllowed: true);
+                        RefKind paramRefKind = getRefKind(param, paramRefCustomMods, RefKind.In, RefKind.Out);
                         paramsBuilder.Add(new FunctionPointerParameterSymbol(paramType, paramRefKind, i, parent, paramRefCustomMods));
                     }
 
@@ -578,12 +576,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 }
             }
 
-            static RefKind getRefKind(ParamInfo<TypeSymbol> param, ImmutableArray<CustomModifier> paramRefCustomMods, RefKind hasInRefKind, RefKind hasOutRefKind, bool requiresLocationAllowed)
+            static RefKind getRefKind(ParamInfo<TypeSymbol> param, ImmutableArray<CustomModifier> paramRefCustomMods, RefKind hasInRefKind, RefKind hasOutRefKind)
             {
                 return param.IsByRef switch
                 {
                     false => RefKind.None,
-                    true when requiresLocationAllowed && CustomModifierUtils.HasRequiresLocationAttributeModifier(paramRefCustomMods) => RefKind.RefReadOnlyParameter,
                     true when CustomModifierUtils.HasInAttributeModifier(paramRefCustomMods) => hasInRefKind,
                     true when CustomModifierUtils.HasOutAttributeModifier(paramRefCustomMods) => hasOutRefKind,
                     true => RefKind.Ref,
