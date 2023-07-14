@@ -2932,6 +2932,9 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             }
             """;
         var verifier = CompileAndVerify(source, expectedOutput: "1222").VerifyDiagnostics(
+            // (4,30): warning CS9521: A default value is specified for 'ref readonly' parameter 'i', but 'ref readonly' should be used only for references. Consider declaring the parameter as 'in'.
+            //     static void M([Optional, DefaultParameterValue(1)] ref readonly int i) => System.Console.Write(i);
+            Diagnostic(ErrorCode.WRN_RefReadonlyParameterDefaultValue, "DefaultParameterValue(1)").WithArguments("i").WithLocation(4, 30),
             // (9,11): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
             //         M(x);
             Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(9, 11));
@@ -3054,6 +3057,9 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             M2 3.3
             M2 3.3
             """).VerifyDiagnostics(
+            // (6,31): warning CS9521: A default value is specified for 'ref readonly' parameter 'd', but 'ref readonly' should be used only for references. Consider declaring the parameter as 'in'.
+            //     static void M1([Optional, DecimalConstant(1, 0, 0u, 0u, 11u)] ref readonly decimal d) => Console.WriteLine("M1 " + d);
+            Diagnostic(ErrorCode.WRN_RefReadonlyParameterDefaultValue, "DecimalConstant(1, 0, 0u, 0u, 11u)").WithArguments("d").WithLocation(6, 31),
             // (7,45): warning CS9521: A default value is specified for 'ref readonly' parameter 'd', but 'ref readonly' should be used only for references. Consider declaring the parameter as 'in'.
             //     static void M2(ref readonly decimal d = 1.1m) => Console.WriteLine("M2 " + d);
             Diagnostic(ErrorCode.WRN_RefReadonlyParameterDefaultValue, "1.1m").WithArguments("d").WithLocation(7, 45),
@@ -3141,7 +3147,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 static void Main() => M();
             }
             """;
-        var verifier = CompileAndVerify(source, expectedOutput: "100").VerifyDiagnostics();
+        var verifier = CompileAndVerify(source, expectedOutput: "100").VerifyDiagnostics(
+            // (6,30): warning CS9521: A default value is specified for 'ref readonly' parameter 'd', but 'ref readonly' should be used only for references. Consider declaring the parameter as 'in'.
+            //     static void M([Optional, DateTimeConstant(100L)] ref readonly DateTime d) => Console.Write(d.Ticks);
+            Diagnostic(ErrorCode.WRN_RefReadonlyParameterDefaultValue, "DateTimeConstant(100L)").WithArguments("d").WithLocation(6, 30));
         verifier.VerifyIL("C.Main", """
             {
               // Code size       17 (0x11)
