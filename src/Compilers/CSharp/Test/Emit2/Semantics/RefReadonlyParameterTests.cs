@@ -3023,12 +3023,13 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     {
         var source = """
             using System;
+            using System.Globalization;
             using System.Runtime.CompilerServices;
             using System.Runtime.InteropServices;
             class C
             {
-                static void M1([Optional, DecimalConstant(1, 0, 0u, 0u, 11u)] ref readonly decimal d) => Console.WriteLine("M1 " + d);
-                static void M2(ref readonly decimal d = 1.1m) => Console.WriteLine("M2 " + d);
+                static void M1([Optional, DecimalConstant(1, 0, 0u, 0u, 11u)] ref readonly decimal d) => Console.WriteLine("M1 " + d.ToString(CultureInfo.InvariantCulture));
+                static void M2(ref readonly decimal d = 1.1m) => Console.WriteLine("M2 " + d.ToString(CultureInfo.InvariantCulture));
                 static void Main()
                 {
                     decimal x = 2.2m;
@@ -3057,18 +3058,18 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             M2 3.3
             M2 3.3
             """).VerifyDiagnostics(
-            // (6,31): warning CS9521: A default value is specified for 'ref readonly' parameter 'd', but 'ref readonly' should be used only for references. Consider declaring the parameter as 'in'.
-            //     static void M1([Optional, DecimalConstant(1, 0, 0u, 0u, 11u)] ref readonly decimal d) => Console.WriteLine("M1 " + d);
-            Diagnostic(ErrorCode.WRN_RefReadonlyParameterDefaultValue, "DecimalConstant(1, 0, 0u, 0u, 11u)").WithArguments("d").WithLocation(6, 31),
-            // (7,45): warning CS9521: A default value is specified for 'ref readonly' parameter 'd', but 'ref readonly' should be used only for references. Consider declaring the parameter as 'in'.
-            //     static void M2(ref readonly decimal d = 1.1m) => Console.WriteLine("M2 " + d);
-            Diagnostic(ErrorCode.WRN_RefReadonlyParameterDefaultValue, "1.1m").WithArguments("d").WithLocation(7, 45),
-            // (12,12): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+            // (7,31): warning CS9521: A default value is specified for 'ref readonly' parameter 'd', but 'ref readonly' should be used only for references. Consider declaring the parameter as 'in'.
+            //     static void M1([Optional, DecimalConstant(1, 0, 0u, 0u, 11u)] ref readonly decimal d) => Console.WriteLine("M1 " + d.ToString(CultureInfo.InvariantCulture));
+            Diagnostic(ErrorCode.WRN_RefReadonlyParameterDefaultValue, "DecimalConstant(1, 0, 0u, 0u, 11u)").WithArguments("d").WithLocation(7, 31),
+            // (8,45): warning CS9521: A default value is specified for 'ref readonly' parameter 'd', but 'ref readonly' should be used only for references. Consider declaring the parameter as 'in'.
+            //     static void M2(ref readonly decimal d = 1.1m) => Console.WriteLine("M2 " + d.ToString(CultureInfo.InvariantCulture));
+            Diagnostic(ErrorCode.WRN_RefReadonlyParameterDefaultValue, "1.1m").WithArguments("d").WithLocation(8, 45),
+            // (13,12): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
             //         M1(x);
-            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(12, 12),
-            // (18,12): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(13, 12),
+            // (19,12): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
             //         M2(y);
-            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "y").WithArguments("1").WithLocation(18, 12));
+            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "y").WithArguments("1").WithLocation(19, 12));
         verifier.VerifyIL("C.M3", """
             {
               // Code size       20 (0x14)
