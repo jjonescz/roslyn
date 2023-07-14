@@ -2874,6 +2874,29 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact]
+    public void DefaultParameterValue()
+    {
+        var source = """
+            class C
+            {
+                static void M(ref readonly int i = 1) => System.Console.Write(i);
+                static void Main()
+                {
+                    int x = 2;
+                    M();
+                    M(x);
+                    M(ref x);
+                    M(in x);
+                }
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "1222").VerifyDiagnostics(
+            // (8,11): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
+            //         M(x);
+            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(8, 11));
+    }
+
+    [Fact]
     public void Invocation_VirtualMethod()
     {
         var source = """
