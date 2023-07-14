@@ -2891,6 +2891,9 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             }
             """;
         CompileAndVerify(source, expectedOutput: "1222").VerifyDiagnostics(
+            // (3,40): warning CS9521: A default value is specified for 'ref readonly' parameter 'i', but 'ref readonly' should be used only for references. Consider declaring the parameter as 'in'.
+            //     static void M(ref readonly int i = 1) => System.Console.Write(i);
+            Diagnostic(ErrorCode.WRN_RefReadonlyParameterDefaultValue, "1").WithArguments("i").WithLocation(3, 40),
             // (8,11): warning CS9503: Argument 1 should be passed with 'ref' or 'in' keyword
             //         M(x);
             Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "x").WithArguments("1").WithLocation(8, 11));
