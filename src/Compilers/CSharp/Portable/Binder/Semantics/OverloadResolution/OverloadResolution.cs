@@ -3257,11 +3257,13 @@ outerDefault:
         // In method group conversions, 'in' is allowed to match 'ref' and 'ref readonly' is allowed to match 'ref' or 'in'.
         internal static bool AreRefsCompatibleForMethodConversion(RefKind x, RefKind y, CSharpCompilation compilation)
         {
-            if (x == y)
-            {
-                return true;
-            }
+            Debug.Assert(compilation is not null);
+            return x == y || IsRefMismatchAcceptableForMethodConversion(x, y, compilation);
+        }
 
+        // Only may be used to determine if warnings should be emitted.
+        internal static bool IsRefMismatchAcceptableForMethodConversion(RefKind x, RefKind y, CSharpCompilation compilationOpt)
+        {
             if (x == RefKind.RefReadOnlyParameter)
             {
                 return y is RefKind.Ref or RefKind.In;
@@ -3273,7 +3275,7 @@ outerDefault:
             }
 
             return (x, y) is (RefKind.In, RefKind.Ref) or (RefKind.Ref, RefKind.In) &&
-                compilation.IsFeatureEnabled(MessageID.IDS_FeatureRefReadonlyParameters);
+                (compilationOpt is null || compilationOpt.IsFeatureEnabled(MessageID.IDS_FeatureRefReadonlyParameters));
         }
 
         private EffectiveParameters GetEffectiveParametersInExpandedForm<TMember>(
