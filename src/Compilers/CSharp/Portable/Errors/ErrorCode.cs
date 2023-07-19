@@ -2250,6 +2250,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         WRN_HidingDifferentRefness = 9508,
         WRN_TargetDifferentRefness = 9510,
         ERR_OutAttrOnRefReadonlyParam = 9520,
+        WRN_RefReadonlyParameterDefaultValue = 9521,
 
         #endregion
 
