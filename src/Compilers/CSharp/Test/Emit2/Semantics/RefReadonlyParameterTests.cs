@@ -782,26 +782,59 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                     c.D(x);
                     c.D(ref x);
                     c.D(in x);
+
+                    delegate*<int, void> v = c.D;
+                    delegate*<ref int, void> r = c.D;
+                    delegate*<in int, void> i = c.D;
+                    delegate*<ref readonly int, void> rr = c.D;
+                    delegate*<out int, void> o = c.D;
                 }
             }
             """;
 
-        CreateCompilationWithIL(source, ilSource, options: TestOptions.UnsafeDebugDll, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
+        CreateCompilationWithIL(new[] { source, RequiresLocationAttributeDefinition }, ilSource, options: TestOptions.UnsafeDebugDll, parseOptions: TestOptions.Regular11).VerifyDiagnostics(
             // (6,13): error CS1620: Argument 1 must be passed with the 'ref' keyword
             //         c.D(x);
             Diagnostic(ErrorCode.ERR_BadArgRef, "x").WithArguments("1", "ref").WithLocation(6, 13),
             // (8,16): error CS1620: Argument 1 must be passed with the 'ref' keyword
             //         c.D(in x);
-            Diagnostic(ErrorCode.ERR_BadArgRef, "x").WithArguments("1", "ref").WithLocation(8, 16));
+            Diagnostic(ErrorCode.ERR_BadArgRef, "x").WithArguments("1", "ref").WithLocation(8, 16),
+            // (10,34): error CS0266: Cannot implicitly convert type 'delegate*<ref int, void>' to 'delegate*<int, void>'. An explicit conversion exists (are you missing a cast?)
+            //         delegate*<int, void> v = c.D;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "c.D").WithArguments("delegate*<ref int, void>", "delegate*<int, void>").WithLocation(10, 34),
+            // (12,37): error CS0266: Cannot implicitly convert type 'delegate*<ref int, void>' to 'delegate*<in int, void>'. An explicit conversion exists (are you missing a cast?)
+            //         delegate*<in int, void> i = c.D;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "c.D").WithArguments("delegate*<ref int, void>", "delegate*<in int, void>").WithLocation(12, 37),
+            // (13,23): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //         delegate*<ref readonly int, void> rr = c.D;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(13, 23),
+            // (13,48): warning CS9510: Reference kind modifier of parameter 'ref int' doesn't match the corresponding parameter 'ref readonly int' in target.
+            //         delegate*<ref readonly int, void> rr = c.D;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "c.D").WithArguments("ref int", "ref readonly int").WithLocation(13, 48),
+            // (14,38): error CS0266: Cannot implicitly convert type 'delegate*<ref int, void>' to 'delegate*<out int, void>'. An explicit conversion exists (are you missing a cast?)
+            //         delegate*<out int, void> o = c.D;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "c.D").WithArguments("delegate*<ref int, void>", "delegate*<out int, void>").WithLocation(14, 38));
 
-        var comp = CreateCompilationWithIL(source, ilSource, options: TestOptions.UnsafeDebugDll);
+        var comp = CreateCompilationWithIL(new[] { source, RequiresLocationAttributeDefinition }, ilSource, options: TestOptions.UnsafeDebugDll);
         comp.VerifyDiagnostics(
-            // (6,13): error CS1620: Argument 1 must be passed with the 'ref' keyword
+            // 0.cs(6,13): error CS1620: Argument 1 must be passed with the 'ref' keyword
             //         c.D(x);
             Diagnostic(ErrorCode.ERR_BadArgRef, "x").WithArguments("1", "ref").WithLocation(6, 13),
-            // (8,16): error CS1620: Argument 1 must be passed with the 'ref' keyword
+            // 0.cs(8,16): error CS1620: Argument 1 must be passed with the 'ref' keyword
             //         c.D(in x);
-            Diagnostic(ErrorCode.ERR_BadArgRef, "x").WithArguments("1", "ref").WithLocation(8, 16));
+            Diagnostic(ErrorCode.ERR_BadArgRef, "x").WithArguments("1", "ref").WithLocation(8, 16),
+            // 0.cs(10,34): error CS0266: Cannot implicitly convert type 'delegate*<ref int, void>' to 'delegate*<int, void>'. An explicit conversion exists (are you missing a cast?)
+            //         delegate*<int, void> v = c.D;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "c.D").WithArguments("delegate*<ref int, void>", "delegate*<int, void>").WithLocation(10, 34),
+            // 0.cs(12,37): warning CS9510: Reference kind modifier of parameter 'ref int' doesn't match the corresponding parameter 'in int' in target.
+            //         delegate*<in int, void> i = c.D;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "c.D").WithArguments("ref int", "in int").WithLocation(12, 37),
+            // 0.cs(13,48): warning CS9510: Reference kind modifier of parameter 'ref int' doesn't match the corresponding parameter 'ref readonly int' in target.
+            //         delegate*<ref readonly int, void> rr = c.D;
+            Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "c.D").WithArguments("ref int", "ref readonly int").WithLocation(13, 48),
+            // 0.cs(14,38): error CS0266: Cannot implicitly convert type 'delegate*<ref int, void>' to 'delegate*<out int, void>'. An explicit conversion exists (are you missing a cast?)
+            //         delegate*<out int, void> o = c.D;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "c.D").WithArguments("delegate*<ref int, void>", "delegate*<out int, void>").WithLocation(14, 38));
 
         var ptr = (FunctionPointerTypeSymbol)comp.GlobalNamespace.GetMember<FieldSymbol>("C.D").Type;
         var p = ptr.Signature.Parameters.Single();
@@ -1006,6 +1039,46 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             // (3,36): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresLocationAttribute' is not defined or imported
             //     public unsafe void M(delegate*<ref readonly int, void> p) { }
             Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "ref readonly int").WithArguments("System.Runtime.CompilerServices.RequiresLocationAttribute").WithLocation(3, 36));
+    }
+
+    [Fact]
+    public void FunctionPointer_Local()
+    {
+        var source = """
+            class C
+            {
+                unsafe void M()
+                {
+                    delegate*<ref readonly int, void> p = null;
+                }
+            }
+            """;
+        var comp = CreateCompilation(new[] { source, RequiresLocationAttributeDefinition }, options: TestOptions.UnsafeDebugDll).VerifyDiagnostics();
+        var tree = comp.SyntaxTrees[0];
+        var model = comp.GetSemanticModel(tree);
+        var local = tree.GetRoot().DescendantNodes().OfType<VariableDeclaratorSyntax>().Single();
+        var symbol = model.GetDeclaredSymbol(local).GetSymbol<LocalSymbol>()!.Type as FunctionPointerTypeSymbol;
+        VerifyRefReadonlyParameter(symbol!.Signature.Parameters.Single(), customModifiers: VerifyModifiers.RequiresLocation);
+    }
+
+    [Fact]
+    public void FunctionPointer_Local_MissingRequiresLocationAttribute()
+    {
+        var source = """
+            class C
+            {
+                unsafe void M()
+                {
+                    delegate*<ref readonly int, void> p = null;
+                }
+            }
+            """;
+        var comp = CreateCompilation(source, options: TestOptions.UnsafeDebugDll);
+        comp.MakeTypeMissing(WellKnownType.System_Runtime_CompilerServices_RequiresLocationAttribute);
+        comp.VerifyDiagnostics(
+            // (5,19): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresLocationAttribute' is not defined or imported
+            //         delegate*<ref readonly int, void> p = null;
+            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "ref readonly int").WithArguments("System.Runtime.CompilerServices.RequiresLocationAttribute").WithLocation(5, 19));
     }
 
     [Fact]
