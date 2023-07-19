@@ -1193,7 +1193,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         static (diagnostics, _, _, overridingParameter, _, arg) =>
                         {
                             var (overriddenParameter, location) = arg;
-                            // Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in overridden or implemented member.
+                            // Reference kind modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in overridden or implemented member.
                             diagnostics.Add(ErrorCode.WRN_OverridingDifferentRefness, location, overridingParameter, overriddenParameter);
                         },
                         overridingMemberLocation,
@@ -1498,10 +1498,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        /// <returns>
-        /// <see langword="true"/> if a diagnostic was added.
-        /// </returns>
-        internal static bool CheckRefReadonlyInMismatch<TArg>(
+        internal static void CheckRefReadonlyInMismatch<TArg>(
             MethodSymbol? baseMethod,
             MethodSymbol? overrideMethod,
             BindingDiagnosticBag diagnostics,
@@ -1514,10 +1511,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (baseMethod is null || overrideMethod is null)
             {
-                return false;
+                return;
             }
 
-            bool hasErrors = false;
             var baseParameters = baseMethod.Parameters;
             var overrideParameters = overrideMethod.Parameters;
             var overrideParameterOffset = invokedAsExtensionMethod ? 1 : 0;
@@ -1531,11 +1527,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     (methodGroupConversion && (baseParameter.RefKind, overrideParameter.RefKind) is (RefKind.Ref, RefKind.In) or (RefKind.In, RefKind.Ref)))
                 {
                     reportMismatchInParameterType(diagnostics, baseMethod, overrideMethod, overrideParameter, topLevel: true, (baseParameter, extraArgument));
-                    hasErrors = true;
                 }
             }
-
-            return hasErrors;
         }
 #nullable disable
 
@@ -1635,14 +1628,15 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 {
                     diagnostics.Add(ErrorCode.WRN_NewRequired, hidingMemberLocation, hidingMember, hiddenMembers[0]);
                 }
-                else if (hidingMember is MethodSymbol hidingMethod && hiddenMembers[0] is MethodSymbol hiddenMethod)
+
+                if (hidingMember is MethodSymbol hidingMethod && hiddenMembers[0] is MethodSymbol hiddenMethod)
                 {
                     CheckRefReadonlyInMismatch(
                         hiddenMethod, hidingMethod, diagnostics,
                         static (diagnostics, _, _, hidingParameter, _, arg) =>
                         {
                             var (hiddenParameter, location) = arg;
-                            // Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in hidden member.
+                            // Reference kind modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in hidden member.
                             diagnostics.Add(ErrorCode.WRN_HidingDifferentRefness, location, hidingParameter, hiddenParameter);
                         },
                         hidingMemberLocation,
