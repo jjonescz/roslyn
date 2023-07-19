@@ -1524,7 +1524,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var baseParameter = baseParameters[i];
                 var overrideParameter = overrideParameters[i + overrideParameterOffset];
                 if ((baseParameter.RefKind, overrideParameter.RefKind) is (RefKind.RefReadOnlyParameter, RefKind.In) or (RefKind.In, RefKind.RefReadOnlyParameter) ||
-                    (methodGroupConversion && (baseParameter.RefKind, overrideParameter.RefKind) is (RefKind.Ref, RefKind.In) or (RefKind.In, RefKind.Ref)))
+                    (methodGroupConversion && (baseParameter.RefKind, overrideParameter.RefKind) is (RefKind.Ref, RefKind.In) or (RefKind.In, RefKind.Ref) or
+                        (RefKind.Ref, RefKind.RefReadOnlyParameter) or (RefKind.RefReadOnlyParameter, RefKind.Ref)))
                 {
                     reportMismatchInParameterType(diagnostics, baseMethod, overrideMethod, overrideParameter, topLevel: true, (baseParameter, extraArgument));
                 }
