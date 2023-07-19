@@ -380,7 +380,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                     ret
                 }
             }
-            
+
             .class public auto ansi sealed beforefieldinit System.Runtime.CompilerServices.RequiresLocationAttribute extends System.Object
             {
                 .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
@@ -421,7 +421,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                     ret
                 }
             }
-            
+
             .class public auto ansi sealed beforefieldinit System.Runtime.CompilerServices.RequiresLocationAttribute extends System.Object
             {
                 .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
@@ -459,7 +459,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                     ret
                 }
             }
-            
+
             .class public auto ansi sealed beforefieldinit System.Runtime.CompilerServices.RequiresLocationAttribute extends System.Object
             {
                 .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
@@ -468,7 +468,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                     ret
                 }
             }
-            
+
             .class public auto ansi sealed beforefieldinit System.Runtime.InteropServices.InAttribute extends System.Object
             {
                 .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
@@ -3530,7 +3530,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             }
             """);
     }
-    
+
     [Fact]
     public void Invocation_Dynamic()
     {
@@ -4824,7 +4824,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
             x = C.Y;
             y = C.X;
-            
+
             x({{getArgumentModifier(x)}} i);
             y({{getArgumentModifier(y)}} i);
 
@@ -4963,14 +4963,14 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         var source = $$"""
             X x = C.X;
             Y y = C.Y;
-            
+
             var i = 1;
             x(in i);
             y({{modifier}} i);
 
             x = (X)C.Y;
             y = (Y)C.X;
-            
+
             x(in i);
             y({{modifier}} i);
 
@@ -4998,14 +4998,14 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         var source = $$"""
             X x = C.X;
             Y y = C.Y;
-            
+
             var i = 1;
             x(in i);
             y({{modifier}} i);
 
             x = new X(C.Y);
             y = new Y(C.X);
-            
+
             x(in i);
             y({{modifier}} i);
 
@@ -5046,11 +5046,11 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         var source2 = $$"""
             X x = C.X;
             Y y = C.Y;
-            
+
             var i = 1;
             x(in i);
             y({{modifier}} i);
-            
+
             x = C.Y;
             y = C.X;
 
@@ -5105,11 +5105,11 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         var source2 = """
             X x = C.X;
             Y y = C.Y;
-            
+
             var i = 1;
             x(ref i);
             y(in i);
-            
+
             x = C.Y;
             y = C.X;
 
@@ -5208,9 +5208,9 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 delegate*<in int, void> i = &I;
                 delegate*<ref int, void> r = &R;
                 delegate*<out int, void> o = &O;
-            
+
                 var x = 1;
-            
+
                 rr = (delegate*<ref readonly int, void>)r; rr(in x);
                 rr = (delegate*<ref readonly int, void>)i; rr(in x);
                 rr = (delegate*<ref readonly int, void>)o; rr(in x);
@@ -5401,7 +5401,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 o = &RR;
                 r = &I;
                 i = &R;
-            
+
                 static void V(int p) => throw null;
                 static void RR(ref readonly int p) => throw null;
                 static void I(in int p) => throw null;
@@ -5460,7 +5460,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
                 x(in i);
                 y({{modifier}} i);
-            
+
                 static void X(ref readonly int p) => System.Console.Write("X");
                 static void Y({{modifier}} int p) => System.Console.Write("Y");
             }
@@ -5483,7 +5483,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             {
                 public static void X1(ref readonly int p) => System.Console.Write("X");
                 public static void Y1({{modifier}} int p) => System.Console.Write("Y");
-            
+
                 public static delegate*<ref readonly int, void> X2;
                 public static delegate*<{{modifier}} int, void> Y2;
             }
@@ -5497,7 +5497,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             {
                 C.X2 = &C.X1;
                 C.Y2 = &C.Y1;
-            
+
                 var i = 1;
                 C.X2(in i);
                 C.Y2({{modifier}} i);
@@ -5548,7 +5548,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             {
                 public static void X1(ref int p) => System.Console.Write("X");
                 public static void Y1(in int p) => System.Console.Write("Y");
-            
+
                 public static delegate*<ref int, void> X2;
                 public static delegate*<in int, void> Y2;
             }
@@ -5562,14 +5562,14 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             {
                 C.X2 = &C.X1;
                 C.Y2 = &C.Y1;
-            
+
                 var i = 1;
                 C.X2(ref i);
                 C.Y2(in i);
 
                 C.Y2 = &C.X1;
                 C.X2 = &C.Y1;
-            
+
                 C.X2(ref i);
                 C.Y2(in i);
             }
@@ -5619,10 +5619,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             o = (ref readonly int x) => throw null;
             r = (in int x) => throw null;
             i = (ref int x) => throw null;
-            
+
             rr = (int x) => throw null;
             rr = x => throw null;
-            
+
             delegate void V(int p);
             delegate void RR(ref readonly int p);
             delegate void I(in int p);
@@ -5699,7 +5699,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
             x(in i);
             y({{modifier}} i);
-            
+
             delegate void X(ref readonly int p);
             delegate void Y({{modifier}} int p);
             """;
@@ -5732,7 +5732,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         var source2 = $$"""
             C.X((ref readonly int p) => System.Console.Write("1"));
             C.Y(({{modifier}} int p) => System.Console.Write("2"));
-            
+
             C.X(({{modifier}} int p) => System.Console.Write("3"));
             C.Y((ref readonly int p) => System.Console.Write("4"));
             """;
@@ -5785,7 +5785,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         var source2 = """
             C.X((ref int p) => System.Console.Write("1"));
             C.Y((in int p) => System.Console.Write("2"));
-            
+
             C.X((in int p) => System.Console.Write("3"));
             C.Y((ref int p) => System.Console.Write("4"));
             """;
