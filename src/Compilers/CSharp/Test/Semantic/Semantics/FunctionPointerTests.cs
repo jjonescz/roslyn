@@ -1094,7 +1094,7 @@ unsafe class C
 }");
 
             comp.VerifyDiagnostics(
-                // (6,43): warning CS9510: Modifier of parameter 'ref object' doesn't match the corresponding parameter 'in object' in target.
+                // (6,43): warning CS9510: Reference kind modifier of parameter 'ref object' doesn't match the corresponding parameter 'in object' in target.
                 //         delegate*<in object, void> ptr1 = param1;
                 Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "param1").WithArguments("ref object", "in object").WithLocation(6, 43),
                 // (7,40): error CS0266: Cannot implicitly convert type 'delegate*<ref object, void>' to 'delegate*<object, void>'. An explicit conversion exists (are you missing a cast?)

@@ -4327,10 +4327,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             var expectedWarnings = (x, y) is ("in", "ref readonly") or ("ref", "in")
                 ? new[]
                 {
-                    // (4,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+                    // (4,5): warning CS9510: Reference kind modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
                     // x = C.Y;
                     Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.Y").WithArguments($"{y} int p", $"{x} int p").WithLocation(4, 5),
-                    // (5,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+                    // (5,5): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
                     // y = C.X;
                     Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.X").WithArguments($"{x} int p", $"{y} int p").WithLocation(5, 5)
                 }
@@ -4376,16 +4376,16 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             delegate void Y(in int p);
             """;
         CreateCompilation(source).VerifyDiagnostics(
-            // (5,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // (5,5): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
             // x = c.Y1;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "c.Y1").WithArguments("in int p", "ref readonly int p").WithLocation(5, 5),
-            // (6,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // (6,5): warning CS9510: Reference kind modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
             // y = c.X1;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "c.X1").WithArguments("ref readonly int p", "in int p").WithLocation(6, 5),
-            // (8,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // (8,5): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
             // x = c.Y2;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "c.Y2").WithArguments("in int p", "ref readonly int p").WithLocation(8, 5),
-            // (9,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // (9,5): warning CS9510: Reference kind modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
             // y = c.X2;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "c.X2").WithArguments("ref readonly int p", "in int p").WithLocation(9, 5));
     }
@@ -4410,10 +4410,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             delegate void Y(in int p);
             """;
         CreateCompilation(source).VerifyDiagnostics(
-            // (4,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // (4,5): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
             // x = (X)C.Y;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(X)C.Y").WithArguments("in int p", "ref readonly int p").WithLocation(4, 5),
-            // (5,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // (5,5): warning CS9510: Reference kind modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
             // y = (Y)C.X;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(Y)C.X").WithArguments("ref readonly int p", "in int p").WithLocation(5, 5));
     }
@@ -4438,10 +4438,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             delegate void Y(in int p);
             """;
         CreateCompilation(source).VerifyDiagnostics(
-            // (4,11): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // (4,11): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
             // x = new X(C.Y);
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.Y").WithArguments("in int p", "ref readonly int p").WithLocation(4, 11),
-            // (5,11): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // (5,11): warning CS9510: Reference kind modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
             // y = new Y(C.X);
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.X").WithArguments("ref readonly int p", "in int p").WithLocation(5, 11));
     }
@@ -4472,10 +4472,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
         var expectedDiagnostics = new[]
         {
-            // (4,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // (4,5): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
             // x = C.Y;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.Y").WithArguments("in int p", "ref readonly int p").WithLocation(4, 5),
-            // (5,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // (5,5): warning CS9510: Reference kind modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
             // y = C.X;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.X").WithArguments("ref readonly int p", "in int p").WithLocation(5, 5)
         };
@@ -4519,10 +4519,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
         var expectedDiagnostics = new[]
         {
-            // (4,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref int p' in target.
+            // (4,5): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref int p' in target.
             // x = C.Y;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.Y").WithArguments("in int p", "ref int p").WithLocation(4, 5),
-            // (5,5): warning CS9510: Modifier of parameter 'ref int p' doesn't match the corresponding parameter 'in int p' in target.
+            // (5,5): warning CS9510: Reference kind modifier of parameter 'ref int p' doesn't match the corresponding parameter 'in int p' in target.
             // y = C.X;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.X").WithArguments("ref int p", "in int p").WithLocation(5, 5)
         };
@@ -4560,19 +4560,19 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             // 0.cs(9,9): error CS0266: Cannot implicitly convert type 'delegate*<ref readonly int, void>' to 'delegate*<int, void>'. An explicit conversion exists (are you missing a cast?)
             //     v = rr;
             Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "rr").WithArguments("delegate*<ref readonly int, void>", "delegate*<int, void>").WithLocation(9, 9),
-            // 0.cs(10,9): warning CS9510: Modifier of parameter 'ref readonly int' doesn't match the corresponding parameter 'in int' in target.
+            // 0.cs(10,9): warning CS9510: Reference kind modifier of parameter 'ref readonly int' doesn't match the corresponding parameter 'in int' in target.
             //     i = rr;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "rr").WithArguments("ref readonly int", "in int").WithLocation(10, 9),
             // 0.cs(12,9): error CS0266: Cannot implicitly convert type 'delegate*<ref readonly int, void>' to 'delegate*<out int, void>'. An explicit conversion exists (are you missing a cast?)
             //     o = rr;
             Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "rr").WithArguments("delegate*<ref readonly int, void>", "delegate*<out int, void>").WithLocation(12, 9),
-            // 0.cs(13,9): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref int' in target.
+            // 0.cs(13,9): warning CS9510: Reference kind modifier of parameter 'in int' doesn't match the corresponding parameter 'ref int' in target.
             //     r = i;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "i").WithArguments("in int", "ref int").WithLocation(13, 9),
-            // 0.cs(14,9): warning CS9510: Modifier of parameter 'ref int' doesn't match the corresponding parameter 'in int' in target.
+            // 0.cs(14,9): warning CS9510: Reference kind modifier of parameter 'ref int' doesn't match the corresponding parameter 'in int' in target.
             //     i = r;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "r").WithArguments("ref int", "in int").WithLocation(14, 9),
-            // 0.cs(16,10): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref readonly int' in target.
+            // 0.cs(16,10): warning CS9510: Reference kind modifier of parameter 'in int' doesn't match the corresponding parameter 'ref readonly int' in target.
             //     rr = i;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "i").WithArguments("in int", "ref readonly int").WithLocation(16, 10),
             // 0.cs(17,10): error CS0266: Cannot implicitly convert type 'delegate*<out int, void>' to 'delegate*<ref readonly int, void>'. An explicit conversion exists (are you missing a cast?)
@@ -4641,10 +4641,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
         var expectedDiagnostics = new[]
         {
-            // 0.cs(6,12): warning CS9510: Modifier of parameter 'ref readonly int' doesn't match the corresponding parameter 'in int' in target.
+            // 0.cs(6,12): warning CS9510: Reference kind modifier of parameter 'ref readonly int' doesn't match the corresponding parameter 'in int' in target.
             //     C.Y2 = C.X1;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.X1").WithArguments("ref readonly int", "in int").WithLocation(6, 12),
-            // 0.cs(7,12): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref readonly int' in target.
+            // 0.cs(7,12): warning CS9510: Reference kind modifier of parameter 'in int' doesn't match the corresponding parameter 'ref readonly int' in target.
             //     C.X2 = C.Y1;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.Y1").WithArguments("in int", "ref readonly int").WithLocation(7, 12)
         };
@@ -4692,10 +4692,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
         var expectedDiagnostics = new[]
         {
-            // (6,12): warning CS9510: Modifier of parameter 'ref int' doesn't match the corresponding parameter 'in int' in target.
+            // (6,12): warning CS9510: Reference kind modifier of parameter 'ref int' doesn't match the corresponding parameter 'in int' in target.
             //     C.Y2 = C.X1;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.X1").WithArguments("ref int", "in int").WithLocation(6, 12),
-            // (7,12): warning CS9510: Modifier of parameter 'in int' doesn't match the corresponding parameter 'ref int' in target.
+            // (7,12): warning CS9510: Reference kind modifier of parameter 'in int' doesn't match the corresponding parameter 'ref int' in target.
             //     C.X2 = C.Y1;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.Y1").WithArguments("in int", "ref int").WithLocation(7, 12)
         };
@@ -4738,7 +4738,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             // 0.cs(9,10): error CS8757: No overload for 'V' matches function pointer 'delegate*<ref readonly int, void>'
             //     rr = &V;
             Diagnostic(ErrorCode.ERR_MethFuncPtrMismatch, "&V").WithArguments("V", "delegate*<ref readonly int, void>").WithLocation(9, 10),
-            // 0.cs(11,10): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int' in target.
+            // 0.cs(11,10): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int' in target.
             //     rr = &I;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&I").WithArguments("in int p", "ref readonly int").WithLocation(11, 10),
             // 0.cs(12,10): error CS8757: No overload for 'O' matches function pointer 'delegate*<ref readonly int, void>'
@@ -4747,16 +4747,16 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             // 0.cs(13,9): error CS8757: No overload for 'RR' matches function pointer 'delegate*<int, void>'
             //     v = &RR;
             Diagnostic(ErrorCode.ERR_MethFuncPtrMismatch, "&RR").WithArguments("RR", "delegate*<int, void>").WithLocation(13, 9),
-            // 0.cs(14,9): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int' in target.
+            // 0.cs(14,9): warning CS9510: Reference kind modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int' in target.
             //     i = &RR;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&RR").WithArguments("ref readonly int p", "in int").WithLocation(14, 9),
             // 0.cs(16,9): error CS8757: No overload for 'RR' matches function pointer 'delegate*<out int, void>'
             //     o = &RR;
             Diagnostic(ErrorCode.ERR_MethFuncPtrMismatch, "&RR").WithArguments("RR", "delegate*<out int, void>").WithLocation(16, 9),
-            // 0.cs(17,9): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref int' in target.
+            // 0.cs(17,9): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref int' in target.
             //     r = &I;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&I").WithArguments("in int p", "ref int").WithLocation(17, 9),
-            // 0.cs(18,9): warning CS9510: Modifier of parameter 'ref int p' doesn't match the corresponding parameter 'in int' in target.
+            // 0.cs(18,9): warning CS9510: Reference kind modifier of parameter 'ref int p' doesn't match the corresponding parameter 'in int' in target.
             //     i = &R;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&R").WithArguments("ref int p", "in int").WithLocation(18, 9));
     }
@@ -4778,10 +4778,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             }
             """;
         CreateCompilation(new[] { source, RequiresLocationAttributeDefinition }, options: TestOptions.UnsafeDebugExe).VerifyDiagnostics(
-            // 0.cs(6,9): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int' in target.
+            // 0.cs(6,9): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int' in target.
             //     x = (delegate*<ref readonly int, void>)&Y;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<ref readonly int, void>)&Y").WithArguments("in int p", "ref readonly int").WithLocation(6, 9),
-            // 0.cs(7,9): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int' in target.
+            // 0.cs(7,9): warning CS9510: Reference kind modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int' in target.
             //     y = (delegate*<in int, void>)&X;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(delegate*<in int, void>)&X").WithArguments("ref readonly int p", "in int").WithLocation(7, 9));
     }
@@ -4816,10 +4816,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
         var expectedDiagnostics = new[]
         {
-            // (6,12): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int' in target.
+            // (6,12): warning CS9510: Reference kind modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int' in target.
             //     C.Y2 = &C.X1;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&C.X1").WithArguments("ref readonly int p", "in int").WithLocation(6, 12),
-            // (7,12): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int' in target.
+            // (7,12): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int' in target.
             //     C.X2 = &C.Y1;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&C.Y1").WithArguments("in int p", "ref readonly int").WithLocation(7, 12)
         };
@@ -4867,10 +4867,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
         var expectedDiagnostics = new[]
         {
-            // (6,12): warning CS9510: Modifier of parameter 'ref int p' doesn't match the corresponding parameter 'in int' in target.
+            // (6,12): warning CS9510: Reference kind modifier of parameter 'ref int p' doesn't match the corresponding parameter 'in int' in target.
             //     C.Y2 = &C.X1;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&C.X1").WithArguments("ref int p", "in int").WithLocation(6, 12),
-            // (7,12): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref int' in target.
+            // (7,12): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref int' in target.
             //     C.X2 = &C.Y1;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "&C.Y1").WithArguments("in int p", "ref int").WithLocation(7, 12)
         };
@@ -4916,7 +4916,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             // (7,11): error CS1676: Parameter 1 must be declared with the 'ref readonly' keyword
             // rr = (int x) => throw null;
             Diagnostic(ErrorCode.ERR_BadParamRef, "x").WithArguments("1", "ref readonly").WithLocation(7, 11),
-            // (9,6): warning CS9510: Modifier of parameter 'in int x' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // (9,6): warning CS9510: Reference kind modifier of parameter 'in int x' doesn't match the corresponding parameter 'ref readonly int p' in target.
             // rr = (in int x) => throw null;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(in int x) => throw null").WithArguments("in int x", "ref readonly int p").WithLocation(9, 6),
             // (10,6): error CS1661: Cannot convert lambda expression to type 'RR' because the parameter types do not match the delegate parameter types
@@ -4931,7 +4931,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             // (11,23): error CS1677: Parameter 1 should not be declared with the 'ref readonly' keyword
             // v = (ref readonly int x) => throw null;
             Diagnostic(ErrorCode.ERR_BadParamExtraRef, "x").WithArguments("1", "ref readonly").WithLocation(11, 23),
-            // (12,5): warning CS9510: Modifier of parameter 'ref readonly int x' doesn't match the corresponding parameter 'in int p' in target.
+            // (12,5): warning CS9510: Reference kind modifier of parameter 'ref readonly int x' doesn't match the corresponding parameter 'in int p' in target.
             // i = (ref readonly int x) => throw null;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(ref readonly int x) => throw null").WithArguments("ref readonly int x", "in int p").WithLocation(12, 5),
             // (14,5): error CS1661: Cannot convert lambda expression to type 'O' because the parameter types do not match the delegate parameter types
@@ -4940,10 +4940,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             // (14,23): error CS1676: Parameter 1 must be declared with the 'out' keyword
             // o = (ref readonly int x) => throw null;
             Diagnostic(ErrorCode.ERR_BadParamRef, "x").WithArguments("1", "out").WithLocation(14, 23),
-            // (15,5): warning CS9510: Modifier of parameter 'in int x' doesn't match the corresponding parameter 'ref int p' in target.
+            // (15,5): warning CS9510: Reference kind modifier of parameter 'in int x' doesn't match the corresponding parameter 'ref int p' in target.
             // r = (in int x) => throw null;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(in int x) => throw null").WithArguments("in int x", "ref int p").WithLocation(15, 5),
-            // (16,5): warning CS9510: Modifier of parameter 'ref int x' doesn't match the corresponding parameter 'in int p' in target.
+            // (16,5): warning CS9510: Reference kind modifier of parameter 'ref int x' doesn't match the corresponding parameter 'in int p' in target.
             // i = (ref int x) => throw null;
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(ref int x) => throw null").WithArguments("ref int x", "in int p").WithLocation(16, 5),
             // (18,6): error CS1661: Cannot convert lambda expression to type 'RR' because the parameter types do not match the delegate parameter types
@@ -4971,10 +4971,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             delegate void Y(in int p);
             """;
         CreateCompilation(source).VerifyDiagnostics(
-            // (4,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // (4,5): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
             // x = (X)((in int p) => throw null);
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(X)((in int p) => throw null)").WithArguments("in int p", "ref readonly int p").WithLocation(4, 5),
-            // (5,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // (5,5): warning CS9510: Reference kind modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
             // y = (Y)((ref readonly int p) => throw null);
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(Y)((ref readonly int p) => throw null)").WithArguments("ref readonly int p", "in int p").WithLocation(5, 5));
     }
@@ -5008,10 +5008,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             // (1,10): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
             // C.X((ref readonly int p) => { });
             Diagnostic(ErrorCode.ERR_FeatureInPreview, "readonly").WithArguments("ref readonly parameters").WithLocation(1, 10),
-            // (4,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // (4,5): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
             // C.X((in int p) => { });
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(in int p) => { }").WithArguments("in int p", "ref readonly int p").WithLocation(4, 5),
-            // (5,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // (5,5): warning CS9510: Reference kind modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
             // C.Y((ref readonly int p) => { });
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(ref readonly int p) => { }").WithArguments("ref readonly int p", "in int p").WithLocation(5, 5),
             // (5,10): error CS8652: The feature 'ref readonly parameters' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
@@ -5020,10 +5020,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
         var expectedDiagnostics = new[]
         {
-            // (4,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
+            // (4,5): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref readonly int p' in target.
             // C.X((in int p) => { });
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(in int p) => { }").WithArguments("in int p", "ref readonly int p").WithLocation(4, 5),
-            // (5,5): warning CS9510: Modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
+            // (5,5): warning CS9510: Reference kind modifier of parameter 'ref readonly int p' doesn't match the corresponding parameter 'in int p' in target.
             // C.Y((ref readonly int p) => { });
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(ref readonly int p) => { }").WithArguments("ref readonly int p", "in int p").WithLocation(5, 5)
         };
@@ -5073,10 +5073,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
 
         var expectedDiagnostics = new[]
         {
-            // (4,5): warning CS9510: Modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref int p' in target.
+            // (4,5): warning CS9510: Reference kind modifier of parameter 'in int p' doesn't match the corresponding parameter 'ref int p' in target.
             // C.X((in int p) => { });
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(in int p) => { }").WithArguments("in int p", "ref int p").WithLocation(4, 5),
-            // (5,5): warning CS9510: Modifier of parameter 'ref int p' doesn't match the corresponding parameter 'in int p' in target.
+            // (5,5): warning CS9510: Reference kind modifier of parameter 'ref int p' doesn't match the corresponding parameter 'in int p' in target.
             // C.Y((ref int p) => { });
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "(ref int p) => { }").WithArguments("ref int p", "in int p").WithLocation(5, 5)
         };

@@ -4618,13 +4618,13 @@
         <note />
       </trans-unit>
       <trans-unit id="WRN_TargetDifferentRefness">
-        <source>Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in target.</source>
-        <target state="new">Modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in target.</target>
+        <source>Reference kind modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in target.</source>
+        <target state="new">Reference kind modifier of parameter '{0}' doesn't match the corresponding parameter '{1}' in target.</target>
         <note />
       </trans-unit>
       <trans-unit id="WRN_TargetDifferentRefness_Title">
-        <source>Modifier of parameter doesn't match the corresponding parameter in target.</source>
-        <target state="new">Modifier of parameter doesn't match the corresponding parameter in target.</target>
+        <source>Reference kind modifier of parameter doesn't match the corresponding parameter in target.</source>
+        <target state="new">Reference kind modifier of parameter doesn't match the corresponding parameter in target.</target>
         <note />
       </trans-unit>
       <trans-unit id="WRN_ThrowPossibleNull">
