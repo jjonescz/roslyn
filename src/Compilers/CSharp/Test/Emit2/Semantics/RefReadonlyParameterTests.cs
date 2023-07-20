@@ -2985,17 +2985,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        // Add betterness rule (https://github.com/dotnet/roslyn/issues/69229). Then verify execution.
-        CreateCompilation(source).VerifyDiagnostics(
-            // (10,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I2, ref readonly int)'
-            //         System.Console.Write(M1(null, ref i));
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I2, ref readonly int)").WithLocation(10, 30),
-            // (11,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I2, ref readonly int)'
-            //         System.Console.Write(M1(null, in i));
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I2, ref readonly int)").WithLocation(11, 30),
-            // (12,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I2, ref readonly int)'
-            //         System.Console.Write(M1(null, i));
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I2, ref readonly int)").WithLocation(12, 30));
+        CompileAndVerify(source, expectedOutput: "25 25 15").VerifyDiagnostics();
     }
 
     [Fact]
@@ -3017,11 +3007,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        // PROTOTYPE: Add betterness rule. Then verify execution.
-        CreateCompilation(source).VerifyDiagnostics(
-            // (10,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, ref int)' and 'C.M1(I2, ref readonly int)'
-            //         System.Console.Write(M1(null, ref i));
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, ref int)", "C.M1(I2, ref readonly int)").WithLocation(10, 30),
+        CompileAndVerify(source, expectedOutput: "15 25 25").VerifyDiagnostics(
             // (12,39): warning CS9503: Argument 2 should be passed with 'ref' or 'in' keyword
             //         System.Console.Write(M1(null, i));
             Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "i").WithArguments("2").WithLocation(12, 39));
@@ -3070,17 +3056,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        // PROTOTYPE: Add betterness rule. Then verify execution.
-        CreateCompilation(source).VerifyDiagnostics(
-            // (12,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I2, ref int)'
-            //         System.Console.Write(M1(null, ref i));
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I2, ref int)").WithLocation(12, 30),
-            // (13,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I3, ref readonly int)'
-            //         System.Console.Write(M1(null, in i));
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I3, ref readonly int)").WithLocation(13, 30),
-            // (14,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I3, ref readonly int)'
-            //         System.Console.Write(M1(null, i));
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I3, ref readonly int)").WithLocation(14, 30));
+        CompileAndVerify(source, expectedOutput: "25 35 15").VerifyDiagnostics();
     }
 
     [Fact]
@@ -3106,13 +3082,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        CreateCompilation(source).VerifyDiagnostics(
-            // (14,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I2, in int)' and 'C.M1(I3, ref int)'
-            //         System.Console.Write(M1(null, ref i));
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I2, in int)", "C.M1(I3, ref int)").WithLocation(14, 30),
-            // (15,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I2, in int)' and 'C.M1(I4, ref readonly int)'
-            //         System.Console.Write(M1(null, in i));
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I2, in int)", "C.M1(I4, ref readonly int)").WithLocation(15, 30));
+        CompileAndVerify(source, expectedOutput: "35 45 15").VerifyDiagnostics();
     }
 
     [Fact]
