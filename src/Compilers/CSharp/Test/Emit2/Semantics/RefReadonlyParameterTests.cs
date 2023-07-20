@@ -5633,14 +5633,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             delegate void D1(X s, ref readonly int x);
             delegate void D2(X s, ref int x);
             """;
-        // Add betterness rule (https://github.com/dotnet/roslyn/issues/69229). Then verify execution.
-        CreateCompilation(source).VerifyDiagnostics(
-            // (7,17): error CS0121: The call is ambiguous between the following methods or properties: 'C.M(I1, ref readonly int)' and 'C.M(I2, ref int)'
-            //         D1 m1 = this.M;
-            Diagnostic(ErrorCode.ERR_AmbigCall, "this.M").WithArguments("C.M(I1, ref readonly int)", "C.M(I2, ref int)").WithLocation(7, 17),
-            // (8,17): error CS0121: The call is ambiguous between the following methods or properties: 'C.M(I1, ref readonly int)' and 'C.M(I2, ref int)'
-            //         D2 m2 = this.M;
-            Diagnostic(ErrorCode.ERR_AmbigCall, "this.M").WithArguments("C.M(I1, ref readonly int)", "C.M(I2, ref int)").WithLocation(8, 17));
+        CompileAndVerify(source, expectedOutput: "12").VerifyDiagnostics();
     }
 
     [Theory, CombinatorialData]

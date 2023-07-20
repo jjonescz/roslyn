@@ -2218,8 +2218,6 @@ outerDefault:
 
             static bool isLeftBetter(RefKind leftRefKind, RefKind rightRefKind, RefKind argumentRefKind, bool isInterpolatedStringHandlerConversion)
             {
-                Debug.Assert(argumentRefKind != RefKind.RefReadOnlyParameter);
-
                 if (leftRefKind == rightRefKind)
                 {
                     return false;
@@ -2238,6 +2236,12 @@ outerDefault:
                     {
                         return true;
                     }
+                }
+
+                // Can happen for delegates where the argument is actually the delegate's parameter.
+                if (argumentRefKind is RefKind.RefReadOnlyParameter)
+                {
+                    return leftRefKind is RefKind.RefReadOnlyParameter && rightRefKind is RefKind.Ref or RefKind.In;
                 }
 
                 if (argumentRefKind is RefKind.Ref or RefKind.In && leftRefKind is RefKind.RefReadOnlyParameter && rightRefKind is RefKind.In)
