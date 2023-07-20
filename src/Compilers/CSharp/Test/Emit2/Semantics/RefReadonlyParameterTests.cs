@@ -2974,28 +2974,145 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             interface I2 { }
             class C
             {
-                static string M1(I1 o, in int i) => "1" + i;
-                static string M1(I2 o, ref readonly int i) => "2" + i;
+                static string M1(I1 o, in int i) => " 1" + i;
+                static string M1(I2 o, ref readonly int i) => " 2" + i;
                 static void Main()
                 {
                     int i = 5;
-                    System.Console.WriteLine(M1(null, ref i));
-                    System.Console.WriteLine(M1(null, in i));
-                    System.Console.WriteLine(M1(null, i));
+                    System.Console.Write(M1(null, ref i));
+                    System.Console.Write(M1(null, in i));
+                    System.Console.Write(M1(null, i));
                 }
             }
             """;
         // Add betterness rule (https://github.com/dotnet/roslyn/issues/69229). Then verify execution.
         CreateCompilation(source).VerifyDiagnostics(
-            // (10,34): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I2, ref readonly int)'
-            //         System.Console.WriteLine(M1(null, ref i));
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I2, ref readonly int)").WithLocation(10, 34),
-            // (11,34): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I2, ref readonly int)'
-            //         System.Console.WriteLine(M1(null, in i));
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I2, ref readonly int)").WithLocation(11, 34),
-            // (12,34): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I2, ref readonly int)'
-            //         System.Console.WriteLine(M1(null, i));
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I2, ref readonly int)").WithLocation(12, 34));
+            // (10,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I2, ref readonly int)'
+            //         System.Console.Write(M1(null, ref i));
+            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I2, ref readonly int)").WithLocation(10, 30),
+            // (11,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I2, ref readonly int)'
+            //         System.Console.Write(M1(null, in i));
+            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I2, ref readonly int)").WithLocation(11, 30),
+            // (12,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I2, ref readonly int)'
+            //         System.Console.Write(M1(null, i));
+            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I2, ref readonly int)").WithLocation(12, 30));
+    }
+
+    [Fact]
+    public void RefReadonlyParameter_OverloadResolution_05()
+    {
+        var source = """
+            interface I1 { }
+            interface I2 { }
+            class C
+            {
+                static string M1(I1 o, ref int i) => " 1" + i;
+                static string M1(I2 o, ref readonly int i) => " 2" + i;
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(M1(null, ref i));
+                    System.Console.Write(M1(null, in i));
+                    System.Console.Write(M1(null, i));
+                }
+            }
+            """;
+        // PROTOTYPE: Add betterness rule. Then verify execution.
+        CreateCompilation(source).VerifyDiagnostics(
+            // (10,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, ref int)' and 'C.M1(I2, ref readonly int)'
+            //         System.Console.Write(M1(null, ref i));
+            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, ref int)", "C.M1(I2, ref readonly int)").WithLocation(10, 30),
+            // (12,39): warning CS9503: Argument 2 should be passed with 'ref' or 'in' keyword
+            //         System.Console.Write(M1(null, i));
+            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "i").WithArguments("2").WithLocation(12, 39));
+    }
+
+    [Fact]
+    public void RefReadonlyParameter_OverloadResolution_06()
+    {
+        var source = """
+            interface I1 { }
+            interface I2 { }
+            class C
+            {
+                static string M1(I1 o, int i) => " 1" + i;
+                static string M1(I2 o, ref readonly int i) => " 2" + i;
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(M1(null, ref i));
+                    System.Console.Write(M1(null, in i));
+                    System.Console.Write(M1(null, i));
+                }
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "25 25 15").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void RefReadonlyParameter_OverloadResolution_07()
+    {
+        var source = """
+            interface I1 { }
+            interface I2 { }
+            interface I3 { }
+            class C
+            {
+                static string M1(I1 o, in int i) => " 1" + i;
+                static string M1(I2 o, ref int i) => " 2" + i;
+                static string M1(I3 o, ref readonly int i) => " 3" + i;
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(M1(null, ref i));
+                    System.Console.Write(M1(null, in i));
+                    System.Console.Write(M1(null, i));
+                }
+            }
+            """;
+        // PROTOTYPE: Add betterness rule. Then verify execution.
+        CreateCompilation(source).VerifyDiagnostics(
+            // (12,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I2, ref int)'
+            //         System.Console.Write(M1(null, ref i));
+            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I2, ref int)").WithLocation(12, 30),
+            // (13,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I3, ref readonly int)'
+            //         System.Console.Write(M1(null, in i));
+            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I3, ref readonly int)").WithLocation(13, 30),
+            // (14,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int)' and 'C.M1(I3, ref readonly int)'
+            //         System.Console.Write(M1(null, i));
+            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int)", "C.M1(I3, ref readonly int)").WithLocation(14, 30));
+    }
+
+    [Fact]
+    public void RefReadonlyParameter_OverloadResolution_08()
+    {
+        var source = """
+            interface I1 { }
+            interface I2 { }
+            interface I3 { }
+            interface I4 { }
+            class C
+            {
+                static string M1(I1 o, int i) => " 1" + i;
+                static string M1(I2 o, in int i) => " 2" + i;
+                static string M1(I3 o, ref int i) => " 3" + i;
+                static string M1(I4 o, ref readonly int i) => " 4" + i;
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(M1(null, ref i));
+                    System.Console.Write(M1(null, in i));
+                    System.Console.Write(M1(null, i));
+                }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (14,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I2, in int)' and 'C.M1(I3, ref int)'
+            //         System.Console.Write(M1(null, ref i));
+            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I2, in int)", "C.M1(I3, ref int)").WithLocation(14, 30),
+            // (15,30): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I2, in int)' and 'C.M1(I4, ref readonly int)'
+            //         System.Console.Write(M1(null, in i));
+            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I2, in int)", "C.M1(I4, ref readonly int)").WithLocation(15, 30));
     }
 
     [Fact]
