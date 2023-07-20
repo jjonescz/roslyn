@@ -3086,6 +3086,39 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact]
+    public void RefReadonlyParameter_OverloadResolution_ExtensionMethod_01()
+    {
+        var source = """
+            class C
+            {
+                string M1(in int i) => "C";
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(new C().M1(ref i));
+                    System.Console.Write(new C().M1(in i));
+                    System.Console.Write(new C().M1(i));
+                }
+            }
+            static class E
+            {
+                public static string M1(this C c, ref int i) => "E";
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "ECC", parseOptions: TestOptions.Regular11).VerifyDiagnostics();
+
+        var expectedDiagnostics = new[]
+        {
+            // (7,45): warning CS9502: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+            //         System.Console.Write(new C().M1(ref i));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("1").WithLocation(7, 45)
+        };
+
+        CompileAndVerify(source, expectedOutput: "CCC", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+        CompileAndVerify(source, expectedOutput: "CCC").VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact]
     public void RefReadonlyParameter_PlainArgument_OverloadResolution()
     {
         var source = """
