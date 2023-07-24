@@ -3080,6 +3080,30 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact]
+    public void RefReadonlyParameter_OverloadResolution_09()
+    {
+        var source = """
+            interface I1 { }
+            interface I2 { }
+            class C
+            {
+                static string M1(I1 o, in int i) => " 1" + i;
+                static string M1(I2 o, ref int i) => " 2" + i;
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(M1(null, ref i));
+                    System.Console.Write(M1(null, in i));
+                    System.Console.Write(M1(null, i));
+                }
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "25 15 15", parseOptions: TestOptions.Regular11).VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: "25 15 15", parseOptions: TestOptions.RegularNext).VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: "25 15 15").VerifyDiagnostics();
+    }
+
+    [Fact]
     public void RefReadonlyParameter_OverloadResolution_ExtensionMethod_01()
     {
         var source = """
