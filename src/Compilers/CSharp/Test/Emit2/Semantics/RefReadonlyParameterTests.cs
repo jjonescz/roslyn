@@ -2843,10 +2843,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        CreateCompilation(source).VerifyDiagnostics(
-            // (9,34): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(string, ref int)' and 'C.M1(C, ref readonly int)'
-            //         System.Console.WriteLine(M1(null, ref i));
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(string, ref int)", "C.M1(C, ref readonly int)").WithLocation(9, 34));
+        CompileAndVerify(source, expectedOutput: "string5").VerifyDiagnostics();
     }
 
     [Fact]
@@ -2865,10 +2862,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        CreateCompilation(source).VerifyDiagnostics(
-            // (9,13): error CS0121: The call is ambiguous between the following methods or properties: 'C.C(string, ref int)' and 'C.C(C, ref readonly int)'
-            //         new C(null, ref i);
-            Diagnostic(ErrorCode.ERR_AmbigCall, "C").WithArguments("C.C(string, ref int)", "C.C(C, ref readonly int)").WithLocation(9, 13));
+        CompileAndVerify(source, expectedOutput: "string5").VerifyDiagnostics();
     }
 
     [Fact]
