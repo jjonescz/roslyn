@@ -2960,7 +2960,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         CompileAndVerify(source, expectedOutput: "c5").VerifyDiagnostics();
     }
 
-    [Fact]
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
     public void RefReadonlyParameter_OverloadResolution_04()
     {
         var source = """
@@ -2982,7 +2982,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         CompileAndVerify(source, expectedOutput: "25 25 15").VerifyDiagnostics();
     }
 
-    [Fact]
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
     public void RefReadonlyParameter_OverloadResolution_05()
     {
         var source = """
@@ -3007,7 +3007,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "i").WithArguments("2").WithLocation(12, 39));
     }
 
-    [Fact]
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
     public void RefReadonlyParameter_OverloadResolution_06()
     {
         var source = """
@@ -3029,7 +3029,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         CompileAndVerify(source, expectedOutput: "25 25 15").VerifyDiagnostics();
     }
 
-    [Fact]
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
     public void RefReadonlyParameter_OverloadResolution_07()
     {
         var source = """
@@ -3053,7 +3053,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         CompileAndVerify(source, expectedOutput: "25 35 15").VerifyDiagnostics();
     }
 
-    [Fact]
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
     public void RefReadonlyParameter_OverloadResolution_08()
     {
         var source = """
@@ -3079,7 +3079,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         CompileAndVerify(source, expectedOutput: "35 45 15").VerifyDiagnostics();
     }
 
-    [Fact]
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
     public void RefReadonlyParameter_OverloadResolution_09()
     {
         var source = """
@@ -3103,7 +3103,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         CompileAndVerify(source, expectedOutput: "25 15 15").VerifyDiagnostics();
     }
 
-    [Fact]
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
     public void RefReadonlyParameter_OverloadResolution_ExtensionMethod_01()
     {
         var source = """
@@ -3132,6 +3132,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("1").WithLocation(7, 45)
         };
 
+        // Improve lookup rules? https://github.com/dotnet/roslyn/issues/69229
         CompileAndVerify(source, expectedOutput: "CCC", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
         CompileAndVerify(source, expectedOutput: "CCC").VerifyDiagnostics(expectedDiagnostics);
     }
@@ -5579,7 +5580,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "C.X").WithArguments("ref readonly int p", $"{modifier} int p").WithLocation(9, 11));
     }
 
-    [Theory, CombinatorialData]
+    [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
     public void Conversion_ExplicitDelegateType([CombinatorialValues("ref", "in", "ref readonly")] string modifier)
     {
         var source = $$"""
@@ -5604,7 +5605,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             delegate void D1(ref readonly int x);
             delegate void D2({{modifier}} int x);
             """;
-        // Add betterness rule (https://github.com/dotnet/roslyn/issues/69229).
+        // Improve lookup rules? https://github.com/dotnet/roslyn/issues/69229
         var verifier = CompileAndVerify(source, expectedOutput: "CC");
         if (modifier != "ref readonly")
         {
@@ -5619,7 +5620,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         }
     }
 
-    [Theory, CombinatorialData]
+    [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
     public void Conversion_ExplicitDelegateType_Inverse([CombinatorialValues("ref", "in", "ref readonly")] string modifier)
     {
         var source = $$"""
@@ -5644,7 +5645,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             delegate void D1({{modifier}} int x);
             delegate void D2(ref readonly int x);
             """;
-        // Add betterness rule (https://github.com/dotnet/roslyn/issues/69229).
+        // Improve lookup rules? https://github.com/dotnet/roslyn/issues/69229
         var verifier = CompileAndVerify(source, expectedOutput: "CC");
         if (modifier != "ref readonly")
         {
@@ -5659,7 +5660,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         }
     }
 
-    [Fact]
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
     public void Conversion_ExplicitDelegateType_MultipleArguments()
     {
         var source = """
