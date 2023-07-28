@@ -9567,7 +9567,10 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // If the method group's receiver is dynamic then there is no point in looking for extension methods; 
             // it's going to be a dynamic invocation.
-            if (!methodGroup.SearchExtensionMethods || methodResolution.HasAnyApplicableMethod || methodGroup.MethodGroupReceiverIsDynamic())
+            bool continuingDueToMismatch = false;
+            if (!methodGroup.SearchExtensionMethods ||
+                (methodResolution.HasAnyApplicableMethod && !(continuingDueToMismatch = hasRefKindMismatch(methodResolution))) ||
+                methodGroup.MethodGroupReceiverIsDynamic())
             {
                 return methodResolution;
             }
@@ -9577,7 +9580,14 @@ namespace Microsoft.CodeAnalysis.CSharp
                 returnRefKind: returnRefKind, returnType: returnType, withDependencies: useSiteInfo.AccumulatesDependencies);
             bool preferExtensionMethodResolution = false;
 
-            if (extensionMethodResolution.HasAnyApplicableMethod)
+            if (continuingDueToMismatch)
+            {
+                if (extensionMethodResolution.HasAnyApplicableMethod && !hasRefKindMismatch(extensionMethodResolution))
+                {
+                    preferExtensionMethodResolution = true;
+                }
+            }
+            else if (extensionMethodResolution.HasAnyApplicableMethod)
             {
                 preferExtensionMethodResolution = true;
             }
@@ -9618,6 +9628,40 @@ namespace Microsoft.CodeAnalysis.CSharp
             extensionMethodResolution.Free();
 
             return methodResolution;
+
+            static bool hasRefKindMismatch(in MethodGroupResolution methodResolution)
+            {
+                Debug.Assert(methodResolution.HasAnyApplicableMethod);
+
+                if (methodResolution.AnalyzedArguments is null)
+                {
+                    return false;
+                }
+
+                var arguments = methodResolution.AnalyzedArguments.Arguments;
+                var methodResult = methodResolution.OverloadResolutionResult.ValidResult;
+                var result = methodResult.Result;
+                var parameters = methodResult.LeastOverriddenMember.GetParameters();
+
+                for (var arg = 0; arg < arguments.Count; arg++)
+                {
+                    // Ignore __arglist arguments.
+                    if (arguments[arg] is BoundArgListOperator)
+                    {
+                        continue;
+                    }
+
+                    // If there is a refness mismatch, we might be able to bind to an extension method without that mismatch.
+                    // PROTOTYPE: Do not consider existing mismatches (like byval over `in`), only those introduced in C# 12.
+                    var correspondingParameter = GetCorrespondingParameter(ref result, parameters, arg);
+                    if (methodResolution.AnalyzedArguments.RefKind(arg) != correspondingParameter.RefKind)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         }
 
         private MethodGroupResolution ResolveDefaultMethodGroup(

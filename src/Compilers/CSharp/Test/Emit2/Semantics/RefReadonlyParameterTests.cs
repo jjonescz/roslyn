@@ -3232,19 +3232,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 public static string M1(this C c, ref int i) => "E";
             }
             """;
-        CompileAndVerify(source, expectedOutput: "ECC", parseOptions: TestOptions.Regular11).VerifyDiagnostics();
-
-        var expectedDiagnostics = new[]
-        {
-            // (7,45): warning CS9502: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
-            //         System.Console.Write(new C().M1(ref i));
-            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("1").WithLocation(7, 45)
-        };
-
-        // Improve lookup rules? https://github.com/dotnet/roslyn/issues/69229
-        var expectedOutput = "CCC";
-        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
-        CompileAndVerify(source, expectedOutput: expectedOutput).VerifyDiagnostics(expectedDiagnostics);
+        var expectedOutput = "ECC";
+        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.Regular11).VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.RegularNext).VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
@@ -5875,19 +5866,9 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             delegate void D1(ref readonly int x);
             delegate void D2({{modifier}} int x);
             """;
-        // Improve lookup rules? https://github.com/dotnet/roslyn/issues/69229
-        var verifier = CompileAndVerify(source, expectedOutput: "CC");
-        if (modifier != "ref readonly")
-        {
-            verifier.VerifyDiagnostics(
-                // (7,17): warning CS9198: Reference kind modifier of parameter 'ref readonly int x' doesn't match the corresponding parameter 'in int x' in target.
-                //         D2 m2 = this.M;
-                Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "this.M").WithArguments("ref readonly int x", $"{modifier} int x").WithLocation(7, 17));
-        }
-        else
-        {
-            verifier.VerifyDiagnostics();
-        }
+        var verifier = CompileAndVerify(source, expectedOutput: modifier == "ref readonly" ? "CC" : "CE",
+            verify: modifier == "ref readonly" ? Verification.Passes : Verification.Fails);
+        verifier.VerifyDiagnostics();
     }
 
     [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
@@ -5915,19 +5896,9 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             delegate void D1({{modifier}} int x);
             delegate void D2(ref readonly int x);
             """;
-        // Improve lookup rules? https://github.com/dotnet/roslyn/issues/69229
-        var verifier = CompileAndVerify(source, expectedOutput: "CC");
-        if (modifier != "ref readonly")
-        {
-            verifier.VerifyDiagnostics(
-                // (7,17): warning CS9198: Reference kind modifier of parameter 'in int x' doesn't match the corresponding parameter 'ref readonly int x' in target.
-                //         D2 m2 = this.M;
-                Diagnostic(ErrorCode.WRN_TargetDifferentRefness, "this.M").WithArguments($"{modifier} int x", "ref readonly int x").WithLocation(7, 17));
-        }
-        else
-        {
-            verifier.VerifyDiagnostics();
-        }
+        var verifier = CompileAndVerify(source, expectedOutput: modifier == "ref readonly" ? "CC" : "CE",
+            verify: modifier == "ref readonly" ? Verification.Passes : Verification.Fails);
+        verifier.VerifyDiagnostics();
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
