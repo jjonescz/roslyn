@@ -3098,9 +3098,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        CompileAndVerify(source, expectedOutput: "25 15 15", parseOptions: TestOptions.Regular11).VerifyDiagnostics();
-        CompileAndVerify(source, expectedOutput: "25 15 15", parseOptions: TestOptions.RegularNext).VerifyDiagnostics();
-        CompileAndVerify(source, expectedOutput: "25 15 15").VerifyDiagnostics();
+        var expectedOutput = "25 15 15";
+        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.Regular11).VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.RegularNext).VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
@@ -3133,8 +3134,9 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         };
 
         // Improve lookup rules? https://github.com/dotnet/roslyn/issues/69229
-        CompileAndVerify(source, expectedOutput: "CCC", parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
-        CompileAndVerify(source, expectedOutput: "CCC").VerifyDiagnostics(expectedDiagnostics);
+        var expectedOutput = "CCC";
+        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+        CompileAndVerify(source, expectedOutput: expectedOutput).VerifyDiagnostics(expectedDiagnostics);
     }
 
     [Fact]
