@@ -5958,6 +5958,34 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         CompileAndVerify(source, expectedOutput: "12").VerifyDiagnostics();
     }
 
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void Conversion_OverloadResolution_04()
+    {
+        var source = """
+            class C
+            {
+                void M(I1 o, in int x) => System.Console.Write("1");
+                void M(I2 o, ref int x) => System.Console.Write("2");
+                void Run()
+                {
+                    D1 m1 = this.M;
+                    D2 m2 = this.M;
+
+                    var i = 1;
+                    m1(null, in i);
+                    m2(null, ref i);
+                }
+                static void Main() => new C().Run();
+            }
+            interface I1 { }
+            interface I2 { }
+            class X : I1, I2 { }
+            delegate void D1(X s, in int x);
+            delegate void D2(X s, ref int x);
+            """;
+        CompileAndVerify(source, expectedOutput: "12").VerifyDiagnostics();
+    }
+
     [Theory, CombinatorialData]
     public void Conversion_LangVersion([CombinatorialValues("in", "ref")] string modifier)
     {
