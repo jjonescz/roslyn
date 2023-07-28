@@ -9652,9 +9652,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
 
                     // If there is a refness mismatch, we might be able to bind to an extension method without that mismatch.
-                    // PROTOTYPE: Do not consider existing mismatches (like byval over `in`), only those introduced in C# 12.
                     var correspondingParameter = GetCorrespondingParameter(ref result, parameters, arg);
-                    if (methodResolution.AnalyzedArguments.RefKind(arg) != correspondingParameter.RefKind)
+                    if (OverloadResolution.IsPossiblyWorseRefKindMismatch(
+                        parameterRefKind: correspondingParameter.RefKind,
+                        argumentRefKind: methodResolution.AnalyzedArguments.RefKind(arg)))
                     {
                         return true;
                     }

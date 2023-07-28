@@ -3398,6 +3398,56 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         CompileAndVerify(new[] { source1, source4 }, expectedOutput: expectedOutput4).VerifyDiagnostics();
     }
 
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void OverloadResolution_ExtensionMethod_05()
+    {
+        var source = """
+            class C
+            {
+                string M1(in int i) => "C";
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(new C().M1(in i));
+                    System.Console.Write(new C().M1(i));
+                }
+            }
+            static class E
+            {
+                public static string M1(this C c, int i) => "E";
+            }
+            """;
+        var expectedOutput = "CC";
+        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.Regular11).VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.RegularNext).VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: expectedOutput).VerifyDiagnostics();
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void OverloadResolution_ExtensionMethod_06()
+    {
+        var source = """
+            class C
+            {
+                string M1(int i) => "C";
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(new C().M1(in i));
+                    System.Console.Write(new C().M1(i));
+                }
+            }
+            static class E
+            {
+                public static string M1(this C c, in int i) => "E";
+            }
+            """;
+        var expectedOutput = "EC";
+        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.Regular11).VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.RegularNext).VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: expectedOutput).VerifyDiagnostics();
+    }
+
     [Fact]
     public void RefReadonlyParameter_PlainArgument_OverloadResolution()
     {

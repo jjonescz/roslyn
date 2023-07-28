@@ -2240,39 +2240,53 @@ outerDefault:
                     }
                 }
 
-                // Can happen during method conversion where the argument is actually the target delegate's parameter.
-                if (argumentRefKind is RefKind.RefReadOnlyParameter)
-                {
-                    // Prefer matching `ref readonly` over mismatched `ref`/`in`.
-                    return leftRefKind is RefKind.RefReadOnlyParameter && rightRefKind is RefKind.Ref or RefKind.In;
-                }
-
-                // Prefer `ref readonly` parameter if argument is passed by `ref`/`in` and the other parameter is `in` (which can be passed by value).
-                if (argumentRefKind is RefKind.Ref or RefKind.In && leftRefKind is RefKind.RefReadOnlyParameter && rightRefKind is RefKind.In)
-                {
-                    return true;
-                }
-
-                // Prefer `ref` parameter if argument is passed by `ref` and the other parameter is `ref readonly` or `in` (which can be passed by `in`).
-                if (argumentRefKind is RefKind.Ref && leftRefKind is RefKind.Ref && rightRefKind is RefKind.RefReadOnlyParameter or RefKind.In)
-                {
-                    return true;
-                }
-
-                // Prefer by-value or `in` parameter if argument is passed by value and the other parameter is `ref readonly` (which can be passed `in`).
-                if (argumentRefKind is RefKind.None && leftRefKind is RefKind.None or RefKind.In && rightRefKind is RefKind.RefReadOnlyParameter)
-                {
-                    return true;
-                }
-
-                // Prefer `in` parameter if argument is passed by `in` and the other parameter is `ref` (which can be passed by `ref`).
-                if (argumentRefKind is RefKind.In && leftRefKind is RefKind.In && rightRefKind is RefKind.Ref)
-                {
-                    return true;
-                }
-
-                return false;
+                return IsLeftBetterParameterRefKindIntroducedWithRefReadonlyParameters(leftRefKind, rightRefKind, argumentRefKind);
             }
+        }
+
+        private static bool IsLeftBetterParameterRefKindIntroducedWithRefReadonlyParameters(RefKind leftRefKind, RefKind rightRefKind, RefKind argumentRefKind)
+        {
+            // Can happen during method conversion where the argument is actually the target delegate's parameter.
+            if (argumentRefKind is RefKind.RefReadOnlyParameter)
+            {
+                // Prefer matching `ref readonly` over mismatched `ref`/`in`.
+                return leftRefKind is RefKind.RefReadOnlyParameter && rightRefKind is RefKind.Ref or RefKind.In;
+            }
+
+            // Prefer `ref readonly` parameter if argument is passed by `ref`/`in` and the other parameter is `in` (which can be passed by value).
+            if (argumentRefKind is RefKind.Ref or RefKind.In && leftRefKind is RefKind.RefReadOnlyParameter && rightRefKind is RefKind.In)
+            {
+                return true;
+            }
+
+            // Prefer `ref` parameter if argument is passed by `ref` and the other parameter is `ref readonly` or `in` (which can be passed by `in`).
+            if (argumentRefKind is RefKind.Ref && leftRefKind is RefKind.Ref && rightRefKind is RefKind.RefReadOnlyParameter or RefKind.In)
+            {
+                return true;
+            }
+
+            // Prefer by-value or `in` parameter if argument is passed by value and the other parameter is `ref readonly` (which can be passed `in`).
+            if (argumentRefKind is RefKind.None && leftRefKind is RefKind.None or RefKind.In && rightRefKind is RefKind.RefReadOnlyParameter)
+            {
+                return true;
+            }
+
+            // Prefer `in` parameter if argument is passed by `in` and the other parameter is `ref` (which can be passed by `ref`).
+            if (argumentRefKind is RefKind.In && leftRefKind is RefKind.In && rightRefKind is RefKind.Ref)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        internal static bool IsPossiblyWorseRefKindMismatch(RefKind parameterRefKind, RefKind argumentRefKind)
+        {
+            // PROTOTYPE: Rewrite (and inline the private static method above to its only callsite).
+            return (parameterRefKind != RefKind.None && IsLeftBetterParameterRefKindIntroducedWithRefReadonlyParameters(RefKind.None, parameterRefKind, argumentRefKind)) ||
+                (parameterRefKind != RefKind.Ref && IsLeftBetterParameterRefKindIntroducedWithRefReadonlyParameters(RefKind.Ref, parameterRefKind, argumentRefKind)) ||
+                (parameterRefKind != RefKind.In && IsLeftBetterParameterRefKindIntroducedWithRefReadonlyParameters(RefKind.In, parameterRefKind, argumentRefKind)) ||
+                (parameterRefKind != RefKind.RefReadOnlyParameter && IsLeftBetterParameterRefKindIntroducedWithRefReadonlyParameters(RefKind.RefReadOnlyParameter, parameterRefKind, argumentRefKind));
         }
 #nullable disable
 
