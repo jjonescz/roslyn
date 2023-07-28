@@ -2961,7 +2961,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
-    public void RefReadonlyParameter_OverloadResolution_04()
+    public void OverloadResolution_01()
     {
         var source = """
             interface I1 { }
@@ -2983,7 +2983,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
-    public void RefReadonlyParameter_OverloadResolution_05()
+    public void OverloadResolution_02()
     {
         var source = """
             interface I1 { }
@@ -3008,7 +3008,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
-    public void RefReadonlyParameter_OverloadResolution_06()
+    public void OverloadResolution_03()
     {
         var source = """
             interface I1 { }
@@ -3030,7 +3030,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
-    public void RefReadonlyParameter_OverloadResolution_07()
+    public void OverloadResolution_04()
     {
         var source = """
             interface I1 { }
@@ -3054,7 +3054,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
-    public void RefReadonlyParameter_OverloadResolution_08()
+    public void OverloadResolution_05()
     {
         var source = """
             interface I1 { }
@@ -3080,7 +3080,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
-    public void RefReadonlyParameter_OverloadResolution_09()
+    public void OverloadResolution_06()
     {
         var source = """
             interface I1 { }
@@ -3105,7 +3105,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
-    public void RefReadonlyParameter_OverloadResolution_ExtensionMethod_01()
+    public void OverloadResolution_ExtensionMethod_01()
     {
         var source = """
             class C
@@ -3137,6 +3137,90 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         var expectedOutput = "CCC";
         CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
         CompileAndVerify(source, expectedOutput: expectedOutput).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void OverloadResolution_ExtensionMethod_02()
+    {
+        var source = """
+            using N1;
+            class C
+            {
+                string M1(in int i) => "C";
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(new C().M1(ref i));
+                    System.Console.Write(new C().M1(in i));
+                    System.Console.Write(new C().M1(i));
+                }
+            }
+            static class X
+            {
+                public static string M1(this C c, in int i) => "X";
+            }
+            namespace N1
+            {
+                static class Y
+                {
+                    public static string M1(this C c, ref int i) => "Y";
+                }
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "YCC", parseOptions: TestOptions.Regular11).VerifyDiagnostics();
+
+        var expectedDiagnostics = new[]
+        {
+            // (1,1): hidden CS8019: Unnecessary using directive.
+            // using N1;
+            Diagnostic(ErrorCode.HDN_UnusedUsingDirective, "using N1;").WithLocation(1, 1),
+            // (8,45): warning CS9191: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+            //         System.Console.Write(new C().M1(ref i));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("1").WithLocation(8, 45)
+        };
+
+        // Improve lookup rules? https://github.com/dotnet/roslyn/issues/69229
+        var expectedOutput = "CCC";
+        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+        CompileAndVerify(source, expectedOutput: expectedOutput).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void OverloadResolution_ExtensionMethod_03()
+    {
+        var source = """
+            using N1;
+            class C
+            {
+                string M1(in int i) => "C";
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(new C().M1(ref i));
+                    System.Console.Write(new C().M1(in i));
+                    System.Console.Write(new C().M1(i));
+                }
+            }
+            static class X
+            {
+                public static string M1(this C c, ref readonly int i) => "X";
+            }
+            namespace N1
+            {
+                static class Y
+                {
+                    public static string M1(this C c, ref int i) => "Y";
+                }
+            }
+            """;
+        // Improve lookup rules? https://github.com/dotnet/roslyn/issues/69229
+        CompileAndVerify(source, expectedOutput: "CCC").VerifyDiagnostics(
+            // (1,1): hidden CS8019: Unnecessary using directive.
+            // using N1;
+            Diagnostic(ErrorCode.HDN_UnusedUsingDirective, "using N1;").WithLocation(1, 1),
+            // (8,45): warning CS9502: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+            //         System.Console.Write(new C().M1(ref i));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("1").WithLocation(8, 45));
     }
 
     [Fact]
