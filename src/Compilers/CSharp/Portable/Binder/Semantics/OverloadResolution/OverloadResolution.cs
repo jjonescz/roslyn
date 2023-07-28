@@ -2223,6 +2223,8 @@ outerDefault:
                     return false;
                 }
 
+                // Prefer by-value parameter over `in`/`ref` parameter
+                // (rules existing before more mismatches become allowed with introduction of `ref readonly` parameters).
                 if (leftRefKind == RefKind.None)
                 {
                     Debug.Assert(argumentRefKind == RefKind.None);
@@ -2238,28 +2240,32 @@ outerDefault:
                     }
                 }
 
-                // Can happen for delegates where the argument is actually the delegate's parameter.
+                // Can happen during method conversion where the argument is actually the target delegate's parameter.
                 if (argumentRefKind is RefKind.RefReadOnlyParameter)
                 {
+                    // Prefer matching `ref readonly` over mismatched `ref`/`in`.
                     return leftRefKind is RefKind.RefReadOnlyParameter && rightRefKind is RefKind.Ref or RefKind.In;
                 }
 
+                // Prefer `ref readonly` parameter if argument is passed by `ref`/`in` and the other parameter is `in` (which can be passed by value).
                 if (argumentRefKind is RefKind.Ref or RefKind.In && leftRefKind is RefKind.RefReadOnlyParameter && rightRefKind is RefKind.In)
                 {
                     return true;
                 }
 
+                // Prefer `ref` parameter if argument is passed by `ref` and the other parameter is `ref readonly` or `in` (which can be passed by `in`).
                 if (argumentRefKind is RefKind.Ref && leftRefKind is RefKind.Ref && rightRefKind is RefKind.RefReadOnlyParameter or RefKind.In)
                 {
                     return true;
                 }
 
+                // Prefer by-value or `in` parameter if argument is passed by value and the other parameter is `ref readonly` (which can be passed `in`).
                 if (argumentRefKind is RefKind.None && leftRefKind is RefKind.None or RefKind.In && rightRefKind is RefKind.RefReadOnlyParameter)
                 {
                     return true;
                 }
 
-                // PROTOTYPE: Gate this on langversion.
+                // Prefer `in` parameter if argument is passed by `in` and the other parameter is `ref` (which can be passed by `ref`).
                 if (argumentRefKind is RefKind.In && leftRefKind is RefKind.In && rightRefKind is RefKind.Ref)
                 {
                     return true;
