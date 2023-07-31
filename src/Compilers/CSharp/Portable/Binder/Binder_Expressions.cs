@@ -9652,12 +9652,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                     continue;
                 }
 
-                // If there is a refness mismatch, we might be able to bind to an extension method without that mismatch.
                 var correspondingParameter = GetCorrespondingParameter(ref result, parameters, arg);
                 if (OverloadResolution.IsPossiblyWorseRefKindMatch(
                     parameterRefKind: correspondingParameter.RefKind,
                     argumentRefKind: methodResolution.AnalyzedArguments.RefKind(arg)))
                 {
+                    // We might be able to bind to an extension method with better ref kind match.
                     return true;
                 }
             }
