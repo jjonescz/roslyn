@@ -3213,6 +3213,29 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void OverloadResolution_09()
+    {
+        var source = """
+            interface I1 { }
+            interface I2 { }
+            class C
+            {
+                string M1(I1 o, in int i, in int j, in int k) => "1";
+                string M1(I2 o, in int i, in int j, ref int k) => "2";
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(new C().M1(null, in i, ref i, ref i));
+                }
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "2").VerifyDiagnostics(
+            // (10,57): warning CS9191: The 'ref' modifier for argument 3 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+            //         System.Console.Write(new C().M1(null, in i, ref i, ref i));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("3").WithLocation(10, 57));
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
     public void OverloadResolution_ExtensionMethod_01()
     {
         var source = """
@@ -3472,6 +3495,197 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             }
             """;
         CompileAndVerify(source, expectedOutput: "E").VerifyDiagnostics();
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void OverloadResolution_ExtensionMethod_09()
+    {
+        var source = """
+            namespace N1
+            {
+                namespace N2
+                {
+                    class C
+                    {
+                        string M1(in int i) => "C";
+                        static void Main()
+                        {
+                            int i = 5;
+                            System.Console.Write(new C().M1(ref i));
+                            System.Console.Write(new C().M1(in i));
+                            System.Console.Write(new C().M1(i));
+                        }
+                    }
+                    static class X
+                    {
+                        public static string M1(this C c, ref readonly int i) => "X";
+                    }
+                }
+                static class Y
+                {
+                    public static string M1(this N2.C c, int i) => "Y";
+                }
+            }
+            static class Z
+            {
+                public static string M1(this N1.N2.C c, ref int i) => "Z";
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "ZXC").VerifyDiagnostics();
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void OverloadResolution_ExtensionMethod_10()
+    {
+        var source = """
+            class C
+            {
+                string M1(in int i, in int j, in int k) => "C";
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(new C().M1(in i, ref i, ref i));
+                }
+            }
+            static class E
+            {
+                public static string M1(this C c, in int i, in int j, ref int k) => "E";
+            }
+            """;
+        // PROTOTYPE: Should print "E" as that's better by overload resolution rules.
+        CompileAndVerify(source, expectedOutput: "C").VerifyDiagnostics(
+            // (7,51): warning CS9191: The 'ref' modifier for argument 2 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+            //         System.Console.Write(new C().M1(in i, ref i, ref i));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2").WithLocation(7, 51),
+            // (7,58): warning CS9191: The 'ref' modifier for argument 3 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+            //         System.Console.Write(new C().M1(in i, ref i, ref i));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("3").WithLocation(7, 58));
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void OverloadResolution_ExtensionMethod_11()
+    {
+        var source = """
+            using N1;
+            class C
+            {
+                string M1(in int i, in int j, in int k) => "C";
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(new C().M1(in i, ref i, ref i));
+                }
+            }
+            static class X
+            {
+                public static string M1(this C c, in int i, in int j, ref int k) => "X";
+            }
+            namespace N1
+            {
+                static class Y
+                {
+                    public static string M1(this C c, in int i, in int j, in int k) => "Y";
+                }
+            }
+            """;
+        // PROTOTYPE: Should print "X" as that's better then both C and Y by overload resolution rules.
+        CompileAndVerify(source, expectedOutput: "C").VerifyDiagnostics(
+            // (8,51): warning CS9191: The 'ref' modifier for argument 2 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+            //         System.Console.Write(new C().M1(in i, ref i, ref i));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2").WithLocation(8, 51),
+            // (8,58): warning CS9191: The 'ref' modifier for argument 3 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+            //         System.Console.Write(new C().M1(in i, ref i, ref i));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("3").WithLocation(8, 58));
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void OverloadResolution_ExtensionMethod_12()
+    {
+        var source = """
+            using N1;
+            class C
+            {
+                string M1(in int i, in int j, in int k) => "C";
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(new C().M1(in i, ref i, ref i));
+                }
+            }
+            static class X
+            {
+                public static string M1(this C c, in int i, in int j, in int k) => "X";
+            }
+            namespace N1
+            {
+                static class Y
+                {
+                    public static string M1(this C c, in int i, in int j, ref int k) => "Y";
+                }
+            }
+            """;
+        // PROTOTYPE: Should print "Y" as that's better then both C and X by overload resolution rules.
+        CompileAndVerify(source, expectedOutput: "C").VerifyDiagnostics(
+            // (8,51): warning CS9191: The 'ref' modifier for argument 2 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+            //         System.Console.Write(new C().M1(in i, ref i, ref i));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2").WithLocation(8, 51),
+            // (8,58): warning CS9191: The 'ref' modifier for argument 3 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+            //         System.Console.Write(new C().M1(in i, ref i, ref i));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("3").WithLocation(8, 58));
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void OverloadResolution_ExtensionMethod_13()
+    {
+        var source = """
+            class C
+            {
+                string M1(in int i, in int j, in int k) => "C";
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(new C().M1(in i, in i, ref i));
+                }
+            }
+            static class E
+            {
+                public static string M1<T>(this T t, in int i, in int j, ref int k) => "E";
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "E", parseOptions: TestOptions.Regular11).VerifyDiagnostics();
+        // PROTOTYPE: This used to print "E", now it prints "C".
+        CompileAndVerify(source, expectedOutput: "C").VerifyDiagnostics(
+            // (7,57): warning CS9191: The 'ref' modifier for argument 3 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+            //         System.Console.Write(new C().M1(in i, in i, ref i));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("3").WithLocation(7, 57));
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void OverloadResolution_ExtensionMethod_14()
+    {
+        var source = """
+            class C
+            {
+                string M1(in int i, in int j, in int k) => "C";
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(new C().M1(in i, ref i, ref i));
+                }
+            }
+            static class E
+            {
+                public static string M1<T>(this T t, in int i, in int j, ref int k) => "E";
+            }
+            """;
+        // Neither method is better than the other, so the first scope wins.
+        CompileAndVerify(source, expectedOutput: "C").VerifyDiagnostics(
+            // (7,51): warning CS9191: The 'ref' modifier for argument 2 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+            //         System.Console.Write(new C().M1(in i, ref i, ref i));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2").WithLocation(7, 51),
+            // (7,58): warning CS9191: The 'ref' modifier for argument 3 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+            //         System.Console.Write(new C().M1(in i, ref i, ref i));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("3").WithLocation(7, 58));
     }
 
     [Fact]
