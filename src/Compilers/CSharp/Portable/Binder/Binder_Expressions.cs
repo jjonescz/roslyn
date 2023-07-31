@@ -9567,9 +9567,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // If the method group's receiver is dynamic then there is no point in looking for extension methods; 
             // it's going to be a dynamic invocation.
-            bool continuingDueToMismatch = false;
+            bool canFindBetterMatch = false;
             if (!methodGroup.SearchExtensionMethods ||
-                (methodResolution.HasAnyApplicableMethod && !(continuingDueToMismatch = hasRefKindMismatch(methodResolution))) ||
+                (methodResolution.HasAnyApplicableMethod && !(canFindBetterMatch = HasPossiblyWorseRefKindMatch(methodResolution))) ||
                 methodGroup.MethodGroupReceiverIsDynamic())
             {
                 return methodResolution;
@@ -9580,9 +9580,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 returnRefKind: returnRefKind, returnType: returnType, withDependencies: useSiteInfo.AccumulatesDependencies);
             bool preferExtensionMethodResolution = false;
 
-            if (continuingDueToMismatch)
+            if (canFindBetterMatch)
             {
-                if (extensionMethodResolution.HasAnyApplicableMethod && !hasRefKindMismatch(extensionMethodResolution))
+                if (extensionMethodResolution.HasAnyApplicableMethod && !HasPossiblyWorseRefKindMatch(extensionMethodResolution))
                 {
                     preferExtensionMethodResolution = true;
                 }
@@ -9628,41 +9628,41 @@ namespace Microsoft.CodeAnalysis.CSharp
             extensionMethodResolution.Free();
 
             return methodResolution;
+        }
 
-            static bool hasRefKindMismatch(in MethodGroupResolution methodResolution)
+        private static bool HasPossiblyWorseRefKindMatch(in MethodGroupResolution methodResolution)
+        {
+            Debug.Assert(methodResolution.HasAnyApplicableMethod);
+
+            if (methodResolution.AnalyzedArguments is null)
             {
-                Debug.Assert(methodResolution.HasAnyApplicableMethod);
-
-                if (methodResolution.AnalyzedArguments is null)
-                {
-                    return false;
-                }
-
-                var arguments = methodResolution.AnalyzedArguments.Arguments;
-                var methodResult = methodResolution.OverloadResolutionResult.ValidResult;
-                var result = methodResult.Result;
-                var parameters = methodResult.LeastOverriddenMember.GetParameters();
-
-                for (var arg = 0; arg < arguments.Count; arg++)
-                {
-                    // Ignore __arglist arguments.
-                    if (arguments[arg] is BoundArgListOperator)
-                    {
-                        continue;
-                    }
-
-                    // If there is a refness mismatch, we might be able to bind to an extension method without that mismatch.
-                    var correspondingParameter = GetCorrespondingParameter(ref result, parameters, arg);
-                    if (OverloadResolution.IsPossiblyWorseRefKindMismatch(
-                        parameterRefKind: correspondingParameter.RefKind,
-                        argumentRefKind: methodResolution.AnalyzedArguments.RefKind(arg)))
-                    {
-                        return true;
-                    }
-                }
-
                 return false;
             }
+
+            var arguments = methodResolution.AnalyzedArguments.Arguments;
+            var methodResult = methodResolution.OverloadResolutionResult.ValidResult;
+            var result = methodResult.Result;
+            var parameters = methodResult.LeastOverriddenMember.GetParameters();
+
+            for (var arg = 0; arg < arguments.Count; arg++)
+            {
+                // Ignore __arglist arguments.
+                if (arguments[arg] is BoundArgListOperator)
+                {
+                    continue;
+                }
+
+                // If there is a refness mismatch, we might be able to bind to an extension method without that mismatch.
+                var correspondingParameter = GetCorrespondingParameter(ref result, parameters, arg);
+                if (OverloadResolution.IsPossiblyWorseRefKindMatch(
+                    parameterRefKind: correspondingParameter.RefKind,
+                    argumentRefKind: methodResolution.AnalyzedArguments.RefKind(arg)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private MethodGroupResolution ResolveDefaultMethodGroup(

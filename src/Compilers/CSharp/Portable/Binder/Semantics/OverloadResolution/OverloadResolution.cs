@@ -2280,7 +2280,7 @@ outerDefault:
             return false;
         }
 
-        internal static bool IsPossiblyWorseRefKindMismatch(RefKind parameterRefKind, RefKind argumentRefKind)
+        internal static bool IsPossiblyWorseRefKindMatch(RefKind parameterRefKind, RefKind argumentRefKind)
         {
             // PROTOTYPE: Rewrite (and inline the private static method above to its only callsite).
             return (parameterRefKind != RefKind.None && IsLeftBetterParameterRefKindIntroducedWithRefReadonlyParameters(RefKind.None, parameterRefKind, argumentRefKind)) ||
