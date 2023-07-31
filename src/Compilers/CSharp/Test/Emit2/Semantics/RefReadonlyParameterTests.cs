@@ -6395,7 +6395,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             delegate void D2({{modifier}} int x);
             """;
         var verifier = CompileAndVerify(source, expectedOutput: modifier == "ref readonly" ? "CC" : "CE",
-            verify: modifier == "ref readonly" ? Verification.Passes : Verification.Fails);
+            verify: modifier == "ref readonly" ? Verification.Passes : Verification.FailsILVerify);
         verifier.VerifyDiagnostics();
     }
 
@@ -6425,7 +6425,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             delegate void D2(ref readonly int x);
             """;
         var verifier = CompileAndVerify(source, expectedOutput: modifier == "ref readonly" ? "CC" : "CE",
-            verify: modifier == "ref readonly" ? Verification.Passes : Verification.Fails);
+            verify: modifier == "ref readonly" ? Verification.Passes : Verification.FailsILVerify);
         verifier.VerifyDiagnostics();
     }
 
