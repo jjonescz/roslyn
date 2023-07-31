@@ -7696,9 +7696,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var result = new MethodGroupResolution(methodGroup, null, overloadResolutionResult, AnalyzedArguments.GetInstance(actualArguments), methodGroup.ResultKind, sealedDiagnostics);
 
                 // If the search in the current scope resulted in any applicable method (regardless of whether a best
-                // applicable method could be determined) then our search is complete. Otherwise, store aside the
-                // first non-applicable result and continue searching for an applicable result.
-                if (result.HasAnyApplicableMethod)
+                // applicable method could be determined) then our search is complete. Otherwise,
+                // or if we could find a better match, store aside the first result and continue searching.
+                if (result.HasAnyApplicableMethod && !HasPossiblyWorseRefKindMatch(result))
                 {
                     if (!firstResult.IsEmpty)
                     {

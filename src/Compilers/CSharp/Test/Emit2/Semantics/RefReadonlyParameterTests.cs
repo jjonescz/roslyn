@@ -3266,22 +3266,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        CompileAndVerify(source, expectedOutput: "YCC", parseOptions: TestOptions.Regular11).VerifyDiagnostics();
-
-        var expectedDiagnostics = new[]
-        {
-            // (1,1): hidden CS8019: Unnecessary using directive.
-            // using N1;
-            Diagnostic(ErrorCode.HDN_UnusedUsingDirective, "using N1;").WithLocation(1, 1),
-            // (8,45): warning CS9191: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
-            //         System.Console.Write(new C().M1(ref i));
-            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("1").WithLocation(8, 45)
-        };
-
-        // Improve lookup rules? https://github.com/dotnet/roslyn/issues/69229
-        var expectedOutput = "CCC";
-        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
-        CompileAndVerify(source, expectedOutput: expectedOutput).VerifyDiagnostics(expectedDiagnostics);
+        var expectedOutput = "YCC";
+        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.Regular11).VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.RegularNext).VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
@@ -3312,14 +3300,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        // PROTOTYPE: Should be "YXC".
-        CompileAndVerify(source, expectedOutput: "CXC").VerifyDiagnostics(
-            // (1,1): hidden CS8019: Unnecessary using directive.
-            // using N1;
-            Diagnostic(ErrorCode.HDN_UnusedUsingDirective, "using N1;").WithLocation(1, 1),
-            // (8,45): warning CS9502: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
-            //         System.Console.Write(new C().M1(ref i));
-            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("1").WithLocation(8, 45));
+        CompileAndVerify(source, expectedOutput: "YXC").VerifyDiagnostics();
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
