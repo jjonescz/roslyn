@@ -2240,11 +2240,11 @@ outerDefault:
                     }
                 }
 
-                return IsLeftBetterParameterRefKindIntroducedWithRefReadonlyParameters(leftRefKind, rightRefKind, argumentRefKind);
+                return IsLeftBetterParameterRefKindMatch(leftRefKind, rightRefKind, argumentRefKind);
             }
         }
 
-        private static bool IsLeftBetterParameterRefKindIntroducedWithRefReadonlyParameters(RefKind leftRefKind, RefKind rightRefKind, RefKind argumentRefKind)
+        internal static bool IsLeftBetterParameterRefKindMatch(RefKind leftRefKind, RefKind rightRefKind, RefKind argumentRefKind)
         {
             // Can happen during method conversion where the argument is actually the target delegate's parameter.
             if (argumentRefKind is RefKind.RefReadOnlyParameter)
@@ -2282,11 +2282,10 @@ outerDefault:
 
         internal static bool IsPossiblyWorseRefKindMatch(RefKind parameterRefKind, RefKind argumentRefKind)
         {
-            // PROTOTYPE: Rewrite (and inline the private static method above to its only callsite).
-            return (parameterRefKind != RefKind.None && IsLeftBetterParameterRefKindIntroducedWithRefReadonlyParameters(RefKind.None, parameterRefKind, argumentRefKind)) ||
-                (parameterRefKind != RefKind.Ref && IsLeftBetterParameterRefKindIntroducedWithRefReadonlyParameters(RefKind.Ref, parameterRefKind, argumentRefKind)) ||
-                (parameterRefKind != RefKind.In && IsLeftBetterParameterRefKindIntroducedWithRefReadonlyParameters(RefKind.In, parameterRefKind, argumentRefKind)) ||
-                (parameterRefKind != RefKind.RefReadOnlyParameter && IsLeftBetterParameterRefKindIntroducedWithRefReadonlyParameters(RefKind.RefReadOnlyParameter, parameterRefKind, argumentRefKind));
+            return (parameterRefKind != RefKind.None && IsLeftBetterParameterRefKindMatch(RefKind.None, parameterRefKind, argumentRefKind)) ||
+                (parameterRefKind != RefKind.Ref && IsLeftBetterParameterRefKindMatch(RefKind.Ref, parameterRefKind, argumentRefKind)) ||
+                (parameterRefKind != RefKind.In && IsLeftBetterParameterRefKindMatch(RefKind.In, parameterRefKind, argumentRefKind)) ||
+                (parameterRefKind != RefKind.RefReadOnlyParameter && IsLeftBetterParameterRefKindMatch(RefKind.RefReadOnlyParameter, parameterRefKind, argumentRefKind));
         }
 #nullable disable
 

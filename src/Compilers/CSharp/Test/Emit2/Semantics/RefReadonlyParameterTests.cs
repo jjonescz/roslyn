@@ -3236,6 +3236,29 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void OverloadResolution_10()
+    {
+        var source = """
+            interface I1 { }
+            interface I2 { }
+            class C
+            {
+                string M1(I1 o, in int i, in int j, in int k) => "1";
+                string M1(I2 o, in int i, in int j, in int k) => "2";
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(new C().M1(null, in i, ref i, ref i));
+                }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (10,38): error CS0121: The call is ambiguous between the following methods or properties: 'C.M1(I1, in int, in int, in int)' and 'C.M1(I2, in int, in int, in int)'
+            //         System.Console.Write(new C().M1(null, in i, ref i, ref i));
+            Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1(I1, in int, in int, in int)", "C.M1(I2, in int, in int, in int)").WithLocation(10, 38));
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
     public void OverloadResolution_ExtensionMethod_01()
     {
         var source = """
@@ -3552,14 +3575,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 public static string M1(this C c, in int i, in int j, ref int k) => "E";
             }
             """;
-        // PROTOTYPE: Should print "E" as that's better by overload resolution rules.
-        CompileAndVerify(source, expectedOutput: "C").VerifyDiagnostics(
+        CompileAndVerify(source, expectedOutput: "E").VerifyDiagnostics(
             // (7,51): warning CS9191: The 'ref' modifier for argument 2 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
             //         System.Console.Write(new C().M1(in i, ref i, ref i));
-            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2").WithLocation(7, 51),
-            // (7,58): warning CS9191: The 'ref' modifier for argument 3 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
-            //         System.Console.Write(new C().M1(in i, ref i, ref i));
-            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("3").WithLocation(7, 58));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2").WithLocation(7, 51));
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
@@ -3588,14 +3607,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        // PROTOTYPE: Should print "X" as that's better then both C and Y by overload resolution rules.
-        CompileAndVerify(source, expectedOutput: "C").VerifyDiagnostics(
+        CompileAndVerify(source, expectedOutput: "X").VerifyDiagnostics(
             // (8,51): warning CS9191: The 'ref' modifier for argument 2 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
             //         System.Console.Write(new C().M1(in i, ref i, ref i));
-            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2").WithLocation(8, 51),
-            // (8,58): warning CS9191: The 'ref' modifier for argument 3 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
-            //         System.Console.Write(new C().M1(in i, ref i, ref i));
-            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("3").WithLocation(8, 58));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2").WithLocation(8, 51));
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
@@ -3624,14 +3639,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        // PROTOTYPE: Should print "Y" as that's better then both C and X by overload resolution rules.
-        CompileAndVerify(source, expectedOutput: "C").VerifyDiagnostics(
+        CompileAndVerify(source, expectedOutput: "Y").VerifyDiagnostics(
             // (8,51): warning CS9191: The 'ref' modifier for argument 2 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
             //         System.Console.Write(new C().M1(in i, ref i, ref i));
-            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2").WithLocation(8, 51),
-            // (8,58): warning CS9191: The 'ref' modifier for argument 3 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
-            //         System.Console.Write(new C().M1(in i, ref i, ref i));
-            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("3").WithLocation(8, 58));
+            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("2").WithLocation(8, 51));
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
@@ -3652,12 +3663,10 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 public static string M1<T>(this T t, in int i, in int j, ref int k) => "E";
             }
             """;
-        CompileAndVerify(source, expectedOutput: "E", parseOptions: TestOptions.Regular11).VerifyDiagnostics();
-        // PROTOTYPE: This used to print "E", now it prints "C".
-        CompileAndVerify(source, expectedOutput: "C").VerifyDiagnostics(
-            // (7,57): warning CS9191: The 'ref' modifier for argument 3 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
-            //         System.Console.Write(new C().M1(in i, in i, ref i));
-            Diagnostic(ErrorCode.WRN_BadArgRef, "i").WithArguments("3").WithLocation(7, 57));
+        var expectedOutput = "E";
+        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.Regular11).VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.RegularNext).VerifyDiagnostics();
+        CompileAndVerify(source, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 
     [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
@@ -3675,7 +3684,7 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
             }
             static class E
             {
-                public static string M1<T>(this T t, in int i, in int j, ref int k) => "E";
+                public static string M1<T>(this T t, in int i, in int j, in int k) => "E";
             }
             """;
         // Neither method is better than the other, so the first scope wins.
