@@ -2240,14 +2240,19 @@ outerDefault:
                     }
                 }
 
-                return IsLeftBetterParameterRefKindMatch(leftRefKind, rightRefKind, argumentRefKind);
+                return IsLeftBetterParameterRefKindMatch(leftRefKind, rightRefKind, argumentRefKind, isMethodGroupConversion: ThreeState.Unknown);
             }
         }
 
-        internal static bool IsLeftBetterParameterRefKindMatch(RefKind leftRefKind, RefKind rightRefKind, RefKind argumentRefKind)
+        internal static bool IsLeftBetterParameterRefKindMatch(RefKind leftRefKind, RefKind rightRefKind, RefKind argumentRefKind, ThreeState isMethodGroupConversion)
         {
+            if (isMethodGroupConversion == ThreeState.True)
+            {
+                return leftRefKind == argumentRefKind && rightRefKind != argumentRefKind;
+            }
+
             // Can happen during method conversion where the argument is actually the target delegate's parameter.
-            if (argumentRefKind is RefKind.RefReadOnlyParameter)
+            if (isMethodGroupConversion != ThreeState.False && argumentRefKind is RefKind.RefReadOnlyParameter)
             {
                 // Prefer matching `ref readonly` over mismatched `ref`/`in`.
                 return leftRefKind is RefKind.RefReadOnlyParameter && rightRefKind is RefKind.Ref or RefKind.In;
@@ -2280,12 +2285,17 @@ outerDefault:
             return false;
         }
 
-        internal static bool IsPossiblyWorseRefKindMatch(RefKind parameterRefKind, RefKind argumentRefKind)
+        internal static bool IsPossiblyWorseRefKindMatch(RefKind parameterRefKind, RefKind argumentRefKind, bool isMethodGroupConversion)
         {
-            return (parameterRefKind != RefKind.None && IsLeftBetterParameterRefKindMatch(RefKind.None, parameterRefKind, argumentRefKind)) ||
-                (parameterRefKind != RefKind.Ref && IsLeftBetterParameterRefKindMatch(RefKind.Ref, parameterRefKind, argumentRefKind)) ||
-                (parameterRefKind != RefKind.In && IsLeftBetterParameterRefKindMatch(RefKind.In, parameterRefKind, argumentRefKind)) ||
-                (parameterRefKind != RefKind.RefReadOnlyParameter && IsLeftBetterParameterRefKindMatch(RefKind.RefReadOnlyParameter, parameterRefKind, argumentRefKind));
+            if (isMethodGroupConversion)
+            {
+                return parameterRefKind != argumentRefKind;
+            }
+
+            return (parameterRefKind != RefKind.None && IsLeftBetterParameterRefKindMatch(RefKind.None, parameterRefKind, argumentRefKind, ThreeState.False)) ||
+                (parameterRefKind != RefKind.Ref && IsLeftBetterParameterRefKindMatch(RefKind.Ref, parameterRefKind, argumentRefKind, ThreeState.False)) ||
+                (parameterRefKind != RefKind.In && IsLeftBetterParameterRefKindMatch(RefKind.In, parameterRefKind, argumentRefKind, ThreeState.False)) ||
+                (parameterRefKind != RefKind.RefReadOnlyParameter && IsLeftBetterParameterRefKindMatch(RefKind.RefReadOnlyParameter, parameterRefKind, argumentRefKind, ThreeState.False));
         }
 #nullable disable
 

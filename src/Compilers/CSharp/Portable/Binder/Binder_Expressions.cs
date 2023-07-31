@@ -7698,7 +7698,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // If the search in the current scope resulted in any applicable method (regardless of whether a best
                 // applicable method could be determined) then our search is complete. Otherwise,
                 // or if we could find a better match, store aside the best matching result and continue searching.
-                if (result.HasAnyApplicableMethod && !HasPossiblyWorseRefKindMatch(result))
+                if (result.HasAnyApplicableMethod &&
+                    !HasPossiblyWorseRefKindMatch(result, isMethodGroupConversion: isMethodGroupConversion))
                 {
                     if (!firstResult.IsEmpty)
                     {
@@ -7712,7 +7713,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     firstResult = result;
                 }
                 else if (result.HasAnyApplicableMethod &&
-                    GetBetterParameterRefKindMatch(firstResult, result) == BetterResult.Right)
+                    GetBetterParameterRefKindMatch(firstResult, result, isMethodGroupConversion: isMethodGroupConversion) == BetterResult.Right)
                 {
                     firstResult.MethodGroup.Free();
                     firstResult.OverloadResolutionResult.Free();
@@ -9576,7 +9577,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             // it's going to be a dynamic invocation.
             bool canFindBetterMatch = false;
             if (!methodGroup.SearchExtensionMethods ||
-                (methodResolution.HasAnyApplicableMethod && !(canFindBetterMatch = HasPossiblyWorseRefKindMatch(methodResolution))) ||
+                (methodResolution.HasAnyApplicableMethod && !(canFindBetterMatch =
+                    HasPossiblyWorseRefKindMatch(methodResolution, isMethodGroupConversion: isMethodGroupConversion))) ||
                 methodGroup.MethodGroupReceiverIsDynamic())
             {
                 return methodResolution;
@@ -9590,7 +9592,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (canFindBetterMatch)
             {
                 if (extensionMethodResolution.HasAnyApplicableMethod &&
-                    GetBetterParameterRefKindMatch(methodResolution, extensionMethodResolution) == BetterResult.Right)
+                    GetBetterParameterRefKindMatch(methodResolution, extensionMethodResolution, isMethodGroupConversion: isMethodGroupConversion) == BetterResult.Right)
                 {
                     preferExtensionMethodResolution = true;
                 }
@@ -9638,7 +9640,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return methodResolution;
         }
 
-        private static BetterResult GetBetterParameterRefKindMatch(in MethodGroupResolution left, in MethodGroupResolution right)
+        private static BetterResult GetBetterParameterRefKindMatch(in MethodGroupResolution left, in MethodGroupResolution right, bool isMethodGroupConversion)
         {
             Debug.Assert(left.HasAnyApplicableMethod);
             Debug.Assert(right.HasAnyApplicableMethod);
@@ -9692,7 +9694,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var leftRefKind = GetCorrespondingParameter(ref leftResult, leftParameters, leftArg).RefKind;
                 var rightRefKind = GetCorrespondingParameter(ref rightResult, rightParameters, rightArg).RefKind;
                 var argumentRefKind = leftArguments.RefKind(leftArg);
-                if (OverloadResolution.IsLeftBetterParameterRefKindMatch(leftRefKind: leftRefKind, rightRefKind: rightRefKind, argumentRefKind: argumentRefKind))
+                if (OverloadResolution.IsLeftBetterParameterRefKindMatch(
+                    leftRefKind: leftRefKind,
+                    rightRefKind: rightRefKind,
+                    argumentRefKind: argumentRefKind,
+                    isMethodGroupConversion: isMethodGroupConversion.ToThreeState()))
                 {
                     if (better == BetterResult.Right)
                     {
@@ -9703,7 +9709,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                         better = BetterResult.Left;
                     }
                 }
-                else if (OverloadResolution.IsLeftBetterParameterRefKindMatch(leftRefKind: rightRefKind, rightRefKind: leftRefKind, argumentRefKind: argumentRefKind))
+                else if (OverloadResolution.IsLeftBetterParameterRefKindMatch(
+                    leftRefKind: rightRefKind,
+                    rightRefKind: leftRefKind,
+                    argumentRefKind: argumentRefKind,
+                    isMethodGroupConversion: isMethodGroupConversion.ToThreeState()))
                 {
                     if (better == BetterResult.Left)
                     {
@@ -9719,7 +9729,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return better;
         }
 
-        private static bool HasPossiblyWorseRefKindMatch(in MethodGroupResolution methodResolution)
+        private static bool HasPossiblyWorseRefKindMatch(in MethodGroupResolution methodResolution, bool isMethodGroupConversion)
         {
             Debug.Assert(methodResolution.HasAnyApplicableMethod);
 
@@ -9744,7 +9754,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var correspondingParameter = GetCorrespondingParameter(ref result, parameters, arg);
                 if (OverloadResolution.IsPossiblyWorseRefKindMatch(
                     parameterRefKind: correspondingParameter.RefKind,
-                    argumentRefKind: arguments.RefKind(arg)))
+                    argumentRefKind: arguments.RefKind(arg),
+                    isMethodGroupConversion: isMethodGroupConversion))
                 {
                     // We might be able to bind to an extension method with better ref kind match.
                     return true;
