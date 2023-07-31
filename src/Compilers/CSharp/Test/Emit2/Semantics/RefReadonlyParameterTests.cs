@@ -3312,8 +3312,8 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
                 }
             }
             """;
-        // Improve lookup rules? https://github.com/dotnet/roslyn/issues/69229
-        CompileAndVerify(source, expectedOutput: "CCC").VerifyDiagnostics(
+        // PROTOTYPE: Should be "YXC".
+        CompileAndVerify(source, expectedOutput: "CXC").VerifyDiagnostics(
             // (1,1): hidden CS8019: Unnecessary using directive.
             // using N1;
             Diagnostic(ErrorCode.HDN_UnusedUsingDirective, "using N1;").WithLocation(1, 1),
@@ -3446,6 +3446,51 @@ public partial class RefReadonlyParameterTests : CSharpTestBase
         CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.Regular11).VerifyDiagnostics();
         CompileAndVerify(source, expectedOutput: expectedOutput, parseOptions: TestOptions.RegularNext).VerifyDiagnostics();
         CompileAndVerify(source, expectedOutput: expectedOutput).VerifyDiagnostics();
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void OverloadResolution_ExtensionMethod_07()
+    {
+        var source = """
+            class C
+            {
+                string M1(ref readonly int i) => "C";
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(new C().M1(i));
+                }
+            }
+            static class E
+            {
+                public static string M1(this C c, ref readonly int i) => "E";
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "C").VerifyDiagnostics(
+            // (7,41): warning CS9192: Argument 1 should be passed with 'ref' or 'in' keyword
+            //         System.Console.Write(new C().M1(i));
+            Diagnostic(ErrorCode.WRN_ArgExpectedRefOrIn, "i").WithArguments("1").WithLocation(7, 41));
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69229")]
+    public void OverloadResolution_ExtensionMethod_08()
+    {
+        var source = """
+            class C
+            {
+                string M1(in int i) => "C";
+                static void Main()
+                {
+                    int i = 5;
+                    System.Console.Write(new C().M1(in i));
+                }
+            }
+            static class E
+            {
+                public static string M1(this C c, ref readonly int i) => "E";
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "E").VerifyDiagnostics();
     }
 
     [Fact]
