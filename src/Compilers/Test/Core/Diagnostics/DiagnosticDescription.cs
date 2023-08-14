@@ -488,7 +488,7 @@ namespace Microsoft.CodeAnalysis.Test.Utilities
             const int CSharp = 1;
             const int VisualBasic = 2;
             var language = actual.Any() && actual.First() is CSDiagnostic ? CSharp : VisualBasic;
-            var includeDiagnosticMessagesAsComments = (language == CSharp);
+            var includeDiagnosticMessagesAsComments = (language != VisualBasic);
             int indentDepth = (language == CSharp) ? 4 : 1;
             var includeDefaultSeverity = expected.Any() && expected.All(d => d.DefaultSeverity != null);
             var includeEffectiveSeverity = expected.Any() && expected.All(d => d.EffectiveSeverity != null);
