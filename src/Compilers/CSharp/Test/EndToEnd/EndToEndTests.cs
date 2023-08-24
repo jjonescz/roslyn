@@ -481,16 +481,31 @@ $@"        if (F({i}))
             }
 
             var builder3 = new StringBuilder();
+            // Local functions should be similarly fast as lambdas.
             if (localFunctions)
             {
                 /*
                     M2(x, L0);
+                    static I0 L0(string arg) {
+                        arg = arg + "0";
+                        // ...
+                        arg = arg + "9";
+                        return default;
+                    }
                     // ...
                     M2(x, L9);
+                    static I0 L9(string arg) { ... }
                 */
                 for (int i = 0; i < lambdasNumber; i++)
                 {
                     builder3.AppendLine($"M2(x, L{i});");
+                    builder3.AppendLine($$"""static I0 L{{i}}(string arg) {""");
+                    for (int j = 0; j < statementsNumber; j++)
+                    {
+                        builder3.AppendLine($"""arg = arg + "{j}";""");
+                    }
+                    builder3.AppendLine("return default;");
+                    builder3.AppendLine("}");
                 }
             }
             else
@@ -520,31 +535,6 @@ $@"        if (F({i}))
                 }
             }
 
-            var builder4 = new StringBuilder();
-            if (localFunctions)
-            {
-                /*
-                    static I0 L0(string arg) {
-                        arg = arg + "0";
-                        // ...
-                        arg = arg + "9";
-                        return default;
-                    }
-                    // ...
-                    static I0 L9(string arg) { ... }
-                */
-                for (int i = 0; i < lambdasNumber; i++)
-                {
-                    builder4.AppendLine($$"""static I0 L{{i}}(string arg) {""");
-                    for (int j = 0; j < statementsNumber; j++)
-                    {
-                        builder4.AppendLine($"""arg = arg + "{j}";""");
-                    }
-                    builder4.AppendLine("return default;");
-                    builder4.AppendLine("}");
-                }
-            }
-
             var source = $$"""
                 {{builder1}}
                 class C
@@ -556,8 +546,6 @@ $@"        if (F({i}))
                         {
                             {{builder3}}
                         });
-
-                        {{builder4}}
                     }
                 }
                 """;
