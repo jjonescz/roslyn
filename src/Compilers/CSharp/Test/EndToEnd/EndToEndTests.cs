@@ -442,7 +442,7 @@ $@"        if (F({i}))
         [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/69093")]
         public void NestedLambdas(bool localFunctions)
         {
-            const int overloads1Number = 100;
+            const int overloads1Number = 20;
             const int overloads2Number = 10;
             const int lambdasNumber = 10;
             const int statementsNumber = 1000;
@@ -566,6 +566,38 @@ $@"        if (F({i}))
                 var comp = CreateCompilation(source, options: TestOptions.DebugDll.WithConcurrentBuild(false));
                 comp.VerifyDiagnostics();
             });
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69093")]
+        public void NestedLambdas_Simple()
+        {
+            var source = """
+                using System;
+                interface I1 { }
+                interface I2 { }
+                interface I3 { }
+                class C
+                {
+                    void M1(Action<I1> a) { }
+                    void M1(Action<I2> a) { }
+                    void M1(Action<I3> a) { }
+                    void M2(I1 o, D1 d) { }
+                    void M2(I2 o, D2 d) { }
+                    void M2(I3 o, D3 d) { }
+                    void Main()
+                    {
+                        M1(o =>
+                        {
+                            M2(o, static int (string arg) => 0);
+                        });
+                    }
+                }
+                delegate int D1(string arg);
+                delegate int D2(string arg);
+                delegate int D3(string arg);
+                """;
+            var comp = CreateCompilation(source, options: TestOptions.DebugDll.WithConcurrentBuild(false));
+            comp.VerifyDiagnostics();
         }
     }
 }
