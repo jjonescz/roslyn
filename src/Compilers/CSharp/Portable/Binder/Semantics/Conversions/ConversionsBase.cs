@@ -1522,12 +1522,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            // Avoid binding body if the lambda is fully typed.
-            if (hasExplicitReturnType && anonymousFunction.HasExplicitlyTypedParameterList)
-            {
-                return LambdaConversionResult.Success;
-            }
-
             // Ensure the body can be converted to that delegate type
             var bound = anonymousFunction.Bind(delegateType, isTargetExpressionTree);
             if (ErrorFacts.PreventsSuccessfulDelegateConversion(bound.Diagnostics.Diagnostics))
