@@ -447,6 +447,70 @@ $@"        if (F({i}))
             Assert.Equal(1, counter.BindCount);
         }
 
+        [Theory, CombinatorialData, WorkItem("https://devdiv.visualstudio.com/DevDiv/_workitems/edit/1874763")]
+        public void LongCallChain([CombinatorialRange(15, 20)] int count)
+        {
+            var chain = """
+                .TheNext(1).With(x => x.Property1 = "Value1").With(x => x.Property2 = "Value2").With(x => x.Property3 = "Value3").With(x => x.Property4 = "Value3").With(x => x.Property5 = "Value5").With(x => x.Property6 = "Value6").With(x => x.Property7 = "Value7").With(x => x.Property8 = "Value8").With(x => x.Property9 = "value9").With(x => x.Property10 = "value10").With(x => x.Property11 = "value11").With(x => x.Property12 = "value12").With(x => x.Property13 = "value13").With(x => x.Property14 = "value14").With(x => x.Property15 = "value15").With(x => x.Property16 = "value16").With(x => x.Property17 = "value17").With(x => x.Property18 = "value18").With(x => x.Property19 = "value19").With(x => x.Property20 = "value20").With(x => x.Property21 = "value21").With(x => x.Property22 = "value22").With(x => x.Property23 = "value23").With(x => x.Property24 = "value24").With(x => x.Property25 = "value25").With(x => x.Property26 = "value26").With(x => x.Property27 = "value27").With(x => x.Property28 = "value28").With(x => x.Property29 = "value28")
+                """;
+            var chains = string.Join(Environment.NewLine, Enumerable.Repeat(chain, count));
+            var source = $$"""
+                using FizzWare.NBuilder;
+                using System.Linq;
+
+                namespace ConsoleApp1
+                {
+                    internal class Program
+                    {
+                        static void Main(string[] args)
+                        {
+                            var objs = Builder<SomeObject>
+                              .CreateListOfSize(20)
+                              .TheFirst(1).With(x => x.Property1 = "Value1").With(x => x.Property2 = "Value2").With(x => x.Property3 = "Value3").With(x => x.Property4 = "Value3").With(x => x.Property5 = "Value5").With(x => x.Property6 = "Value6").With(x => x.Property7 = "Value7").With(x => x.Property8 = "Value8").With(x => x.Property9 = "value9").With(x => x.Property10 = "value10").With(x => x.Property11 = "value11").With(x => x.Property12 = "value12").With(x => x.Property13 = "value13").With(x => x.Property14 = "value14").With(x => x.Property15 = "value15").With(x => x.Property16 = "value16").With(x => x.Property17 = "value17").With(x => x.Property18 = "value18").With(x => x.Property19 = "value19").With(x => x.Property20 = "value20").With(x => x.Property21 = "value21").With(x => x.Property22 = "value22").With(x => x.Property23 = "value23").With(x => x.Property24 = "value24").With(x => x.Property25 = "value25").With(x => x.Property26 = "value26").With(x => x.Property27 = "value27").With(x => x.Property28 = "value28").With(x => x.Property29 = "value28")
+                              {{chains}}
+                              .Build().ToList();
+                        }
+                    }
+
+                    internal class SomeObject
+                    {
+                        public string Property1 { get; set; }
+                        public string Property2 { get; set; }
+                        public string Property3 { get; set; }
+                        public string Property4 { get; set; }
+                        public string Property5 { get; set; }
+                        public string Property6 { get; set; }
+                        public string Property7 { get; set; }
+                        public string Property8 { get; set; }
+                        public string Property9 { get; set; }
+                        public string Property10 { get; set; }
+                        public string Property11 { get; set; }
+                        public string Property12 { get; set; }
+                        public string Property13 { get; set; }
+                        public string Property14 { get; set; }
+                        public string Property15 { get; set; }
+                        public string Property16 { get; set; }
+                        public string Property17 { get; set; }
+                        public string Property18 { get; set; }
+                        public string Property19 { get; set; }
+                        public string Property20 { get; set; }
+                        public string Property21 { get; set; }
+                        public string Property22 { get; set; }
+                        public string Property23 { get; set; }
+                        public string Property24 { get; set; }
+                        public string Property25 { get; set; }
+                        public string Property26 { get; set; }
+                        public string Property27 { get; set; }
+                        public string Property28 { get; set; }
+                        public string Property29 { get; set; }
+                    }
+                }
+                """;
+            var comp = CreateCompilation(source, new[] { MetadataReference.CreateFromFile(@"C:\Users\janjones\Code\issues\roslyn\1874763-BindingChain\ConsoleApp2\packages\NBuilder.6.1.0\lib\net40\FizzWare.NBuilder.dll") },
+                TestOptions.DebugDll.WithConcurrentBuild(false));
+            comp.VerifyEmitDiagnostics();
+        }
+
         [Fact]
         public void Interceptors()
         {
