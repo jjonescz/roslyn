@@ -291,28 +291,46 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundExpression rewrittenCall;
 
-            if (node.ReceiverOpt is BoundCall receiver1)
+            // Handle long call chain including
+            // - instance and extension method invocations,
+            // - receivers wrapped in a conversion.
+            if (tryGetReceiver(node, out var receiver1, out var call))
             {
-                var calls = ArrayBuilder<BoundCall>.GetInstance();
+                var calls = ArrayBuilder<BoundExpression>.GetInstance();
 
                 calls.Push(node);
-                node = receiver1;
+                BoundExpression expression = receiver1;
 
-                while (node.ReceiverOpt is BoundCall receiver2)
+                while (tryGetReceiver(call, out var receiver2, out call))
                 {
-                    calls.Push(node);
-                    node = receiver2;
+                    calls.Push(expression);
+                    expression = receiver2;
                 }
 
                 // Rewrite the receiver
-                BoundExpression? rewrittenReceiver = VisitExpression(node.ReceiverOpt);
+                BoundExpression? rewrittenReceiver = VisitExpression(getCall(expression, out _).ReceiverOpt);
 
                 do
                 {
-                    rewrittenCall = visitArgumentsAndFinishRewrite(node, rewrittenReceiver);
+                    rewrittenCall = visitArgumentsAndFinishRewrite(getCall(expression, out var conversion), rewrittenReceiver);
+
+                    if (conversion is not null)
+                    {
+                        var rewrittenType = VisitType(conversion.Type);
+                        rewrittenCall = MakeConversionNode(
+                            oldNodeOpt: conversion,
+                            syntax: conversion.Syntax,
+                            rewrittenOperand: rewrittenCall,
+                            conversion: conversion.Conversion,
+                            @checked: conversion.Checked,
+                            explicitCastInCode: conversion.ExplicitCastInCode,
+                            constantValueOpt: conversion.ConstantValueOpt,
+                            rewrittenType: rewrittenType);
+                    }
+
                     rewrittenReceiver = rewrittenCall;
                 }
-                while (calls.TryPop(out node!));
+                while (calls.TryPop(out expression!));
 
                 calls.Free();
             }
@@ -325,23 +343,95 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             return rewrittenCall;
 
+            // Gets instance or extension invocation receiver if any.
+            static bool tryGetReceiver(BoundCall node,
+                [MaybeNullWhen(returnValue: false)] out BoundExpression receiver,
+                [MaybeNullWhen(returnValue: false)] out BoundCall call)
+            {
+                if (isOptionallyConvertedCall(node.ReceiverOpt, out var instanceCall, out _))
+                {
+                    receiver = node.ReceiverOpt;
+                    call = instanceCall;
+                    return true;
+                }
+
+                if (node.InvokedAsExtensionMethod && node.Arguments is [var extensionReceiver, ..] &&
+                    isOptionallyConvertedCall(extensionReceiver, out var extensionCall, out _))
+                {
+                    Debug.Assert(node.ReceiverOpt is null);
+                    receiver = extensionReceiver;
+                    call = extensionCall;
+                    return true;
+                }
+
+                receiver = null;
+                call = null;
+                return false;
+            }
+
+            static bool isOptionallyConvertedCall(
+                [NotNullWhen(returnValue: true)] BoundExpression? expression,
+                [MaybeNullWhen(returnValue: false)] out BoundCall call,
+                out BoundConversion? conversion)
+            {
+                if (expression is BoundCall directCall)
+                {
+                    call = directCall;
+                    conversion = null;
+                    return true;
+                }
+
+                if (expression is BoundConversion { Operand: BoundCall convertedCall } conv)
+                {
+                    call = convertedCall;
+                    conversion = conv;
+                    return true;
+                }
+
+                call = null;
+                conversion = null;
+                return false;
+            }
+
+            static BoundCall getCall(BoundExpression optionallyConvertedCall, out BoundConversion? conversion)
+            {
+                if (isOptionallyConvertedCall(optionallyConvertedCall, out var call, out conversion))
+                {
+                    return call;
+                }
+
+                throw ExceptionUtilities.UnexpectedValue(optionallyConvertedCall);
+            }
+
             BoundExpression visitArgumentsAndFinishRewrite(BoundCall node, BoundExpression? rewrittenReceiver)
             {
                 MethodSymbol method = node.Method;
                 ImmutableArray<int> argsToParamsOpt = node.ArgsToParamsOpt;
                 ImmutableArray<RefKind> argRefKindsOpt = node.ArgumentRefKindsOpt;
+                ImmutableArray<BoundExpression> arguments = node.Arguments;
                 bool invokedAsExtensionMethod = node.InvokedAsExtensionMethod;
+
+                // Rewritten receiver can be actually the first argument for an extension invocation.
+                bool skipRewritingFirstArgument = false;
+                if (rewrittenReceiver is not null && node.ReceiverOpt is null)
+                {
+                    Debug.Assert(invokedAsExtensionMethod && !arguments.IsEmpty);
+                    arguments = arguments.SetItem(0, rewrittenReceiver);
+                    rewrittenReceiver = null;
+                    skipRewritingFirstArgument = true;
+                }
 
                 ArrayBuilder<LocalSymbol>? temps = null;
                 var rewrittenArguments = VisitArgumentsAndCaptureReceiverIfNeeded(
                     ref rewrittenReceiver,
                     captureReceiverMode: ReceiverCaptureMode.Default,
-                    node.Arguments,
+                    arguments,
                     method,
                     argsToParamsOpt,
                     argRefKindsOpt,
                     storesOpt: null,
-                    ref temps);
+                    ref temps,
+                    skipRewritingFirstArgument: skipRewritingFirstArgument);
 
                 rewrittenArguments = MakeArguments(
                     node.Syntax,
@@ -616,7 +706,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<int> argsToParamsOpt,
             ImmutableArray<RefKind> argumentRefKindsOpt,
             ArrayBuilder<BoundExpression>? storesOpt,
-            ref ArrayBuilder<LocalSymbol>? tempsOpt)
+            ref ArrayBuilder<LocalSymbol>? tempsOpt,
+            bool skipRewritingFirstArgument = false)
         {
             Debug.Assert(argumentRefKindsOpt.IsDefault || argumentRefKindsOpt.Length == arguments.Length);
             var requiresInstanceReceiver = methodOrIndexer.RequiresInstanceReceiver() && methodOrIndexer is not MethodSymbol { MethodKind: MethodKind.Constructor } and not FunctionPointerMethodSymbol;
@@ -704,7 +795,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         ref tempsOpt,
                         ref argumentsAssignedToTemp);
 
-                    visitedArgumentsBuilder.Add(VisitExpression(argument));
+                    visitedArgumentsBuilder.Add(skipRewritingFirstArgument && i == 0 ? argument : VisitExpression(argument));
 
                     foreach (var placeholder in argumentPlaceholders)
                     {
