@@ -507,7 +507,8 @@ $@"        if (F({i}))
                 }
                 """;
             var comp = CreateCompilation(source, new[] { MetadataReference.CreateFromFile(@"C:\Users\janjones\Code\issues\roslyn\1874763-BindingChain\ConsoleApp2\packages\NBuilder.6.1.0\lib\net40\FizzWare.NBuilder.dll") },
-                TestOptions.DebugDll.WithConcurrentBuild(false));
+                TestOptions.DebugDll.WithConcurrentBuild(false),
+                TestOptions.RegularPreview.WithFeature("run-nullable-analysis", "never"));
             comp.VerifyEmitDiagnostics();
         }
 
