@@ -294,43 +294,28 @@ namespace Microsoft.CodeAnalysis.CSharp
             // Handle long call chain including
             // - instance and extension method invocations,
             // - receivers wrapped in a conversion.
-            if (tryGetReceiver(node, out var receiver1, out var call))
+            if (tryGetReceiver(node, out var receiver1))
             {
-                var calls = ArrayBuilder<BoundExpression>.GetInstance();
+                var calls = ArrayBuilder<BoundCall>.GetInstance();
 
                 calls.Push(node);
-                BoundExpression expression = receiver1;
+                node = receiver1;
 
-                while (tryGetReceiver(call, out var receiver2, out call))
+                while (tryGetReceiver(node, out var receiver2))
                 {
-                    calls.Push(expression);
-                    expression = receiver2;
+                    calls.Push(node);
+                    node = receiver2;
                 }
 
                 // Rewrite the receiver
-                BoundExpression? rewrittenReceiver = VisitExpression(getCall(expression, out _).ReceiverOpt);
+                BoundExpression? rewrittenReceiver = VisitExpression(node.ReceiverOpt);
 
                 do
                 {
-                    rewrittenCall = visitArgumentsAndFinishRewrite(getCall(expression, out var conversion), rewrittenReceiver);
-
-                    if (conversion is not null)
-                    {
-                        var rewrittenType = VisitType(conversion.Type);
-                        rewrittenCall = MakeConversionNode(
-                            oldNodeOpt: conversion,
-                            syntax: conversion.Syntax,
-                            rewrittenOperand: rewrittenCall,
-                            conversion: conversion.Conversion,
-                            @checked: conversion.Checked,
-                            explicitCastInCode: conversion.ExplicitCastInCode,
-                            constantValueOpt: conversion.ConstantValueOpt,
-                            rewrittenType: rewrittenType);
-                    }
-
+                    rewrittenCall = visitArgumentsAndFinishRewrite(node, rewrittenReceiver);
                     rewrittenReceiver = rewrittenCall;
                 }
-                while (calls.TryPop(out expression!));
+                while (calls.TryPop(out node!));
 
                 calls.Free();
             }
@@ -344,63 +329,23 @@ namespace Microsoft.CodeAnalysis.CSharp
             return rewrittenCall;
 
             // Gets instance or extension invocation receiver if any.
-            static bool tryGetReceiver(BoundCall node,
-                [MaybeNullWhen(returnValue: false)] out BoundExpression receiver,
-                [MaybeNullWhen(returnValue: false)] out BoundCall call)
+            static bool tryGetReceiver(BoundCall node, [MaybeNullWhen(returnValue: false)] out BoundCall receiver)
             {
-                if (isOptionallyConvertedCall(node.ReceiverOpt, out var instanceCall, out _))
+                if (node.ReceiverOpt is BoundCall instanceReceiver)
                 {
-                    receiver = node.ReceiverOpt;
-                    call = instanceCall;
+                    receiver = instanceReceiver;
                     return true;
                 }
 
-                if (node.InvokedAsExtensionMethod && node.Arguments is [var extensionReceiver, ..] &&
-                    isOptionallyConvertedCall(extensionReceiver, out var extensionCall, out _))
+                if (node.InvokedAsExtensionMethod && node.Arguments is [BoundCall extensionReceiver, ..])
                 {
                     Debug.Assert(node.ReceiverOpt is null);
                     receiver = extensionReceiver;
-                    call = extensionCall;
                     return true;
                 }
 
                 receiver = null;
-                call = null;
                 return false;
-            }
-
-            static bool isOptionallyConvertedCall(
-                [NotNullWhen(returnValue: true)] BoundExpression? expression,
-                [MaybeNullWhen(returnValue: false)] out BoundCall call,
-                out BoundConversion? conversion)
-            {
-                if (expression is BoundCall directCall)
-                {
-                    call = directCall;
-                    conversion = null;
-                    return true;
-                }
-
-                if (expression is BoundConversion { Operand: BoundCall convertedCall } conv)
-                {
-                    call = convertedCall;
-                    conversion = conv;
-                    return true;
-                }
-
-                call = null;
-                conversion = null;
-                return false;
-            }
-
-            static BoundCall getCall(BoundExpression optionallyConvertedCall, out BoundConversion? conversion)
-            {
-                if (isOptionallyConvertedCall(optionallyConvertedCall, out var call, out conversion))
-                {
-                    return call;
-                }
-
-                throw ExceptionUtilities.UnexpectedValue(optionallyConvertedCall);
             }
 
             BoundExpression visitArgumentsAndFinishRewrite(BoundCall node, BoundExpression? rewrittenReceiver)
