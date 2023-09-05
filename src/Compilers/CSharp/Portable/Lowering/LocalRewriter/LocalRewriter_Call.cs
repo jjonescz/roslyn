@@ -291,17 +291,15 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundExpression rewrittenCall;
 
-            // Handle long call chain including
-            // - instance and extension method invocations,
-            // - receivers wrapped in a conversion.
-            if (tryGetReceiver(node, out var receiver1))
+            if (tryGetReceiver(node, out BoundCall? receiver1))
             {
+                // Handle long call chain of both instance and extension method invocations.
                 var calls = ArrayBuilder<BoundCall>.GetInstance();
 
                 calls.Push(node);
                 node = receiver1;
 
-                while (tryGetReceiver(node, out var receiver2))
+                while (tryGetReceiver(node, out BoundCall? receiver2))
                 {
                     calls.Push(node);
                     node = receiver2;
@@ -356,7 +354,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ImmutableArray<BoundExpression> arguments = node.Arguments;
                 bool invokedAsExtensionMethod = node.InvokedAsExtensionMethod;
 
-                // Rewritten receiver can be actually the first argument for an extension invocation.
+                // Rewritten receiver can be actually the first argument of an extension invocation.
                 bool skipRewritingFirstArgument = false;
                 if (rewrittenReceiver is not null && node.ReceiverOpt is null)
                 {
