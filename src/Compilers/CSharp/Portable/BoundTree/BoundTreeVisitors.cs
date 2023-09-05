@@ -237,14 +237,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         [DebuggerStepThrough]
         private BoundExpression? VisitExpressionWithStackGuard(BoundExpression node)
         {
-            try
-            {
-                return VisitExpressionWithoutStackGuard(node);
-            }
-            catch (InsufficientExecutionStackException ex)
-            {
-                throw new CancelledByStackGuardException(ex, node);
-            }
+            return VisitExpressionWithoutStackGuard(node);
         }
 
         /// <summary>
