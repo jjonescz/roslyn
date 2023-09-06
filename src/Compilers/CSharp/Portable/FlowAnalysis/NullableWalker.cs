@@ -5778,26 +5778,27 @@ namespace Microsoft.CodeAnalysis.CSharp
             return null;
         }
 
-        private readonly record struct FirstArgumentInfo(Optional<LocalState> SavedState, RefKind RefKind, FlowAnalysisAnnotations Annotations);
+        private readonly record struct ExtensionReceiverInfo(Optional<LocalState> SavedState, RefKind RefKind, FlowAnalysisAnnotations Annotations);
 
         public override BoundNode? VisitCall(BoundCall node)
         {
             // Note: we analyze even omitted calls
-            if (tryGetReceiver(node, out BoundCall? receiver, out FirstArgumentInfo? argumentInfo))
+            if (tryGetReceiver(node, out BoundCall? receiver, out ExtensionReceiverInfo? extensionReceiverInfo))
             {
                 // Handle long call chain of both instance and extension method invocations.
-                var calls = ArrayBuilder<(BoundCall, FirstArgumentInfo?)>.GetInstance();
+                // Each call node is saved with info from visiting its first argument if it's an extension method invocation.
+                var calls = ArrayBuilder<(BoundCall, ExtensionReceiverInfo?)>.GetInstance();
 
-                calls.Push((node, argumentInfo));
+                calls.Push((node, extensionReceiverInfo));
                 node = receiver;
 
                 bool originalExpressionIsRead = _expressionIsRead;
                 _expressionIsRead = true;
 
-                while (tryGetReceiver(node, out BoundCall? receiver2, out argumentInfo))
+                while (tryGetReceiver(node, out BoundCall? receiver2, out extensionReceiverInfo))
                 {
                     TakeIncrementalSnapshot(node); // Visit does this before visiting each node
-                    calls.Push((node, argumentInfo));
+                    calls.Push((node, extensionReceiverInfo));
                     node = receiver2;
                 }
 
@@ -5805,18 +5806,18 @@ namespace Microsoft.CodeAnalysis.CSharp
                 TypeWithState receiverType = visitAndCheckReceiver(node);
 
                 receiver = null;
-                argumentInfo = null;
+                extensionReceiverInfo = null;
                 while (true)
                 {
-                    VisitArgumentResult? firstArgument = null;
+                    VisitArgumentResult? extensionReceiverResult = null;
                     if (receiver is not null && node.ReceiverOpt is null)
                     {
-                        Debug.Assert(node.InvokedAsExtensionMethod && argumentInfo is not null);
-                        var (savedState, refKind, annotations) = argumentInfo.Value;
-                        firstArgument = VisitArgumentEvaluateEpilogue(receiver, savedState, refKind, annotations);
+                        Debug.Assert(node.InvokedAsExtensionMethod && extensionReceiverInfo is not null);
+                        var (savedState, refKind, annotations) = extensionReceiverInfo.Value;
+                        extensionReceiverResult = VisitArgumentEvaluateEpilogue(receiver, savedState, refKind, annotations);
                     }
 
-                    ReinferMethodAndVisitArguments(node, receiverType, firstArgument: firstArgument);
+                    ReinferMethodAndVisitArguments(node, receiverType, firstArgument: extensionReceiverResult);
 
                     receiver = node;
                     if (!calls.TryPop(out var entry))
@@ -5824,11 +5825,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                         break;
                     }
 
-                    (node, argumentInfo) = entry;
+                    (node, extensionReceiverInfo) = entry;
 
                     VisitExpressionWithoutStackGuardEpilogue(receiver); // VisitExpressionWithoutStackGuard does this after visiting each node
 
-                    // Only receivers go through VisitRvalue; arguments go through Visit.
+                    // Only instance receivers go through VisitRvalue; arguments go through Visit.
                     if (node.ReceiverOpt is not null)
                     {
                         VisitRvalueEpilogue(receiver); // VisitRvalue does this after visiting each node
@@ -5850,12 +5851,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             return null;
 
             // Gets instance or extension invocation receiver if any.
-            bool tryGetReceiver(BoundCall node, [MaybeNullWhen(returnValue: false)] out BoundCall receiver, out FirstArgumentInfo? argumentInfo)
+            bool tryGetReceiver(BoundCall node, [MaybeNullWhen(returnValue: false)] out BoundCall receiver, out ExtensionReceiverInfo? extensionReceiverInfo)
             {
                 if (node.ReceiverOpt is BoundCall instanceReceiver)
                 {
                     receiver = instanceReceiver;
-                    argumentInfo = null;
+                    extensionReceiverInfo = null;
                     return true;
                 }
 
@@ -5866,12 +5867,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                     var savedState = VisitArgumentEvaluatePrologue(receiver);
                     var refKind = GetRefKind(node.ArgumentRefKindsOpt, 0);
                     var annotations = GetCorrespondingParameter(0, node.Method.Parameters, node.ArgsToParamsOpt, node.Expanded).Annotations;
-                    argumentInfo = new FirstArgumentInfo(savedState, refKind, annotations);
+                    extensionReceiverInfo = new ExtensionReceiverInfo(savedState, refKind, annotations);
                     return true;
                 }
 
                 receiver = null;
-                argumentInfo = null;
+                extensionReceiverInfo = null;
                 return false;
             }
 
