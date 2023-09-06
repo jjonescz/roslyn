@@ -5783,33 +5783,20 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override BoundNode? VisitCall(BoundCall node)
         {
             // Note: we analyze even omitted calls
-            if (tryGetReceiver(node, out BoundCall? receiver, out _))
+            if (tryGetReceiver(node, out BoundCall? receiver, out FirstArgumentInfo? argumentInfo))
             {
                 // Handle long call chain of both instance and extension method invocations.
                 var calls = ArrayBuilder<(BoundCall, FirstArgumentInfo?)>.GetInstance();
 
-                calls.Push((node, null));
+                calls.Push((node, argumentInfo));
                 node = receiver;
 
                 bool originalExpressionIsRead = _expressionIsRead;
                 _expressionIsRead = true;
 
-                FirstArgumentInfo? argumentInfo = null;
-                while (tryGetReceiver(node, out BoundCall? receiver2, out var isArgument))
+                while (tryGetReceiver(node, out BoundCall? receiver2, out argumentInfo))
                 {
-                    if (isArgument)
-                    {
-                        var savedState = VisitArgumentEvaluatePrologue(receiver2);
-                        var refKind = GetRefKind(node.ArgumentRefKindsOpt, 0);
-                        var annotations = GetCorrespondingParameter(0, node.Method.Parameters, node.ArgsToParamsOpt, node.Expanded).Annotations;
-                        argumentInfo = new FirstArgumentInfo(savedState, refKind, annotations);
-                    }
-                    else
-                    {
-                        TakeIncrementalSnapshot(node); // Visit does this before visiting each node
-                        argumentInfo = null;
-                    }
-
+                    TakeIncrementalSnapshot(node); // Visit does this before visiting each node
                     calls.Push((node, argumentInfo));
                     node = receiver2;
                 }
@@ -5818,21 +5805,20 @@ namespace Microsoft.CodeAnalysis.CSharp
                 TypeWithState receiverType = visitAndCheckReceiver(node);
 
                 receiver = null;
-                FirstArgumentInfo? receiverArgumentInfo = null;
+                argumentInfo = null;
                 while (true)
                 {
                     VisitArgumentResult? firstArgument = null;
                     if (receiver is not null && node.ReceiverOpt is null)
                     {
-                        Debug.Assert(node.InvokedAsExtensionMethod && receiverArgumentInfo is not null);
-                        var (savedState, refKind, annotations) = receiverArgumentInfo.Value;
+                        Debug.Assert(node.InvokedAsExtensionMethod && argumentInfo is not null);
+                        var (savedState, refKind, annotations) = argumentInfo.Value;
                         firstArgument = VisitArgumentEvaluateEpilogue(receiver, savedState, refKind, annotations);
                     }
 
                     ReinferMethodAndVisitArguments(node, receiverType, firstArgument: firstArgument);
 
                     receiver = node;
-                    receiverArgumentInfo = argumentInfo;
                     if (!calls.TryPop(out var entry))
                     {
                         break;
@@ -5864,12 +5850,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             return null;
 
             // Gets instance or extension invocation receiver if any.
-            static bool tryGetReceiver(BoundCall node, [MaybeNullWhen(returnValue: false)] out BoundCall receiver, out bool isArgument)
+            bool tryGetReceiver(BoundCall node, [MaybeNullWhen(returnValue: false)] out BoundCall receiver, out FirstArgumentInfo? argumentInfo)
             {
                 if (node.ReceiverOpt is BoundCall instanceReceiver)
                 {
                     receiver = instanceReceiver;
-                    isArgument = false;
+                    argumentInfo = null;
                     return true;
                 }
 
@@ -5877,12 +5863,15 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     Debug.Assert(node.ReceiverOpt is null);
                     receiver = extensionReceiver;
-                    isArgument = true;
+                    var savedState = VisitArgumentEvaluatePrologue(receiver);
+                    var refKind = GetRefKind(node.ArgumentRefKindsOpt, 0);
+                    var annotations = GetCorrespondingParameter(0, node.Method.Parameters, node.ArgsToParamsOpt, node.Expanded).Annotations;
+                    argumentInfo = new FirstArgumentInfo(savedState, refKind, annotations);
                     return true;
                 }
 
                 receiver = null;
-                isArgument = false;
+                argumentInfo = null;
                 return false;
             }
 
