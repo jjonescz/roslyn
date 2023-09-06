@@ -355,13 +355,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                 bool invokedAsExtensionMethod = node.InvokedAsExtensionMethod;
 
                 // Rewritten receiver can be actually the first argument of an extension invocation.
-                bool skipRewritingFirstArgument = false;
+                BoundExpression? firstRewrittenArgument = null;
                 if (rewrittenReceiver is not null && node.ReceiverOpt is null)
                 {
                     Debug.Assert(invokedAsExtensionMethod && !arguments.IsEmpty);
-                    arguments = arguments.SetItem(0, rewrittenReceiver);
+                    firstRewrittenArgument = rewrittenReceiver;
                     rewrittenReceiver = null;
-                    skipRewritingFirstArgument = true;
                 }
 
                 ArrayBuilder<LocalSymbol>? temps = null;
@@ -374,7 +373,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     argRefKindsOpt,
                     storesOpt: null,
                     ref temps,
-                    skipRewritingFirstArgument: skipRewritingFirstArgument);
+                    firstRewrittenArgument: firstRewrittenArgument);
 
                 rewrittenArguments = MakeArguments(
                     node.Syntax,
@@ -650,7 +649,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<RefKind> argumentRefKindsOpt,
             ArrayBuilder<BoundExpression>? storesOpt,
             ref ArrayBuilder<LocalSymbol>? tempsOpt,
-            bool skipRewritingFirstArgument = false)
+            BoundExpression? firstRewrittenArgument = null)
         {
             Debug.Assert(argumentRefKindsOpt.IsDefault || argumentRefKindsOpt.Length == arguments.Length);
             var requiresInstanceReceiver = methodOrIndexer.RequiresInstanceReceiver() && methodOrIndexer is not MethodSymbol { MethodKind: MethodKind.Constructor } and not FunctionPointerMethodSymbol;
@@ -738,7 +737,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                         ref tempsOpt,
                         ref argumentsAssignedToTemp);
 
-                    visitedArgumentsBuilder.Add(skipRewritingFirstArgument && i == 0 ? argument : VisitExpression(argument));
+                    visitedArgumentsBuilder.Add(i == 0 && firstRewrittenArgument is not null
+                        ? firstRewrittenArgument
+                        : VisitExpression(argument));
 
                     foreach (var placeholder in argumentPlaceholders)
                     {

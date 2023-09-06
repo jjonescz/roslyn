@@ -5814,7 +5814,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         extensionReceiverResult = VisitArgumentEvaluateEpilogue(receiver, default, refKind, annotations);
                     }
 
-                    ReinferMethodAndVisitArguments(node, receiverType, firstArgument: extensionReceiverResult);
+                    ReinferMethodAndVisitArguments(node, receiverType, firstArgumentResult: extensionReceiverResult);
 
                     receiver = node;
                     if (!calls.TryPop(out node!))
@@ -5881,7 +5881,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
-        private void ReinferMethodAndVisitArguments(BoundCall node, TypeWithState receiverType, VisitArgumentResult? firstArgument = null)
+        private void ReinferMethodAndVisitArguments(BoundCall node, TypeWithState receiverType, VisitArgumentResult? firstArgumentResult = null)
         {
             var method = node.Method;
             ImmutableArray<RefKind> refKindsOpt = node.ArgumentRefKindsOpt;
@@ -5894,7 +5894,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<VisitArgumentResult> results;
             bool returnNotNull;
             (method, results, returnNotNull) = VisitArguments(node, node.Arguments, refKindsOpt, method!.Parameters, node.ArgsToParamsOpt, node.DefaultArguments,
-                node.Expanded, node.InvokedAsExtensionMethod, method, firstArgument: firstArgument);
+                node.Expanded, node.InvokedAsExtensionMethod, method, firstArgumentResult: firstArgumentResult);
 
             ApplyMemberPostConditions(node.ReceiverOpt, method);
 
@@ -6331,9 +6331,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             bool expanded,
             bool invokedAsExtensionMethod,
             MethodSymbol? method = null,
-            VisitArgumentResult? firstArgument = null)
+            VisitArgumentResult? firstArgumentResult = null)
         {
-            var result = VisitArguments(node, arguments, refKindsOpt, parametersOpt, argsToParamsOpt, defaultArguments, expanded, invokedAsExtensionMethod, method, delayCompletionForTargetMember: false, firstArgument: firstArgument);
+            var result = VisitArguments(node, arguments, refKindsOpt, parametersOpt, argsToParamsOpt, defaultArguments, expanded, invokedAsExtensionMethod, method, delayCompletionForTargetMember: false, firstArgumentResult: firstArgumentResult);
             Debug.Assert(result.completion is null);
 
             return (result.method, result.results, result.returnNotNull);
@@ -6353,13 +6353,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             bool invokedAsExtensionMethod,
             MethodSymbol? method,
             bool delayCompletionForTargetMember,
-            VisitArgumentResult? firstArgument = null)
+            VisitArgumentResult? firstArgumentResult = null)
         {
             Debug.Assert(!arguments.IsDefault);
             (ImmutableArray<BoundExpression> argumentsNoConversions, ImmutableArray<Conversion> conversions) = RemoveArgumentConversions(arguments, refKindsOpt);
 
             // Visit the arguments and collect results
-            ImmutableArray<VisitArgumentResult> results = VisitArgumentsEvaluate(argumentsNoConversions, refKindsOpt, GetParametersAnnotations(arguments, parametersOpt, argsToParamsOpt, expanded), defaultArguments, firstArgument: firstArgument);
+            ImmutableArray<VisitArgumentResult> results = VisitArgumentsEvaluate(argumentsNoConversions, refKindsOpt, GetParametersAnnotations(arguments, parametersOpt, argsToParamsOpt, expanded), defaultArguments, firstArgumentResult: firstArgumentResult);
 
             return visitArguments(
                 node, arguments, argumentsNoConversions, conversions, results, refKindsOpt,
@@ -6644,7 +6644,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<RefKind> refKindsOpt,
             ImmutableArray<FlowAnalysisAnnotations> parameterAnnotationsOpt,
             BitVector defaultArguments,
-            VisitArgumentResult? firstArgument = null)
+            VisitArgumentResult? firstArgumentResult = null)
         {
             Debug.Assert(!IsConditionalState);
             int n = arguments.Length;
@@ -6659,7 +6659,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // we disable nullable warnings on default arguments
                 _disableDiagnostics = defaultArguments[i] || previousDisableDiagnostics;
-                if (i == 0 && firstArgument is { } result)
+                if (i == 0 && firstArgumentResult is { } result)
                 {
                     resultsBuilder.Add(result);
                 }
