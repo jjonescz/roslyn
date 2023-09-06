@@ -5778,27 +5778,24 @@ namespace Microsoft.CodeAnalysis.CSharp
             return null;
         }
 
-        private readonly record struct ExtensionReceiverInfo(Optional<LocalState> SavedState, RefKind RefKind, FlowAnalysisAnnotations Annotations);
-
         public override BoundNode? VisitCall(BoundCall node)
         {
             // Note: we analyze even omitted calls
-            if (tryGetReceiver(node, out BoundCall? receiver, out ExtensionReceiverInfo? extensionReceiverInfo))
+            if (tryGetReceiver(node, out BoundCall? receiver))
             {
                 // Handle long call chain of both instance and extension method invocations.
-                // Each call node is saved with info from visiting its first argument if it's an extension method invocation.
-                var calls = ArrayBuilder<(BoundCall, ExtensionReceiverInfo?)>.GetInstance();
+                var calls = ArrayBuilder<BoundCall>.GetInstance();
 
-                calls.Push((node, extensionReceiverInfo));
+                calls.Push(node);
                 node = receiver;
 
                 bool originalExpressionIsRead = _expressionIsRead;
                 _expressionIsRead = true;
 
-                while (tryGetReceiver(node, out BoundCall? receiver2, out extensionReceiverInfo))
+                while (tryGetReceiver(node, out BoundCall? receiver2))
                 {
                     TakeIncrementalSnapshot(node); // Visit does this before visiting each node
-                    calls.Push((node, extensionReceiverInfo));
+                    calls.Push(node);
                     node = receiver2;
                 }
 
@@ -5806,26 +5803,24 @@ namespace Microsoft.CodeAnalysis.CSharp
                 TypeWithState receiverType = visitAndCheckReceiver(node);
 
                 receiver = null;
-                extensionReceiverInfo = null;
                 while (true)
                 {
                     VisitArgumentResult? extensionReceiverResult = null;
                     if (receiver is not null && node.ReceiverOpt is null)
                     {
-                        Debug.Assert(node.InvokedAsExtensionMethod && extensionReceiverInfo is not null);
-                        var (savedState, refKind, annotations) = extensionReceiverInfo.Value;
-                        extensionReceiverResult = VisitArgumentEvaluateEpilogue(receiver, savedState, refKind, annotations);
+                        Debug.Assert(node.InvokedAsExtensionMethod);
+                        var refKind = GetRefKind(node.ArgumentRefKindsOpt, 0);
+                        var annotations = GetCorrespondingParameter(0, node.Method.Parameters, node.ArgsToParamsOpt, node.Expanded).Annotations;
+                        extensionReceiverResult = VisitArgumentEvaluateEpilogue(receiver, default, refKind, annotations);
                     }
 
                     ReinferMethodAndVisitArguments(node, receiverType, firstArgument: extensionReceiverResult);
 
                     receiver = node;
-                    if (!calls.TryPop(out var entry))
+                    if (!calls.TryPop(out node!))
                     {
                         break;
                     }
-
-                    (node, extensionReceiverInfo) = entry;
 
                     VisitExpressionWithoutStackGuardEpilogue(receiver); // VisitExpressionWithoutStackGuard does this after visiting each node
 
@@ -5851,28 +5846,24 @@ namespace Microsoft.CodeAnalysis.CSharp
             return null;
 
             // Gets instance or extension invocation receiver if any.
-            bool tryGetReceiver(BoundCall node, [MaybeNullWhen(returnValue: false)] out BoundCall receiver, out ExtensionReceiverInfo? extensionReceiverInfo)
+            bool tryGetReceiver(BoundCall node, [MaybeNullWhen(returnValue: false)] out BoundCall receiver)
             {
                 if (node.ReceiverOpt is BoundCall instanceReceiver)
                 {
                     receiver = instanceReceiver;
-                    extensionReceiverInfo = null;
                     return true;
                 }
 
-                if (node.InvokedAsExtensionMethod && node.Arguments is [BoundCall extensionReceiver, ..])
+                if (node.InvokedAsExtensionMethod && node.Arguments is [BoundCall extensionReceiver, ..] &&
+                    // Exclude arguments that need saving state before visiting (only lambdas currently).
+                    !VisitArgumentEvaluatePrologue(extensionReceiver).HasValue)
                 {
                     Debug.Assert(node.ReceiverOpt is null);
                     receiver = extensionReceiver;
-                    var savedState = VisitArgumentEvaluatePrologue(receiver);
-                    var refKind = GetRefKind(node.ArgumentRefKindsOpt, 0);
-                    var annotations = GetCorrespondingParameter(0, node.Method.Parameters, node.ArgsToParamsOpt, node.Expanded).Annotations;
-                    extensionReceiverInfo = new ExtensionReceiverInfo(savedState, refKind, annotations);
                     return true;
                 }
 
                 receiver = null;
-                extensionReceiverInfo = null;
                 return false;
             }
 
