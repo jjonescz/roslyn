@@ -199,6 +199,21 @@ class X {}
             AssertMappedSpanEqual(SyntaxFactory.ParseSyntaxTree(sampleProgram, path: "   "), "class X {}", "   ", 19, 0, 19, 10, hasMappedPath: false);
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69248")]
+        public void LineMapping_CharacterOffsetOutside()
+        {
+            var mappedPath = "C:\\SomeProject\\SomeRazorFile.razor";
+            var source = $"""
+                #line (7,2)-(7,6) 24 "{mappedPath}"
+                __builder.AddContent(0, Body);
+                """;
+            var path = "C:\\SomeProject\\SomeRazorFile.razor.g.cs";
+            var tree = SyntaxFactory.ParseSyntaxTree(source, path: path);
+            AssertMappedSpanEqual(tree, "Body", mappedPath, 6, 2, 6, 6, hasMappedPath: true);
+            AssertMappedSpanEqual(tree, "0", path, 2, 21, 2, 22, hasMappedPath: false);
+            AssertMappedSpanEqual(tree, "0, Body", path, 2, 21, 2, 28, hasMappedPath: false);
+        }
+
         [Fact]
         public void TestInvalidLineMapping()
         {
