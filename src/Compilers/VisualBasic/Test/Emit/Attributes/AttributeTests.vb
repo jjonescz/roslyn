@@ -335,6 +335,28 @@ Imports System.Runtime.CompilerServices
             Assert.Equal("A.XAttribute", attrs(0).AttributeClass.ToDisplayString)
         End Sub
 
+        <Fact, WorkItem("https://github.com/dotnet/roslyn/issues/70007")>
+        Public Sub AssemblyVersion_Recursion()
+            Dim compilation = CreateCompilation(
+                <compilation>
+                    <file name="a.vb"><![CDATA[
+                        Imports System.Reflection
+
+                        <Assembly: AssemblyVersion(MainVersion.CurrentVersion)>
+
+                        Public Class MainVersion
+                            Public Const Major As String = "8"
+                            Public Const Minor As String = "2"
+                            Public Const Build As String = "0"
+                            Public Const Revision As String = "1"
+
+                            Public Const CurrentVersion As String = Major & "." & Minor & "." & Build & "." & Revision
+                        End Class]]>
+                    </file>
+                </compilation>)
+            compilation.VerifyEmitDiagnostics()
+        End Sub
+
         <WorkItem(540506, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/540506")>
         <Fact>
         Public Sub TestAttributesOnClassWithConstantDefinedInClass()

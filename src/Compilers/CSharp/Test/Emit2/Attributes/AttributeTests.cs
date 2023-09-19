@@ -1458,6 +1458,27 @@ class C
             Assert.Equal("A.XAttribute", attrs.First().AttributeClass.ToDisplayString());
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/70007")]
+        public void AssemblyVersion_Recursion()
+        {
+            var source = """
+                using System.Reflection;
+
+                [assembly: AssemblyVersion(MainVersion.CurrentVersion)]
+
+                public class MainVersion
+                {
+                    public const string Major = "8";
+                    public const string Minor = "2";
+                    public const string Build = "0";
+                    public const string Revision = "1";
+
+                    public const string CurrentVersion = Major + "." + Minor + "." + Build + "." + Revision;
+                }
+                """;
+            CreateCompilation(source).VerifyEmitDiagnostics();
+        }
+
         [Fact]
         public void TestAttributesOnClassWithConstantDefinedInClass()
         {
