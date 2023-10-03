@@ -210,8 +210,8 @@ class X {}
             var path = "C:\\SomeProject\\SomeRazorFile.razor.g.cs";
             var tree = SyntaxFactory.ParseSyntaxTree(source, path: path);
             AssertMappedSpanEqual(tree, "Body", mappedPath, 6, 2, 6, 6, hasMappedPath: true);
-            AssertMappedSpanEqual(tree, "0", path, 2, 21, 2, 22, hasMappedPath: false);
-            AssertMappedSpanEqual(tree, "0, Body", path, 2, 21, 2, 28, hasMappedPath: false);
+            AssertMappedSpanEqual(tree, "0", path, 1, 21, 1, 22, hasMappedPath: false);
+            AssertMappedSpanEqual(tree, "0, Body", path, 1, 21, 1, 28, hasMappedPath: false);
         }
 
         [Fact]

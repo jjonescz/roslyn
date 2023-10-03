@@ -57,11 +57,12 @@ namespace Microsoft.CodeAnalysis
 
         protected FileLinePositionSpan TranslateSpan(in LineMappingEntry entry, string treeFilePath, LinePosition unmappedStartPos, LinePosition unmappedEndPos)
         {
-            string path = entry.MappedPathOpt ?? treeFilePath;
+            var mapped = true;
             var span = entry.State == PositionState.RemappedSpan ?
-                TranslateEnhancedLineDirectiveSpan(entry, unmappedStartPos, unmappedEndPos) :
+                TranslateEnhancedLineDirectiveSpan(entry, unmappedStartPos, unmappedEndPos, out mapped) :
                 TranslateLineDirectiveSpan(entry, unmappedStartPos, unmappedEndPos);
-            return new FileLinePositionSpan(path, span, hasMappedPath: entry.MappedPathOpt != null);
+            string path = mapped && entry.MappedPathOpt is { } mappedPath ? mappedPath : treeFilePath;
+            return new FileLinePositionSpan(path, span, hasMappedPath: mapped && entry.MappedPathOpt != null);
         }
 
         private static LinePositionSpan TranslateLineDirectiveSpan(in LineMappingEntry entry, LinePosition unmappedStartPos, LinePosition unmappedEndPos)
@@ -75,19 +76,19 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        private static LinePositionSpan TranslateEnhancedLineDirectiveSpan(in LineMappingEntry entry, LinePosition unmappedStartPos, LinePosition unmappedEndPos)
+        private static LinePositionSpan TranslateEnhancedLineDirectiveSpan(in LineMappingEntry entry, LinePosition unmappedStartPos, LinePosition unmappedEndPos, out bool mapped)
         {
-            // A span starting on the first line, at or before 'UnmappedCharacterOffset' is
-            // mapped to the entire 'MappedSpan', regardless of the size of the unmapped span,
-            // even if the unmapped span ends before 'UnmappedCharacterOffset'.
+            // A span starting on the first line, at or before 'UnmappedCharacterOffset' is not mapped.
             if (unmappedStartPos.Line == entry.UnmappedLine &&
                 unmappedStartPos.Character <= entry.UnmappedCharacterOffset.GetValueOrDefault())
             {
-                return entry.MappedSpan;
+                mapped = false;
+                return new LinePositionSpan(unmappedStartPos, unmappedEndPos);
             }
 
             // A span starting on the first line after 'UnmappedCharacterOffset', or starting on
             // a subsequent line, is mapped to a span of corresponding size.
+            mapped = true;
             return new LinePositionSpan(translatePosition(entry, unmappedStartPos), translatePosition(entry, unmappedEndPos));
 
             static LinePosition translatePosition(in LineMappingEntry entry, LinePosition unmapped)
