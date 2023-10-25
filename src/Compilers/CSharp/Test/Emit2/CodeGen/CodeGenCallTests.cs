@@ -10160,13 +10160,12 @@ class Program
     static int GetArrayIndex() => 0;
 }
 ";
-            // Execution fails due to https://github.com/dotnet/roslyn/issues/70267
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe/*, expectedOutput: @"
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-"*/).VerifyDiagnostics();
+").VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -10241,6 +10240,107 @@ Position set for item '2'
   IL_004e:  ret
 }
 ");
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/70267")]
+        public void GenericTypeParameterElementReference_BaseClassConstraint()
+        {
+            var source = """
+                class Base
+                {
+                    public int Prop { get; set; }
+                }
+
+                class Derived : Base { }
+
+                class Program
+                {
+                    static void Main()
+                    {
+                        var a = new[] { new Derived() };
+                        F<Base>(a);
+                        System.Console.Write(a[0].Prop);
+                    }
+
+                    static void F<T>(T[] a) where T : Base
+                    {
+                        a[0].Prop++;
+                    }
+                }
+                """;
+            var verifier = CompileAndVerify(source, expectedOutput: "1").VerifyDiagnostics();
+            verifier.VerifyIL("Program.F<T>", """
+                {
+                  // Code size       35 (0x23)
+                  .maxstack  3
+                  .locals init (int V_0)
+                  IL_0000:  ldarg.0
+                  IL_0001:  ldc.i4.0
+                  IL_0002:  ldelema    "T"
+                  IL_0007:  dup
+                  IL_0008:  constrained. "T"
+                  IL_000e:  callvirt   "int Base.Prop.get"
+                  IL_0013:  stloc.0
+                  IL_0014:  ldloc.0
+                  IL_0015:  ldc.i4.1
+                  IL_0016:  add
+                  IL_0017:  constrained. "T"
+                  IL_001d:  callvirt   "void Base.Prop.set"
+                  IL_0022:  ret
+                }
+                """);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/70267")]
+        public void GenericTypeParameterElementReference_Struct()
+        {
+            var source = """
+                interface IBase
+                {
+                    int Prop { get; set; }
+                }
+
+                struct Derived : IBase
+                {
+                    public int Prop { get; set; }
+                }
+
+                class Program
+                {
+                    static void Main()
+                    {
+                        var a = new[] { new Derived() };
+                        F(a);
+                        System.Console.WriteLine(a[0].Prop);
+                    }
+
+                    static void F<T>(T[] a) where T : IBase
+                    {
+                        a[0].Prop++;
+                    }
+                }
+                """;
+            var verifier = CompileAndVerify(source, expectedOutput: "1").VerifyDiagnostics();
+            verifier.VerifyIL("Program.F<T>", """
+                {
+                  // Code size       35 (0x23)
+                  .maxstack  3
+                  .locals init (int V_0)
+                  IL_0000:  ldarg.0
+                  IL_0001:  ldc.i4.0
+                  IL_0002:  ldelema    "T"
+                  IL_0007:  dup
+                  IL_0008:  constrained. "T"
+                  IL_000e:  callvirt   "int IBase.Prop.get"
+                  IL_0013:  stloc.0
+                  IL_0014:  ldloc.0
+                  IL_0015:  ldc.i4.1
+                  IL_0016:  add
+                  IL_0017:  constrained. "T"
+                  IL_001d:  callvirt   "void IBase.Prop.set"
+                  IL_0022:  ret
+                }
+                """);
         }
 
         [Fact]
