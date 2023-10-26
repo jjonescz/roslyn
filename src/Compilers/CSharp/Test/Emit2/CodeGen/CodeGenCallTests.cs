@@ -10271,22 +10271,24 @@ Position set for item '2'
             var verifier = CompileAndVerify(source, expectedOutput: "1").VerifyDiagnostics();
             verifier.VerifyIL("Program.F<T>", """
                 {
-                  // Code size       35 (0x23)
+                  // Code size       39 (0x27)
                   .maxstack  3
                   .locals init (int V_0)
                   IL_0000:  ldarg.0
-                  IL_0001:  ldc.i4.0
-                  IL_0002:  ldelema    "T"
-                  IL_0007:  dup
-                  IL_0008:  constrained. "T"
-                  IL_000e:  callvirt   "int Base.Prop.get"
-                  IL_0013:  stloc.0
-                  IL_0014:  ldloc.0
-                  IL_0015:  ldc.i4.1
-                  IL_0016:  add
-                  IL_0017:  constrained. "T"
-                  IL_001d:  callvirt   "void Base.Prop.set"
-                  IL_0022:  ret
+                  IL_0001:  dup
+                  IL_0002:  ldc.i4.0
+                  IL_0003:  ldelem     "T"
+                  IL_0008:  box        "T"
+                  IL_000d:  callvirt   "int Base.Prop.get"
+                  IL_0012:  stloc.0
+                  IL_0013:  ldc.i4.0
+                  IL_0014:  ldelem     "T"
+                  IL_0019:  box        "T"
+                  IL_001e:  ldloc.0
+                  IL_001f:  ldc.i4.1
+                  IL_0020:  add
+                  IL_0021:  callvirt   "void Base.Prop.set"
+                  IL_0026:  ret
                 }
                 """);
         }
@@ -10323,22 +10325,26 @@ Position set for item '2'
             var verifier = CompileAndVerify(source, expectedOutput: "1").VerifyDiagnostics();
             verifier.VerifyIL("Program.F<T>", """
                 {
-                  // Code size       35 (0x23)
+                  // Code size       45 (0x2d)
                   .maxstack  3
                   .locals init (int V_0)
                   IL_0000:  ldarg.0
-                  IL_0001:  ldc.i4.0
-                  IL_0002:  ldelema    "T"
-                  IL_0007:  dup
-                  IL_0008:  constrained. "T"
-                  IL_000e:  callvirt   "int IBase.Prop.get"
-                  IL_0013:  stloc.0
-                  IL_0014:  ldloc.0
-                  IL_0015:  ldc.i4.1
-                  IL_0016:  add
-                  IL_0017:  constrained. "T"
-                  IL_001d:  callvirt   "void IBase.Prop.set"
-                  IL_0022:  ret
+                  IL_0001:  dup
+                  IL_0002:  ldc.i4.0
+                  IL_0003:  readonly.
+                  IL_0005:  ldelema    "T"
+                  IL_000a:  constrained. "T"
+                  IL_0010:  callvirt   "int IBase.Prop.get"
+                  IL_0015:  stloc.0
+                  IL_0016:  ldc.i4.0
+                  IL_0017:  readonly.
+                  IL_0019:  ldelema    "T"
+                  IL_001e:  ldloc.0
+                  IL_001f:  ldc.i4.1
+                  IL_0020:  add
+                  IL_0021:  constrained. "T"
+                  IL_0027:  callvirt   "void IBase.Prop.set"
+                  IL_002c:  ret
                 }
                 """);
         }

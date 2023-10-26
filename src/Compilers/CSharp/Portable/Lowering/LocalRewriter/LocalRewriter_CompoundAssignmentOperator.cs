@@ -189,6 +189,14 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundExpression rewrittenReceiver = VisitExpression(receiverOpt);
 
+            // See TransformCompoundAssignmentLHS for an explanation of this transform.
+            if (rewrittenReceiver is BoundArrayAccess arrayAccess && !IsInvariantArray(arrayAccess.Expression.Type))
+            {
+                var loweredArray = VisitExpression(arrayAccess.Expression);
+                var loweredIndices = VisitList(arrayAccess.Indices);
+                return SpillArrayElementAccess(loweredArray, loweredIndices, stores, temps);
+            }
+
             BoundAssignmentOperator assignmentToTemp;
 
             // SPEC VIOLATION: It is not very clear when receiver of constrained callvirt is dereferenced - when pushed (in lexical order),
