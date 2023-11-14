@@ -670,5 +670,75 @@ $@"        if (F({i}))
                 Assert.Equal(localFunctions ? 20 : 40, data.LambdaBindingCount);
             }, timeout: TimeSpan.FromSeconds(5));
         }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/70381")]
+        public void CollectionExpression_Nested()
+        {
+            int depth = (IntPtr.Size, ExecutionConditionUtil.Configuration, RuntimeUtilities.IsDesktopRuntime) switch
+            {
+                (8, _, _) => 120,
+                _ => throw new Exception($"Unexpected configuration {IntPtr.Size * 8}-bit {ExecutionConditionUtil.Configuration}, Desktop: {RuntimeUtilities.IsDesktopRuntime}")
+            };
+
+            // Un-comment the call below to figure out the new limits.
+            //testLimits();
+
+            try
+            {
+                tryCompile(depth);
+            }
+            catch (Exception e)
+            {
+                testLimits(e);
+            }
+
+            static void testLimits(Exception innerException = null)
+            {
+                for (int i = 0; i < int.MaxValue; i += 10)
+                {
+                    try
+                    {
+                        tryCompile(i);
+                    }
+                    catch (Exception e)
+                    {
+                        if (innerException != null)
+                        {
+                            e = new AggregateException(e, innerException);
+                        }
+
+                        throw new Exception($"Depth: {i}, Bytes: {IntPtr.Size}, Config: {ExecutionConditionUtil.Configuration}, Desktop: {RuntimeUtilities.IsDesktopRuntime}", e);
+                    }
+                }
+            }
+
+            static void tryCompile(int depth)
+            {
+                var openingBrackets = new string('[', depth);
+                var closingBrackets = new string(']', depth);
+                var source = $$"""
+                    using System;
+                    using System.Collections;
+                    using System.Collections.Generic;
+
+                    class MyCollection : IEnumerable
+                    {
+                        void M()
+                        {
+                            MyCollection collection = [{{openingBrackets}}{{closingBrackets}}];
+                        }
+
+                        public void Add(MyCollection c) { }
+                        public IEnumerator<int> GetEnumerator() => throw new NotImplementedException();
+                        IEnumerator IEnumerable.GetEnumerator() => throw new NotImplementedException();
+                    }
+                    """;
+                RunInThread(() =>
+                {
+                    var compilation = CreateCompilation(source);
+                    compilation.GetEmitDiagnostics();
+                });
+            }
+        }
     }
 }
