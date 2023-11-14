@@ -20329,6 +20329,31 @@ class C1(string p1)
             Assert.Equal(namedType1, namedType2);
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69152")]
+        public void SemanticModel_AnalyzeDataFlow()
+        {
+            var source = """
+                using System;
+                class C(int x)
+                {
+                    void F()
+                    {
+                        var f = new Func<int, int>(static a => 2);
+                        var y = x;
+                    }
+                }
+                """;
+            var comp = CreateCompilation(source);
+            var tree = comp.SyntaxTrees.Single();
+            var literal = tree.GetRoot().DescendantNodes().OfType<LiteralExpressionSyntax>().Single();
+            Assert.Equal("2", literal.ToString());
+            var model = comp.GetSemanticModel(tree);
+            var dataFlow = model.AnalyzeDataFlow(literal);
+            Assert.Equal(new[] { "System.Int32 x" }, dataFlow.Captured.Select(s => s.ToTestDisplayString()));
+            Assert.Empty(dataFlow.CapturedInside);
+            Assert.Equal(new[] { "System.Int32 x" }, dataFlow.CapturedOutside.Select(s => s.ToTestDisplayString()));
+        }
+
         [Fact]
         public void ShadowedByMemberFromBase_01_NoArgumentList()
         {
