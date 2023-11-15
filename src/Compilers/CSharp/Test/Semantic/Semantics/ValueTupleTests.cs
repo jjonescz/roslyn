@@ -217,6 +217,59 @@ namespace System
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/60961")]
+        public void MissingRest()
+        {
+            var source = """
+                (int i1, int i2, int i3, int i4, int i5, int i6, int i7, int i8) tuple = (1, 2, 3, 4, 5, 6, 7, 8);
+                (_, _, _, _, _, _, _, int x) = tuple;
+                System.Console.WriteLine(x);
+                
+                namespace System
+                {
+                    public struct ValueTuple<T1>
+                    {
+                        public T1 Item1;
+                
+                        public ValueTuple(T1 item1)
+                        {
+                            Item1 = item1;
+                        }
+                    }
+                
+                    public struct ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest>
+                    {
+                        public T1 Item1;
+                        public T2 Item2;
+                        public T3 Item3;
+                        public T4 Item4;
+                        public T5 Item5;
+                        public T6 Item6;
+                        public T7 Item7;
+                        // public TRest Rest;
+                
+                        public ValueTuple(T1 item1, T2 item2, T3 item3, T4 item4, T5 item5, T6 item6, T7 item7, TRest rest)
+                        {
+                            Item1 = item1;
+                            Item2 = item2;
+                            Item3 = item3;
+                            Item4 = item4;
+                            Item5 = item5;
+                            Item6 = item6;
+                            Item7 = item7;
+                            // Rest = rest;
+                        }
+                    }
+                }
+                """;
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics();
+            comp.VerifyEmitDiagnostics(
+                // (2,32): error CS8128: Member 'Rest' was not found on type 'ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest>' from assembly '4673a225-d16d-4bf1-8f3a-151a5780086a, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'.
+                // (_, _, _, _, _, _, _, int x) = tuple;
+                Diagnostic(ErrorCode.ERR_PredefinedTypeMemberNotFoundInAssembly, "tuple").WithArguments("Rest", "System.ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest>", "4673a225-d16d-4bf1-8f3a-151a5780086a, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null").WithLocation(2, 32));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/60961")]
         public void ExplicitInterfaceImplementation_Indexer_Partial()
         {
             var source = """
