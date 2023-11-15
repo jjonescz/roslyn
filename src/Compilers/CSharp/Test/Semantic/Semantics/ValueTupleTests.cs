@@ -261,12 +261,12 @@ namespace System
                     }
                 }
                 """;
-            var comp = CreateCompilation(source);
+            var comp = CreateCompilation(source, assemblyName: "comp");
             comp.VerifyDiagnostics();
             comp.VerifyEmitDiagnostics(
-                // (2,32): error CS8128: Member 'Rest' was not found on type 'ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest>' from assembly '4673a225-d16d-4bf1-8f3a-151a5780086a, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'.
+                // (2,32): error CS8128: Member 'Rest' was not found on type 'ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest>' from assembly 'comp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'.
                 // (_, _, _, _, _, _, _, int x) = tuple;
-                Diagnostic(ErrorCode.ERR_PredefinedTypeMemberNotFoundInAssembly, "tuple").WithArguments("Rest", "System.ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest>", "4673a225-d16d-4bf1-8f3a-151a5780086a, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null").WithLocation(2, 32));
+                Diagnostic(ErrorCode.ERR_PredefinedTypeMemberNotFoundInAssembly, "tuple").WithArguments("Rest", "System.ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest>", "comp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null").WithLocation(2, 32));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/60961")]
