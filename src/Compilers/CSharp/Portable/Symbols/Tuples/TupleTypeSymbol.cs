@@ -52,7 +52,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             NamedTypeSymbol underlyingType = getTupleUnderlyingType(elementTypesWithAnnotations, syntax, compilation, diagnostics);
 
-            if (numElements >= ValueTupleRestPosition && diagnostics != null && !underlyingType.IsErrorType())
+            if (numElements >= ValueTupleRestPosition && diagnostics != null && !underlyingType.IsErrorType() &&
+                // ValueTuple defined in sourced is checked in SourceNamedTypeSymbol.AfterMembersCompletedChecks to prevent cycles.
+                underlyingType.OriginalDefinition is not SourceNamedTypeSymbol)
             {
                 WellKnownMember wellKnownTupleRest = GetTupleTypeMember(ValueTupleRestPosition, ValueTupleRestPosition);
                 _ = GetWellKnownMemberInType(underlyingType.OriginalDefinition, wellKnownTupleRest, diagnostics, syntax);
