@@ -1626,6 +1626,18 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// <returns>True if this is an interface type.</returns>
         internal abstract bool IsInterface { get; }
 
+        internal bool IsTupleTypeOrDefinition
+        {
+            get
+            {
+                return !IsUnboundGenericType &&
+                    ContainingSymbol?.Kind == SymbolKind.Namespace &&
+                    ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true &&
+                    Name == ValueTupleTypeName &&
+                    ContainingNamespace.Name == MetadataHelpers.SystemString;
+            }
+        }
+
         /// <summary>
         /// Verify if the given type can be used to back a tuple type 
         /// and return cardinality of that tuple type in <paramref name="tupleCardinality"/>. 
@@ -1635,11 +1647,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         internal bool IsTupleTypeOfCardinality(out int tupleCardinality)
         {
             // Should this be optimized for perf (caching for VT<0> to VT<7>, etc.)?
-            if (!IsUnboundGenericType &&
-                ContainingSymbol?.Kind == SymbolKind.Namespace &&
-                ContainingNamespace.ContainingNamespace?.IsGlobalNamespace == true &&
-                Name == ValueTupleTypeName &&
-                ContainingNamespace.Name == MetadataHelpers.SystemString)
+            if (IsTupleTypeOrDefinition)
             {
                 int arity = Arity;
 

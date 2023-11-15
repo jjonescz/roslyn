@@ -1892,6 +1892,14 @@ next:;
                     diagnostics.Add(ErrorCode.ERR_RuntimeDoesNotSupportInlineArrayTypes, GetFirstLocation());
                 }
             }
+
+            if (!this.IsErrorType() && IsTupleTypeOrDefinition && Arity == ValueTupleRestPosition)
+            {
+                WellKnownMember wellKnownTupleRest = GetTupleTypeMember(ValueTupleRestPosition, ValueTupleRestPosition);
+                SyntaxNode? syntax = DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax();
+                SyntaxNodeOrToken syntaxOrToken = syntax is BaseTypeDeclarationSyntax typeSyntax ? typeSyntax.Identifier : syntax;
+                _ = GetWellKnownMemberInType(OriginalDefinition, wellKnownTupleRest, diagnostics, syntaxOrToken);
+            }
         }
     }
 }

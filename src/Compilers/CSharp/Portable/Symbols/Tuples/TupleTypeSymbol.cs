@@ -492,7 +492,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// <summary>
         /// Lookup well-known member declaration in provided type and reports diagnostics.
         /// </summary>
-        internal static Symbol? GetWellKnownMemberInType(NamedTypeSymbol type, WellKnownMember relativeMember, BindingDiagnosticBag diagnostics, SyntaxNode? syntax)
+        internal static Symbol? GetWellKnownMemberInType(NamedTypeSymbol type, WellKnownMember relativeMember, BindingDiagnosticBag diagnostics, SyntaxNodeOrToken syntax)
         {
             Symbol? member = GetWellKnownMemberInType(type, relativeMember);
 
@@ -509,7 +509,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     useSiteInfo = useSiteInfo.AdjustDiagnosticInfo(null);
                 }
 
-                diagnostics.Add(useSiteInfo, static syntax => syntax?.Location ?? Location.None, syntax);
+                diagnostics.Add(useSiteInfo, static syntax => syntax.GetLocation() ?? Location.None, syntax);
             }
 
             return member;
