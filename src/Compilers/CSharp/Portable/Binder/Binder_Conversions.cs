@@ -543,6 +543,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             Conversion conversion,
             BindingDiagnosticBag diagnostics)
         {
+            StackGuard.EnsureSufficientExecutionStack(int.MaxValue);
+
             if (conversion.IsNullable)
             {
                 targetType = targetType.GetNullableUnderlyingType();
