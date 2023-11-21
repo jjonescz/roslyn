@@ -2440,57 +2440,49 @@ class Program
             verifier.VerifyDiagnostics();
             verifier.VerifyMethodBody("C.M", """
                 {
-                  // Code size       43 (0x2b)
-                  .maxstack  3
+                  // Code size       33 (0x21)
+                  .maxstack  2
                   // sequence point: Write(b ?? true);
                   IL_0000:  ldarga.s   V_0
-                  IL_0002:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0007:  ldarga.s   V_0
-                  IL_0009:  call       "bool bool?.HasValue.get"
-                  IL_000e:  ldc.i4.0
-                  IL_000f:  ceq
-                  IL_0011:  or
-                  IL_0012:  call       "void C.Write(bool)"
+                  IL_0002:  ldc.i4.1
+                  IL_0003:  call       "bool bool?.GetValueOrDefault(bool)"
+                  IL_0008:  call       "void C.Write(bool)"
                   // sequence point: Write(b ?? false);
-                  IL_0017:  ldarga.s   V_0
-                  IL_0019:  call       "bool bool?.GetValueOrDefault()"
-                  IL_001e:  call       "void C.Write(bool)"
+                  IL_000d:  ldarga.s   V_0
+                  IL_000f:  call       "bool bool?.GetValueOrDefault()"
+                  IL_0014:  call       "void C.Write(bool)"
                   // sequence point: System.Console.Write(' ');
-                  IL_0023:  ldc.i4.s   32
-                  IL_0025:  call       "void System.Console.Write(char)"
+                  IL_0019:  ldc.i4.s   32
+                  IL_001b:  call       "void System.Console.Write(char)"
                   // sequence point: }
-                  IL_002a:  ret
+                  IL_0020:  ret
                 }
                 """);
             verifier = CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput);
             verifier.VerifyDiagnostics();
             verifier.VerifyMethodBody("C.M", """
                 {
-                  // Code size       47 (0x2f)
-                  .maxstack  3
+                  // Code size       37 (0x25)
+                  .maxstack  2
                   // sequence point: {
                   IL_0000:  nop
                   // sequence point: Write(b ?? true);
                   IL_0001:  ldarga.s   V_0
-                  IL_0003:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0008:  ldarga.s   V_0
-                  IL_000a:  call       "bool bool?.HasValue.get"
-                  IL_000f:  ldc.i4.0
-                  IL_0010:  ceq
-                  IL_0012:  or
-                  IL_0013:  call       "void C.Write(bool)"
-                  IL_0018:  nop
+                  IL_0003:  ldc.i4.1
+                  IL_0004:  call       "bool bool?.GetValueOrDefault(bool)"
+                  IL_0009:  call       "void C.Write(bool)"
+                  IL_000e:  nop
                   // sequence point: Write(b ?? false);
-                  IL_0019:  ldarga.s   V_0
-                  IL_001b:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0020:  call       "void C.Write(bool)"
-                  IL_0025:  nop
+                  IL_000f:  ldarga.s   V_0
+                  IL_0011:  call       "bool bool?.GetValueOrDefault()"
+                  IL_0016:  call       "void C.Write(bool)"
+                  IL_001b:  nop
                   // sequence point: System.Console.Write(' ');
-                  IL_0026:  ldc.i4.s   32
-                  IL_0028:  call       "void System.Console.Write(char)"
-                  IL_002d:  nop
+                  IL_001c:  ldc.i4.s   32
+                  IL_001e:  call       "void System.Console.Write(char)"
+                  IL_0023:  nop
                   // sequence point: }
-                  IL_002e:  ret
+                  IL_0024:  ret
                 }
                 """);
         }
