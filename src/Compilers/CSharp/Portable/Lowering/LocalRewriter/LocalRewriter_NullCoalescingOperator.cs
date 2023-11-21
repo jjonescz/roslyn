@@ -158,8 +158,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 && TryGetNullableMethod(rewrittenLeft.Syntax, rewrittenLeft.Type, SpecialMember.System_Nullable_T_get_HasValue, out MethodSymbol hasValue))
             {
                 return _factory.Binary(BinaryOperatorKind.Or, rewrittenRight.Type,
-                    BoundCall.Synthesized(rewrittenLeft.Syntax, rewrittenLeft, getValueOrDefault2),
-                    _factory.Not(BoundCall.Synthesized(rewrittenLeft.Syntax, rewrittenLeft, hasValue)));
+                    BoundCall.Synthesized(rewrittenLeft.Syntax, rewrittenLeft, initialBindingReceiverIsSubjectToCloning: ThreeState.Unknown, getValueOrDefault2),
+                    _factory.Not(BoundCall.Synthesized(rewrittenLeft.Syntax, rewrittenLeft, initialBindingReceiverIsSubjectToCloning: ThreeState.Unknown, hasValue)));
             }
 
             // We lower left ?? right to
