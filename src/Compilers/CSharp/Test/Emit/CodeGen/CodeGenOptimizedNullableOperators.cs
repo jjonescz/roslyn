@@ -2415,268 +2415,246 @@ class Program
 }");
         }
 
-        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/66431")]
-        public void NullableConstant_Boolean()
+        private void NullableConstant_Boolean(string code, string output, string releaseIl, string debugIl)
         {
-            var source = """
-                C.M(true);
-                C.M(false);
-                C.M(null);
+            var source = $$"""
+                C.Run(true);
+                C.Run(false);
+                C.Run(null);
 
                 class C
                 {
-                    static void Write(bool b) => System.Console.Write(b ? 1 : 0);
-
-                    public static void M(bool? b)
+                    public static void Run(bool? b)
                     {
-                        Write(b == true);
-                        Write(true == b);
-                        Write(b == false);
-                        Write(false == b);
-                        System.Console.Write('-');
-                        Write(b != true);
-                        Write(true != b);
-                        Write(b != false);
-                        Write(false != b);
-                        System.Console.Write('-');
-                        Write(!(b == true));
-                        Write(!(b != true));
-                        Write(!!(b == true));
-                        System.Console.Write(' ');
+                        System.Console.Write(M(b) ? 1 : 0);
                     }
+                    static bool M(bool? b) => {{code}};
                 }
                 """;
-            var expectedOutput = "1100-0011-011 0011-1100-100 0000-1111-100";
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput);
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: output);
             verifier.VerifyDiagnostics();
-            verifier.VerifyMethodBody("C.M", """
+            verifier.VerifyIL("C.M", releaseIl);
+            verifier = CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: output);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyIL("C.M", debugIl);
+        }
+
+        [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/66431")]
+        public void NullableConstant_Boolean_ET([CombinatorialValues("b == true", "true == b")] string code)
+        {
+            var il = """
                 {
-                  // Code size      225 (0xe1)
-                  .maxstack  2
-                  .locals init (bool? V_0,
-                                bool V_1)
-                  // sequence point: Write(b == true);
+                  // Code size        8 (0x8)
+                  .maxstack  1
                   IL_0000:  ldarga.s   V_0
                   IL_0002:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0007:  call       "void C.Write(bool)"
-                  // sequence point: Write(true == b);
-                  IL_000c:  ldarga.s   V_0
-                  IL_000e:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0013:  call       "void C.Write(bool)"
-                  // sequence point: Write(b == false);
-                  IL_0018:  ldarg.0
-                  IL_0019:  stloc.0
-                  IL_001a:  ldc.i4.0
-                  IL_001b:  stloc.1
-                  IL_001c:  ldloca.s   V_0
-                  IL_001e:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0023:  ldloc.1
-                  IL_0024:  ceq
-                  IL_0026:  ldloca.s   V_0
-                  IL_0028:  call       "bool bool?.HasValue.get"
-                  IL_002d:  and
-                  IL_002e:  call       "void C.Write(bool)"
-                  // sequence point: Write(false == b);
-                  IL_0033:  ldc.i4.0
-                  IL_0034:  ldarg.0
-                  IL_0035:  stloc.0
-                  IL_0036:  ldloca.s   V_0
-                  IL_0038:  call       "bool bool?.GetValueOrDefault()"
-                  IL_003d:  ceq
-                  IL_003f:  ldloca.s   V_0
-                  IL_0041:  call       "bool bool?.HasValue.get"
-                  IL_0046:  and
-                  IL_0047:  call       "void C.Write(bool)"
-                  // sequence point: System.Console.Write('-');
-                  IL_004c:  ldc.i4.s   45
-                  IL_004e:  call       "void System.Console.Write(char)"
-                  // sequence point: Write(b != true);
-                  IL_0053:  ldarga.s   V_0
-                  IL_0055:  call       "bool bool?.GetValueOrDefault()"
-                  IL_005a:  ldc.i4.0
-                  IL_005b:  ceq
-                  IL_005d:  call       "void C.Write(bool)"
-                  // sequence point: Write(true != b);
-                  IL_0062:  ldarga.s   V_0
-                  IL_0064:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0069:  ldc.i4.0
-                  IL_006a:  ceq
-                  IL_006c:  call       "void C.Write(bool)"
-                  // sequence point: Write(b != false);
-                  IL_0071:  ldarg.0
-                  IL_0072:  stloc.0
-                  IL_0073:  ldc.i4.0
-                  IL_0074:  stloc.1
-                  IL_0075:  ldloca.s   V_0
-                  IL_0077:  call       "bool bool?.GetValueOrDefault()"
-                  IL_007c:  ldloc.1
-                  IL_007d:  ceq
-                  IL_007f:  ldloca.s   V_0
-                  IL_0081:  call       "bool bool?.HasValue.get"
-                  IL_0086:  and
-                  IL_0087:  ldc.i4.0
-                  IL_0088:  ceq
-                  IL_008a:  call       "void C.Write(bool)"
-                  // sequence point: Write(false != b);
-                  IL_008f:  ldc.i4.0
-                  IL_0090:  ldarg.0
-                  IL_0091:  stloc.0
-                  IL_0092:  ldloca.s   V_0
-                  IL_0094:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0099:  ceq
-                  IL_009b:  ldloca.s   V_0
-                  IL_009d:  call       "bool bool?.HasValue.get"
-                  IL_00a2:  and
-                  IL_00a3:  ldc.i4.0
-                  IL_00a4:  ceq
-                  IL_00a6:  call       "void C.Write(bool)"
-                  // sequence point: System.Console.Write('-');
-                  IL_00ab:  ldc.i4.s   45
-                  IL_00ad:  call       "void System.Console.Write(char)"
-                  // sequence point: Write(!(b == true));
-                  IL_00b2:  ldarga.s   V_0
-                  IL_00b4:  call       "bool bool?.GetValueOrDefault()"
-                  IL_00b9:  ldc.i4.0
-                  IL_00ba:  ceq
-                  IL_00bc:  call       "void C.Write(bool)"
-                  // sequence point: Write(!(b != true));
-                  IL_00c1:  ldarga.s   V_0
-                  IL_00c3:  call       "bool bool?.GetValueOrDefault()"
-                  IL_00c8:  call       "void C.Write(bool)"
-                  // sequence point: Write(!!(b == true));
-                  IL_00cd:  ldarga.s   V_0
-                  IL_00cf:  call       "bool bool?.GetValueOrDefault()"
-                  IL_00d4:  call       "void C.Write(bool)"
-                  // sequence point: System.Console.Write(' ');
-                  IL_00d9:  ldc.i4.s   32
-                  IL_00db:  call       "void System.Console.Write(char)"
-                  // sequence point: }
-                  IL_00e0:  ret
+                  IL_0007:  ret
                 }
-                """);
-            verifier = CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput);
-            verifier.VerifyDiagnostics();
-            verifier.VerifyMethodBody("C.M", """
+                """;
+            NullableConstant_Boolean(code, "100", il, il);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/66431")]
+        public void NullableConstant_Boolean_EF1()
+        {
+            NullableConstant_Boolean("b == false", "010", """
                 {
-                  // Code size      240 (0xf0)
+                  // Code size       23 (0x17)
                   .maxstack  2
                   .locals init (bool? V_0,
                                 bool V_1)
-                  // sequence point: {
-                  IL_0000:  nop
-                  // sequence point: Write(b == true);
-                  IL_0001:  ldarga.s   V_0
-                  IL_0003:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0008:  call       "void C.Write(bool)"
-                  IL_000d:  nop
-                  // sequence point: Write(true == b);
-                  IL_000e:  ldarga.s   V_0
-                  IL_0010:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0015:  call       "void C.Write(bool)"
-                  IL_001a:  nop
-                  // sequence point: Write(b == false);
-                  IL_001b:  ldarg.0
-                  IL_001c:  stloc.0
-                  IL_001d:  ldc.i4.0
-                  IL_001e:  stloc.1
-                  IL_001f:  ldloca.s   V_0
-                  IL_0021:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0026:  ldloc.1
-                  IL_0027:  ceq
-                  IL_0029:  ldloca.s   V_0
-                  IL_002b:  call       "bool bool?.HasValue.get"
-                  IL_0030:  and
-                  IL_0031:  call       "void C.Write(bool)"
-                  IL_0036:  nop
-                  // sequence point: Write(false == b);
-                  IL_0037:  ldc.i4.0
-                  IL_0038:  ldarg.0
-                  IL_0039:  stloc.0
-                  IL_003a:  ldloca.s   V_0
-                  IL_003c:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0041:  ceq
-                  IL_0043:  ldloca.s   V_0
-                  IL_0045:  call       "bool bool?.HasValue.get"
-                  IL_004a:  and
-                  IL_004b:  call       "void C.Write(bool)"
-                  IL_0050:  nop
-                  // sequence point: System.Console.Write('-');
-                  IL_0051:  ldc.i4.s   45
-                  IL_0053:  call       "void System.Console.Write(char)"
-                  IL_0058:  nop
-                  // sequence point: Write(b != true);
-                  IL_0059:  ldarga.s   V_0
-                  IL_005b:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0060:  ldc.i4.0
-                  IL_0061:  ceq
-                  IL_0063:  call       "void C.Write(bool)"
-                  IL_0068:  nop
-                  // sequence point: Write(true != b);
-                  IL_0069:  ldarga.s   V_0
-                  IL_006b:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0070:  ldc.i4.0
-                  IL_0071:  ceq
-                  IL_0073:  call       "void C.Write(bool)"
-                  IL_0078:  nop
-                  // sequence point: Write(b != false);
-                  IL_0079:  ldarg.0
-                  IL_007a:  stloc.0
-                  IL_007b:  ldc.i4.0
-                  IL_007c:  stloc.1
-                  IL_007d:  ldloca.s   V_0
-                  IL_007f:  call       "bool bool?.GetValueOrDefault()"
-                  IL_0084:  ldloc.1
-                  IL_0085:  ceq
-                  IL_0087:  ldloca.s   V_0
-                  IL_0089:  call       "bool bool?.HasValue.get"
-                  IL_008e:  and
-                  IL_008f:  ldc.i4.0
-                  IL_0090:  ceq
-                  IL_0092:  call       "void C.Write(bool)"
-                  IL_0097:  nop
-                  // sequence point: Write(false != b);
-                  IL_0098:  ldc.i4.0
-                  IL_0099:  ldarg.0
-                  IL_009a:  stloc.0
-                  IL_009b:  ldloca.s   V_0
-                  IL_009d:  call       "bool bool?.GetValueOrDefault()"
-                  IL_00a2:  ceq
-                  IL_00a4:  ldloca.s   V_0
-                  IL_00a6:  call       "bool bool?.HasValue.get"
-                  IL_00ab:  and
-                  IL_00ac:  ldc.i4.0
-                  IL_00ad:  ceq
-                  IL_00af:  call       "void C.Write(bool)"
-                  IL_00b4:  nop
-                  // sequence point: System.Console.Write('-');
-                  IL_00b5:  ldc.i4.s   45
-                  IL_00b7:  call       "void System.Console.Write(char)"
-                  IL_00bc:  nop
-                  // sequence point: Write(!(b == true));
-                  IL_00bd:  ldarga.s   V_0
-                  IL_00bf:  call       "bool bool?.GetValueOrDefault()"
-                  IL_00c4:  ldc.i4.0
-                  IL_00c5:  ceq
-                  IL_00c7:  call       "void C.Write(bool)"
-                  IL_00cc:  nop
-                  // sequence point: Write(!(b != true));
-                  IL_00cd:  ldarga.s   V_0
-                  IL_00cf:  call       "bool bool?.GetValueOrDefault()"
-                  IL_00d4:  call       "void C.Write(bool)"
-                  IL_00d9:  nop
-                  // sequence point: Write(!!(b == true));
-                  IL_00da:  ldarga.s   V_0
-                  IL_00dc:  call       "bool bool?.GetValueOrDefault()"
-                  IL_00e1:  call       "void C.Write(bool)"
-                  IL_00e6:  nop
-                  // sequence point: System.Console.Write(' ');
-                  IL_00e7:  ldc.i4.s   32
-                  IL_00e9:  call       "void System.Console.Write(char)"
-                  IL_00ee:  nop
-                  // sequence point: }
-                  IL_00ef:  ret
+                  IL_0000:  ldarg.0
+                  IL_0001:  stloc.0
+                  IL_0002:  ldc.i4.0
+                  IL_0003:  stloc.1
+                  IL_0004:  ldloca.s   V_0
+                  IL_0006:  call       "bool bool?.GetValueOrDefault()"
+                  IL_000b:  ldloc.1
+                  IL_000c:  ceq
+                  IL_000e:  ldloca.s   V_0
+                  IL_0010:  call       "bool bool?.HasValue.get"
+                  IL_0015:  and
+                  IL_0016:  ret
+                }
+                """, """
+                {
+                  // Code size       23 (0x17)
+                  .maxstack  2
+                  .locals init (bool? V_0,
+                                bool V_1)
+                  IL_0000:  ldarg.0
+                  IL_0001:  stloc.0
+                  IL_0002:  ldc.i4.0
+                  IL_0003:  stloc.1
+                  IL_0004:  ldloca.s   V_0
+                  IL_0006:  call       "bool bool?.GetValueOrDefault()"
+                  IL_000b:  ldloc.1
+                  IL_000c:  ceq
+                  IL_000e:  ldloca.s   V_0
+                  IL_0010:  call       "bool bool?.HasValue.get"
+                  IL_0015:  and
+                  IL_0016:  ret
                 }
                 """);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/66431")]
+        public void NullableConstant_Boolean_EF2()
+        {
+            NullableConstant_Boolean("false == b", "010", """
+                {
+                  // Code size       21 (0x15)
+                  .maxstack  2
+                  .locals init (bool? V_0)
+                  IL_0000:  ldc.i4.0
+                  IL_0001:  ldarg.0
+                  IL_0002:  stloc.0
+                  IL_0003:  ldloca.s   V_0
+                  IL_0005:  call       "bool bool?.GetValueOrDefault()"
+                  IL_000a:  ceq
+                  IL_000c:  ldloca.s   V_0
+                  IL_000e:  call       "bool bool?.HasValue.get"
+                  IL_0013:  and
+                  IL_0014:  ret
+                }
+                """, """
+                {
+                  // Code size       21 (0x15)
+                  .maxstack  2
+                  .locals init (bool? V_0)
+                  IL_0000:  ldc.i4.0
+                  IL_0001:  ldarg.0
+                  IL_0002:  stloc.0
+                  IL_0003:  ldloca.s   V_0
+                  IL_0005:  call       "bool bool?.GetValueOrDefault()"
+                  IL_000a:  ceq
+                  IL_000c:  ldloca.s   V_0
+                  IL_000e:  call       "bool bool?.HasValue.get"
+                  IL_0013:  and
+                  IL_0014:  ret
+                }
+                """);
+        }
+
+        [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/66431")]
+        public void NullableConstant_Boolean_NT([CombinatorialValues("b != true", "true != b")] string code)
+        {
+            var il = """
+                {
+                  // Code size       11 (0xb)
+                  .maxstack  2
+                  IL_0000:  ldarga.s   V_0
+                  IL_0002:  call       "bool bool?.GetValueOrDefault()"
+                  IL_0007:  ldc.i4.0
+                  IL_0008:  ceq
+                  IL_000a:  ret
+                }
+                """;
+            NullableConstant_Boolean(code, "011", il, il);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/66431")]
+        public void NullableConstant_Boolean_NF1()
+        {
+            var il = """
+                {
+                  // Code size       26 (0x1a)
+                  .maxstack  2
+                  .locals init (bool? V_0,
+                                bool V_1)
+                  IL_0000:  ldarg.0
+                  IL_0001:  stloc.0
+                  IL_0002:  ldc.i4.0
+                  IL_0003:  stloc.1
+                  IL_0004:  ldloca.s   V_0
+                  IL_0006:  call       "bool bool?.GetValueOrDefault()"
+                  IL_000b:  ldloc.1
+                  IL_000c:  ceq
+                  IL_000e:  ldloca.s   V_0
+                  IL_0010:  call       "bool bool?.HasValue.get"
+                  IL_0015:  and
+                  IL_0016:  ldc.i4.0
+                  IL_0017:  ceq
+                  IL_0019:  ret
+                }
+                """;
+            NullableConstant_Boolean("b != false", "101", il, il);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/66431")]
+        public void NullableConstant_Boolean_NF2()
+        {
+            var il = """
+                {
+                  // Code size       24 (0x18)
+                  .maxstack  2
+                  .locals init (bool? V_0)
+                  IL_0000:  ldc.i4.0
+                  IL_0001:  ldarg.0
+                  IL_0002:  stloc.0
+                  IL_0003:  ldloca.s   V_0
+                  IL_0005:  call       "bool bool?.GetValueOrDefault()"
+                  IL_000a:  ceq
+                  IL_000c:  ldloca.s   V_0
+                  IL_000e:  call       "bool bool?.HasValue.get"
+                  IL_0013:  and
+                  IL_0014:  ldc.i4.0
+                  IL_0015:  ceq
+                  IL_0017:  ret
+                }
+                """;
+            NullableConstant_Boolean("false != b", "101", il, il);
+        }
+
+        [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/66431")]
+        public void NullableConstant_Boolean_EN([CombinatorialValues("b == null", "null == b")] string code)
+        {
+            var il = """
+                {
+                  // Code size       11 (0xb)
+                  .maxstack  2
+                  IL_0000:  ldarga.s   V_0
+                  IL_0002:  call       "bool bool?.HasValue.get"
+                  IL_0007:  ldc.i4.0
+                  IL_0008:  ceq
+                  IL_000a:  ret
+                }
+                """;
+            NullableConstant_Boolean(code, "001", il, il);
+        }
+
+        [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/66431")]
+        public void NullableConstant_Boolean_NET([CombinatorialValues("!(b == true)", "!!!(b == true)")] string code)
+        {
+            var il = """
+                {
+                  // Code size       11 (0xb)
+                  .maxstack  2
+                  IL_0000:  ldarga.s   V_0
+                  IL_0002:  call       "bool bool?.GetValueOrDefault()"
+                  IL_0007:  ldc.i4.0
+                  IL_0008:  ceq
+                  IL_000a:  ret
+                }
+                """;
+            NullableConstant_Boolean(code, "011", il, il);
+        }
+
+        [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/66431")]
+        public void NullableConstant_Boolean_NNT([CombinatorialValues("b != true", "!!(b != true)")] string code)
+        {
+            var il = """
+                {
+                  // Code size       11 (0xb)
+                  .maxstack  2
+                  IL_0000:  ldarga.s   V_0
+                  IL_0002:  call       "bool bool?.GetValueOrDefault()"
+                  IL_0007:  ldc.i4.0
+                  IL_0008:  ceq
+                  IL_000a:  ret
+                }
+                """;
+            NullableConstant_Boolean(code, "011", il, il);
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/66431")]
