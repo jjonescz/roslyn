@@ -9553,13 +9553,12 @@ class Program
     static int GetArrayIndex() => 0;
 }
 ";
-            // Execution fails due to https://github.com/dotnet/roslyn/issues/70267
-            string expectedOutput = null /*@"
+            string expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-"*/;
+";
             var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
