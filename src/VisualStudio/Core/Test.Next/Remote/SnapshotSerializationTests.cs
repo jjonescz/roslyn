@@ -97,7 +97,7 @@ namespace Microsoft.CodeAnalysis.Remote.UnitTests
             var solutionObject = await validator.GetValueAsync<SolutionStateChecksums>(checksum).ConfigureAwait(false);
             await validator.VerifyChecksumInServiceAsync(solutionObject.Attributes, WellKnownSynchronizationKind.SolutionAttributes).ConfigureAwait(false);
 
-            Assert.Equal(0, solutionObject.Projects.Count);
+            Assert.Equal(0, solutionObject.Projects.Length);
         }
 
         [Fact]
@@ -130,7 +130,7 @@ namespace Microsoft.CodeAnalysis.Remote.UnitTests
 
             await validator.VerifyChecksumInServiceAsync(solutionObject.Attributes, WellKnownSynchronizationKind.SolutionAttributes);
 
-            Assert.Equal(1, solutionObject.Projects.Count);
+            Assert.Equal(1, solutionObject.Projects.Length);
         }
 
         [Fact]
@@ -196,7 +196,7 @@ namespace Microsoft.CodeAnalysis.Remote.UnitTests
             await validator.VerifySynchronizationObjectInServiceAsync(syncObject).ConfigureAwait(false);
             await validator.VerifyChecksumInServiceAsync(solutionObject.Attributes, WellKnownSynchronizationKind.SolutionAttributes).ConfigureAwait(false);
 
-            Assert.Equal(2, solutionObject.Projects.Count);
+            Assert.Equal(2, solutionObject.Projects.Length);
         }
 
         [Fact]
@@ -501,7 +501,7 @@ namespace Microsoft.CodeAnalysis.Remote.UnitTests
         [Fact]
         public async Task UnknownLanguageTest()
         {
-            using var workspace = CreateWorkspace(new[] { typeof(NoCompilationLanguageService) });
+            using var workspace = CreateWorkspace([typeof(NoCompilationLanguageService)]);
             var project = workspace.CurrentSolution.AddProject("Project", "Project.dll", NoCompilationConstants.LanguageName);
 
             var validator = new SerializationValidator(workspace.Services);
@@ -535,7 +535,7 @@ namespace Microsoft.CodeAnalysis.Remote.UnitTests
 
             var checksum = await project.State.GetChecksumAsync(CancellationToken.None).ConfigureAwait(false);
 
-            Assert.NotNull(checksum);
+            Assert.True(checksum != Checksum.Null);
         }
 
         [Fact]
@@ -691,7 +691,7 @@ namespace Microsoft.CodeAnalysis.Remote.UnitTests
 
         private class MissingAnalyzerLoader : AnalyzerAssemblyLoader
         {
-            protected override string PreparePathToLoad(string fullPath)
+            protected override string PreparePathToLoad(string fullPath, ImmutableHashSet<string> cultureNames)
                 => throw new FileNotFoundException(fullPath);
         }
 

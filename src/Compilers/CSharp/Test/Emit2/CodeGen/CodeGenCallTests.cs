@@ -72,11 +72,11 @@ class Program
     }
 }
 ";
-
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '1'
 Position GetName for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Call1<T>",
 @"
@@ -114,6 +114,8 @@ Position GetName for item '2'
   IL_002c:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -168,10 +170,11 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '-1'
 Position GetName for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Call1<T>",
 @"
@@ -186,6 +189,8 @@ Position GetName for item '-2'
   IL_0014:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -240,26 +245,24 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '1'
 Position GetName for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Call1<T>",
 @"
 {
-  // Code size       27 (0x1b)
+      // Code size       23 (0x17)
   .maxstack  2
-  .locals init (T V_0)
   IL_0000:  ldarg.0
   IL_0001:  ldobj      ""T""
-  IL_0006:  stloc.0
-  IL_0007:  ldloca.s   V_0
-  IL_0009:  ldarg.0
-  IL_000a:  call       ""int Program.GetOffset<T>(ref T)""
-  IL_000f:  constrained. ""T""
-  IL_0015:  callvirt   ""void IMoveable.GetName(int)""
-  IL_001a:  ret
+  IL_0006:  box        ""T""
+  IL_000b:  ldarg.0
+  IL_000c:  call       ""int Program.GetOffset<T>(ref T)""
+  IL_0011:  callvirt   ""void IMoveable.GetName(int)""
+  IL_0016:  ret
 }
 ");
 
@@ -285,6 +288,8 @@ Position GetName for item '2'
   IL_002a:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -339,10 +344,11 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '-1'
 Position GetName for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Call1<T>",
 @"
@@ -357,6 +363,8 @@ Position GetName for item '-2'
   IL_0012:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -410,18 +418,19 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '1'
 Position GetName for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Call1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -614,6 +623,8 @@ Position GetName for item '2'
   IL_00f0:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -667,18 +678,19 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '-1'
 Position GetName for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Call1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -761,6 +773,8 @@ Position GetName for item '-2'
   IL_00ab:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -816,18 +830,19 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '1'
 Position GetName for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Call1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -1100,6 +1115,8 @@ Position GetName for item '2'
   IL_0159:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -1155,18 +1172,19 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '-1'
 Position GetName for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Call1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -1289,6 +1307,8 @@ Position GetName for item '-2'
   IL_0114:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -1344,9 +1364,9 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 
@@ -1354,10 +1374,11 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '1'
 Position GetName for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Call1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -1576,6 +1597,8 @@ Position GetName for item '2'
   IL_013d:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -1629,9 +1652,9 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 
@@ -1639,10 +1662,11 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '-1'
 Position GetName for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Call1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -1746,6 +1770,8 @@ Position GetName for item '-2'
   IL_00ea:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -1819,14 +1845,15 @@ internal ref struct DummyHandler
 }
 ";
 
-            var verifier = CompileAndVerify(
-                new[] { source, InterpolatedStringHandlerAttribute, InterpolatedStringHandlerArgumentAttribute },
-                options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position DummyHandler for item '1'
 Position GetName for item '1'
 Position DummyHandler for item '2'
 Position GetName for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(
+                new[] { source, InterpolatedStringHandlerAttribute, InterpolatedStringHandlerArgumentAttribute },
+                options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Call1<T>",
 @"
@@ -1902,6 +1929,10 @@ Position GetName for item '2'
   IL_0055:  ret
 }
 ");
+
+            CompileAndVerify(
+                new[] { source, InterpolatedStringHandlerAttribute, InterpolatedStringHandlerArgumentAttribute },
+                options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -1975,14 +2006,15 @@ internal ref struct DummyHandler
 }
 ";
 
-            var verifier = CompileAndVerify(
-                new[] { source, InterpolatedStringHandlerAttribute, InterpolatedStringHandlerArgumentAttribute },
-                options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position DummyHandler for item '-1'
 Position GetName for item '-1'
 Position DummyHandler for item '-2'
 Position GetName for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(
+                new[] { source, InterpolatedStringHandlerAttribute, InterpolatedStringHandlerArgumentAttribute },
+                options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Call1<T>",
 @"
@@ -2015,6 +2047,10 @@ Position GetName for item '-2'
   IL_003f:  ret
 }
 ");
+
+            CompileAndVerify(
+                new[] { source, InterpolatedStringHandlerAttribute, InterpolatedStringHandlerArgumentAttribute },
+                options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -2088,14 +2124,15 @@ internal ref struct DummyHandler
 }
 ";
 
-            var verifier = CompileAndVerify(
-                new[] { source, InterpolatedStringHandlerAttribute, InterpolatedStringHandlerArgumentAttribute },
-                options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position DummyHandler for item '1'
 Position GetName for item '1'
 Position DummyHandler for item '2'
 Position GetName for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(
+                new[] { source, InterpolatedStringHandlerAttribute, InterpolatedStringHandlerArgumentAttribute },
+                options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Call1<T>",
 @"
@@ -2176,6 +2213,10 @@ Position GetName for item '2'
   IL_0053:  ret
 }
 ");
+
+            CompileAndVerify(
+                new[] { source, InterpolatedStringHandlerAttribute, InterpolatedStringHandlerArgumentAttribute },
+                options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -2249,14 +2290,15 @@ internal ref struct DummyHandler
 }
 ";
 
-            var verifier = CompileAndVerify(
-                new[] { source, InterpolatedStringHandlerAttribute, InterpolatedStringHandlerArgumentAttribute },
-                options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position DummyHandler for item '-1'
 Position GetName for item '-1'
 Position DummyHandler for item '-2'
 Position GetName for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(
+                new[] { source, InterpolatedStringHandlerAttribute, InterpolatedStringHandlerArgumentAttribute },
+                options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Call1<T>",
 @"
@@ -2289,6 +2331,10 @@ Position GetName for item '-2'
   IL_003d:  ret
 }
 ");
+
+            CompileAndVerify(
+                new[] { source, InterpolatedStringHandlerAttribute, InterpolatedStringHandlerArgumentAttribute },
+                options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -2343,10 +2389,11 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '1'
 Position GetName for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Call1<T>",
 @"
@@ -2393,6 +2440,8 @@ Position GetName for item '2'
   IL_0036:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -2439,9 +2488,12 @@ class Program
 }
 ";
 
-            CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '-1'
-").VerifyDiagnostics();
+";
+            CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -2496,10 +2548,11 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '1'
 Position GetName for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Call1<T>",
 @"
@@ -2547,6 +2600,8 @@ Position GetName for item '2'
   IL_0034:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -2593,9 +2648,12 @@ class Program
 }
 ";
 
-            CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '-1'
-").VerifyDiagnostics();
+";
+            CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -2649,18 +2707,19 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '1'
 Position GetName for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Call1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -2861,6 +2920,8 @@ Position GetName for item '2'
   IL_0100:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -2906,17 +2967,20 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '-1'
-").VerifyDiagnostics();
+";
+            CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -2972,18 +3036,19 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '1'
 Position GetName for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Call1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -3264,6 +3329,8 @@ Position GetName for item '2'
   IL_0169:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -3310,17 +3377,20 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '-1'
-").VerifyDiagnostics();
+";
+            CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -3382,35 +3452,33 @@ class Program
     }
 }
 ";
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
 {
-  // Code size       44 (0x2c)
+      // Code size       40 (0x28)
   .maxstack  3
-  .locals init (T& V_0,
-            T V_1)
+  .locals init (T& V_0)
   IL_0000:  ldarga.s   V_0
   IL_0002:  stloc.0
   IL_0003:  ldloc.0
   IL_0004:  ldobj      ""T""
-  IL_0009:  stloc.1
-  IL_000a:  ldloca.s   V_1
-  IL_000c:  ldloc.0
-  IL_000d:  constrained. ""T""
-  IL_0013:  callvirt   ""int IMoveable.Position.get""
-  IL_0018:  ldarga.s   V_0
-  IL_001a:  call       ""int Program.GetOffset<T>(ref T)""
-  IL_001f:  add
-  IL_0020:  constrained. ""T""
-  IL_0026:  callvirt   ""void IMoveable.Position.set""
-  IL_002b:  ret
+  IL_0009:  box        ""T""
+  IL_000e:  ldloc.0
+  IL_000f:  constrained. ""T""
+  IL_0015:  callvirt   ""int IMoveable.Position.get""
+  IL_001a:  ldarga.s   V_0
+  IL_001c:  call       ""int Program.GetOffset<T>(ref T)""
+  IL_0021:  add
+  IL_0022:  callvirt   ""void IMoveable.Position.set""
+  IL_0027:  ret
 }
 ");
 
@@ -3443,6 +3511,8 @@ Position set for item '2'
   IL_003b:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -3505,12 +3575,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '-1'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -3529,6 +3600,8 @@ Position set for item '-2'
   IL_0021:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -3591,35 +3664,33 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
 {
-  // Code size       42 (0x2a)
+      // Code size       38 (0x26)
   .maxstack  3
-  .locals init (T& V_0,
-            T V_1)
+  .locals init (T& V_0)
   IL_0000:  ldarg.0
   IL_0001:  stloc.0
   IL_0002:  ldloc.0
   IL_0003:  ldobj      ""T""
-  IL_0008:  stloc.1
-  IL_0009:  ldloca.s   V_1
-  IL_000b:  ldloc.0
-  IL_000c:  constrained. ""T""
-  IL_0012:  callvirt   ""int IMoveable.Position.get""
-  IL_0017:  ldarg.0
-  IL_0018:  call       ""int Program.GetOffset<T>(ref T)""
-  IL_001d:  add
-  IL_001e:  constrained. ""T""
-  IL_0024:  callvirt   ""void IMoveable.Position.set""
-  IL_0029:  ret
+  IL_0008:  box        ""T""
+  IL_000d:  ldloc.0
+  IL_000e:  constrained. ""T""
+  IL_0014:  callvirt   ""int IMoveable.Position.get""
+  IL_0019:  ldarg.0
+  IL_001a:  call       ""int Program.GetOffset<T>(ref T)""
+  IL_001f:  add
+  IL_0020:  callvirt   ""void IMoveable.Position.set""
+  IL_0025:  ret
 }
 ");
 
@@ -3652,6 +3723,8 @@ Position set for item '2'
   IL_0039:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -3714,12 +3787,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '-1'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -3738,6 +3812,8 @@ Position set for item '-2'
   IL_001f:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -3799,20 +3875,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -4026,6 +4103,8 @@ Position set for item '2'
   IL_010e:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -4087,20 +4166,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '-1'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -4192,6 +4272,8 @@ Position set for item '-2'
   IL_00c9:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -4255,20 +4337,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -4562,6 +4645,8 @@ Position set for item '2'
   IL_0177:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -4625,20 +4710,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '-1'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -4770,6 +4856,8 @@ Position set for item '-2'
   IL_0132:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -4832,12 +4920,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -4912,6 +5001,8 @@ Position set for item '2'
   IL_004d:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -4974,12 +5065,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '-1'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -5008,6 +5100,8 @@ Position set for item '-2'
   IL_002e:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -5070,12 +5164,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -5151,6 +5246,8 @@ Position set for item '2'
   IL_004b:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -5213,12 +5310,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '-1'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -5247,6 +5345,8 @@ Position set for item '-2'
   IL_002c:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -5308,20 +5408,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int?> GetOffsetAsync(int? i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -5552,6 +5653,8 @@ Position set for item '2'
   IL_012f:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -5613,20 +5716,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int?> GetOffsetAsync(int? i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '-1'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -5721,6 +5825,8 @@ Position set for item '-2'
   IL_00cd:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -5784,20 +5890,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int?> GetOffsetAsync(int? i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -6108,6 +6215,8 @@ Position set for item '2'
   IL_0195:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -6171,20 +6280,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int?> GetOffsetAsync(int? i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '-1'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -6319,6 +6429,8 @@ Position set for item '-2'
   IL_0134:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -6381,12 +6493,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -6457,6 +6570,8 @@ Position set for item '2'
   IL_0045:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -6519,12 +6634,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -6551,6 +6667,8 @@ Position set for item '-2'
   IL_0027:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -6613,12 +6731,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -6690,6 +6809,8 @@ Position set for item '2'
   IL_0043:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -6752,12 +6873,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -6784,6 +6906,8 @@ Position set for item '-2'
   IL_0025:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -6845,20 +6969,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -7073,6 +7198,8 @@ Position set for item '2'
   IL_011c:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -7134,20 +7261,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -7237,6 +7365,8 @@ Position set for item '-2'
   IL_00bf:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -7300,20 +7430,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -7608,6 +7739,8 @@ Position set for item '2'
   IL_0186:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -7671,20 +7804,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -7814,6 +7948,8 @@ Position set for item '-2'
   IL_0128:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -7876,12 +8012,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -7952,6 +8089,8 @@ Position set for item '2'
   IL_0045:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -8014,12 +8153,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -8046,6 +8186,8 @@ Position set for item '-2'
   IL_0027:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -8108,12 +8250,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -8185,6 +8328,8 @@ Position set for item '2'
   IL_0043:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -8247,12 +8392,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -8279,6 +8425,8 @@ Position set for item '-2'
   IL_0025:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -8340,20 +8488,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -8574,6 +8723,8 @@ Position set for item '2'
   IL_0121:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -8635,20 +8786,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -8741,6 +8893,8 @@ Position set for item '-2'
   IL_00c3:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -8804,20 +8958,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -9118,6 +9273,8 @@ Position set for item '2'
   IL_018a:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -9181,20 +9338,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -9327,6 +9485,8 @@ Position set for item '-2'
   IL_012c:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -9394,12 +9554,13 @@ class Program
 }
 ";
             // Execution fails due to https://github.com/dotnet/roslyn/issues/70267
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe/*, expectedOutput: @"
+            string expectedOutput = null /*@"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-"*/).VerifyDiagnostics();
+"*/;
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -9474,6 +9635,8 @@ Position set for item '2'
   IL_004e:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -9538,12 +9701,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -9572,6 +9736,8 @@ Position set for item '-2'
   IL_0030:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -9635,9 +9801,9 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 
@@ -9645,12 +9811,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -9903,6 +10070,8 @@ Position set for item '2'
   IL_018c:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -9964,9 +10133,9 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 
@@ -9974,12 +10143,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -10094,6 +10264,8 @@ Position set for item '-2'
   IL_010e:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -10160,12 +10332,13 @@ class Program
     static int GetArrayIndex() => 0;
 }
 ";
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            string expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -10240,6 +10413,8 @@ Position set for item '2'
   IL_004e:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/70267")]
@@ -10411,12 +10586,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -10445,6 +10621,8 @@ Position set for item '-2'
   IL_0030:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -10508,9 +10686,9 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 
@@ -10518,12 +10696,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -10782,6 +10961,8 @@ Position set for item '2'
   IL_0191:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -10843,9 +11024,9 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 
@@ -10853,12 +11034,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -10976,6 +11158,8 @@ Position set for item '-2'
   IL_0112:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -11038,12 +11222,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -11142,6 +11327,8 @@ Position set for item '2'
   IL_0065:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -11204,12 +11391,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -11250,6 +11438,8 @@ Position set for item '-2'
   IL_0043:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -11312,12 +11502,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -11417,6 +11608,8 @@ Position set for item '2'
   IL_0063:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -11479,12 +11672,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -11525,6 +11719,8 @@ Position set for item '-2'
   IL_0041:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -11586,20 +11782,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -11842,6 +12039,8 @@ Position set for item '2'
   IL_013d:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -11903,20 +12102,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -12020,6 +12220,8 @@ Position set for item '-2'
   IL_00e2:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -12083,20 +12285,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -12419,6 +12622,8 @@ Position set for item '2'
   IL_01a5:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -12482,20 +12687,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-1'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -12639,6 +12845,8 @@ Position set for item '-2'
   IL_014a:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -12701,37 +12909,35 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
 {
-  // Code size       46 (0x2e)
+      // Code size       42 (0x2a)
   .maxstack  4
-  .locals init (T& V_0,
-            T V_1)
+  .locals init (T& V_0)
   IL_0000:  ldarga.s   V_0
   IL_0002:  stloc.0
   IL_0003:  ldloc.0
   IL_0004:  ldobj      ""T""
-  IL_0009:  stloc.1
-  IL_000a:  ldloca.s   V_1
-  IL_000c:  ldc.i4.1
-  IL_000d:  ldloc.0
+  IL_0009:  box        ""T""
   IL_000e:  ldc.i4.1
-  IL_000f:  constrained. ""T""
-  IL_0015:  callvirt   ""int IMoveable.this[int].get""
-  IL_001a:  ldarga.s   V_0
-  IL_001c:  call       ""int Program.GetOffset<T>(ref T)""
-  IL_0021:  add
-  IL_0022:  constrained. ""T""
-  IL_0028:  callvirt   ""void IMoveable.this[int].set""
-  IL_002d:  ret
+  IL_000f:  ldloc.0
+  IL_0010:  ldc.i4.1
+  IL_0011:  constrained. ""T""
+  IL_0017:  callvirt   ""int IMoveable.this[int].get""
+  IL_001c:  ldarga.s   V_0
+  IL_001e:  call       ""int Program.GetOffset<T>(ref T)""
+  IL_0023:  add
+  IL_0024:  callvirt   ""void IMoveable.this[int].set""
+  IL_0029:  ret
 }
 ");
 
@@ -12766,6 +12972,8 @@ Position set for item '2'
   IL_003d:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -12828,12 +13036,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '-1'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -12857,6 +13066,8 @@ Position set for item '-2'
   IL_0025:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -12919,37 +13130,35 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
 {
-  // Code size       44 (0x2c)
+      // Code size       40 (0x28)
   .maxstack  4
-  .locals init (T& V_0,
-            T V_1)
+  .locals init (T& V_0)
   IL_0000:  ldarg.0
   IL_0001:  stloc.0
   IL_0002:  ldloc.0
   IL_0003:  ldobj      ""T""
-  IL_0008:  stloc.1
-  IL_0009:  ldloca.s   V_1
-  IL_000b:  ldc.i4.1
-  IL_000c:  ldloc.0
+  IL_0008:  box        ""T""
   IL_000d:  ldc.i4.1
-  IL_000e:  constrained. ""T""
-  IL_0014:  callvirt   ""int IMoveable.this[int].get""
-  IL_0019:  ldarg.0
-  IL_001a:  call       ""int Program.GetOffset<T>(ref T)""
-  IL_001f:  add
-  IL_0020:  constrained. ""T""
-  IL_0026:  callvirt   ""void IMoveable.this[int].set""
-  IL_002b:  ret
+  IL_000e:  ldloc.0
+  IL_000f:  ldc.i4.1
+  IL_0010:  constrained. ""T""
+  IL_0016:  callvirt   ""int IMoveable.this[int].get""
+  IL_001b:  ldarg.0
+  IL_001c:  call       ""int Program.GetOffset<T>(ref T)""
+  IL_0021:  add
+  IL_0022:  callvirt   ""void IMoveable.this[int].set""
+  IL_0027:  ret
 }
 ");
 
@@ -12984,6 +13193,8 @@ Position set for item '2'
   IL_003b:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -13046,12 +13257,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '-1'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -13075,6 +13287,8 @@ Position set for item '-2'
   IL_0023:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -13136,20 +13350,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -13367,6 +13582,8 @@ Position set for item '2'
   IL_0110:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -13428,20 +13645,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '-1'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -13535,6 +13753,8 @@ Position set for item '-2'
   IL_00cb:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -13597,12 +13817,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -13675,6 +13896,8 @@ Position set for item '2'
   IL_004b:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -13737,12 +13960,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-2'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -13770,6 +13994,8 @@ Position set for item '-4'
   IL_002d:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -13832,12 +14058,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -13911,6 +14138,8 @@ Position set for item '2'
   IL_0048:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -13973,12 +14202,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-2'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -14006,6 +14236,8 @@ Position set for item '-4'
   IL_002a:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -14067,20 +14299,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -14327,6 +14560,8 @@ Position set for item '2'
   IL_0146:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -14388,20 +14623,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-2'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -14504,6 +14740,8 @@ Position set for item '-4'
   IL_00e5:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -14565,20 +14803,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -14797,6 +15036,8 @@ Position set for item '2'
   IL_0126:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -14858,20 +15099,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-2'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -14963,6 +15205,8 @@ Position set for item '-4'
   IL_00cc:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -15024,20 +15268,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -15357,6 +15602,8 @@ Position set for item '2'
   IL_01a7:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -15418,20 +15665,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-2'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -15570,6 +15818,8 @@ Position set for item '-4'
   IL_0146:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -15632,12 +15882,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -15730,6 +15981,8 @@ Position set for item '2'
   IL_0062:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -15792,12 +16045,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '-1'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -15835,6 +16089,8 @@ Position set for item '-2'
   IL_0040:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -15897,12 +16153,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -15996,6 +16253,8 @@ Position set for item '2'
   IL_0060:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -16058,12 +16317,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '-1'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -16101,6 +16361,8 @@ Position set for item '-2'
   IL_003e:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -16162,20 +16424,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -16412,6 +16675,8 @@ Position set for item '2'
   IL_013e:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -16473,20 +16738,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '-1'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -16587,6 +16853,8 @@ Position set for item '-2'
   IL_00da:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -16649,12 +16917,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -16755,6 +17024,8 @@ Position set for item '2'
   IL_006b:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -16817,12 +17088,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-2'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -16864,6 +17136,8 @@ Position set for item '-4'
   IL_0049:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -16926,12 +17200,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -17033,6 +17308,8 @@ Position set for item '2'
   IL_0068:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -17095,12 +17372,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-2'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -17142,6 +17420,8 @@ Position set for item '-4'
   IL_0046:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -17203,20 +17483,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -17467,6 +17748,8 @@ Position set for item '2'
   IL_0159:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -17528,20 +17811,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-2'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -17649,6 +17933,8 @@ Position set for item '-4'
   IL_00f8:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -17710,20 +17996,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -17970,6 +18257,8 @@ Position set for item '2'
   IL_0147:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -18031,20 +18320,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-2'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -18150,6 +18440,8 @@ Position set for item '-4'
   IL_00ec:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -18211,20 +18503,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '1'
 Position set for item '1'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -18553,6 +18846,8 @@ Position set for item '2'
   IL_01bf:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -18614,20 +18909,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position get for item '-1'
 Position set for item '-2'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -18774,6 +19070,8 @@ Position set for item '-4'
   IL_0161:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -18836,10 +19134,11 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position set for item '1'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -18892,6 +19191,8 @@ Position set for item '2'
   IL_0033:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -18954,10 +19255,11 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position set for item '-1'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -18975,6 +19277,8 @@ Position set for item '-2'
   IL_0016:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -19037,10 +19341,11 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position set for item '1'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -19094,6 +19399,8 @@ Position set for item '2'
   IL_0031:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -19156,10 +19463,11 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position set for item '-1'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -19177,6 +19485,8 @@ Position set for item '-2'
   IL_0014:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -19238,18 +19548,19 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position set for item '1'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -19442,6 +19753,8 @@ Position set for item '2'
   IL_00f0:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -19503,18 +19816,19 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position set for item '-1'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -19597,6 +19911,8 @@ Position set for item '-2'
   IL_00ab:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -19669,12 +19985,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position Length for item '2'
 Position get for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -19740,6 +20057,8 @@ Position get for item '2'
   IL_0044:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -19812,12 +20131,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position Length for item '-2'
 Position get for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -19840,6 +20160,8 @@ Position get for item '-2'
   IL_0024:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -19912,12 +20234,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position Length for item '2'
 Position get for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -19984,6 +20307,8 @@ Position get for item '2'
   IL_0042:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -20056,12 +20381,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position Length for item '-2'
 Position get for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -20084,6 +20410,8 @@ Position get for item '-2'
   IL_0022:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -20155,20 +20483,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position Length for item '2'
 Position get for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -20381,6 +20710,8 @@ Position get for item '2'
   IL_011b:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -20452,20 +20783,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position Length for item '-2'
 Position get for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -20554,6 +20886,8 @@ Position get for item '-2'
   IL_00be:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -20626,14 +20960,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -20715,6 +21050,8 @@ Position set for item '2'
   IL_0057:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -20787,14 +21124,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-1'
 Position Length for item '-2'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -20828,6 +21166,8 @@ Position set for item '-2'
   IL_0036:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -20900,14 +21240,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -20990,6 +21331,8 @@ Position set for item '2'
   IL_0055:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -21062,14 +21405,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-1'
 Position Length for item '-2'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -21103,6 +21447,8 @@ Position set for item '-2'
   IL_0034:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -21174,22 +21520,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -21428,6 +21775,8 @@ Position set for item '2'
   IL_014b:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -21499,22 +21848,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-1'
 Position Length for item '-2'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -21612,6 +21962,8 @@ Position set for item '-2'
   IL_00d8:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -21684,14 +22036,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -21761,6 +22114,8 @@ Position set for item '2'
   IL_004c:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -21833,14 +22188,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '-1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -21871,6 +22227,8 @@ Position set for item '-2'
   IL_0034:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -21943,14 +22301,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -22021,6 +22380,8 @@ Position set for item '2'
   IL_004a:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -22093,14 +22454,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '-1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -22131,6 +22493,8 @@ Position set for item '-2'
   IL_0032:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -22202,22 +22566,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -22457,6 +22822,8 @@ Position set for item '2'
   IL_0136:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -22528,22 +22895,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '-1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -22649,6 +23017,8 @@ Position set for item '-2'
   IL_00ed:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -22721,14 +23091,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -22812,6 +23183,8 @@ Position set for item '2'
   IL_005d:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -22884,14 +23257,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-2'
 Position Length for item '-3'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -22926,6 +23300,8 @@ Position set for item '-4'
   IL_003c:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -22998,14 +23374,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -23090,6 +23467,8 @@ Position set for item '2'
   IL_005a:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -23162,14 +23541,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-2'
 Position Length for item '-3'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -23204,6 +23584,8 @@ Position set for item '-4'
   IL_0039:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -23275,22 +23657,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -23556,6 +23939,8 @@ Position set for item '2'
   IL_0176:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -23627,22 +24012,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-2'
 Position Length for item '-3'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -23753,6 +24139,8 @@ Position set for item '-4'
   IL_00ff:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -23824,22 +24212,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -24082,6 +24471,8 @@ Position set for item '2'
   IL_0155:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -24153,22 +24544,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-2'
 Position Length for item '-3'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -24268,6 +24660,8 @@ Position set for item '-4'
   IL_00e2:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -24339,22 +24733,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -24698,6 +25093,8 @@ Position set for item '2'
   IL_01d7:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -24769,22 +25166,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-2'
 Position Length for item '-3'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -24931,6 +25329,8 @@ Position set for item '-4'
   IL_0160:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -25003,14 +25403,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -25120,6 +25521,8 @@ Position set for item '2'
   IL_0077:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -25192,14 +25595,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-1'
 Position Length for item '-2'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -25247,6 +25651,8 @@ Position set for item '-2'
   IL_0055:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -25319,14 +25725,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -25437,6 +25844,8 @@ Position set for item '2'
   IL_0075:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -25509,14 +25918,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-1'
 Position Length for item '-2'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -25564,6 +25974,8 @@ Position set for item '-2'
   IL_0053:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -25635,22 +26047,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -25917,6 +26330,8 @@ Position set for item '2'
   IL_016d:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -25988,22 +26403,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-1'
 Position Length for item '-2'
 Position get for item '-2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -26115,6 +26531,8 @@ Position set for item '-2'
   IL_00f9:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -26187,14 +26605,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -26298,6 +26717,8 @@ Position set for item '2'
   IL_0072:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -26370,14 +26791,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '-1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -26422,6 +26844,8 @@ Position set for item '-2'
   IL_0050:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -26494,14 +26918,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -26606,6 +27031,8 @@ Position set for item '2'
   IL_0070:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -26678,14 +27105,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '-1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -26730,6 +27158,8 @@ Position set for item '-2'
   IL_004e:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -26801,22 +27231,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -27081,6 +27512,8 @@ Position set for item '2'
   IL_0179:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -27152,22 +27585,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '-1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -27278,6 +27712,8 @@ Position set for item '-2'
   IL_0103:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -27350,14 +27786,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -27469,6 +27906,8 @@ Position set for item '2'
   IL_007d:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -27541,14 +27980,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-2'
 Position Length for item '-3'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -27597,6 +28037,8 @@ Position set for item '-4'
   IL_005b:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -27669,14 +28111,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -27789,6 +28232,8 @@ Position set for item '2'
   IL_007a:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -27861,14 +28306,15 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-2'
 Position Length for item '-3'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -27917,6 +28363,8 @@ Position set for item '-4'
   IL_0058:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -27988,22 +28436,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -28278,6 +28727,8 @@ Position set for item '2'
   IL_0189:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -28349,22 +28800,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-2'
 Position Length for item '-3'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -28480,6 +28932,8 @@ Position set for item '-4'
   IL_0112:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -28551,22 +29005,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -28837,6 +29292,8 @@ Position set for item '2'
   IL_0177:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -28908,22 +29365,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-2'
 Position Length for item '-3'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -29037,6 +29495,8 @@ Position set for item '-4'
   IL_0103:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -29108,22 +29568,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position get for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position get for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -29470,6 +29931,8 @@ Position set for item '2'
   IL_01ea:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -29541,22 +30004,23 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position get for item '-1'
 Position set for item '-2'
 Position Length for item '-3'
 Position get for item '-3'
 Position set for item '-4'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -29708,6 +30172,8 @@ Position set for item '-4'
   IL_0173:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -29780,12 +30246,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -29853,6 +30320,8 @@ Position set for item '2'
   IL_004a:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -29925,12 +30394,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position set for item '-1'
 Position Length for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -29957,6 +30427,8 @@ Position set for item '-2'
   IL_002c:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -30029,12 +30501,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -30103,6 +30576,8 @@ Position set for item '2'
   IL_0048:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -30175,12 +30650,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position set for item '-1'
 Position Length for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -30207,6 +30683,8 @@ Position set for item '-2'
   IL_002a:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -30278,20 +30756,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position set for item '1'
 Position Length for item '2'
 Position set for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -30520,6 +30999,8 @@ Position set for item '2'
   IL_0134:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -30591,20 +31072,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position set for item '-1'
 Position Length for item '2'
 Position set for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -30701,6 +31183,8 @@ Position set for item '-2'
   IL_00d3:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -30766,12 +31250,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position Slice for item '1'
 Position Length for item '2'
 Position Slice for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -30839,6 +31324,8 @@ Position Slice for item '2'
   IL_0045:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -30904,12 +31391,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position Slice for item '-1'
 Position Length for item '-2'
 Position Slice for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -30936,6 +31424,8 @@ Position Slice for item '-2'
   IL_0027:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -31001,12 +31491,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position Slice for item '1'
 Position Length for item '2'
 Position Slice for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -31075,6 +31566,8 @@ Position Slice for item '2'
   IL_0043:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -31140,12 +31633,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position Slice for item '-1'
 Position Length for item '-2'
 Position Slice for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -31172,6 +31666,8 @@ Position Slice for item '-2'
   IL_0025:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -31236,20 +31732,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position Slice for item '1'
 Position Length for item '2'
 Position Slice for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -31464,6 +31961,8 @@ Position Slice for item '2'
   IL_011c:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -31528,20 +32027,21 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position Slice for item '-1'
 Position Length for item '-2'
 Position Slice for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -31631,6 +32131,8 @@ Position Slice for item '-2'
   IL_00bf:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -31696,12 +32198,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position Slice for item '1'
 Position Length for item '2'
 Position Slice for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -31803,6 +32306,8 @@ Position Slice for item '2'
   IL_006e:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -31868,12 +32373,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position Slice for item '-1'
 Position Length for item '-2'
 Position Slice for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -31917,6 +32423,8 @@ Position Slice for item '-2'
   IL_004b:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -31982,12 +32490,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position Slice for item '1'
 Position Length for item '2'
 Position Slice for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -32090,6 +32599,8 @@ Position Slice for item '2'
   IL_006c:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -32155,12 +32666,13 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position Slice for item '-1'
 Position Length for item '-2'
 Position Slice for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Shift1<T>",
 @"
@@ -32204,6 +32716,8 @@ Position Slice for item '-2'
   IL_0049:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -32268,20 +32782,21 @@ class Program
         return 0..1;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<Range> GetOffsetAsync(Range i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '1'
 Position Slice for item '1'
 Position Length for item '2'
 Position Slice for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -32536,6 +33051,8 @@ Position Slice for item '2'
   IL_014a:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [ConditionalFact(typeof(CoreClrOnly))]
@@ -32600,20 +33117,21 @@ class Program
         return 0..1;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<Range> GetOffsetAsync(Range i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
-            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Length for item '-1'
 Position Slice for item '-1'
 Position Length for item '-2'
 Position Slice for item '-2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Shift1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -32723,6 +33241,8 @@ Position Slice for item '-2'
   IL_00ef:  ret
 }
 ");
+
+            CompileAndVerify(source, targetFramework: TargetFramework.NetLatest, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -32774,10 +33294,11 @@ class Program
 }
 ";
             // The output doesn't match the expectation, see https://github.com/dotnet/roslyn/issues/66162
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Equals for item '1'
 Position Equals for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Call1<T>",
 @"
@@ -32871,18 +33392,19 @@ class Program
         return 0;
     }
 
-#pragma warning disable CS1998 // This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
     static async Task<int> GetOffsetAsync(int i)
     {
+        await Task.Yield();
         return i;
     }
 }
 ";
 
             // The output doesn't match the expectation, see https://github.com/dotnet/roslyn/issues/66162
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: @"
+            var expectedOutput = @"
 Position Equals for item '1'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<Call1>d__1<T>.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext",
 @"
@@ -32988,6 +33510,8 @@ Position Equals for item '1'
   IL_00f6:  ret
 }
 ");
+
+            CompileAndVerify(source, options: TestOptions.DebugExe, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
 
         [Fact]
@@ -33043,28 +33567,26 @@ class Program
 }
 ";
 
-            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, verify: Verification.Fails, expectedOutput: @"
+            var expectedOutput = @"
 Position GetName for item '1'
 Position GetName for item '2'
-").VerifyDiagnostics();
+";
+            var verifier = CompileAndVerify(source, options: TestOptions.ReleaseExe, verify: Verification.Fails, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.Call1<T>",
 @"
 {
-  // Code size       35 (0x23)
+      // Code size       31 (0x1f)
   .maxstack  2
-  .locals init (T V_0)
   IL_0000:  ldarg.0
   IL_0001:  ldarga.s   V_1
   IL_0003:  callvirt   ""ref T Program.GetReceiver<T>(ref T)""
   IL_0008:  ldobj      ""T""
-  IL_000d:  stloc.0
-  IL_000e:  ldloca.s   V_0
-  IL_0010:  ldarga.s   V_1
-  IL_0012:  call       ""int Program.GetOffset<T>(ref T)""
-  IL_0017:  constrained. ""T""
-  IL_001d:  callvirt   ""void IMoveable.GetName(int)""
-  IL_0022:  ret
+  IL_000d:  box        ""T""
+  IL_0012:  ldarga.s   V_1
+  IL_0014:  call       ""int Program.GetOffset<T>(ref T)""
+  IL_0019:  callvirt   ""void IMoveable.GetName(int)""
+  IL_001e:  ret
 }
 ");
 
@@ -33092,6 +33614,7 @@ Position GetName for item '2'
   IL_0032:  ret
 }
 ");
+            CompileAndVerify(source, options: TestOptions.DebugExe, verify: Verification.Fails, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
     }
 }
