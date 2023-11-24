@@ -455,7 +455,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             var F = _factory;
             BoundExpression makeOffsetInput = DetermineMakePatternIndexOffsetExpressionStrategy(node.Argument, out PatternIndexOffsetLoweringStrategy strategy);
 
+            var previousInCompoundAssignmentReceiver = _inCompoundAssignmentReceiver;
+            _inCompoundAssignmentReceiver |= isRegularAssignmentOrRegularCompoundAssignment;
             var receiver = VisitExpression(node.Receiver);
+            _inCompoundAssignmentReceiver = previousInCompoundAssignmentReceiver;
 
             // Do not capture receiver if it is a local or parameter and we are evaluating a pattern
             // If length access is a local, then we are evaluating a pattern

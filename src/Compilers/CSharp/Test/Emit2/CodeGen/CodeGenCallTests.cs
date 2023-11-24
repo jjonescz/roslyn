@@ -10521,6 +10521,65 @@ Position set for item '2'
                 """);
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/70267")]
+        public void GenericTypeParameterElementReference_ArrayTypeMismatchException()
+        {
+            var source = """
+                using System;
+
+                class Base
+                {
+                    public Base() { Console.WriteLine("Base ctor"); }
+                }
+
+                class Derived : Base
+                {
+                    public Derived() { Console.WriteLine("Derived ctor"); }
+                }
+
+                class Program
+                {
+                    static void Main()
+                    {
+                        var a = new[] { new Derived() };
+                        try
+                        {
+                            F<Base>(a);
+                        }
+                        catch (ArrayTypeMismatchException)
+                        {
+                            Console.WriteLine("exception");
+                        }
+                        Console.Write(a[0].GetType());
+                    }
+
+                    static void F<T>(T[] a) where T : Base, new()
+                    {
+                        ref T x = ref a[0];
+                        x = new T();
+                    }
+                }
+                """;
+            var verifier = CompileAndVerify(source, expectedOutput: """
+                Base ctor
+                Derived ctor
+                exception
+                Derived
+                """).VerifyDiagnostics();
+            verifier.VerifyIL("Program.F<T>", """
+                {
+                  // Code size       18 (0x12)
+                  .maxstack  2
+                  IL_0000:  ldarg.0
+                  IL_0001:  ldc.i4.0
+                  IL_0002:  ldelema    "T"
+                  IL_0007:  call       "T System.Activator.CreateInstance<T>()"
+                  IL_000c:  stobj      "T"
+                  IL_0011:  ret
+                }
+                """);
+        }
+
         [Fact]
         [WorkItem(63221, "https://github.com/dotnet/roslyn/issues/63221")]
         public void GenericTypeParameterAsReceiver_Increment_Indexer_Struct_ThroughArray()

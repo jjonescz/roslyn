@@ -2530,7 +2530,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             // * Post-storage: If we stashed away the duplicated value in the temporary, we need to restore it back to the stack.
 
             bool lhsUsesStack = EmitAssignmentPreamble(assignmentOperator);
-            EmitAssignmentValue(assignmentOperator, useKind);
+            EmitAssignmentValue(assignmentOperator);
             LocalDefinition temp = EmitAssignmentDuplication(assignmentOperator, useKind, lhsUsesStack);
             EmitStore(assignmentOperator);
             EmitAssignmentPostfix(assignmentOperator, temp, useKind);
@@ -2954,7 +2954,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             return lhsUsesStack;
         }
 
-        private void EmitAssignmentValue(BoundAssignmentOperator assignmentOperator, UseKind useKind)
+        private void EmitAssignmentValue(BoundAssignmentOperator assignmentOperator)
         {
             if (!assignmentOperator.IsRef)
             {
@@ -2967,12 +2967,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
                 // NOTE: passing "ReadOnlyStrict" here. 
                 //       we should not get an address of a copy if at all possible
-                LocalDefinition temp = EmitAddress(assignmentOperator.Right,
-                    lhs.GetRefKind() is RefKind.RefReadOnly or RefKindExtensions.StrictIn or RefKind.RefReadOnlyParameter
-                    ? AddressKind.ReadOnlyStrict
-                    : useKind == UseKind.Unused && assignmentOperator.Right.Type is { TypeKind: TypeKind.TypeParameter, IsValueType: false }
-                        ? AddressKind.Constrained
-                        : AddressKind.Writeable);
+                LocalDefinition temp = EmitAddress(assignmentOperator.Right, lhs.GetRefKind() is RefKind.RefReadOnly or RefKindExtensions.StrictIn or RefKind.RefReadOnlyParameter ? AddressKind.ReadOnlyStrict : AddressKind.Writeable);
 
                 // Generally taking a ref for the purpose of ref assignment should not be done on homeless values
                 // however, there are very rare cases when we need to get a ref off a temp in synthetic code.
