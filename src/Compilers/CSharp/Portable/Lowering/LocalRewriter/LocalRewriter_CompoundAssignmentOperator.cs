@@ -189,14 +189,6 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundExpression rewrittenReceiver = VisitExpression(receiverOpt);
 
-            // See TransformCompoundAssignmentLHS for an explanation of this transform.
-            if (rewrittenReceiver is BoundArrayAccess arrayAccess && !IsInvariantArray(arrayAccess.Expression.Type))
-            {
-                var loweredArray = VisitExpression(arrayAccess.Expression);
-                var loweredIndices = VisitList(arrayAccess.Indices);
-                return SpillArrayElementAccess(loweredArray, loweredIndices, stores, temps);
-            }
-
             BoundAssignmentOperator assignmentToTemp;
 
             // SPEC VIOLATION: It is not very clear when receiver of constrained callvirt is dereferenced - when pushed (in lexical order),
@@ -255,16 +247,6 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundExpression transformedReceiver = VisitExpression(receiverOpt);
 
-            // See TransformCompoundAssignmentLHS for an explanation of this transform.
-            bool receiverSpilled = false;
-            if (transformedReceiver is BoundArrayAccess arrayAccess && !IsInvariantArray(arrayAccess.Expression.Type))
-            {
-                var loweredArray = VisitExpression(arrayAccess.Expression);
-                var loweredIndices = VisitList(arrayAccess.Indices);
-                transformedReceiver = SpillArrayElementAccess(loweredArray, loweredIndices, stores, temps);
-                receiverSpilled = true;
-            }
-
             // Dealing with the arguments is a bit tricky because they can be named out-of-order arguments;
             // we have to preserve both the source-code order of the side effects and the side effects
             // only being executed once.
@@ -312,7 +294,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             ImmutableArray<BoundExpression> rewrittenArguments = VisitArgumentsAndCaptureReceiverIfNeeded(
                 ref transformedReceiver,
-                captureReceiverMode: !receiverSpilled && CanChangeValueBetweenReads(receiverOpt) ?
+                captureReceiverMode: CanChangeValueBetweenReads(receiverOpt) ?
                                          (isRegularCompoundAssignment ?
                                               ReceiverCaptureMode.CompoundAssignment :
                                               ReceiverCaptureMode.UseTwiceComplex) :
