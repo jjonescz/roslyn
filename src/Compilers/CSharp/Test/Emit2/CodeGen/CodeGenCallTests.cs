@@ -10468,6 +10468,62 @@ Position set for item '2'
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/70267")]
+        public void GenericTypeParameterElementReference_InterfaceConstraint()
+        {
+            var source = """
+                interface IBase
+                {
+                    int Prop { get; set; }
+                }
+
+                class Derived : IBase
+                {
+                    public int Prop { get; set; }
+                }
+
+                class Program
+                {
+                    static void Main()
+                    {
+                        var a = new[] { new Derived() };
+                        F<IBase>(a);
+                        System.Console.Write(a[0].Prop);
+                    }
+
+                    static void F<T>(T[] a) where T : IBase
+                    {
+                        a[0].Prop++;
+                    }
+                }
+                """;
+            var verifier = CompileAndVerify(source, expectedOutput: "1").VerifyDiagnostics();
+            verifier.VerifyIL("Program.F<T>", """
+                {
+                  // Code size       45 (0x2d)
+                  .maxstack  3
+                  .locals init (int V_0)
+                  IL_0000:  ldarg.0
+                  IL_0001:  dup
+                  IL_0002:  ldc.i4.0
+                  IL_0003:  readonly.
+                  IL_0005:  ldelema    "T"
+                  IL_000a:  constrained. "T"
+                  IL_0010:  callvirt   "int IBase.Prop.get"
+                  IL_0015:  stloc.0
+                  IL_0016:  ldc.i4.0
+                  IL_0017:  readonly.
+                  IL_0019:  ldelema    "T"
+                  IL_001e:  ldloc.0
+                  IL_001f:  ldc.i4.1
+                  IL_0020:  add
+                  IL_0021:  constrained. "T"
+                  IL_0027:  callvirt   "void IBase.Prop.set"
+                  IL_002c:  ret
+                }
+                """);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/70267")]
         public void GenericTypeParameterElementReference_Struct()
         {
             var source = """
