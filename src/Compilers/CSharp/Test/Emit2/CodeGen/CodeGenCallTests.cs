@@ -10524,6 +10524,84 @@ Position set for item '2'
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/70267")]
+        public void GenericTypeParameterElementReference_InterfaceConstraint_NestedArrayAccess()
+        {
+            var source = """
+                using System;
+                using System.Numerics;
+                class Program
+                {
+                    static void Main()
+                    {
+                        var item1 = new[] {new int[] { 100 }};
+                        Shift1(item1);
+                        Console.WriteLine(item1[0][0]);
+                        var item2 = new[] {new int[] { 200 }};
+                        Shift2(item2);
+                        Console.WriteLine(item2[0][0]);
+                        var item3 = new[] {new int[] { 300 }};
+                        Shift3(item3);
+                        Console.WriteLine(item3[0][0]);
+                    }
+                    static void Shift1<T>(T[][] item) where T : struct, INumber<T>
+                    {
+                        item[GetArrayIndex()][GetOffset(ref item)] ++;
+                    }
+                    static void Shift2<T>(T[][] item) where T : INumber<T>
+                    {
+                        item[GetArrayIndex()][GetOffset(ref item)] ++;
+                    }
+                    static void Shift3(int[][] item)
+                    {
+                        item[GetArrayIndex()][GetOffset(ref item)] ++;
+                    }
+                    static int GetOffset<T>(ref T[][] item) where T : INumber<T>
+                    {
+                        item[0] = new[] { -item[0][0] };
+                        return 0;
+                    }
+                    static int GetArrayIndex()
+                    {
+                        Console.WriteLine("GetArrayIndex()");
+                        return 0;
+                    }
+                }
+                """;
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.Net70, expectedOutput: """
+                GetArrayIndex()
+                -100
+                GetArrayIndex()
+                -200
+                GetArrayIndex()
+                -300
+                """, verify: Verification.Fails).VerifyDiagnostics();
+            verifier.VerifyIL("Program.Shift2<T>", """
+                {
+                  // Code size       42 (0x2a)
+                  .maxstack  3
+                  .locals init (int V_0,
+                                T V_1)
+                  IL_0000:  ldarg.0
+                  IL_0001:  call       "int Program.GetArrayIndex()"
+                  IL_0006:  ldelem.ref
+                  IL_0007:  ldarga.s   V_0
+                  IL_0009:  call       "int Program.GetOffset<T>(ref T[][])"
+                  IL_000e:  stloc.0
+                  IL_000f:  dup
+                  IL_0010:  ldloc.0
+                  IL_0011:  ldelem     "T"
+                  IL_0016:  stloc.1
+                  IL_0017:  ldloc.0
+                  IL_0018:  ldloc.1
+                  IL_0019:  constrained. "T"
+                  IL_001f:  call       "T System.Numerics.IIncrementOperators<T>.op_Increment(T)"
+                  IL_0024:  stelem     "T"
+                  IL_0029:  ret
+                }
+                """);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/70267")]
         public void GenericTypeParameterElementReference_Struct()
         {
             var source = """
