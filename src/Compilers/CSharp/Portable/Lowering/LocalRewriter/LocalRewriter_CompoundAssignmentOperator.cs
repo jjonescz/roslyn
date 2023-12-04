@@ -189,6 +189,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundExpression rewrittenReceiver = VisitExpression(receiverOpt);
 
+            if (SafelyReferToArrayElementAccess(rewrittenReceiver, temps) is { } transformedReceiver)
+            {
+                return transformedReceiver;
+            }
+
             BoundAssignmentOperator assignmentToTemp;
 
             // SPEC VIOLATION: It is not very clear when receiver of constrained callvirt is dereferenced - when pushed (in lexical order),
@@ -246,6 +251,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(receiverOpt != null);
 
             BoundExpression transformedReceiver = VisitExpression(receiverOpt);
+
+            transformedReceiver = SafelyReferToArrayElementAccess(transformedReceiver, temps) ?? transformedReceiver;
 
             // Dealing with the arguments is a bit tricky because they can be named out-of-order arguments;
             // we have to preserve both the source-code order of the side effects and the side effects
@@ -801,6 +808,33 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             return _factory.ArrayAccess(boundTempArray, boundTempIndices);
+        }
+
+        private BoundExpression? SafelyReferToArrayElementAccess(BoundExpression rewrittenReceiver, ArrayBuilder<LocalSymbol> temps)
+        {
+            if (rewrittenReceiver is BoundArrayAccess { Expression.Type: ArrayTypeSymbol { ElementType: { TypeKind: TypeKind.TypeParameter, IsValueType: false, IsSealed: false } elementType } })
+            {
+                BoundLocal byValTemp = _factory.StoreToTemp(rewrittenReceiver, out BoundAssignmentOperator byValStore);
+                temps.Add(byValTemp.LocalSymbol);
+                var byValSequence = new BoundSequence(rewrittenReceiver.Syntax, ImmutableArray<LocalSymbol>.Empty, ImmutableArray.Create<BoundExpression>(byValStore), byValTemp, byValTemp.Type);
+
+                if (elementType.IsReferenceType)
+                {
+                    return byValSequence;
+                }
+
+                BoundLocal refTemp = _factory.StoreToTemp(rewrittenReceiver, out BoundAssignmentOperator refStore, refKind: RefKind.Ref);
+                temps.Add(refTemp.LocalSymbol);
+                var byRefSequence = new BoundSequence(rewrittenReceiver.Syntax, ImmutableArray<LocalSymbol>.Empty, ImmutableArray.Create<BoundExpression>(refStore), refTemp, refTemp.Type);
+
+                return new BoundComplexConditionalReceiver(
+                    rewrittenReceiver.Syntax,
+                    valueTypeReceiver: byRefSequence,
+                    referenceTypeReceiver: byValSequence,
+                    rewrittenReceiver.Type);
+            }
+
+            return null;
         }
 
         /// <summary>
