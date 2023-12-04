@@ -812,8 +812,10 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BoundExpression? SafelyReferToArrayElementAccess(BoundExpression rewrittenReceiver, ArrayBuilder<BoundExpression> stores, ArrayBuilder<LocalSymbol> temps)
         {
-            if (rewrittenReceiver is BoundArrayAccess { Expression.Type: ArrayTypeSymbol { ElementType: { TypeKind: TypeKind.TypeParameter, IsValueType: false, IsSealed: false } elementType } })
+            if (rewrittenReceiver is BoundArrayAccess { Expression.Type: ArrayTypeSymbol { ElementType: { TypeKind: TypeKind.TypeParameter, IsValueType: false, IsSealed: false } elementType } } arrayAccess)
             {
+                rewrittenReceiver = SpillArrayElementAccess(arrayAccess.Expression, arrayAccess.Indices, stores, temps);
+
                 BoundLocal byValTemp = _factory.StoreToTemp(rewrittenReceiver, out BoundAssignmentOperator byValStore);
                 temps.Add(byValTemp.LocalSymbol);
 
