@@ -647,6 +647,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                     refKind = RefKind.None;
                     goto default;
 
+                case BoundKind.ComplexConditionalReceiver:
+                    // TODO.
+                    return HoistExpression(((BoundAssignmentOperator)((BoundSequence)((BoundComplexConditionalReceiver)expr).ValueTypeReceiver).SideEffects[0]).Right, awaitSyntaxOpt, syntaxOffset, refKind, sideEffects, hoistedFields, ref needsSacrificialEvaluation);
+
                 default:
                     if (expr.ConstantValueOpt != null)
                     {
