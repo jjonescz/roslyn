@@ -189,7 +189,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundExpression rewrittenReceiver = VisitExpression(receiverOpt);
 
-            if (SafelyReferToArrayElementAccess(rewrittenReceiver, temps) is { } transformedReceiver)
+            if (SafelyReferToArrayElementAccess(rewrittenReceiver, stores, temps) is { } transformedReceiver)
             {
                 return transformedReceiver;
             }
@@ -252,7 +252,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundExpression transformedReceiver = VisitExpression(receiverOpt);
 
-            transformedReceiver = SafelyReferToArrayElementAccess(transformedReceiver, temps) ?? transformedReceiver;
+            transformedReceiver = SafelyReferToArrayElementAccess(transformedReceiver, stores, temps) ?? transformedReceiver;
 
             // Dealing with the arguments is a bit tricky because they can be named out-of-order arguments;
             // we have to preserve both the source-code order of the side effects and the side effects
@@ -810,7 +810,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return _factory.ArrayAccess(boundTempArray, boundTempIndices);
         }
 
-        private BoundExpression? SafelyReferToArrayElementAccess(BoundExpression rewrittenReceiver, ArrayBuilder<LocalSymbol> temps)
+        private BoundExpression? SafelyReferToArrayElementAccess(BoundExpression rewrittenReceiver, ArrayBuilder<BoundExpression> stores, ArrayBuilder<LocalSymbol> temps)
         {
             if (rewrittenReceiver is BoundArrayAccess { Expression.Type: ArrayTypeSymbol { ElementType: { TypeKind: TypeKind.TypeParameter, IsValueType: false, IsSealed: false } elementType } })
             {
@@ -826,7 +826,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 BoundLocal refTemp = _factory.StoreToTemp(rewrittenReceiver, out BoundAssignmentOperator refStore, refKind: RefKind.Ref);
                 temps.Add(refTemp.LocalSymbol);
 
-                return new BoundComplexConditionalReceiver(
+                var complexReceiver = new BoundComplexConditionalReceiver(
                     rewrittenReceiver.Syntax,
                     // ref refTemp = ref arrayAccess; refTemp
                     valueTypeReceiver: new BoundSequence(
@@ -845,6 +845,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                         refTemp,
                         refTemp.Type),
                     rewrittenReceiver.Type);
+
+                BoundLocal complexTemp = _factory.StoreToTemp(complexReceiver, out BoundAssignmentOperator complexStore, refKind: RefKind.Ref);
+                temps.Add(complexTemp.LocalSymbol);
+                stores.Add(complexStore);
+                return complexTemp;
             }
 
             return null;
