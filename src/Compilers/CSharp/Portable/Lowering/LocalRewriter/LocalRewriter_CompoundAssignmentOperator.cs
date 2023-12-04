@@ -816,21 +816,34 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 BoundLocal byValTemp = _factory.StoreToTemp(rewrittenReceiver, out BoundAssignmentOperator byValStore);
                 temps.Add(byValTemp.LocalSymbol);
-                var byValSequence = new BoundSequence(rewrittenReceiver.Syntax, ImmutableArray<LocalSymbol>.Empty, ImmutableArray.Create<BoundExpression>(byValStore), byValTemp, byValTemp.Type);
 
                 if (elementType.IsReferenceType)
                 {
-                    return byValSequence;
+                    // byValTemp = arrayAccess; byValTemp
+                    return new BoundSequence(rewrittenReceiver.Syntax, ImmutableArray<LocalSymbol>.Empty, ImmutableArray.Create<BoundExpression>(byValStore), byValTemp, byValTemp.Type);
                 }
 
                 BoundLocal refTemp = _factory.StoreToTemp(rewrittenReceiver, out BoundAssignmentOperator refStore, refKind: RefKind.Ref);
                 temps.Add(refTemp.LocalSymbol);
-                var byRefSequence = new BoundSequence(rewrittenReceiver.Syntax, ImmutableArray<LocalSymbol>.Empty, ImmutableArray.Create<BoundExpression>(refStore), refTemp, refTemp.Type);
 
                 return new BoundComplexConditionalReceiver(
                     rewrittenReceiver.Syntax,
-                    valueTypeReceiver: byRefSequence,
-                    referenceTypeReceiver: byValSequence,
+                    // ref refTemp = ref arrayAccess; refTemp
+                    valueTypeReceiver: new BoundSequence(
+                        rewrittenReceiver.Syntax,
+                        ImmutableArray<LocalSymbol>.Empty,
+                        ImmutableArray.Create<BoundExpression>(refStore),
+                        refTemp,
+                        refTemp.Type),
+                    // byValTemp = arrayAccess; ref refTemp = ref byValTemp; refTemp
+                    referenceTypeReceiver: new BoundSequence(
+                        rewrittenReceiver.Syntax,
+                        ImmutableArray<LocalSymbol>.Empty,
+                        ImmutableArray.Create<BoundExpression>(
+                            byValStore,
+                            new BoundAssignmentOperator(rewrittenReceiver.Syntax, refTemp, byValTemp, isRef: true, rewrittenReceiver.Type)),
+                        refTemp,
+                        refTemp.Type),
                     rewrittenReceiver.Type);
             }
 
