@@ -3030,10 +3030,10 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             var localFunc = node.Symbol;
             var localFunctionState = GetOrCreateLocalFuncUsages(localFunc);
-            // The starting state is the top state, but with captured
+            // The starting state is the bottom state, but with captured
             // variables set according to Joining the state at all the
             // local function use sites
-            var state = TopState();
+            var state = ReachableBottomState();
             var startingState = localFunctionState.StartingState;
             startingState.ForEach(
                 (slot, variables) =>
