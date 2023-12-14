@@ -1007,8 +1007,6 @@ namespace Microsoft.CodeAnalysis.Emit
 
         public abstract Cci.IMethodReference GetInitArrayHelper();
 
-        public abstract Cci.IMethodReference GetCreateSpanHelper(ITypeSymbol elementType);
-
         public ArrayMethods ArrayMethods
         {
             get

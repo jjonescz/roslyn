@@ -1031,8 +1031,10 @@ namespace System
                 """);
         }
 
-        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69325")]
-        public void TestPointerCreateSpan()
+        [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/69325")]
+        [InlineData((int)WellKnownMember.System_Runtime_CompilerServices_RuntimeHelpers__CreateSpanRuntimeFieldHandle)]
+        [InlineData((int)WellKnownMember.System_ReadOnlySpan_T__GetPinnableReference)]
+        public void TestPointerCreateSpan(int missingMember)
         {
             var source = """
                 using System;
@@ -1051,7 +1053,8 @@ namespace System
                     }
                 }
                 """;
-            var verifier = CompileAndVerify(source, expectedOutput: "123", verify: Verification.Fails, options: TestOptions.UnsafeReleaseExe, targetFramework: TargetFramework.Net70);
+            var output = "123";
+            var verifier = CompileAndVerify(source, expectedOutput: output, verify: Verification.Fails, options: TestOptions.UnsafeReleaseExe, targetFramework: TargetFramework.Net70);
             verifier.VerifyDiagnostics();
             verifier.VerifyIL("C.Main", """
                 {
@@ -1071,6 +1074,38 @@ namespace System
                   IL_001a:  cpblk
                   IL_001c:  call       "void C.Write(int*)"
                   IL_0021:  ret
+                }
+                """);
+
+            var comp = CreateCompilation(source, options: TestOptions.UnsafeReleaseExe, targetFramework: TargetFramework.Net70);
+            comp.MakeMemberMissing((WellKnownMember)missingMember);
+            verifier = CompileAndVerify(comp, expectedOutput: output, verify: Verification.Fails);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyIL("C.Main", """
+                {
+                  // Code size       27 (0x1b)
+                  .maxstack  4
+                  IL_0000:  ldc.i4.s   12
+                  IL_0002:  conv.u
+                  IL_0003:  localloc
+                  IL_0005:  dup
+                  IL_0006:  ldc.i4.1
+                  IL_0007:  stind.i4
+                  IL_0008:  dup
+                  IL_0009:  ldc.i4.4
+                  IL_000a:  add
+                  IL_000b:  ldc.i4.2
+                  IL_000c:  stind.i4
+                  IL_000d:  dup
+                  IL_000e:  ldc.i4.2
+                  IL_000f:  conv.i
+                  IL_0010:  ldc.i4.4
+                  IL_0011:  mul
+                  IL_0012:  add
+                  IL_0013:  ldc.i4.3
+                  IL_0014:  stind.i4
+                  IL_0015:  call       "void C.Write(int*)"
+                  IL_001a:  ret
                 }
                 """);
         }
