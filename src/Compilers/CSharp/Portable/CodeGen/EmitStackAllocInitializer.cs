@@ -132,14 +132,14 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             var temp = AllocateTemp(readOnlySpan, syntaxNode);
             _builder.EmitLocalStore(temp);
             _builder.EmitLocalAddress(temp);
-            FreeTemp(temp);
 
-            // PROTOTYPE: is this safe without pinning?
             _builder.EmitOpCode(ILOpCode.Call, 0);
             EmitSymbolToken(getPinnableReference, syntaxNode, optArgList: null);
             _builder.EmitIntConstant(data.Length);
             // PROTOTYPE: is this correct without unaligned.?
             _builder.EmitOpCode(ILOpCode.Cpblk, -3);
+
+            FreeTemp(temp);
         }
 
         internal static bool UseCreateSpanForReadOnlySpanInitialization(
