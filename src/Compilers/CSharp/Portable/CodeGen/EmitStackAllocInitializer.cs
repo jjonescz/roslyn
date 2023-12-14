@@ -136,7 +136,6 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             _builder.EmitOpCode(ILOpCode.Call, 0);
             EmitSymbolToken(getPinnableReference, syntaxNode, optArgList: null);
             _builder.EmitIntConstant(data.Length);
-            // PROTOTYPE: is this correct without unaligned.?
             _builder.EmitOpCode(ILOpCode.Cpblk, -3);
 
             FreeTemp(temp);
