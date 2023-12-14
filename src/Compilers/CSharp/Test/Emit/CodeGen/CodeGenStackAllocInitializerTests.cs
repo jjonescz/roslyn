@@ -1090,29 +1090,16 @@ namespace System
                 }
                 """;
             var verifier = CompileAndVerify(source, expectedOutput: ExecutionConditionUtil.IsCoreClr ? "XYZ" : null,
-                verify: Verification.Fails, targetFramework: TargetFramework.Net70);
+                verify: Verification.FailsPEVerify, targetFramework: TargetFramework.Net70);
             verifier.VerifyDiagnostics();
             verifier.VerifyIL("C.Main", """
                 {
-                  // Code size       45 (0x2d)
-                  .maxstack  4
-                  .locals init (System.ReadOnlySpan<E> V_0)
-                  IL_0000:  ldc.i4.s   24
-                  IL_0002:  conv.u
-                  IL_0003:  localloc
-                  IL_0005:  dup
-                  IL_0006:  ldtoken    "<PrivateImplementationDetails>.__StaticArrayInitTypeSize=24 <PrivateImplementationDetails>.AB25350E3E65EFEBE24584461683ECDA68725576E825E550038B90E7B1479946"
-                  IL_000b:  call       "System.ReadOnlySpan<E> System.Runtime.CompilerServices.RuntimeHelpers.CreateSpan<E>(System.RuntimeFieldHandle)"
-                  IL_0010:  stloc.0
-                  IL_0011:  ldloca.s   V_0
-                  IL_0013:  call       "ref readonly E System.ReadOnlySpan<E>.GetPinnableReference()"
-                  IL_0018:  ldc.i4.s   24
-                  IL_001a:  cpblk
-                  IL_001c:  ldc.i4.3
-                  IL_001d:  newobj     "System.Span<E>..ctor(void*, int)"
-                  IL_0022:  call       "System.ReadOnlySpan<E> System.Span<E>.op_Implicit(System.Span<E>)"
-                  IL_0027:  call       "void C.Write(System.ReadOnlySpan<E>)"
-                  IL_002c:  ret
+                  // Code size       16 (0x10)
+                  .maxstack  1
+                  IL_0000:  ldtoken    "<PrivateImplementationDetails>.__StaticArrayInitTypeSize=24 <PrivateImplementationDetails>.AB25350E3E65EFEBE24584461683ECDA68725576E825E550038B90E7B1479946"
+                  IL_0005:  call       "System.ReadOnlySpan<E> System.Runtime.CompilerServices.RuntimeHelpers.CreateSpan<E>(System.RuntimeFieldHandle)"
+                  IL_000a:  call       "void C.Write(System.ReadOnlySpan<E>)"
+                  IL_000f:  ret
                 }
                 """);
         }
