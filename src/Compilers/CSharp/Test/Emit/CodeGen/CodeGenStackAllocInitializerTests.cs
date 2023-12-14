@@ -1033,6 +1033,137 @@ namespace System
                 """);
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69325")]
+        public void TestReadOnlySpan_Net7_Double()
+        {
+            var source = """
+                using System;
+                static class C
+                {
+                    static void Main()
+                    {
+                        ReadOnlySpan<double> p = stackalloc double[3] { 1.0, 2.9, 3.8 };
+                        Write(p);
+                    }
+
+                    static void Write(ReadOnlySpan<double> span)
+                    {
+                        foreach (double x in span)
+                            Console.Write(x + " ");
+                    }
+                }
+                """;
+            var verifier = CompileAndVerify(source, expectedOutput: ExecutionConditionUtil.IsCoreClr ? "1 2.9 3.8" : null,
+                verify: Verification.FailsPEVerify, targetFramework: TargetFramework.Net70);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyIL("C.Main", """
+                {
+                  // Code size       16 (0x10)
+                  .maxstack  1
+                  IL_0000:  ldtoken    "<PrivateImplementationDetails>.__StaticArrayInitTypeSize=24 <PrivateImplementationDetails>.A469E23C2EF824690D849F86F0B660CC6E91A9E4BE44208A7103F98510BF64F5"
+                  IL_0005:  call       "System.ReadOnlySpan<double> System.Runtime.CompilerServices.RuntimeHelpers.CreateSpan<double>(System.RuntimeFieldHandle)"
+                  IL_000a:  call       "void C.Write(System.ReadOnlySpan<double>)"
+                  IL_000f:  ret
+                }
+                """);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69325")]
+        public void TestReadOnlySpan_Net7_Enum()
+        {
+            var source = """
+                using System;
+                enum E : long { X, Y, Z }
+                static class C
+                {
+                    static void Main()
+                    {
+                        ReadOnlySpan<E> p = stackalloc E[3] { E.X, E.Y, E.Z };
+                        Write(p);
+                    }
+
+                    static void Write(ReadOnlySpan<E> span)
+                    {
+                        foreach (E x in span)
+                            Console.Write(x);
+                    }
+                }
+                """;
+            var verifier = CompileAndVerify(source, expectedOutput: ExecutionConditionUtil.IsCoreClr ? "XYZ" : null,
+                verify: Verification.Fails, targetFramework: TargetFramework.Net70);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyIL("C.Main", """
+                {
+                  // Code size       45 (0x2d)
+                  .maxstack  4
+                  .locals init (System.ReadOnlySpan<E> V_0)
+                  IL_0000:  ldc.i4.s   24
+                  IL_0002:  conv.u
+                  IL_0003:  localloc
+                  IL_0005:  dup
+                  IL_0006:  ldtoken    "<PrivateImplementationDetails>.__StaticArrayInitTypeSize=24 <PrivateImplementationDetails>.AB25350E3E65EFEBE24584461683ECDA68725576E825E550038B90E7B1479946"
+                  IL_000b:  call       "System.ReadOnlySpan<E> System.Runtime.CompilerServices.RuntimeHelpers.CreateSpan<E>(System.RuntimeFieldHandle)"
+                  IL_0010:  stloc.0
+                  IL_0011:  ldloca.s   V_0
+                  IL_0013:  call       "ref readonly E System.ReadOnlySpan<E>.GetPinnableReference()"
+                  IL_0018:  ldc.i4.s   24
+                  IL_001a:  cpblk
+                  IL_001c:  ldc.i4.3
+                  IL_001d:  newobj     "System.Span<E>..ctor(void*, int)"
+                  IL_0022:  call       "System.ReadOnlySpan<E> System.Span<E>.op_Implicit(System.Span<E>)"
+                  IL_0027:  call       "void C.Write(System.ReadOnlySpan<E>)"
+                  IL_002c:  ret
+                }
+                """);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69325")]
+        public void TestReadOnlySpan_Net7_FewElements()
+        {
+            var source = """
+                using System;
+                static class C
+                {
+                    static void Main()
+                    {
+                        ReadOnlySpan<int> p = stackalloc int[] { 1, 2 };
+                        Write(p);
+                    }
+
+                    static void Write(ReadOnlySpan<int> span)
+                    {
+                        foreach (int x in span)
+                            Console.Write(x);
+                    }
+                }
+                """;
+            var verifier = CompileAndVerify(source, expectedOutput: ExecutionConditionUtil.IsCoreClr ? "12" : null,
+                verify: Verification.Fails, targetFramework: TargetFramework.Net70);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyIL("C.Main", """
+                {
+                  // Code size       29 (0x1d)
+                  .maxstack  3
+                  IL_0000:  ldc.i4.8
+                  IL_0001:  conv.u
+                  IL_0002:  localloc
+                  IL_0004:  dup
+                  IL_0005:  ldc.i4.1
+                  IL_0006:  stind.i4
+                  IL_0007:  dup
+                  IL_0008:  ldc.i4.4
+                  IL_0009:  add
+                  IL_000a:  ldc.i4.2
+                  IL_000b:  stind.i4
+                  IL_000c:  ldc.i4.2
+                  IL_000d:  newobj     "System.Span<int>..ctor(void*, int)"
+                  IL_0012:  call       "System.ReadOnlySpan<int> System.Span<int>.op_Implicit(System.Span<int>)"
+                  IL_0017:  call       "void C.Write(System.ReadOnlySpan<int>)"
+                  IL_001c:  ret
+                }
+                """);
+        }
+
         [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/69325")]
         [InlineData((int)WellKnownMember.System_Runtime_CompilerServices_RuntimeHelpers__CreateSpanRuntimeFieldHandle)]
         [InlineData((int)WellKnownMember.System_ReadOnlySpan_T__GetPinnableReference)]
