@@ -20,6 +20,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
         Cci.IFieldReference GetArrayCachingFieldForData(ImmutableArray<byte> data, Cci.IArrayTypeReference arrayType, SyntaxNode syntaxNode, DiagnosticBag diagnostics);
 
         Cci.IMethodReference GetInitArrayHelper();
+        Cci.IMethodReference GetCreateSpanHelper(ITypeSymbol elementType);
 
         string GetStringFromToken(uint token);
         /// <summary>
