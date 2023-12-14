@@ -69,24 +69,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             var rewrittenType = VisitType(node.Type);
 
             // special handling for initializers converted to ROS<T>
-            if (TypeSymbol.Equals(rewrittenType.OriginalDefinition, _compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.ConsiderEverything) &&
-                node.Operand is BoundConvertedStackAllocExpression or BoundArrayCreation)
+            if (node.Operand is BoundConvertedStackAllocExpression stackAllocExpression &&
+                TypeSymbol.Equals(rewrittenType.OriginalDefinition, _compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.ConsiderEverything) &&
+                _compilation.GetWellKnownTypeMember(WellKnownMember.System_Runtime_CompilerServices_RuntimeHelpers__CreateSpanRuntimeFieldHandle) is not null &&
+                CodeGen.CodeGenerator.UseCreateSpanForReadOnlySpanStackAlloc(stackAllocExpression.ElementType, stackAllocExpression.InitializerOpt, isEncDelta: this.EmitModule?.IsEncDelta == true))
             {
-                bool hasCreateSpanHelper = _compilation.GetWellKnownTypeMember(WellKnownMember.System_Runtime_CompilerServices_RuntimeHelpers__CreateSpanRuntimeFieldHandle) is not null;
-
-                var (isArrayCreation, elementType, initializerOpt, count) = node.Operand switch
-                {
-                    BoundConvertedStackAllocExpression stackAlloc => (false, stackAlloc.ElementType, stackAlloc.InitializerOpt, VisitExpression(stackAlloc.Count)),
-                    BoundArrayCreation arrayCreation =>
-                        (true, ((ArrayTypeSymbol)arrayCreation.Type).ElementType, arrayCreation.InitializerOpt, /* need some dummy expression */ _factory.Literal(0)),
-                    _ => throw ExceptionUtilities.Unreachable()
-                };
-
-                if (CodeGen.CodeGenerator.UseCreateSpanForReadOnlySpanInitialization(hasCreateSpanHelper, considerInitblk: !isArrayCreation, elementType, initializerOpt,
-                    isEncDelta: this.EmitModule?.IsEncDelta == true))
-                {
-                    return new BoundConvertedStackAllocExpression(node.Operand.Syntax, elementType, count, initializerOpt, rewrittenType);
-                }
+                var count = VisitExpression(stackAllocExpression.Count);
+                return new BoundConvertedStackAllocExpression(node.Operand.Syntax, stackAllocExpression.ElementType, count, stackAllocExpression.InitializerOpt, rewrittenType);
             }
 
             bool wasInExpressionLambda = _inExpressionLambda;
