@@ -1034,6 +1034,41 @@ namespace System
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69325")]
+        public void TestReadOnlySpan_Net7_Byte()
+        {
+            var source = """
+                using System;
+                static class C
+                {
+                    static void Main()
+                    {
+                        ReadOnlySpan<byte> p = stackalloc byte[3] { 1, 2, 3 };
+                        Write(p);
+                    }
+
+                    static void Write(ReadOnlySpan<byte> span)
+                    {
+                        foreach (byte x in span)
+                            Console.Write(x);
+                    }
+                }
+                """;
+            var verifier = CompileAndVerify(source, expectedOutput: ExecutionConditionUtil.IsCoreClr ? "123" : null,
+                verify: Verification.FailsPEVerify, targetFramework: TargetFramework.Net70);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyIL("C.Main", """
+                {
+                  // Code size       16 (0x10)
+                  .maxstack  1
+                  IL_0000:  ldtoken    "<PrivateImplementationDetails>.__StaticArrayInitTypeSize=3 <PrivateImplementationDetails>.039058C6F2C0CB492C533B0A4D14EF77CC0F78ABCCCED5287D84A1A2011CFB81"
+                  IL_0005:  call       "System.ReadOnlySpan<byte> System.Runtime.CompilerServices.RuntimeHelpers.CreateSpan<byte>(System.RuntimeFieldHandle)"
+                  IL_000a:  call       "void C.Write(System.ReadOnlySpan<byte>)"
+                  IL_000f:  ret
+                }
+                """);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/69325")]
         public void TestReadOnlySpan_Net7_Double()
         {
             var source = """

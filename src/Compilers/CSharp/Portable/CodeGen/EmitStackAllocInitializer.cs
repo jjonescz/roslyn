@@ -139,7 +139,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
         internal static bool UseCreateSpanForReadOnlySpanStackAlloc(TypeSymbol elementType, BoundArrayInitialization? inits, bool isEncDelta)
         {
             return inits?.Initializers is { } initExprs &&
-                elementType.EnumUnderlyingTypeOrSelf().SpecialType.SizeInBytes() > 1 &&
+                elementType.EnumUnderlyingTypeOrSelf().SpecialType.SizeInBytes() >= 1 &&
                 ShouldEmitBlockInitializerForStackAlloc(elementType, initExprs, isEncDelta) == ArrayInitializerStyle.Block;
         }
 
