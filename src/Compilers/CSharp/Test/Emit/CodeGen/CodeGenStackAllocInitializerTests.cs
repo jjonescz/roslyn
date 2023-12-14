@@ -906,7 +906,8 @@ namespace System
                     }
                 }
                 """;
-            var verifier = CompileAndVerify(source, expectedOutput: "123", verify: Verification.Fails, targetFramework: TargetFramework.Net70);
+            var verifier = CompileAndVerify(source, expectedOutput: ExecutionConditionUtil.IsCoreClr ? "123" : null,
+                verify: Verification.Fails, targetFramework: TargetFramework.Net70);
             verifier.VerifyDiagnostics();
             verifier.VerifyIL("C.Main", """
                 {
@@ -1017,7 +1018,8 @@ namespace System
                     }
                 }
                 """;
-            var verifier = CompileAndVerify(source, expectedOutput: "123", targetFramework: TargetFramework.Net70);
+            var verifier = CompileAndVerify(source, expectedOutput: ExecutionConditionUtil.IsCoreClr ? "123" : null,
+                verify: Verification.FailsPEVerify, targetFramework: TargetFramework.Net70);
             verifier.VerifyDiagnostics();
             verifier.VerifyIL("C.Main", """
                 {
@@ -1054,7 +1056,8 @@ namespace System
                 }
                 """;
             var output = "123";
-            var verifier = CompileAndVerify(source, expectedOutput: output, verify: Verification.Fails, options: TestOptions.UnsafeReleaseExe, targetFramework: TargetFramework.Net70);
+            var verifier = CompileAndVerify(source, expectedOutput: ExecutionConditionUtil.IsCoreClr ? output : null,
+                verify: Verification.Fails, options: TestOptions.UnsafeReleaseExe, targetFramework: TargetFramework.Net70);
             verifier.VerifyDiagnostics();
             verifier.VerifyIL("C.Main", """
                 {
@@ -1079,7 +1082,7 @@ namespace System
 
             var comp = CreateCompilation(source, options: TestOptions.UnsafeReleaseExe, targetFramework: TargetFramework.Net70);
             comp.MakeMemberMissing((WellKnownMember)missingMember);
-            verifier = CompileAndVerify(comp, expectedOutput: output, verify: Verification.Fails);
+            verifier = CompileAndVerify(comp, expectedOutput: ExecutionConditionUtil.IsCoreClr ? output : null, verify: Verification.Fails);
             verifier.VerifyDiagnostics();
             verifier.VerifyIL("C.Main", """
                 {
@@ -1132,7 +1135,8 @@ namespace System
                     }
                 }
                 """;
-            var verifier = CompileAndVerify(source, expectedOutput: "1234", verify: Verification.Fails, targetFramework: TargetFramework.Net70);
+            var verifier = CompileAndVerify(source, expectedOutput: ExecutionConditionUtil.IsCoreClr ? "1234" : null,
+                verify: Verification.Fails, targetFramework: TargetFramework.Net70);
             verifier.VerifyDiagnostics();
             verifier.VerifyIL("C.M", """
                 {
