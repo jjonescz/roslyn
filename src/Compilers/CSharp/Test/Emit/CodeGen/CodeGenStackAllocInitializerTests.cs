@@ -1054,16 +1054,24 @@ namespace System
                 }
                 """;
             var verifier = CompileAndVerify(source, expectedOutput: ExecutionConditionUtil.IsCoreClr ? "123" : null,
-                verify: Verification.FailsPEVerify, targetFramework: TargetFramework.Net70);
+                verify: Verification.Fails, targetFramework: TargetFramework.Net70);
             verifier.VerifyDiagnostics();
             verifier.VerifyIL("C.Main", """
                 {
-                  // Code size       16 (0x10)
-                  .maxstack  1
-                  IL_0000:  ldtoken    "<PrivateImplementationDetails>.__StaticArrayInitTypeSize=3 <PrivateImplementationDetails>.039058C6F2C0CB492C533B0A4D14EF77CC0F78ABCCCED5287D84A1A2011CFB81"
-                  IL_0005:  call       "System.ReadOnlySpan<byte> System.Runtime.CompilerServices.RuntimeHelpers.CreateSpan<byte>(System.RuntimeFieldHandle)"
-                  IL_000a:  call       "void C.Write(System.ReadOnlySpan<byte>)"
-                  IL_000f:  ret
+                  // Code size       30 (0x1e)
+                  .maxstack  4
+                  IL_0000:  ldc.i4.3
+                  IL_0001:  conv.u
+                  IL_0002:  localloc
+                  IL_0004:  dup
+                  IL_0005:  ldsflda    "<PrivateImplementationDetails>.__StaticArrayInitTypeSize=3 <PrivateImplementationDetails>.039058C6F2C0CB492C533B0A4D14EF77CC0F78ABCCCED5287D84A1A2011CFB81"
+                  IL_000a:  ldc.i4.3
+                  IL_000b:  cpblk
+                  IL_000d:  ldc.i4.3
+                  IL_000e:  newobj     "System.Span<byte>..ctor(void*, int)"
+                  IL_0013:  call       "System.ReadOnlySpan<byte> System.Span<byte>.op_Implicit(System.Span<byte>)"
+                  IL_0018:  call       "void C.Write(System.ReadOnlySpan<byte>)"
+                  IL_001d:  ret
                 }
                 """);
         }
