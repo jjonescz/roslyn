@@ -100,14 +100,14 @@ stages:
       displayName: Setting SourceBranchName variable
       condition: succeeded()
 
-    - task: tagBuildOrRelease@0
+    - task: colinsalmcorner.colinsalmcorner-buildtasks.tag-build-task.tagBuildOrRelease@0
       displayName: Tag official build
       inputs:
         type: 'Build'
         tags: 'OfficialBuild'
       condition: and(succeeded(), endsWith(variables['SourceBranchName'], '-vs-deps'))
 
-    - task: tagBuildOrRelease@0
+    - task: colinsalmcorner.colinsalmcorner-buildtasks.tag-build-task.tagBuildOrRelease@0
       displayName: Tag main validation build
       inputs:
         type: 'Build'
