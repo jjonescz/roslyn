@@ -11878,7 +11878,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
 
                 Debug.Assert(index < Capacity);
-                index = index * 2 + 2;
+                index = index * 2 + 1;
                 Debug.Assert((_state[index], _state[index + 1]) != (false, false));
 
                 var result = (_state[index], _state[index + 1]) switch
@@ -11909,7 +11909,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // No states should be modified in unreachable code, as there is only one unreachable state.
                 if (!this.Reachable) return;
-                index = index * 2 + 2;
+                index = index * 2 + 1;
 
                 (_state[index], _state[index + 1]) = value switch
                 {
