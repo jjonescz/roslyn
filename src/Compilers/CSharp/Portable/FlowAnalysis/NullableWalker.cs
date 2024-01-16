@@ -3177,7 +3177,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(!IsConditionalState);
             var localFunctionState = GetOrCreateLocalFuncUsages(symbol);
             var state = State.GetStateForVariables(localFunctionState.StartingState.Id);
-            if (Join(ref localFunctionState.StartingState, ref state) &&
+            var oldCapacity = localFunctionState.StartingState.Capacity;
+            if ((Join(ref localFunctionState.StartingState, ref state) ||
+                oldCapacity != localFunctionState.StartingState.Capacity) &&
                 localFunctionState.Visited)
             {
                 // If the starting state of the local function has changed and we've already visited
@@ -11753,7 +11755,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return state;
             }
 
-            private int Capacity => (_state.Capacity - 1) / 2;
+            internal int Capacity => (_state.Capacity - 1) / 2;
 
             private void EnsureCapacity(int capacity)
             {
