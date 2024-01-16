@@ -3039,6 +3039,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // at all the local function use sites (`localFunctionState.StartingState`)
             // which starts as the bottom state ("not null", unreachable).
             var startingState = localFunctionState.StartingState;
+            startingState.Normalize(this, _variables);
             startingState.ForEach(
                 (slot, variables) =>
                 {
