@@ -563,7 +563,8 @@ End Namespace
                          WellKnownType.System_Runtime_CompilerServices_Unsafe,
                          WellKnownType.System_Runtime_CompilerServices_RequiresLocationAttribute,
                          WellKnownType.System_Runtime_InteropServices_CollectionsMarshal,
-                         WellKnownType.System_Runtime_InteropServices_ImmutableCollectionsMarshal
+                         WellKnownType.System_Runtime_InteropServices_ImmutableCollectionsMarshal,
+                         WellKnownType.System_Threading_Lock
                         ' Not available on all platforms.
                         Continue For
                     Case WellKnownType.ExtSentinel
@@ -644,7 +645,8 @@ End Namespace
                          WellKnownType.System_Runtime_CompilerServices_Unsafe,
                          WellKnownType.System_Runtime_CompilerServices_RequiresLocationAttribute,
                          WellKnownType.System_Runtime_InteropServices_CollectionsMarshal,
-                         WellKnownType.System_Runtime_InteropServices_ImmutableCollectionsMarshal
+                         WellKnownType.System_Runtime_InteropServices_ImmutableCollectionsMarshal,
+                         WellKnownType.System_Threading_Lock
                         ' Not available on all platforms.
                         Continue For
                     Case WellKnownType.ExtSentinel
