@@ -96,4 +96,144 @@ public class LockTests : CSharpTestBase
         verifier.VerifyIL("C.M2", il);
         verifier.VerifyIL("C.M1", il);
     }
+
+    [Fact]
+    public void MissingEnterLockScope()
+    {
+        var source = """
+            System.Threading.Lock l = new();
+            lock (l) { }
+
+            namespace System.Threading
+            {
+                public class Lock { }
+            }
+            """;
+        CreateCompilation(source).VerifyEmitDiagnostics(
+            // (2,1): error CS0656: Missing compiler required member 'System.Threading.Lock.EnterLockScope'
+            // lock (l) { }
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "lock (l) { }").WithArguments("System.Threading.Lock", "EnterLockScope").WithLocation(2, 1));
+    }
+
+    [Fact]
+    public void EnterLockScopeReturnsVoid()
+    {
+        var source = """
+            System.Threading.Lock l = new();
+            lock (l) { }
+
+            namespace System.Threading
+            {
+                public class Lock
+                {
+                    public void EnterLockScope() { }
+                }
+            }
+            """;
+        CreateCompilation(source).VerifyEmitDiagnostics(
+            // (2,1): error CS0656: Missing compiler required member 'System.Threading.Lock.EnterLockScope'
+            // lock (l) { }
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "lock (l) { }").WithArguments("System.Threading.Lock", "EnterLockScope").WithLocation(2, 1));
+    }
+
+    [Fact]
+    public void EnterLockScopeTakesArguments()
+    {
+        var source = """
+            System.Threading.Lock l = new();
+            lock (l) { }
+
+            namespace System.Threading
+            {
+                public class Lock
+                {
+                    public Scope EnterLockScope(int arg) => new Scope();
+
+                    public ref struct Scope
+                    {
+                        public void Dispose() { }
+                    }
+                }
+            }
+            """;
+        CreateCompilation(source).VerifyEmitDiagnostics(
+            // (2,1): error CS0656: Missing compiler required member 'System.Threading.Lock.EnterLockScope'
+            // lock (l) { }
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "lock (l) { }").WithArguments("System.Threading.Lock", "EnterLockScope").WithLocation(2, 1));
+    }
+
+    [Fact]
+    public void MissingScopeDispose()
+    {
+        var source = """
+            System.Threading.Lock l = new();
+            lock (l) { }
+
+            namespace System.Threading
+            {
+                public class Lock
+                {
+                    public Scope EnterLockScope() => new Scope();
+
+                    public struct Scope { }
+                }
+            }
+            """;
+        CreateCompilation(source).VerifyEmitDiagnostics(
+            // (2,1): error CS0656: Missing compiler required member 'System.Threading.Lock+Scope.Dispose'
+            // lock (l) { }
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "lock (l) { }").WithArguments("System.Threading.Lock+Scope", "Dispose").WithLocation(2, 1));
+    }
+
+    [Fact]
+    public void ScopeDisposeReturnsNonVoid()
+    {
+        var source = """
+            System.Threading.Lock l = new();
+            lock (l) { }
+
+            namespace System.Threading
+            {
+                public class Lock
+                {
+                    public Scope EnterLockScope() => new Scope();
+
+                    public ref struct Scope
+                    {
+                        public int Dispose() => 1;
+                    }
+                }
+            }
+            """;
+        CreateCompilation(source).VerifyEmitDiagnostics(
+            // (2,1): error CS0656: Missing compiler required member 'System.Threading.Lock+Scope.Dispose'
+            // lock (l) { }
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "lock (l) { }").WithArguments("System.Threading.Lock+Scope", "Dispose").WithLocation(2, 1));
+    }
+
+    [Fact]
+    public void ScopeDisposeTakesArguments()
+    {
+        var source = """
+            System.Threading.Lock l = new();
+            lock (l) { }
+
+            namespace System.Threading
+            {
+                public class Lock
+                {
+                    public Scope EnterLockScope() => new Scope();
+
+                    public ref struct Scope
+                    {
+                        public void Dispose(int x) { }
+                    }
+                }
+            }
+            """;
+        CreateCompilation(source).VerifyEmitDiagnostics(
+            // (2,1): error CS0656: Missing compiler required member 'System.Threading.Lock+Scope.Dispose'
+            // lock (l) { }
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "lock (l) { }").WithArguments("System.Threading.Lock+Scope", "Dispose").WithLocation(2, 1));
+    }
 }
