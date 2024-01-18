@@ -301,10 +301,7 @@ public class LockTests : CSharpTestBase
             static {{type}} Cast2<T>(T t) where T : class => t;
             lock (Cast2(l)) { Console.Write("6"); }
 
-            static {{type}} Cast3<T>(
-                T t)
-                where T : Lock
-                => t;
+            static {{type}} Cast3<T>(T t) where T : Lock => t;
             lock (Cast3(l)) { Console.Write("7"); }
             """;
         var verifier = CompileAndVerify(new[] { source, LockTypeDefinition }, verify: Verification.FailsILVerify,
@@ -313,18 +310,15 @@ public class LockTests : CSharpTestBase
             // 0.cs(6,13): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
             // object  o = l;
             Diagnostic(ErrorCode.WRN_ConvertingLock, "l").WithLocation(6, 13),
-            // 0.cs(9,7): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
+            // 0.cs(9,16): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
             // lock ((object )l) { Console.Write("2"); }
-            Diagnostic(ErrorCode.WRN_ConvertingLock, $"({type})l").WithLocation(9, 7),
+            Diagnostic(ErrorCode.WRN_ConvertingLock, "l").WithLocation(9, 16),
             // 0.cs(11,7): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
             // lock (l as object ) { Console.Write("3"); }
-            Diagnostic(ErrorCode.WRN_ConvertingLock, $"l as {type.Trim()}").WithLocation(11, 7),
+            Diagnostic(ErrorCode.WRN_ConvertingLock, "l").WithLocation(11, 7),
             // 0.cs(13,5): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
             // o = l as object ;
-            Diagnostic(ErrorCode.WRN_ConvertingLock, $"l as {type.Trim()}").WithLocation(13, 5),
-            // 0.cs(22,22): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
-            // static object  Cast3<T>(
-            Diagnostic(ErrorCode.WRN_ConvertingLock, "T").WithLocation(22, 22));
+            Diagnostic(ErrorCode.WRN_ConvertingLock, "l").WithLocation(13, 5));
     }
 
     [Theory, CombinatorialData]
@@ -448,26 +442,14 @@ public class LockTests : CSharpTestBase
 
             M(new Lock());
 
-            static void M<T>(
-                T t)
-                {{constraint}}
+            static void M<T>(T t) {{constraint}}
             {
                 lock (t) { Console.Write("L"); }
             }
             """;
         var verifier = CompileAndVerify(new[] { source, LockTypeDefinition }, verify: Verification.FailsILVerify,
            expectedOutput: "L");
-        if (constraint == "where T : Lock")
-        {
-            verifier.VerifyDiagnostics(
-                // 0.cs(6,15): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
-                // static void M<T>(
-                Diagnostic(ErrorCode.WRN_ConvertingLock, "T").WithLocation(6, 15));
-        }
-        else
-        {
-            verifier.VerifyDiagnostics();
-        }
+        verifier.VerifyDiagnostics();
     }
 
     [Fact]
@@ -487,8 +469,8 @@ public class LockTests : CSharpTestBase
         var verifier = CompileAndVerify(new[] { source, LockTypeDefinition }, verify: Verification.FailsILVerify,
            expectedOutput: "L");
         verifier.VerifyDiagnostics(
-            // 0.cs(4,1): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
+            // 0.cs(4,11): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
             // M<object>(new Lock());
-            Diagnostic(ErrorCode.WRN_ConvertingLock, "M<object>").WithLocation(4, 1));
+            Diagnostic(ErrorCode.WRN_ConvertingLock, "new Lock()").WithLocation(4, 11));
     }
 }
