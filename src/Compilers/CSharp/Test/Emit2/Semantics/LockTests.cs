@@ -247,7 +247,9 @@ public class LockTests : CSharpTestBase
     [Fact]
     public void ExternalAssembly()
     {
-        var lib = CreateCompilation(LockTypeDefinition).EmitToImageReference();
+        var lib = CreateCompilation(LockTypeDefinition)
+            .VerifyDiagnostics()
+            .EmitToImageReference();
         var source = """
             using System;
             using System.Threading;
@@ -319,6 +321,29 @@ public class LockTests : CSharpTestBase
             // 0.cs(13,5): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
             // o = l as object ;
             Diagnostic(ErrorCode.WRN_ConvertingLock, "l").WithLocation(13, 5));
+    }
+
+    [Fact]
+    public void CommonType()
+    {
+        var source = """
+            using System;
+            using System.Threading;
+
+            var array1 = new[] { new Lock(), new Lock() };
+            Console.WriteLine(array1.GetType());
+
+            var array2 = new[] { new Lock(), new object() };
+            Console.WriteLine(array2.GetType());
+            """;
+        var verifier = CompileAndVerify(new[] { source, LockTypeDefinition }, verify: Verification.FailsILVerify, expectedOutput: """
+            System.Threading.Lock[]
+            System.Object[]
+            """);
+        verifier.VerifyDiagnostics(
+            // 0.cs(7,22): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
+            // var array2 = new[] { new Lock(), new object() };
+            Diagnostic(ErrorCode.WRN_ConvertingLock, "new Lock()").WithLocation(7, 22));
     }
 
     [Theory, CombinatorialData]
@@ -430,6 +455,41 @@ public class LockTests : CSharpTestBase
             Diagnostic(ErrorCode.WRN_ConvertingLock, "new Lock()").WithLocation(4, 12));
     }
 
+    [Fact]
+    public void OtherConversions()
+    {
+        var source = """
+            #nullable enable
+            using System.Threading;
+
+            I i = new Lock();
+            Lock? l = new Lock();
+            C c = new Lock();
+            D d = new Lock();
+            d = (D)new Lock();
+
+            interface I { }
+
+            class C
+            {
+                public static implicit operator C(Lock l) => new C();
+            }
+
+            class D
+            {
+                public static explicit operator D(Lock l) => new D();
+            }
+            """;
+        // No warnings about converting `Lock` expected.
+        CreateCompilation(new[] { source, LockTypeDefinition }).VerifyEmitDiagnostics(
+            // 0.cs(4,7): error CS0266: Cannot implicitly convert type 'System.Threading.Lock' to 'I'. An explicit conversion exists (are you missing a cast?)
+            // I i = new Lock();
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "new Lock()").WithArguments("System.Threading.Lock", "I").WithLocation(4, 7),
+            // 0.cs(7,7): error CS0266: Cannot implicitly convert type 'System.Threading.Lock' to 'D'. An explicit conversion exists (are you missing a cast?)
+            // D d = new Lock();
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "new Lock()").WithArguments("System.Threading.Lock", "D").WithLocation(7, 7));
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("where T : class")]
@@ -472,5 +532,264 @@ public class LockTests : CSharpTestBase
             // 0.cs(4,11): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
             // M<object>(new Lock());
             Diagnostic(ErrorCode.WRN_ConvertingLock, "new Lock()").WithLocation(4, 11));
+    }
+
+    [Fact]
+    public void UseSiteError_EnterLockScope()
+    {
+        // namespace System.Threading
+        // {
+        //     public class Lock
+        //     {
+        //         [System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute("Test")]
+        //         public Scope EnterLockScope() => throw null;
+        //
+        //         public ref struct Scope
+        //         {
+        //             public void Dispose() { }
+        //         }
+        //     }
+        // }
+        var ilSource = """
+            .class public auto ansi sealed beforefieldinit System.Threading.Lock extends System.Object
+            {
+                .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
+                {
+                    .maxstack 8
+                    ret
+                }
+
+                .method public hidebysig instance class System.Threading.Lock/Scope EnterLockScope () cil managed
+                {
+                    .custom instance void System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute::.ctor(string) = (
+                        01 00 04 54 65 73 74 00 00
+                    )
+                    .maxstack 8
+                    ldnull
+                    throw
+                }
+
+                .class nested public sequential ansi sealed beforefieldinit Scope extends System.ValueType
+                {
+                    .custom instance void System.Runtime.CompilerServices.IsByRefLikeAttribute::.ctor() = (
+                        01 00 00 00
+                    )
+
+                    .pack 0
+                    .size 1
+
+                    .method public hidebysig instance void Dispose () cil managed
+                    {
+                        .maxstack 8
+                        ret
+                    }
+                }
+            }
+
+            .class public auto ansi sealed beforefieldinit System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute extends System.Object
+            {
+                .method public hidebysig specialname rtspecialname instance void .ctor(string s) cil managed
+                {
+                    .maxstack 8
+                    ret
+                }
+            }
+
+            .class public auto ansi sealed beforefieldinit System.Runtime.CompilerServices.IsByRefLikeAttribute extends System.Object
+            {
+                .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
+                {
+                    .maxstack 8
+                    ret
+                }
+            }
+            """;
+        var source = """
+            class C
+            {
+                void M(System.Threading.Lock l)
+                {
+                    lock (l) { }
+                }
+            }
+            """;
+        CreateCompilationWithIL(source, ilSource).VerifyEmitDiagnostics(
+            // (5,9): error CS9041: 'Lock.EnterLockScope()' requires compiler feature 'Test', which is not supported by this version of the C# compiler.
+            //         lock (l) { }
+            Diagnostic(ErrorCode.ERR_UnsupportedCompilerFeature, "lock (l) { }").WithArguments("System.Threading.Lock.EnterLockScope()", "Test").WithLocation(5, 9));
+    }
+
+    [Fact]
+    public void UseSiteError_Scope()
+    {
+        // namespace System.Threading
+        // {
+        //     public class Lock
+        //     {
+        //         public Scope EnterLockScope() => throw null;
+        //
+        //         [System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute("Test")]
+        //         public ref struct Scope
+        //         {
+        //             public void Dispose() { }
+        //         }
+        //     }
+        // }
+        var ilSource = """
+            .class public auto ansi sealed beforefieldinit System.Threading.Lock extends System.Object
+            {
+                .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
+                {
+                    .maxstack 8
+                    ret
+                }
+
+                .method public hidebysig instance class System.Threading.Lock/Scope EnterLockScope () cil managed
+                {
+                    .maxstack 8
+                    ldnull
+                    throw
+                }
+
+                .class nested public sequential ansi sealed beforefieldinit Scope extends System.ValueType
+                {
+                    .custom instance void System.Runtime.CompilerServices.IsByRefLikeAttribute::.ctor() = (
+                        01 00 00 00
+                    )
+
+                    .custom instance void System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute::.ctor(string) = (
+                        01 00 04 54 65 73 74 00 00
+                    )
+
+                    .pack 0
+                    .size 1
+
+                    .method public hidebysig instance void Dispose () cil managed
+                    {
+                        .maxstack 8
+                        ret
+                    }
+                }
+            }
+
+            .class public auto ansi sealed beforefieldinit System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute extends System.Object
+            {
+                .method public hidebysig specialname rtspecialname instance void .ctor(string s) cil managed
+                {
+                    .maxstack 8
+                    ret
+                }
+            }
+
+            .class public auto ansi sealed beforefieldinit System.Runtime.CompilerServices.IsByRefLikeAttribute extends System.Object
+            {
+                .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
+                {
+                    .maxstack 8
+                    ret
+                }
+            }
+            """;
+        var source = """
+            class C
+            {
+                void M(System.Threading.Lock l)
+                {
+                    lock (l) { }
+                }
+            }
+            """;
+        CreateCompilationWithIL(source, ilSource).VerifyEmitDiagnostics(
+            // (5,9): error CS9041: 'Lock.Scope' requires compiler feature 'Test', which is not supported by this version of the C# compiler.
+            //         lock (l) { }
+            Diagnostic(ErrorCode.ERR_UnsupportedCompilerFeature, "lock (l) { }").WithArguments("System.Threading.Lock.Scope", "Test").WithLocation(5, 9),
+            // (5,9): error CS9041: 'Lock.Scope' requires compiler feature 'Test', which is not supported by this version of the C# compiler.
+            //         lock (l) { }
+            Diagnostic(ErrorCode.ERR_UnsupportedCompilerFeature, "lock (l) { }").WithArguments("System.Threading.Lock.Scope", "Test").WithLocation(5, 9));
+    }
+
+    [Fact]
+    public void UseSiteError_Dispose()
+    {
+        // namespace System.Threading
+        // {
+        //     public class Lock
+        //     {
+        //         public Scope EnterLockScope() => throw null;
+        //
+        //         public ref struct Scope
+        //         {
+        //             [System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute("Test")]
+        //             public void Dispose() { }
+        //         }
+        //     }
+        // }
+        var ilSource = """
+            .class public auto ansi sealed beforefieldinit System.Threading.Lock extends System.Object
+            {
+                .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
+                {
+                    .maxstack 8
+                    ret
+                }
+
+                .method public hidebysig instance class System.Threading.Lock/Scope EnterLockScope () cil managed
+                {
+                    .maxstack 8
+                    ldnull
+                    throw
+                }
+
+                .class nested public sequential ansi sealed beforefieldinit Scope extends System.ValueType
+                {
+                    .custom instance void System.Runtime.CompilerServices.IsByRefLikeAttribute::.ctor() = (
+                        01 00 00 00
+                    )
+
+                    .pack 0
+                    .size 1
+
+                    .method public hidebysig instance void Dispose () cil managed
+                    {
+                        .custom instance void System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute::.ctor(string) = (
+                            01 00 04 54 65 73 74 00 00
+                        )
+                        .maxstack 8
+                        ret
+                    }
+                }
+            }
+
+            .class public auto ansi sealed beforefieldinit System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute extends System.Object
+            {
+                .method public hidebysig specialname rtspecialname instance void .ctor(string s) cil managed
+                {
+                    .maxstack 8
+                    ret
+                }
+            }
+
+            .class public auto ansi sealed beforefieldinit System.Runtime.CompilerServices.IsByRefLikeAttribute extends System.Object
+            {
+                .method public hidebysig specialname rtspecialname instance void .ctor() cil managed
+                {
+                    .maxstack 8
+                    ret
+                }
+            }
+            """;
+        var source = """
+            class C
+            {
+                void M(System.Threading.Lock l)
+                {
+                    lock (l) { }
+                }
+            }
+            """;
+        CreateCompilationWithIL(source, ilSource).VerifyEmitDiagnostics(
+            // (5,9): error CS9041: 'Lock.Scope.Dispose()' requires compiler feature 'Test', which is not supported by this version of the C# compiler.
+            //         lock (l) { }
+            Diagnostic(ErrorCode.ERR_UnsupportedCompilerFeature, "lock (l) { }").WithArguments("System.Threading.Lock.Scope.Dispose()", "Test").WithLocation(5, 9));
     }
 }
