@@ -278,6 +278,283 @@ public class LockTests : CSharpTestBase
         verifier.VerifyDiagnostics();
     }
 
+    [Fact]
+    public void EmbeddedStatement()
+    {
+        var source = """
+            using System;
+            using System.Threading;
+            
+            lock (new Lock()) Console.Write("L");
+            """;
+        var verifier = CompileAndVerify([source, LockTypeDefinition], verify: Verification.FailsILVerify,
+           expectedOutput: "ELD");
+        verifier.VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void EmptyStatement()
+    {
+        var source = """
+            using System.Threading;
+            
+            lock (new Lock()) ;
+            """;
+        var verifier = CompileAndVerify([source, LockTypeDefinition], verify: Verification.FailsILVerify,
+           expectedOutput: "ED");
+        verifier.VerifyDiagnostics(
+            // (3,19): warning CS0642: Possible mistaken empty statement
+            // lock (new Lock()) ;
+            Diagnostic(ErrorCode.WRN_PossibleMistakenNullStatement, ";").WithLocation(3, 19));
+    }
+
+    [Fact]
+    public void Nullable()
+    {
+        var source = """
+            #nullable enable
+            using System;
+            using System.Threading;
+
+            static class C
+            {
+                static void Main()
+                {
+                    M(new Lock());
+                }
+
+                static void M(Lock? l)
+                {
+                    lock (l) { Console.Write("1"); }
+                    lock (l) { Console.Write("2"); }
+                }
+            }
+            """;
+        var verifier = CompileAndVerify([source, LockTypeDefinition], verify: Verification.FailsILVerify,
+           expectedOutput: "E1DE2D");
+        verifier.VerifyDiagnostics(
+            // (14,15): warning CS8602: Dereference of a possibly null reference.
+            //         lock (l) { Console.Write("1"); }
+            Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "l").WithLocation(14, 15));
+    }
+
+    [Theory, CombinatorialData]
+    public void Null([CombinatorialValues("null", "default")] string expr)
+    {
+        var source = $$"""
+            #nullable enable
+            static class C
+            {
+                static void Main()
+                {
+                    try
+                    {
+                        M();
+                    }
+                    catch (System.NullReferenceException)
+                    {
+                        System.Console.Write("caught");
+                    }
+                }
+                static void M()
+                {
+                    lock ((System.Threading.Lock){{expr}}) { }
+                }
+            }
+            """;
+        var verifier = CompileAndVerify([source, LockTypeDefinition], verify: Verification.FailsILVerify,
+            expectedOutput: "caught");
+        verifier.VerifyDiagnostics(
+            // (17,15): warning CS8600: Converting null literal or possible null value to non-nullable type.
+            //         lock ((System.Threading.Lock)null) { }
+            Diagnostic(ErrorCode.WRN_ConvertingNullableToNonNullable, $"(System.Threading.Lock){expr}").WithLocation(17, 15),
+            // (17,15): warning CS8602: Dereference of a possibly null reference.
+            //         lock ((System.Threading.Lock)null) { }
+            Diagnostic(ErrorCode.WRN_NullReferenceReceiver, $"(System.Threading.Lock){expr}").WithLocation(17, 15));
+        verifier.VerifyIL("C.M", """
+            {
+              // Code size       18 (0x12)
+              .maxstack  1
+              .locals init (System.Threading.Lock.Scope V_0)
+              IL_0000:  ldnull
+              IL_0001:  callvirt   "System.Threading.Lock.Scope System.Threading.Lock.EnterLockScope()"
+              IL_0006:  stloc.0
+              .try
+              {
+                IL_0007:  leave.s    IL_0011
+              }
+              finally
+              {
+                IL_0009:  ldloca.s   V_0
+                IL_000b:  call       "void System.Threading.Lock.Scope.Dispose()"
+                IL_0010:  endfinally
+              }
+              IL_0011:  ret
+            }
+            """);
+    }
+
+    [Fact]
+    public void Await()
+    {
+        var source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            lock (new Lock())
+            {
+                await Task.Yield();
+            }
+            """;
+        var comp = CreateCompilation([source, LockTypeDefinition]);
+
+        var expectedDiagnostics = new[]
+        {
+            // (6,5): error CS1996: Cannot await in the body of a lock statement
+            //     await Task.Yield();
+            Diagnostic(ErrorCode.ERR_BadAwaitInLock, "await Task.Yield()").WithLocation(6, 5)
+        };
+
+        comp.VerifyDiagnostics(expectedDiagnostics);
+        comp.VerifyEmitDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact]
+    public void AsyncMethod()
+    {
+        var source = """
+            #pragma warning disable 1998 // async method lacks 'await' operators
+            using System.Threading;
+
+            class C
+            {
+                async void M()
+                {
+                    lock (new Lock()) { }
+                }
+            }
+            """;
+        CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics();
+    }
+
+    [Fact]
+    public void AsyncMethod_WithAwait()
+    {
+        var source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            class C
+            {
+                async void M()
+                {
+                    await Task.Yield();
+                    lock (new Lock()) { }
+                }
+            }
+            """;
+        CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics();
+    }
+
+    [Fact]
+    public void AsyncLocalFunction()
+    {
+        var source = """
+            #pragma warning disable 1998 // async method lacks 'await' operators
+            using System.Threading;
+
+            async void local()
+            {
+                lock (new Lock()) { }
+            }
+
+            local();
+            """;
+        CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics();
+    }
+
+    [Fact]
+    public void AsyncLocalFunction_WithAwait()
+    {
+        var source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            async void local()
+            {
+                await Task.Yield();
+                lock (new Lock()) { }
+            }
+
+            local();
+            """;
+        CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics();
+    }
+
+    [Fact]
+    public void AsyncLambda()
+    {
+        var source = """
+            #pragma warning disable 1998 // async method lacks 'await' operators
+            using System.Threading;
+
+            var lam = async () =>
+            {
+                lock (new Lock()) { }
+            };
+            """;
+        CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics();
+    }
+
+    [Fact]
+    public void AsyncLambda_WithAwait()
+    {
+        var source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            var lam = async () =>
+            {
+                await Task.Yield();
+                lock (new Lock()) { }
+            };
+            """;
+        CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics();
+    }
+
+    [Fact]
+    public void Yield()
+    {
+        var source = """
+            using System.Collections.Generic;
+            using System.Threading;
+
+            class C
+            {
+                IEnumerable<int> M()
+                {
+                    yield return 1;
+                    lock (new Lock())
+                    {
+                        yield return 2;
+                    }
+                    yield return 3;
+                }
+            }
+            """;
+        CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics(
+            // (7,5): error CS4013: Instance of type 'Lock.Scope' cannot be used inside a nested function, query expression, iterator block or async method
+            //     {
+            Diagnostic(ErrorCode.ERR_SpecialByRefInLambda, @"{
+        yield return 1;
+        lock (new Lock())
+        {
+            yield return 2;
+        }
+        yield return 3;
+    }").WithArguments("System.Threading.Lock.Scope").WithLocation(7, 5));
+    }
+
     [Theory, CombinatorialData]
     public void CastToObject([CombinatorialValues("object ", "dynamic")] string type)
     {
