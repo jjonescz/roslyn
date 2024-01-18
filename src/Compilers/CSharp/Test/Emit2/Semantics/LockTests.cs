@@ -70,7 +70,7 @@ public class LockTests : CSharpTestBase
                 }
             }
             """;
-        var verifier = CompileAndVerify(new[] { source, LockTypeDefinition }, expectedOutput: "1E2D31E2D3",
+        var verifier = CompileAndVerify([source, LockTypeDefinition], expectedOutput: "1E2D31E2D3",
             verify: Verification.FailsILVerify);
         verifier.VerifyDiagnostics();
         var il = """
@@ -273,7 +273,7 @@ public class LockTests : CSharpTestBase
                 Console.Write("L");
             }
             """;
-        var verifier = CompileAndVerify(new[] { source, LockTypeDefinition }, verify: Verification.FailsILVerify,
+        var verifier = CompileAndVerify([source, LockTypeDefinition], verify: Verification.FailsILVerify,
            expectedOutput: "ELD");
         verifier.VerifyDiagnostics();
     }
@@ -306,7 +306,7 @@ public class LockTests : CSharpTestBase
             static {{type}} Cast3<T>(T t) where T : Lock => t;
             lock (Cast3(l)) { Console.Write("7"); }
             """;
-        var verifier = CompileAndVerify(new[] { source, LockTypeDefinition }, verify: Verification.FailsILVerify,
+        var verifier = CompileAndVerify([source, LockTypeDefinition], verify: Verification.FailsILVerify,
            expectedOutput: "1234567");
         verifier.VerifyDiagnostics(
             // 0.cs(6,13): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
@@ -336,7 +336,7 @@ public class LockTests : CSharpTestBase
             var array2 = new[] { new Lock(), new object() };
             Console.WriteLine(array2.GetType());
             """;
-        var verifier = CompileAndVerify(new[] { source, LockTypeDefinition }, verify: Verification.FailsILVerify, expectedOutput: """
+        var verifier = CompileAndVerify([source, LockTypeDefinition], verify: Verification.FailsILVerify, expectedOutput: """
             System.Threading.Lock[]
             System.Object[]
             """);
@@ -447,7 +447,7 @@ public class LockTests : CSharpTestBase
             object o = new Lock();
             lock ((Lock)o) { Console.Write("L"); }
             """;
-        var verifier = CompileAndVerify(new[] { source, LockTypeDefinition }, verify: Verification.FailsILVerify,
+        var verifier = CompileAndVerify([source, LockTypeDefinition], verify: Verification.FailsILVerify,
            expectedOutput: "ELD");
         verifier.VerifyDiagnostics(
             // 0.cs(4,12): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
@@ -481,7 +481,7 @@ public class LockTests : CSharpTestBase
             }
             """;
         // No warnings about converting `Lock` expected.
-        CreateCompilation(new[] { source, LockTypeDefinition }).VerifyEmitDiagnostics(
+        CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics(
             // 0.cs(4,7): error CS0266: Cannot implicitly convert type 'System.Threading.Lock' to 'I'. An explicit conversion exists (are you missing a cast?)
             // I i = new Lock();
             Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "new Lock()").WithArguments("System.Threading.Lock", "I").WithLocation(4, 7),
@@ -507,7 +507,7 @@ public class LockTests : CSharpTestBase
                 lock (t) { Console.Write("L"); }
             }
             """;
-        var verifier = CompileAndVerify(new[] { source, LockTypeDefinition }, verify: Verification.FailsILVerify,
+        var verifier = CompileAndVerify([source, LockTypeDefinition], verify: Verification.FailsILVerify,
            expectedOutput: "L");
         verifier.VerifyDiagnostics();
     }
@@ -526,7 +526,7 @@ public class LockTests : CSharpTestBase
                 lock (t) { Console.Write("L"); }
             }
             """;
-        var verifier = CompileAndVerify(new[] { source, LockTypeDefinition }, verify: Verification.FailsILVerify,
+        var verifier = CompileAndVerify([source, LockTypeDefinition], verify: Verification.FailsILVerify,
            expectedOutput: "L");
         verifier.VerifyDiagnostics(
             // 0.cs(4,11): warning CS9214: A value of type 'System.Threading.Lock' converted to another type will use likely unintended monitor-based locking in 'lock' statement.
