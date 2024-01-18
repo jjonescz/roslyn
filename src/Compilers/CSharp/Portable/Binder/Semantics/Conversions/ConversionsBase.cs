@@ -2612,6 +2612,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // SPEC: From any reference type to object and dynamic.
             if (destination.SpecialType == SpecialType.System_Object || destination.Kind == SymbolKind.DynamicType)
             {
+                checkLockUpcast(source, ref useSiteInfo);
                 return true;
             }
 
@@ -2619,17 +2620,25 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 case TypeKind.Class:
                     // SPEC:  From any class type S to any class type T provided S is derived from T.
-                    if (destination.IsClassType() && IsBaseClass(source, destination, ref useSiteInfo))
+                    if (destination.IsClassType() && IsBaseClass(source, destination, ref useSiteInfo) ||
+                        HasImplicitConversionToInterface(source, destination, ref useSiteInfo))
                     {
+                        checkLockUpcast(source, ref useSiteInfo);
                         return true;
                     }
 
-                    return HasImplicitConversionToInterface(source, destination, ref useSiteInfo);
+                    return false;
 
                 case TypeKind.Interface:
                     // SPEC: From any interface-type S to any interface-type T, provided S is derived from T.
                     // NOTE: This handles variance conversions
-                    return HasImplicitConversionToInterface(source, destination, ref useSiteInfo);
+                    if (HasImplicitConversionToInterface(source, destination, ref useSiteInfo))
+                    {
+                        checkLockUpcast(source, ref useSiteInfo);
+                        return true;
+                    }
+
+                    return false;
 
                 case TypeKind.Delegate:
                     // SPEC: From any delegate-type to System.Delegate and the interfaces it implements.
@@ -2649,6 +2658,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             // UNDONE: Implicit conversions involving type parameters that are known to be reference types.
 
             return false;
+
+            static void checkLockUpcast(TypeSymbol source, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
+            {
+                if (useSiteInfo.AccumulatesDiagnostics && source.IsWellKnownTypeLock())
+                {
+                    useSiteInfo.Add(new UseSiteInfo<AssemblySymbol>(new CSDiagnosticInfo(ErrorCode.WRN_ConvertingLock)));
+                }
+            }
         }
 
         private bool HasImplicitConversionToInterface(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
