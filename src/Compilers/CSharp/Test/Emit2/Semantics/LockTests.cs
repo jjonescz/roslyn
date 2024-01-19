@@ -406,17 +406,13 @@ public class LockTests : CSharpTestBase
                 await Task.Yield();
             }
             """;
-        var comp = CreateCompilation([source, LockTypeDefinition]);
-
-        var expectedDiagnostics = new[]
-        {
+        CreateCompilation([source, LockTypeDefinition]).VerifyDiagnostics(
+            // (4,7): error CS9104: A using statement resource of type 'Lock.Scope' cannot be used in async methods or async lambda expressions.
+            // lock (new Lock())
+            Diagnostic(ErrorCode.ERR_BadSpecialByRefUsing, "new Lock()").WithArguments("System.Threading.Lock.Scope").WithLocation(4, 7),
             // (6,5): error CS1996: Cannot await in the body of a lock statement
             //     await Task.Yield();
-            Diagnostic(ErrorCode.ERR_BadAwaitInLock, "await Task.Yield()").WithLocation(6, 5)
-        };
-
-        comp.VerifyDiagnostics(expectedDiagnostics);
-        comp.VerifyEmitDiagnostics(expectedDiagnostics);
+            Diagnostic(ErrorCode.ERR_BadAwaitInLock, "await Task.Yield()").WithLocation(6, 5));
     }
 
     [Fact]
@@ -434,7 +430,10 @@ public class LockTests : CSharpTestBase
                 }
             }
             """;
-        CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics();
+        CreateCompilation([source, LockTypeDefinition]).VerifyDiagnostics(
+            // (8,15): error CS9104: A using statement resource of type 'Lock.Scope' cannot be used in async methods or async lambda expressions.
+            //         lock (new Lock()) { }
+            Diagnostic(ErrorCode.ERR_BadSpecialByRefUsing, "new Lock()").WithArguments("System.Threading.Lock.Scope").WithLocation(8, 15));
     }
 
     [Fact]
@@ -453,7 +452,10 @@ public class LockTests : CSharpTestBase
                 }
             }
             """;
-        CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics();
+        CreateCompilation([source, LockTypeDefinition]).VerifyDiagnostics(
+            // (9,15): error CS9104: A using statement resource of type 'Lock.Scope' cannot be used in async methods or async lambda expressions.
+            //         lock (new Lock()) { }
+            Diagnostic(ErrorCode.ERR_BadSpecialByRefUsing, "new Lock()").WithArguments("System.Threading.Lock.Scope").WithLocation(9, 15));
     }
 
     [Fact]
@@ -470,7 +472,10 @@ public class LockTests : CSharpTestBase
 
             local();
             """;
-        CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics();
+        CreateCompilation([source, LockTypeDefinition]).VerifyDiagnostics(
+            // (6,11): error CS9104: A using statement resource of type 'Lock.Scope' cannot be used in async methods or async lambda expressions.
+            //     lock (new Lock()) { }
+            Diagnostic(ErrorCode.ERR_BadSpecialByRefUsing, "new Lock()").WithArguments("System.Threading.Lock.Scope").WithLocation(6, 11));
     }
 
     [Fact]
@@ -488,7 +493,10 @@ public class LockTests : CSharpTestBase
 
             local();
             """;
-        CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics();
+        CreateCompilation([source, LockTypeDefinition]).VerifyDiagnostics(
+            // (7,11): error CS9104: A using statement resource of type 'Lock.Scope' cannot be used in async methods or async lambda expressions.
+            //     lock (new Lock()) { }
+            Diagnostic(ErrorCode.ERR_BadSpecialByRefUsing, "new Lock()").WithArguments("System.Threading.Lock.Scope").WithLocation(7, 11));
     }
 
     [Fact]
@@ -503,7 +511,10 @@ public class LockTests : CSharpTestBase
                 lock (new Lock()) { }
             };
             """;
-        CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics();
+        CreateCompilation([source, LockTypeDefinition]).VerifyDiagnostics(
+            // (6,11): error CS9104: A using statement resource of type 'Lock.Scope' cannot be used in async methods or async lambda expressions.
+            //     lock (new Lock()) { }
+            Diagnostic(ErrorCode.ERR_BadSpecialByRefUsing, "new Lock()").WithArguments("System.Threading.Lock.Scope").WithLocation(6, 11));
     }
 
     [Fact]
@@ -519,7 +530,10 @@ public class LockTests : CSharpTestBase
                 lock (new Lock()) { }
             };
             """;
-        CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics();
+        CreateCompilation([source, LockTypeDefinition]).VerifyDiagnostics(
+            // (7,11): error CS9104: A using statement resource of type 'Lock.Scope' cannot be used in async methods or async lambda expressions.
+            //     lock (new Lock()) { }
+            Diagnostic(ErrorCode.ERR_BadSpecialByRefUsing, "new Lock()").WithArguments("System.Threading.Lock.Scope").WithLocation(7, 11));
     }
 
     [Fact]
