@@ -71,8 +71,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 return new BoundBlock(
                     lockSyntax,
-                    locals: [boundTemp.LocalSymbol],
-                    statements: [expressionStatement, tryFinally]);
+                    locals: ImmutableArray.Create(boundTemp.LocalSymbol),
+                    statements: ImmutableArray.Create(expressionStatement, tryFinally));
             }
 
             if (argumentType.Kind == SymbolKind.TypeParameter)
