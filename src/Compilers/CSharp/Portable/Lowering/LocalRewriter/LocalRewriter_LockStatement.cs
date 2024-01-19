@@ -48,17 +48,21 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 var tryBlock = rewrittenBody is BoundBlock block ? block : BoundBlock.SynthesizedNoLocals(lockSyntax, rewrittenBody);
 
-                var enterLockScopeCall = _factory.Call(rewrittenArgument, enterLockScope);
+                var enterLockScopeCall = BoundCall.Synthesized(
+                    rewrittenArgument.Syntax,
+                    rewrittenArgument,
+                    initialBindingReceiverIsSubjectToCloning: ThreeState.Unknown,
+                    enterLockScope);
 
                 BoundLocal boundTemp = _factory.StoreToTemp(enterLockScopeCall,
                     out BoundAssignmentOperator tempAssignment,
-                    syntaxOpt: lockSyntax,
+                    syntaxOpt: rewrittenArgument.Syntax,
                     kind: SynthesizedLocalKind.Using);
                 var expressionStatement = new BoundExpressionStatement(rewrittenArgument.Syntax, tempAssignment);
 
                 BoundStatement tryFinally = RewriteUsingStatementTryFinally(
-                    lockSyntax,
-                    lockSyntax,
+                    rewrittenArgument.Syntax,
+                    rewrittenArgument.Syntax,
                     tryBlock,
                     boundTemp,
                     awaitKeywordOpt: default,

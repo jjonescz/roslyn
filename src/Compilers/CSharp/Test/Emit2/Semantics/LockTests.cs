@@ -557,16 +557,9 @@ public class LockTests : CSharpTestBase
             }
             """;
         CreateCompilation([source, LockTypeDefinition]).VerifyEmitDiagnostics(
-            // (7,5): error CS4013: Instance of type 'Lock.Scope' cannot be used inside a nested function, query expression, iterator block or async method
-            //     {
-            Diagnostic(ErrorCode.ERR_SpecialByRefInLambda, @"{
-        yield return 1;
-        lock (new Lock())
-        {
-            yield return 2;
-        }
-        yield return 3;
-    }").WithArguments("System.Threading.Lock.Scope").WithLocation(7, 5));
+            // (9,15): error CS4013: Instance of type 'Lock.Scope' cannot be used inside a nested function, query expression, iterator block or async method
+            //         lock (new Lock())
+            Diagnostic(ErrorCode.ERR_SpecialByRefInLambda, "new Lock()").WithArguments("System.Threading.Lock.Scope").WithLocation(9, 15));
     }
 
     [Theory, CombinatorialData]
