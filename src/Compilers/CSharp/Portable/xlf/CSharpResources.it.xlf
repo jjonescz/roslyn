@@ -267,6 +267,11 @@
         <target state="translated">Il membro di record '{0}' deve essere una proprietà di istanza leggibile o campo di tipo '{1}' per corrispondere al parametro posizionale '{2}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_BadSpecialByRefLock">
+        <source>A lock statement scope type '{0}' cannot be used in async methods or async lambda expressions.</source>
+        <target state="new">A lock statement scope type '{0}' cannot be used in async methods or async lambda expressions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_BadSpecialByRefUsing">
         <source>A using statement resource of type '{0}' cannot be used in async methods or async lambda expressions.</source>
         <target state="translated">Non è possibile usare una risorsa di istruzione using di tipo '{0}' in metodi asincroni o espressioni lambda asincrone.</target>

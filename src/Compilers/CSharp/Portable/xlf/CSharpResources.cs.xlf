@@ -267,6 +267,11 @@
         <target state="translated">Člen záznamu {0} musí být čitelná vlastnost instance nebo pole typu {1}, která se bude shodovat s pozičním parametrem {2}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_BadSpecialByRefLock">
+        <source>A lock statement scope type '{0}' cannot be used in async methods or async lambda expressions.</source>
+        <target state="new">A lock statement scope type '{0}' cannot be used in async methods or async lambda expressions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_BadSpecialByRefUsing">
         <source>A using statement resource of type '{0}' cannot be used in async methods or async lambda expressions.</source>
         <target state="translated">Prostředek použitého příkazu typu {0} nejde použít v asynchronních metodách ani v asynchronních výrazech lambda.</target>

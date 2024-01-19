@@ -62,7 +62,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     scopeType,
                     diagnostics,
                     exprSyntax,
-                    forUsingExpression: true);
+                    errorCode: ErrorCode.ERR_BadSpecialByRefLock);
             }
 
             BoundStatement stmt = originalBinder.BindPossibleEmbeddedStatement(_syntax.Statement, diagnostics);
