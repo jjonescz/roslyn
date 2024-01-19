@@ -46,7 +46,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // lock (x) { body } -> using (x.EnterLockScope()) { body }
 
-                var tryBlock = rewrittenBody is BoundBlock block ? block : BoundBlock.SynthesizedNoLocals(node.Syntax, rewrittenBody);
+                var tryBlock = rewrittenBody is BoundBlock block ? block : BoundBlock.SynthesizedNoLocals(lockSyntax, rewrittenBody);
 
                 var enterLockScopeCall = _factory.Call(rewrittenArgument, enterLockScope);
 
