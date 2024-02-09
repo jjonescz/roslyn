@@ -426,6 +426,127 @@ ILockOperation (OperationKind.Lock, Type: null) (Syntax: 'lock (new o ... }')
             VerifyOperationTreeAndDiagnosticsForTest<LockStatementSyntax>([source, LockTypeDefinition], expectedOperationTree, expectedDiagnostics);
         }
 
+        [Fact, CompilerTrait(CompilerFeature.IOperation)]
+        public void ILockStatement_LockObject_MissingEnterLockScope()
+        {
+            var source = """
+                using System;
+                using System.Threading;
+
+                Lock l = new Lock();
+                /*<bind>*/lock (l)
+                {
+                }/*</bind>*/
+
+                namespace System.Threading
+                {
+                    public class Lock { }
+                }
+                """;
+
+            var expectedOperationTree = """
+                ILockOperation (OperationKind.Lock, Type: null, IsInvalid) (Syntax: 'lock (l) ... }')
+                  Expression:
+                    ILocalReferenceOperation: l (OperationKind.LocalReference, Type: System.Threading.Lock, IsInvalid) (Syntax: 'l')
+                  Body:
+                    IBlockOperation (0 statements) (OperationKind.Block, Type: null) (Syntax: '{ ... }')
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (5,17): error CS0656: Missing compiler required member 'System.Threading.Lock.EnterLockScope'
+                // /*<bind>*/lock (l)
+                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "l").WithArguments("System.Threading.Lock", "EnterLockScope").WithLocation(5, 17)
+            };
+
+            VerifyOperationTreeAndDiagnosticsForTest<LockStatementSyntax>(source, expectedOperationTree, expectedDiagnostics);
+        }
+
+        [Fact, CompilerTrait(CompilerFeature.IOperation)]
+        public void ILockStatement_LockObject_MissingScopeDispose()
+        {
+            var source = """
+                using System;
+                using System.Threading;
+
+                Lock l = new Lock();
+                /*<bind>*/lock (l)
+                {
+                }/*</bind>*/
+
+                namespace System.Threading
+                {
+                    public class Lock
+                    {
+                        public Scope EnterLockScope() => new Scope();
+
+                        public ref struct Scope { }
+                    }
+                }
+                """;
+
+            var expectedOperationTree = """
+                ILockOperation (OperationKind.Lock, Type: null, IsInvalid) (Syntax: 'lock (l) ... }')
+                  Expression:
+                    ILocalReferenceOperation: l (OperationKind.LocalReference, Type: System.Threading.Lock, IsInvalid) (Syntax: 'l')
+                  Body:
+                    IBlockOperation (0 statements) (OperationKind.Block, Type: null) (Syntax: '{ ... }')
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (5,17): error CS0656: Missing compiler required member 'System.Threading.Lock+Scope.Dispose'
+                // /*<bind>*/lock (l)
+                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "l").WithArguments("System.Threading.Lock+Scope", "Dispose").WithLocation(5, 17)
+            };
+
+            VerifyOperationTreeAndDiagnosticsForTest<LockStatementSyntax>(source, expectedOperationTree, expectedDiagnostics);
+        }
+
+        [Fact, CompilerTrait(CompilerFeature.IOperation)]
+        public void ILockStatement_LockObject_EnterLockScopeVirtual()
+        {
+            var source = """
+                using System;
+                using System.Threading;
+
+                Lock l = new LockDerived();
+                /*<bind>*/lock (l)
+                {
+                }/*</bind>*/
+
+                namespace System.Threading
+                {
+                    public class Lock
+                    {
+                        public virtual Scope EnterLockScope() => new();
+
+                        public ref struct Scope
+                        {
+                            public void Dispose() { }
+                        }
+                    }
+
+                    public class LockDerived : Lock
+                    {
+                        public override Scope EnterLockScope() => new();
+                    }
+                }
+                """;
+
+            var expectedOperationTree = """
+                ILockOperation (OperationKind.Lock, Type: null) (Syntax: 'lock (l) ... }')
+                  Expression:
+                    ILocalReferenceOperation: l (OperationKind.LocalReference, Type: System.Threading.Lock) (Syntax: 'l')
+                  Body:
+                    IBlockOperation (0 statements) (OperationKind.Block, Type: null) (Syntax: '{ ... }')
+                """;
+
+            var expectedDiagnostics = DiagnosticDescription.None;
+
+            VerifyOperationTreeAndDiagnosticsForTest<LockStatementSyntax>(source, expectedOperationTree, expectedDiagnostics);
+        }
+
         [CompilerTrait(CompilerFeature.IOperation, CompilerFeature.Dataflow)]
         [Fact]
         public void LockFlow_01()
@@ -1158,6 +1279,330 @@ Block[B6] - Exit
             var expectedDiagnostics = DiagnosticDescription.None;
 
             VerifyFlowGraphAndDiagnosticsForTest<BlockSyntax>([source, LockTypeDefinition], expectedFlowGraph, expectedDiagnostics);
+        }
+
+        [Fact, CompilerTrait(CompilerFeature.IOperation, CompilerFeature.Dataflow)]
+        public void LockFlow_LockObject_MissingEnterLockScope()
+        {
+            var source = """
+                using System;
+                using System.Threading;
+
+                class C
+                {
+                    void M()
+                    /*<bind>*/{
+                        Lock l = new Lock();
+                        lock (l)
+                        {
+                        }
+                    }/*</bind>*/
+                }
+
+                namespace System.Threading
+                {
+                    public class Lock { }
+                }
+                """;
+
+            var expectedFlowGraph = """
+                Block[B0] - Entry
+                    Statements (0)
+                    Next (Regular) Block[B1]
+                        Entering: {R1}
+                .locals {R1}
+                {
+                    Locals: [System.Threading.Lock l]
+                    Block[B1] - Block
+                        Predecessors: [B0]
+                        Statements (1)
+                            ISimpleAssignmentOperation (OperationKind.SimpleAssignment, Type: System.Threading.Lock, IsImplicit) (Syntax: 'l = new Lock()')
+                              Left:
+                                ILocalReferenceOperation: l (IsDeclaration: True) (OperationKind.LocalReference, Type: System.Threading.Lock, IsImplicit) (Syntax: 'l = new Lock()')
+                              Right:
+                                IObjectCreationOperation (Constructor: System.Threading.Lock..ctor()) (OperationKind.ObjectCreation, Type: System.Threading.Lock) (Syntax: 'new Lock()')
+                                  Arguments(0)
+                                  Initializer:
+                                    null
+                        Next (Regular) Block[B2]
+                            Entering: {R2}
+                    .locals {R2}
+                    {
+                        CaptureIds: [0]
+                        Block[B2] - Block
+                            Predecessors: [B1]
+                            Statements (1)
+                                IFlowCaptureOperation: 0 (OperationKind.FlowCapture, Type: null, IsInvalid, IsImplicit) (Syntax: 'l')
+                                  Value:
+                                    IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: System.IDisposable, IsInvalid, IsImplicit) (Syntax: 'l')
+                                      Conversion: CommonConversion (Exists: False, IsIdentity: False, IsNumeric: False, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+                                        (NoConversion)
+                                      Operand:
+                                        IInvalidOperation (OperationKind.Invalid, Type: null, IsInvalid, IsImplicit) (Syntax: 'l')
+                                          Children(1):
+                                              ILocalReferenceOperation: l (OperationKind.LocalReference, Type: System.Threading.Lock, IsInvalid) (Syntax: 'l')
+                            Next (Regular) Block[B3]
+                                Entering: {R3} {R4}
+                        .try {R3, R4}
+                        {
+                            Block[B3] - Block
+                                Predecessors: [B2]
+                                Statements (0)
+                                Next (Regular) Block[B7]
+                                    Finalizing: {R5}
+                                    Leaving: {R4} {R3} {R2} {R1}
+                        }
+                        .finally {R5}
+                        {
+                            Block[B4] - Block
+                                Predecessors (0)
+                                Statements (0)
+                                Jump if True (Regular) to Block[B6]
+                                    IIsNullOperation (OperationKind.IsNull, Type: System.Boolean, IsInvalid, IsImplicit) (Syntax: 'l')
+                                      Operand:
+                                        IFlowCaptureReferenceOperation: 0 (OperationKind.FlowCaptureReference, Type: System.IDisposable, IsInvalid, IsImplicit) (Syntax: 'l')
+                                Next (Regular) Block[B5]
+                            Block[B5] - Block
+                                Predecessors: [B4]
+                                Statements (1)
+                                    IInvocationOperation (virtual void System.IDisposable.Dispose()) (OperationKind.Invocation, Type: System.Void, IsInvalid, IsImplicit) (Syntax: 'l')
+                                      Instance Receiver:
+                                        IFlowCaptureReferenceOperation: 0 (OperationKind.FlowCaptureReference, Type: System.IDisposable, IsInvalid, IsImplicit) (Syntax: 'l')
+                                      Arguments(0)
+                                Next (Regular) Block[B6]
+                            Block[B6] - Block
+                                Predecessors: [B4] [B5]
+                                Statements (0)
+                                Next (StructuredExceptionHandling) Block[null]
+                        }
+                    }
+                }
+                Block[B7] - Exit
+                    Predecessors: [B3]
+                    Statements (0)
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (9,15): error CS0656: Missing compiler required member 'System.Threading.Lock.EnterLockScope'
+                //         lock (l)
+                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "l").WithArguments("System.Threading.Lock", "EnterLockScope").WithLocation(9, 15)
+            };
+
+            VerifyFlowGraphAndDiagnosticsForTest<BlockSyntax>(source, expectedFlowGraph, expectedDiagnostics);
+        }
+
+        [Fact, CompilerTrait(CompilerFeature.IOperation, CompilerFeature.Dataflow)]
+        public void LockFlow_LockObject_MissingScopeDispose()
+        {
+            var source = """
+                using System;
+                using System.Threading;
+
+                class C
+                {
+                    void M()
+                    /*<bind>*/{
+                        Lock l = new Lock();
+                        lock (l)
+                        {
+                        }
+                    }/*</bind>*/
+                }
+
+                namespace System.Threading
+                {
+                    public class Lock
+                    {
+                        public Scope EnterLockScope() => new Scope();
+
+                        public ref struct Scope { }
+                    }
+                }
+                """;
+
+            var expectedFlowGraph = """
+                Block[B0] - Entry
+                    Statements (0)
+                    Next (Regular) Block[B1]
+                        Entering: {R1}
+                .locals {R1}
+                {
+                    Locals: [System.Threading.Lock l]
+                    Block[B1] - Block
+                        Predecessors: [B0]
+                        Statements (1)
+                            ISimpleAssignmentOperation (OperationKind.SimpleAssignment, Type: System.Threading.Lock, IsImplicit) (Syntax: 'l = new Lock()')
+                              Left:
+                                ILocalReferenceOperation: l (IsDeclaration: True) (OperationKind.LocalReference, Type: System.Threading.Lock, IsImplicit) (Syntax: 'l = new Lock()')
+                              Right:
+                                IObjectCreationOperation (Constructor: System.Threading.Lock..ctor()) (OperationKind.ObjectCreation, Type: System.Threading.Lock) (Syntax: 'new Lock()')
+                                  Arguments(0)
+                                  Initializer:
+                                    null
+                        Next (Regular) Block[B2]
+                            Entering: {R2}
+                    .locals {R2}
+                    {
+                        CaptureIds: [0]
+                        Block[B2] - Block
+                            Predecessors: [B1]
+                            Statements (1)
+                                IFlowCaptureOperation: 0 (OperationKind.FlowCapture, Type: null, IsInvalid, IsImplicit) (Syntax: 'l')
+                                  Value:
+                                    IInvocationOperation ( System.Threading.Lock.Scope System.Threading.Lock.EnterLockScope()) (OperationKind.Invocation, Type: System.Threading.Lock.Scope, IsInvalid, IsImplicit) (Syntax: 'l')
+                                      Instance Receiver:
+                                        ILocalReferenceOperation: l (OperationKind.LocalReference, Type: System.Threading.Lock, IsInvalid) (Syntax: 'l')
+                                      Arguments(0)
+                            Next (Regular) Block[B3]
+                                Entering: {R3} {R4}
+                        .try {R3, R4}
+                        {
+                            Block[B3] - Block
+                                Predecessors: [B2]
+                                Statements (0)
+                                Next (Regular) Block[B5]
+                                    Finalizing: {R5}
+                                    Leaving: {R4} {R3} {R2} {R1}
+                        }
+                        .finally {R5}
+                        {
+                            Block[B4] - Block
+                                Predecessors (0)
+                                Statements (1)
+                                    IInvocationOperation (virtual void System.IDisposable.Dispose()) (OperationKind.Invocation, Type: System.Void, IsInvalid, IsImplicit) (Syntax: 'l')
+                                      Instance Receiver:
+                                        IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: System.IDisposable, IsInvalid, IsImplicit) (Syntax: 'l')
+                                          Conversion: CommonConversion (Exists: False, IsIdentity: False, IsNumeric: False, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+                                            (NoConversion)
+                                          Operand:
+                                            IFlowCaptureReferenceOperation: 0 (OperationKind.FlowCaptureReference, Type: System.Threading.Lock.Scope, IsInvalid, IsImplicit) (Syntax: 'l')
+                                      Arguments(0)
+                                Next (StructuredExceptionHandling) Block[null]
+                        }
+                    }
+                }
+                Block[B5] - Exit
+                    Predecessors: [B3]
+                    Statements (0)
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (9,15): error CS0656: Missing compiler required member 'System.Threading.Lock+Scope.Dispose'
+                //         lock (l)
+                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "l").WithArguments("System.Threading.Lock+Scope", "Dispose").WithLocation(9, 15)
+            };
+
+            VerifyFlowGraphAndDiagnosticsForTest<BlockSyntax>(source, expectedFlowGraph, expectedDiagnostics);
+        }
+
+        [Fact, CompilerTrait(CompilerFeature.IOperation, CompilerFeature.Dataflow)]
+        public void LockFlow_LockObject_EnterLockScopeVirtual()
+        {
+            var source = """
+                using System;
+                using System.Threading;
+
+                class C
+                {
+                    void M()
+                    /*<bind>*/{
+                        Lock l = new LockDerived();
+                        lock (l)
+                        {
+                        }
+                    }/*</bind>*/
+                }
+
+                namespace System.Threading
+                {
+                    public class Lock
+                    {
+                        public virtual Scope EnterLockScope() => new();
+
+                        public ref struct Scope
+                        {
+                            public void Dispose() { }
+                        }
+                    }
+
+                    public class LockDerived : Lock
+                    {
+                        public override Scope EnterLockScope() => new();
+                    }
+                }
+                """;
+
+            var expectedFlowGraph = """
+                Block[B0] - Entry
+                    Statements (0)
+                    Next (Regular) Block[B1]
+                        Entering: {R1}
+                .locals {R1}
+                {
+                    Locals: [System.Threading.Lock l]
+                    Block[B1] - Block
+                        Predecessors: [B0]
+                        Statements (1)
+                            ISimpleAssignmentOperation (OperationKind.SimpleAssignment, Type: System.Threading.Lock, IsImplicit) (Syntax: 'l = new LockDerived()')
+                              Left:
+                                ILocalReferenceOperation: l (IsDeclaration: True) (OperationKind.LocalReference, Type: System.Threading.Lock, IsImplicit) (Syntax: 'l = new LockDerived()')
+                              Right:
+                                IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: System.Threading.Lock, IsImplicit) (Syntax: 'new LockDerived()')
+                                  Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: True, IsUserDefined: False) (MethodSymbol: null)
+                                    (ImplicitReference)
+                                  Operand:
+                                    IObjectCreationOperation (Constructor: System.Threading.LockDerived..ctor()) (OperationKind.ObjectCreation, Type: System.Threading.LockDerived) (Syntax: 'new LockDerived()')
+                                      Arguments(0)
+                                      Initializer:
+                                        null
+                        Next (Regular) Block[B2]
+                            Entering: {R2}
+                    .locals {R2}
+                    {
+                        CaptureIds: [0]
+                        Block[B2] - Block
+                            Predecessors: [B1]
+                            Statements (1)
+                                IFlowCaptureOperation: 0 (OperationKind.FlowCapture, Type: null, IsImplicit) (Syntax: 'l')
+                                  Value:
+                                    IInvocationOperation ( System.Threading.Lock.Scope System.Threading.Lock.EnterLockScope()) (OperationKind.Invocation, Type: System.Threading.Lock.Scope, IsImplicit) (Syntax: 'l')
+                                      Instance Receiver:
+                                        ILocalReferenceOperation: l (OperationKind.LocalReference, Type: System.Threading.Lock) (Syntax: 'l')
+                                      Arguments(0)
+                            Next (Regular) Block[B3]
+                                Entering: {R3} {R4}
+                        .try {R3, R4}
+                        {
+                            Block[B3] - Block
+                                Predecessors: [B2]
+                                Statements (0)
+                                Next (Regular) Block[B5]
+                                    Finalizing: {R5}
+                                    Leaving: {R4} {R3} {R2} {R1}
+                        }
+                        .finally {R5}
+                        {
+                            Block[B4] - Block
+                                Predecessors (0)
+                                Statements (1)
+                                    IInvocationOperation ( void System.Threading.Lock.Scope.Dispose()) (OperationKind.Invocation, Type: System.Void, IsImplicit) (Syntax: 'l')
+                                      Instance Receiver:
+                                        IFlowCaptureReferenceOperation: 0 (OperationKind.FlowCaptureReference, Type: System.Threading.Lock.Scope, IsImplicit) (Syntax: 'l')
+                                      Arguments(0)
+                                Next (StructuredExceptionHandling) Block[null]
+                        }
+                    }
+                }
+                Block[B5] - Exit
+                    Predecessors: [B3]
+                    Statements (0)
+                """;
+
+            var expectedDiagnostics = DiagnosticDescription.None;
+
+            VerifyFlowGraphAndDiagnosticsForTest<BlockSyntax>(source, expectedFlowGraph, expectedDiagnostics);
         }
     }
 }
