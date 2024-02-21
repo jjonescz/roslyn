@@ -5825,6 +5825,21 @@ class C<T>
             });
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/71970")]
+        public void EnumAttributeCycle()
+        {
+            var source = """
+                [assembly: Test]
+                enum TestEnum { Default }
+                class TestAttribute : System.Attribute
+                {
+                    public readonly TestEnum TestEnum;
+                    public TestAttribute(TestEnum e = TestEnum.Default) { TestEnum = e; }
+                }
+                """;
+            CreateCompilation(source).VerifyEmitDiagnostics();
+        }
+
         #endregion
 
         #region Error Tests
