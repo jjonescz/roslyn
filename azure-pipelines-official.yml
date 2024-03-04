@@ -91,14 +91,14 @@ extends:
 
       jobs:
       - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.9') }}:
-        - template: /eng/common/templates/job/onelocbuild.yml@self
+        - template: /eng/common/templates-official/job/onelocbuild.yml@self
           parameters:
             MirrorRepo: roslyn
             MirrorBranch: release/dev17.9
             LclSource: lclFilesfromPackage
             LclPackageId: 'LCL-JUNO-PROD-ROSLYN'
 
-      - template: /eng/common/templates/jobs/source-build.yml@self
+      - template: /eng/common/templates-official/jobs/source-build.yml@self
 
       - job: OfficialBuild
         displayName: Official Build
@@ -283,7 +283,7 @@ extends:
                        /p:GenerateSbom=true
           condition: succeeded()
 
-        - template: /eng/common/templates/steps/generate-sbom.yml@self
+        - template: /eng/common/templates-official/steps/generate-sbom.yml@self
 
         - task: PowerShell@2
           displayName: Publish Assets
@@ -315,7 +315,7 @@ extends:
           condition: succeededOrFailed()
 
       # Publish to Build Asset Registry
-      - template: /eng/common/templates/job/publish-build-assets.yml@self
+      - template: /eng/common/templates-official/job/publish-build-assets.yml@self
         parameters:
           publishUsingPipelines: true
           dependsOn:
@@ -352,7 +352,7 @@ extends:
             dropPath: '$(Pipeline.Workspace)\VSSetup'
 
     - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-      - template: /eng/common/templates/post-build/post-build.yml@self
+      - template: /eng/common/templates-official/post-build/post-build.yml@self
         parameters:
           publishingInfraVersion: 3
           # Symbol validation is not entirely reliable as of yet, so should be turned off until
