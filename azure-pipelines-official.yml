@@ -150,6 +150,13 @@ extends:
             artifactName: 'NGen Logs'
             publishLocation: Container
 
+          # Publishes setup VSIXes to a drop.
+          # Note: The insertion tool looks for the display name of this task in the logs.
+          - output: microBuildVstsDrop
+            dropFolder: 'artifacts\VSSetup\$(BuildConfiguration)\Insertion'
+            dropName: $(VisualStudio.DropName)
+            accessToken: $(_DevDivDropAccessToken)
+
           # Publish insertion packages to CoreXT store.
           - output: nuget
             displayName: 'Publish CoreXT Packages'
@@ -310,19 +317,6 @@ extends:
             mergeTestResults: true
             testRunTitle: 'Unit Tests'
           condition: and(succeededOrFailed(), ne(variables['SkipTests'], 'true'))
-
-        # Publishes setup VSIXes to a drop.
-        # Note: The insertion tool looks for the display name of this task in the logs.
-        - task: ms-vseng.MicroBuildTasks.4305a8de-ba66-4d8b-b2d1-0dc4ecbbf5e8.MicroBuildUploadVstsDropFolder@1
-          displayName: Upload VSTS Drop
-          inputs:
-            DropName: $(VisualStudio.DropName)
-            DropFolder: 'artifacts\VSSetup\$(BuildConfiguration)\Insertion'
-            AccessToken: $(_DevDivDropAccessToken)
-          condition: succeeded()
-        - task: ms-vseng.MicroBuildTasks.521a94ea-9e68-468a-8167-6dcf361ea776.MicroBuildCleanup@1
-          displayName: Perform Cleanup Tasks
-          condition: succeededOrFailed()
 
       # Publish to Build Asset Registry
       - template: /eng/common/templates-official/job/publish-build-assets.yml@self
