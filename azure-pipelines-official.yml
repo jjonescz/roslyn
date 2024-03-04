@@ -80,7 +80,7 @@ extends:
   parameters:
     sdl:
       sourceAnalysisPool:
-        name: $(DncEngInternalBuildPool)
+        name: NetCore1ESPool-Svc-Internal
         image: 1es-windows-2022-pt
         os: windows
     pool:
