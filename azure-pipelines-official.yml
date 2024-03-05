@@ -12,9 +12,9 @@ pr: none
 
 resources:
   repositories:
-  - repository: MicroBuildTemplate
+  - repository: 1ESPipelineTemplates
     type: git
-    name: 1ESPipelineTemplates/MicroBuildTemplate
+    name: 1ESPipelineTemplates/1ESPipelineTemplates
     ref: refs/tags/release
 
 parameters:
@@ -76,8 +76,10 @@ variables:
     value: ''
 
 extends:
-  template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
+  template: v1/1ES.Official.PipelineTemplate.yml@1ESPipelineTemplates
   parameters:
+    featureFlags:
+      autoBaseline: true
     sdl:
       sourceAnalysisPool:
         name: NetCore1ESPool-Svc-Internal
