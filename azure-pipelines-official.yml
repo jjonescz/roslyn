@@ -347,10 +347,8 @@ extends:
       - job: insert
         displayName: Insert to VS
         steps:
-        - task: DownloadPipelineArtifact@2
-          inputs:
-            buildType: current
-            artifact: VSSetup
+        - download: current
+          artifact: VSSetup
         - powershell: |
             $branchName = "$(Build.SourceBranch)".Substring("refs/heads/".Length)
             Write-Host "##vso[task.setvariable variable=ComponentBranchName]$branchName"
