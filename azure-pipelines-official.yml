@@ -158,7 +158,7 @@ extends:
           - output: nuget
             displayName: 'Publish CoreXT Packages'
             condition: succeeded()
-            packageParentPath: '$(Build.ArtifactStagingDirectory)'
+            packageParentPath: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(BuildConfiguration)\DevDivPackages'
             packagesToPush: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(BuildConfiguration)\DevDivPackages\**\*.nupkg'
             allowPackageConflicts: true
             nuGetFeedType: external
