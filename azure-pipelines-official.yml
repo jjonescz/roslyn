@@ -171,18 +171,18 @@ extends:
 
           # Publish our NuPkgs as an artifact. The name of this artifact must be PackageArtifacts as the
           # arcade templates depend on the name.
-          - output: pipelineArtifact
+          - output: buildArtifacts
             displayName: 'Publish Artifact Packages'
             condition: succeeded()
-            targetPath: 'artifacts\packages\$(BuildConfiguration)'
-            artifactName: 'PackageArtifacts'
+            PathtoPublish: 'artifacts\packages\$(BuildConfiguration)'
+            ArtifactName: 'PackageArtifacts'
 
           # Publish Asset Manifests for Build Asset Registry job
-          - output: pipelineArtifact
+          - output: buildArtifacts
             displayName: 'Publish Asset Manifests'
             condition: succeeded()
-            targetPath: '$(Build.SourcesDirectory)/artifacts/log/$(BuildConfiguration)/AssetManifest'
-            artifactName: AssetManifests
+            PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log/$(BuildConfiguration)/AssetManifest'
+            ArtifactName: AssetManifests
 
         steps:
         - powershell: Write-Host "##vso[task.setvariable variable=SourceBranchName]$('$(Build.SourceBranch)'.Substring('refs/heads/'.Length))"
@@ -347,8 +347,10 @@ extends:
       - job: insert
         displayName: Insert to VS
         steps:
-        - download: current
-          artifact: VSSetup
+        - task: DownloadPipelineArtifact@2
+          inputs:
+            buildType: current
+            artifact: VSSetup
         - powershell: |
             $branchName = "$(Build.SourceBranch)".Substring("refs/heads/".Length)
             Write-Host "##vso[task.setvariable variable=ComponentBranchName]$branchName"
