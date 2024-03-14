@@ -2017,6 +2017,45 @@ public class LockTests : CSharpTestBase
     }
 
     [Fact]
+    public void Yield_AroundOnly()
+    {
+        var source = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+
+            static class Program
+            {
+                static void Main()
+                {
+                    foreach (var x in M())
+                    {
+                        Console.Write(x);
+                    }
+                }
+
+                static IEnumerable<int> M()
+                {
+                    yield return 1;
+                    lock (new Lock())
+                    {
+                        Console.Write("L");
+                    }
+                    yield return 2;
+                }
+            }
+            """;
+        var expectedOutput = "1ELD2";
+        var verifier = CompileAndVerify([source, LockTypeDefinition], options: TestOptions.ReleaseExe,
+            verify: Verification.FailsILVerify, expectedOutput: expectedOutput);
+        verifier.VerifyDiagnostics();
+
+        verifier = CompileAndVerify([source, LockTypeDefinition], options: TestOptions.DebugExe,
+            verify: Verification.FailsILVerify, expectedOutput: expectedOutput);
+        verifier.VerifyDiagnostics();
+    }
+
+    [Fact]
     public void Yield_Async()
     {
         var source = """
