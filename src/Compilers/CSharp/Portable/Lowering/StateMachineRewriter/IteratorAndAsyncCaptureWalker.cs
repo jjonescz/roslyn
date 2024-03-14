@@ -19,7 +19,7 @@ namespace Microsoft.CodeAnalysis.CSharp
     /// </summary>
     /// <remarks>
     /// Data flow analysis is used to calculate the locals. At yield/await we mark all variables as "unassigned".
-    /// When a read from an unassigned variables is reported we add the variable to the captured set.
+    /// When a read from an unassigned variable is reported we add the variable to the captured set.
     /// "this" parameter is captured if a reference to "this", "base" or an instance field is encountered.
     /// Variables used in finally also need to be captured if there is a yield in the corresponding try block.
     /// </remarks>
