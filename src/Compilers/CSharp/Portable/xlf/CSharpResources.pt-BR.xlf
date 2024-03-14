@@ -267,11 +267,6 @@
         <target state="translated">O membro do registro '{0}' precisa ser uma propriedade de instância legível ou campo do tipo '{1}' para corresponder ao parâmetro posicional '{2}'.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ERR_BadSpecialByRefLock">
-        <source>A lock statement on a value of type 'System.Threading.Lock' cannot be used in async methods or async lambda expressions.</source>
-        <target state="new">A lock statement on a value of type 'System.Threading.Lock' cannot be used in async methods or async lambda expressions.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ERR_BadSpecialByRefUsing">
         <source>A using statement resource of type '{0}' cannot be used in async methods or async lambda expressions.</source>
         <target state="translated">Um recurso de instrução using do tipo "{0}" não pode ser usado em métodos assíncronos ou expressões lambda assíncronas.</target>

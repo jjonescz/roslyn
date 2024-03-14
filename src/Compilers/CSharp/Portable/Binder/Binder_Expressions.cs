@@ -3184,19 +3184,12 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         internal static void CheckRestrictedTypeInAsyncMethod(Symbol containingSymbol, TypeSymbol type, BindingDiagnosticBag diagnostics, SyntaxNode syntax, ErrorCode errorCode = ErrorCode.ERR_BadSpecialByRefLocal)
         {
-            Debug.Assert(errorCode is ErrorCode.ERR_BadSpecialByRefLocal or ErrorCode.ERR_BadSpecialByRefUsing or ErrorCode.ERR_BadSpecialByRefLock);
+            Debug.Assert(errorCode is ErrorCode.ERR_BadSpecialByRefLocal or ErrorCode.ERR_BadSpecialByRefUsing);
             if (containingSymbol.Kind == SymbolKind.Method
                 && ((MethodSymbol)containingSymbol).IsAsync
                 && type.IsRestrictedType())
             {
-                if (errorCode == ErrorCode.ERR_BadSpecialByRefLock)
-                {
-                    Error(diagnostics, errorCode, syntax);
-                }
-                else
-                {
-                    Error(diagnostics, errorCode, syntax, type);
-                }
+                Error(diagnostics, errorCode, syntax, type);
             }
         }
 

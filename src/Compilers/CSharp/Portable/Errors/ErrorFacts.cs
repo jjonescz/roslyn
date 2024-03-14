@@ -2418,7 +2418,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ErrorCode.ERR_CollectionExpressionMissingConstructor:
                 case ErrorCode.ERR_CollectionExpressionMissingAdd:
                 case ErrorCode.WRN_ConvertingLock:
-                case ErrorCode.ERR_BadSpecialByRefLock:
                 case ErrorCode.ERR_CantInferMethTypeArgs_DynamicArgumentWithParamsCollections:
                 case ErrorCode.ERR_ParamsCollectionAmbiguousDynamicArgument:
                 case ErrorCode.WRN_DynamicDispatchToParamsCollectionMethod:
