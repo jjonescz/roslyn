@@ -174,12 +174,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 Error(diagnostics, ErrorCode.ERR_IllegalUnsafe, node.UnsafeKeyword);
             }
-            else if (this.IsIndirectlyInIterator) // called *after* we know the binder map has been created.
-            {
-                // Spec 8.2: "An iterator block always defines a safe context, even when its declaration
-                // is nested in an unsafe context."
-                Error(diagnostics, ErrorCode.ERR_IllegalInnerUnsafe, node.UnsafeKeyword);
-            }
 
             return BindEmbeddedBlock(node.Block, diagnostics);
         }

@@ -275,9 +275,8 @@ class C
 }
 ";
 
-            CreateCompilation(text, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
-                // (4,56): error CS1629: Unsafe code may not appear in iterators
-                Diagnostic(ErrorCode.ERR_IllegalInnerUnsafe, "Goo"));
+            // PROTOTYPE: Should be an error (yield inside unsafe).
+            CreateCompilation(text, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
         }
 
         [Fact]
@@ -294,9 +293,7 @@ class C
 }
 ";
 
-            CreateCompilation(text, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
-                // (6,9): error CS1629: Unsafe code may not appear in iterators
-                Diagnostic(ErrorCode.ERR_IllegalInnerUnsafe, "unsafe"));
+            CreateCompilation(text, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
         }
 
         [Fact]
@@ -313,9 +310,7 @@ unsafe class C
 }
 ";
 
-            CreateCompilation(text, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
-                // (6,9): error CS1629: Unsafe code may not appear in iterators
-                Diagnostic(ErrorCode.ERR_IllegalInnerUnsafe, "unsafe"));
+            CreateCompilation(text, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
         }
 
         [WorkItem(546657, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/546657")]
@@ -333,9 +328,178 @@ unsafe class C
 }
 ";
 
-            CreateCompilation(text, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
-                // (6,9): error CS1629: Unsafe code may not appear in iterators
-                Diagnostic(ErrorCode.ERR_IllegalInnerUnsafe, "unsafe"));
+            CreateCompilation(text, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void IteratorUnsafe6()
+        {
+            var code = """
+                static class Program
+                {
+                    static void Main()
+                    {
+                        foreach (var x in M(new[] { 1, 2 }))
+                        {
+                            System.Console.Write(x);
+                        }
+                    }
+                    static System.Collections.Generic.IEnumerable<int> M(int[] xs)
+                    {
+                        int r;
+                        unsafe
+                        {
+                            fixed (int* p = xs)
+                            {
+                                r = p[1];
+                            }
+                        }
+                        yield return r;
+                    }
+                }
+                """;
+            var expectedOutput = "2";
+            var verifier = CompileAndVerify(code, options: TestOptions.UnsafeReleaseExe,
+                expectedOutput: expectedOutput, verify: Verification.FailsILVerify);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyIL("Program.<M>d__1.System.Collections.IEnumerator.MoveNext", """
+                {
+                  // Code size       84 (0x54)
+                  .maxstack  2
+                  .locals init (int V_0,
+                                int V_1, //r
+                                int* V_2, //p
+                                pinned int[] V_3)
+                  IL_0000:  ldarg.0
+                  IL_0001:  ldfld      "int Program.<M>d__1.<>1__state"
+                  IL_0006:  stloc.0
+                  IL_0007:  ldloc.0
+                  IL_0008:  brfalse.s  IL_0010
+                  IL_000a:  ldloc.0
+                  IL_000b:  ldc.i4.1
+                  IL_000c:  beq.s      IL_004b
+                  IL_000e:  ldc.i4.0
+                  IL_000f:  ret
+                  IL_0010:  ldarg.0
+                  IL_0011:  ldc.i4.m1
+                  IL_0012:  stfld      "int Program.<M>d__1.<>1__state"
+                  IL_0017:  ldarg.0
+                  IL_0018:  ldfld      "int[] Program.<M>d__1.xs"
+                  IL_001d:  dup
+                  IL_001e:  stloc.3
+                  IL_001f:  brfalse.s  IL_0026
+                  IL_0021:  ldloc.3
+                  IL_0022:  ldlen
+                  IL_0023:  conv.i4
+                  IL_0024:  brtrue.s   IL_002b
+                  IL_0026:  ldc.i4.0
+                  IL_0027:  conv.u
+                  IL_0028:  stloc.2
+                  IL_0029:  br.s       IL_0034
+                  IL_002b:  ldloc.3
+                  IL_002c:  ldc.i4.0
+                  IL_002d:  ldelema    "int"
+                  IL_0032:  conv.u
+                  IL_0033:  stloc.2
+                  IL_0034:  ldloc.2
+                  IL_0035:  ldc.i4.4
+                  IL_0036:  add
+                  IL_0037:  ldind.i4
+                  IL_0038:  stloc.1
+                  IL_0039:  ldnull
+                  IL_003a:  stloc.3
+                  IL_003b:  ldarg.0
+                  IL_003c:  ldloc.1
+                  IL_003d:  stfld      "int Program.<M>d__1.<>2__current"
+                  IL_0042:  ldarg.0
+                  IL_0043:  ldc.i4.1
+                  IL_0044:  stfld      "int Program.<M>d__1.<>1__state"
+                  IL_0049:  ldc.i4.1
+                  IL_004a:  ret
+                  IL_004b:  ldarg.0
+                  IL_004c:  ldc.i4.m1
+                  IL_004d:  stfld      "int Program.<M>d__1.<>1__state"
+                  IL_0052:  ldc.i4.0
+                  IL_0053:  ret
+                }
+                """);
+
+            verifier = CompileAndVerify(code, options: TestOptions.UnsafeDebugExe,
+                expectedOutput: expectedOutput, verify: Verification.FailsILVerify);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyIL("Program.<M>d__1.System.Collections.IEnumerator.MoveNext", """
+                {
+                  // Code size      122 (0x7a)
+                  .maxstack  3
+                  .locals init (int V_0,
+                                pinned int[] V_1)
+                  IL_0000:  ldarg.0
+                  IL_0001:  ldfld      "int Program.<M>d__1.<>1__state"
+                  IL_0006:  stloc.0
+                  IL_0007:  ldloc.0
+                  IL_0008:  brfalse.s  IL_0012
+                  IL_000a:  br.s       IL_000c
+                  IL_000c:  ldloc.0
+                  IL_000d:  ldc.i4.1
+                  IL_000e:  beq.s      IL_0014
+                  IL_0010:  br.s       IL_0016
+                  IL_0012:  br.s       IL_0018
+                  IL_0014:  br.s       IL_0071
+                  IL_0016:  ldc.i4.0
+                  IL_0017:  ret
+                  IL_0018:  ldarg.0
+                  IL_0019:  ldc.i4.m1
+                  IL_001a:  stfld      "int Program.<M>d__1.<>1__state"
+                  IL_001f:  nop
+                  IL_0020:  nop
+                  IL_0021:  ldarg.0
+                  IL_0022:  ldfld      "int[] Program.<M>d__1.xs"
+                  IL_0027:  dup
+                  IL_0028:  stloc.1
+                  IL_0029:  brfalse.s  IL_0030
+                  IL_002b:  ldloc.1
+                  IL_002c:  ldlen
+                  IL_002d:  conv.i4
+                  IL_002e:  brtrue.s   IL_003a
+                  IL_0030:  ldarg.0
+                  IL_0031:  ldc.i4.0
+                  IL_0032:  conv.u
+                  IL_0033:  stfld      "int* Program.<M>d__1.<p>5__2"
+                  IL_0038:  br.s       IL_0048
+                  IL_003a:  ldarg.0
+                  IL_003b:  ldloc.1
+                  IL_003c:  ldc.i4.0
+                  IL_003d:  ldelema    "int"
+                  IL_0042:  conv.u
+                  IL_0043:  stfld      "int* Program.<M>d__1.<p>5__2"
+                  IL_0048:  nop
+                  IL_0049:  ldarg.0
+                  IL_004a:  ldarg.0
+                  IL_004b:  ldfld      "int* Program.<M>d__1.<p>5__2"
+                  IL_0050:  ldc.i4.4
+                  IL_0051:  add
+                  IL_0052:  ldind.i4
+                  IL_0053:  stfld      "int Program.<M>d__1.<r>5__1"
+                  IL_0058:  nop
+                  IL_0059:  ldnull
+                  IL_005a:  stloc.1
+                  IL_005b:  nop
+                  IL_005c:  ldarg.0
+                  IL_005d:  ldarg.0
+                  IL_005e:  ldfld      "int Program.<M>d__1.<r>5__1"
+                  IL_0063:  stfld      "int Program.<M>d__1.<>2__current"
+                  IL_0068:  ldarg.0
+                  IL_0069:  ldc.i4.1
+                  IL_006a:  stfld      "int Program.<M>d__1.<>1__state"
+                  IL_006f:  ldc.i4.1
+                  IL_0070:  ret
+                  IL_0071:  ldarg.0
+                  IL_0072:  ldc.i4.m1
+                  IL_0073:  stfld      "int Program.<M>d__1.<>1__state"
+                  IL_0078:  ldc.i4.0
+                  IL_0079:  ret
+                }
+                """);
         }
 
         [Fact]

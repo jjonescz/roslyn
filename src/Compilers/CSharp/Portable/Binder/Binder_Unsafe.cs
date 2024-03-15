@@ -56,12 +56,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 return null;
             }
-            else if (this.IsIndirectlyInIterator)
-            {
-                // Spec 8.2: "An iterator block always defines a safe context, even when its declaration
-                // is nested in an unsafe context."
-                return new CSDiagnosticInfo(ErrorCode.ERR_IllegalInnerUnsafe);
-            }
             else if (!this.InUnsafeRegion)
             {
                 return ((object)sizeOfTypeOpt == null)
