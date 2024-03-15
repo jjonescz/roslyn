@@ -4988,12 +4988,6 @@ class C
                 // (8,26): error CS0306: The type 'S' may not be used as a type argument
                 //     async Task M(Task<S> t)
                 Diagnostic(ErrorCode.ERR_BadTypeArgument, "t").WithArguments("S").WithLocation(8, 26),
-                // (12,9): error CS4012: Parameters or locals of type 'S' cannot be declared in async methods or async lambda expressions.
-                //         var a = await t;
-                Diagnostic(ErrorCode.ERR_BadSpecialByRefLocal, "var").WithArguments("S").WithLocation(12, 9),
-                // (14,9): error CS4012: Parameters or locals of type 'S' cannot be declared in async methods or async lambda expressions.
-                //         var r = t.Result;
-                Diagnostic(ErrorCode.ERR_BadSpecialByRefLocal, "var").WithArguments("S").WithLocation(14, 9),
                 // (15,9): error CS8350: This combination of arguments to 'C.M(S, ref S)' is disallowed because it may expose variables referenced by parameter 't' outside of their declaration scope
                 //         M(await t, ref r);
                 Diagnostic(ErrorCode.ERR_CallArgMixing, "M(await t, ref r)").WithArguments("C.M(S, ref S)", "t").WithLocation(15, 9)

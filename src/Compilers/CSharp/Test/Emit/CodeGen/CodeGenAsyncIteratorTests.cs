@@ -635,11 +635,155 @@ ref struct S
             comp.VerifyDiagnostics(
                 // source(4,65): error CS0306: The type 'S' may not be used as a type argument
                 //     static async System.Collections.Generic.IAsyncEnumerable<S> M()
-                Diagnostic(ErrorCode.ERR_BadTypeArgument, "M").WithArguments("S").WithLocation(4, 65),
-                // source(11,24): error CS4012: Parameters or locals of type 'S' cannot be declared in async methods or async lambda expressions.
-                //         await foreach (var s in M())
-                Diagnostic(ErrorCode.ERR_BadSpecialByRefLocal, "var").WithArguments("S").WithLocation(11, 24)
+                Diagnostic(ErrorCode.ERR_BadTypeArgument, "M").WithArguments("S").WithLocation(4, 65)
                 );
+        }
+
+        [Fact]
+        public void RefStructElementType_NonGeneric()
+        {
+            string source = """
+                using System.Threading.Tasks;
+
+                class C
+                {
+                    public E GetAsyncEnumerator() => new E();
+                    static async Task Main()
+                    {
+                        await foreach (var s in new C())
+                        {
+                            System.Console.Write(s.F);
+                        }
+                    }
+                }
+                class E
+                {
+                    bool _done;
+                    public S Current => new S { F = 123 };
+                    public async Task<bool> MoveNextAsync()
+                    {
+                        await Task.CompletedTask;
+                        return !_done ? (_done = true) : false;
+                    }
+                }
+                ref struct S
+                {
+                    public int F;
+                }
+                """;
+            var comp = CreateCompilationWithAsyncIterator(source, options: TestOptions.DebugExe);
+            var verifier = CompileAndVerify(comp, expectedOutput: "123", verify: Verification.FailsILVerify);
+            verifier.VerifyIL("C.<Main>d__1.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext", """
+                {
+                  // Code size      238 (0xee)
+                  .maxstack  3
+                  .locals init (int V_0,
+                                S V_1, //s
+                                System.Runtime.CompilerServices.TaskAwaiter<bool> V_2,
+                                C.<Main>d__1 V_3,
+                                System.Exception V_4)
+                  IL_0000:  ldarg.0
+                  IL_0001:  ldfld      "int C.<Main>d__1.<>1__state"
+                  IL_0006:  stloc.0
+                  .try
+                  {
+                    IL_0007:  ldloc.0
+                    IL_0008:  brfalse.s  IL_0012
+                    IL_000a:  br.s       IL_000c
+                    IL_000c:  ldloc.0
+                    IL_000d:  ldc.i4.1
+                    IL_000e:  beq.s      IL_0014
+                    IL_0010:  br.s       IL_0016
+                    IL_0012:  br.s       IL_0082
+                    IL_0014:  br.s       IL_0082
+                    IL_0016:  nop
+                    IL_0017:  nop
+                    IL_0018:  ldarg.0
+                    IL_0019:  newobj     "C..ctor()"
+                    IL_001e:  call       "E C.GetAsyncEnumerator()"
+                    IL_0023:  stfld      "E C.<Main>d__1.<>s__1"
+                    IL_0028:  br.s       IL_0044
+                    IL_002a:  ldarg.0
+                    IL_002b:  ldfld      "E C.<Main>d__1.<>s__1"
+                    IL_0030:  callvirt   "S E.Current.get"
+                    IL_0035:  stloc.1
+                    IL_0036:  nop
+                    IL_0037:  ldloc.1
+                    IL_0038:  ldfld      "int S.F"
+                    IL_003d:  call       "void System.Console.Write(int)"
+                    IL_0042:  nop
+                    IL_0043:  nop
+                    IL_0044:  ldarg.0
+                    IL_0045:  ldfld      "E C.<Main>d__1.<>s__1"
+                    IL_004a:  callvirt   "System.Threading.Tasks.Task<bool> E.MoveNextAsync()"
+                    IL_004f:  callvirt   "System.Runtime.CompilerServices.TaskAwaiter<bool> System.Threading.Tasks.Task<bool>.GetAwaiter()"
+                    IL_0054:  stloc.2
+                    IL_0055:  ldloca.s   V_2
+                    IL_0057:  call       "bool System.Runtime.CompilerServices.TaskAwaiter<bool>.IsCompleted.get"
+                    IL_005c:  brtrue.s   IL_009e
+                    IL_005e:  ldarg.0
+                    IL_005f:  ldc.i4.0
+                    IL_0060:  dup
+                    IL_0061:  stloc.0
+                    IL_0062:  stfld      "int C.<Main>d__1.<>1__state"
+                    IL_0067:  ldarg.0
+                    IL_0068:  ldloc.2
+                    IL_0069:  stfld      "System.Runtime.CompilerServices.TaskAwaiter<bool> C.<Main>d__1.<>u__1"
+                    IL_006e:  ldarg.0
+                    IL_006f:  stloc.3
+                    IL_0070:  ldarg.0
+                    IL_0071:  ldflda     "System.Runtime.CompilerServices.AsyncTaskMethodBuilder C.<Main>d__1.<>t__builder"
+                    IL_0076:  ldloca.s   V_2
+                    IL_0078:  ldloca.s   V_3
+                    IL_007a:  call       "void System.Runtime.CompilerServices.AsyncTaskMethodBuilder.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter<bool>, C.<Main>d__1>(ref System.Runtime.CompilerServices.TaskAwaiter<bool>, ref C.<Main>d__1)"
+                    IL_007f:  nop
+                    IL_0080:  leave.s    IL_00ed
+                    IL_0082:  ldarg.0
+                    IL_0083:  ldfld      "System.Runtime.CompilerServices.TaskAwaiter<bool> C.<Main>d__1.<>u__1"
+                    IL_0088:  stloc.2
+                    IL_0089:  ldarg.0
+                    IL_008a:  ldflda     "System.Runtime.CompilerServices.TaskAwaiter<bool> C.<Main>d__1.<>u__1"
+                    IL_008f:  initobj    "System.Runtime.CompilerServices.TaskAwaiter<bool>"
+                    IL_0095:  ldarg.0
+                    IL_0096:  ldc.i4.m1
+                    IL_0097:  dup
+                    IL_0098:  stloc.0
+                    IL_0099:  stfld      "int C.<Main>d__1.<>1__state"
+                    IL_009e:  ldarg.0
+                    IL_009f:  ldloca.s   V_2
+                    IL_00a1:  call       "bool System.Runtime.CompilerServices.TaskAwaiter<bool>.GetResult()"
+                    IL_00a6:  stfld      "bool C.<Main>d__1.<>s__2"
+                    IL_00ab:  ldarg.0
+                    IL_00ac:  ldfld      "bool C.<Main>d__1.<>s__2"
+                    IL_00b1:  brtrue     IL_002a
+                    IL_00b6:  ldarg.0
+                    IL_00b7:  ldnull
+                    IL_00b8:  stfld      "E C.<Main>d__1.<>s__1"
+                    IL_00bd:  leave.s    IL_00d9
+                  }
+                  catch System.Exception
+                  {
+                    IL_00bf:  stloc.s    V_4
+                    IL_00c1:  ldarg.0
+                    IL_00c2:  ldc.i4.s   -2
+                    IL_00c4:  stfld      "int C.<Main>d__1.<>1__state"
+                    IL_00c9:  ldarg.0
+                    IL_00ca:  ldflda     "System.Runtime.CompilerServices.AsyncTaskMethodBuilder C.<Main>d__1.<>t__builder"
+                    IL_00cf:  ldloc.s    V_4
+                    IL_00d1:  call       "void System.Runtime.CompilerServices.AsyncTaskMethodBuilder.SetException(System.Exception)"
+                    IL_00d6:  nop
+                    IL_00d7:  leave.s    IL_00ed
+                  }
+                  IL_00d9:  ldarg.0
+                  IL_00da:  ldc.i4.s   -2
+                  IL_00dc:  stfld      "int C.<Main>d__1.<>1__state"
+                  IL_00e1:  ldarg.0
+                  IL_00e2:  ldflda     "System.Runtime.CompilerServices.AsyncTaskMethodBuilder C.<Main>d__1.<>t__builder"
+                  IL_00e7:  call       "void System.Runtime.CompilerServices.AsyncTaskMethodBuilder.SetResult()"
+                  IL_00ec:  nop
+                  IL_00ed:  ret
+                }
+                """);
         }
 
         [Fact]

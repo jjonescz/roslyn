@@ -3189,7 +3189,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 && ((MethodSymbol)containingSymbol).IsAsync
                 && type.IsRestrictedType())
             {
-                Error(diagnostics, errorCode, syntax, type);
+                //Error(diagnostics, errorCode, syntax, type);
             }
         }
 
