@@ -4994,6 +4994,38 @@ class C
                 );
         }
 
+        [Fact]
+        public void AsyncLocals_Reassignment()
+        {
+            var code = """
+                using System.Threading.Tasks;
+                class C
+                {
+                    async Task M1()
+                    {
+                        int x = 42;
+                        ref int y = ref x;
+                        y.ToString();
+                        await Task.Yield();
+                        y.ToString(); // 1
+                    }
+                    async Task M2()
+                    {
+                        int x = 42;
+                        ref int y = ref x;
+                        y.ToString();
+                        await Task.Yield();
+                        y = ref x;
+                        y.ToString();
+                    }
+                }
+                """;
+            CreateCompilation(code).VerifyEmitDiagnostics(
+                // (10,9): error CS4013: Instance of type 'int' cannot be used inside a nested function, query expression, iterator block or async method
+                //         y.ToString(); // 1
+                Diagnostic(ErrorCode.ERR_SpecialByRefInLambda, "y").WithArguments("int").WithLocation(10, 9));
+        }
+
         [WorkItem(25398, "https://github.com/dotnet/roslyn/issues/25398")]
         [Theory]
         [InlineData(LanguageVersion.CSharp10)]

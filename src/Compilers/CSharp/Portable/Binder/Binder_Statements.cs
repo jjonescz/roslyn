@@ -1159,16 +1159,16 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected bool CheckRefLocalInAsyncOrIteratorMethod(SyntaxToken identifierToken, BindingDiagnosticBag diagnostics)
         {
-            if (IsInAsyncMethod())
-            {
-                Error(diagnostics, ErrorCode.ERR_BadAsyncLocalType, identifierToken);
-                return true;
-            }
-            else if (IsDirectlyInIterator)
-            {
-                Error(diagnostics, ErrorCode.ERR_BadIteratorLocalType, identifierToken);
-                return true;
-            }
+            //if (IsInAsyncMethod())
+            //{
+            //    Error(diagnostics, ErrorCode.ERR_BadAsyncLocalType, identifierToken);
+            //    return true;
+            //}
+            //else if (IsDirectlyInIterator)
+            //{
+            //    Error(diagnostics, ErrorCode.ERR_BadIteratorLocalType, identifierToken);
+            //    return true;
+            //}
 
             return false;
         }

@@ -195,7 +195,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private void CaptureVariable(Symbol variable, SyntaxNode syntax)
         {
             var type = (variable.Kind == SymbolKind.Local) ? ((LocalSymbol)variable).Type : ((ParameterSymbol)variable).Type;
-            if (type.IsRestrictedType())
+            if (type.IsRestrictedType() || variable is LocalSymbol { RefKind: not RefKind.None })
             {
                 (_lazyDisallowedCaptures ??= new MultiDictionary<Symbol, SyntaxNode>()).Add(variable, syntax);
             }
