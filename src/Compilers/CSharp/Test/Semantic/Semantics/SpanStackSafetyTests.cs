@@ -1338,6 +1338,39 @@ public class Program
         }
 
         [Fact]
+        public void AsyncLocals_Reassignment()
+        {
+            var code = """
+                using System;
+                using System.Threading.Tasks;
+                class C
+                {
+                    async Task M1()
+                    {
+                        int x = 42;
+                        Span<int> y = new(ref x);
+                        y.ToString();
+                        await Task.Yield();
+                        y.ToString(); // 1
+                    }
+                    async Task M2()
+                    {
+                        int x = 42;
+                        Span<int> y = new(ref x);
+                        y.ToString();
+                        await Task.Yield();
+                        y = new(ref x);
+                        y.ToString();
+                    }
+                }
+                """;
+            CreateCompilation(code, targetFramework: TargetFramework.Net70).VerifyEmitDiagnostics(
+                // (11,9): error CS4013: Instance of type 'Span<int>' cannot be used inside a nested function, query expression, iterator block or async method
+                //         y.ToString(); // 1
+                Diagnostic(ErrorCode.ERR_SpecialByRefInLambda, "y").WithArguments("System.Span<int>").WithLocation(11, 9));
+        }
+
+        [Fact]
         public void AsyncSpilling()
         {
             var text = @"
