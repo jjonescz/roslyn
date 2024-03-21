@@ -23,9 +23,9 @@
       ],
       "tool": "psscriptanalyzer",
       "ruleId": "PSAvoidUsingConvertToSecureStringWithPlainText",
-      "createdDate": "2024-03-20 22:05:39Z",
-      "expirationDate": "2024-09-07 00:50:54Z",
-      "justification": "This error is baselined with an expiration date of 180 days from 2024-03-21 00:50:54Z"
+      "createdDate": "2024-03-20 22:36:00Z",
+      "expirationDate": "2024-09-07 01:12:58Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2024-03-21 01:12:58Z"
     },
     "ec3b30de7f7c5fca72d402bd7f34279d378700b16d98b2f3da9922fa8db3546f": {
       "signature": "ec3b30de7f7c5fca72d402bd7f34279d378700b16d98b2f3da9922fa8db3546f",
@@ -37,9 +37,9 @@
       ],
       "tool": "credscan",
       "ruleId": "CSCAN-GENERAL0060",
-      "createdDate": "2024-03-20 22:05:39Z",
-      "expirationDate": "2024-09-07 00:50:54Z",
-      "justification": "This error is baselined with an expiration date of 180 days from 2024-03-21 00:50:54Z"
+      "createdDate": "2024-03-20 22:36:00Z",
+      "expirationDate": "2024-09-07 01:12:58Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2024-03-21 01:12:58Z"
     }
   }
 }
