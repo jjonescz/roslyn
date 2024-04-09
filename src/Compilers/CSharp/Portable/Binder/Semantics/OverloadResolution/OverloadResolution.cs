@@ -1343,6 +1343,52 @@ outerDefault:
             return true;
         }
 
+        internal ImmutableArray<TMember> RemoveLessDerivedMembers<TMember>(ImmutableArray<TMember> members) where TMember : Symbol
+        {
+            if (members.Length < 2)
+            {
+                return members;
+            }
+
+            var builder = ArrayBuilder<TMember>.GetInstance(capacity: members.Length);
+            builder.AddRange(members);
+
+            var result = OverloadResolutionResult<TMember>.GetInstance();
+            var results = result.ResultsBuilder;
+            var useSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
+
+            foreach (var member in builder)
+            {
+                if (!MemberGroupContainsMoreDerivedOverride(builder, member, checkOverrideContainingType: true, ref useSiteInfo))
+                {
+                    var leastOverriddenMember = (TMember)member.GetLeastOverriddenMember(_binder.ContainingType);
+                    results.Add(new MemberResolutionResult<TMember>(
+                        member,
+                        leastOverriddenMember,
+                        MemberAnalysisResult.NormalForm(argsToParamsOpt: default, conversions: default, hasAnyRefOmittedArgument: false),
+                        hasTypeArgumentInferredFromFunctionType: false));
+                }
+            }
+
+            RemoveLessDerivedMembers(results, ref useSiteInfo);
+
+            if (results.Count == builder.Count)
+            {
+                builder.Free();
+                result.Free();
+                return members;
+            }
+
+            builder.Clear();
+            foreach (var r in results)
+            {
+                builder.Add(r.Member);
+            }
+
+            result.Free();
+            return builder.ToImmutableAndFree();
+        }
+
         private static void RemoveLessDerivedMembers<TMember>(ArrayBuilder<MemberResolutionResult<TMember>> results, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
             where TMember : Symbol
         {
