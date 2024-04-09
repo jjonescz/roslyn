@@ -1260,7 +1260,7 @@ outerDefault:
         /// <paramref name="members"/> are all in a type that derives from the type containing
         /// <paramref name="member"/>.</param>
         private static bool MemberGroupContainsMoreDerivedOverride<TMember>(
-            ArrayBuilder<TMember> members,
+            IReadOnlyList<TMember> members,
             TMember member,
             bool checkOverrideContainingType,
             ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
@@ -1286,6 +1286,41 @@ outerDefault:
 
             return false;
         }
+
+#nullable enable
+        internal static ImmutableArray<TMember> WithoutLessDerivedMembers<TMember>(ImmutableArray<TMember> members) where TMember : Symbol
+        {
+            if (members.Length < 2)
+            {
+                return members;
+            }
+
+            ArrayBuilder<TMember>? result = null;
+            var useSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
+
+            for (int i = 0; i < members.Length; i++)
+            {
+                var member = members[i];
+                if (MemberGroupContainsMoreDerivedOverride(members, member, checkOverrideContainingType: true, ref useSiteInfo))
+                {
+                    if (result is null)
+                    {
+                        result = ArrayBuilder<TMember>.GetInstance(capacity: members.Length);
+                        for (int j = 0; j < i; j++)
+                        {
+                            result.Add(members[j]);
+                        }
+                    }
+                }
+                else
+                {
+                    result?.Add(member);
+                }
+            }
+
+            return result?.ToImmutableAndFree() ?? members;
+        }
+#nullable disable
 
         private static bool MemberGroupHidesByName<TMember>(ArrayBuilder<TMember> members, TMember member, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
             where TMember : Symbol
@@ -1341,38 +1376,6 @@ outerDefault:
                 if (!_binder.IsAccessible(arg, ref useSiteInfo)) return false;
             }
             return true;
-        }
-
-        internal ImmutableArray<TMember> RemoveLessDerivedMembers<TMember>(ImmutableArray<TMember> members) where TMember : Symbol
-        {
-            if (members.Length < 2)
-            {
-                return members;
-            }
-
-            var builder = ArrayBuilder<TMember>.GetInstance(capacity: members.Length);
-            builder.AddRange(members);
-
-            var result = ArrayBuilder<TMember>.GetInstance(capacity: members.Length);
-            var useSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
-
-            foreach (var member in builder)
-            {
-                if (!MemberGroupContainsMoreDerivedOverride(builder, member, checkOverrideContainingType: true, ref useSiteInfo))
-                {
-                    result.Add(member);
-                }
-            }
-
-            if (result.Count == builder.Count)
-            {
-                builder.Free();
-                result.Free();
-                return members;
-            }
-
-            builder.Free();
-            return result.ToImmutableAndFree();
         }
 
         private static void RemoveLessDerivedMembers<TMember>(ArrayBuilder<MemberResolutionResult<TMember>> results, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
