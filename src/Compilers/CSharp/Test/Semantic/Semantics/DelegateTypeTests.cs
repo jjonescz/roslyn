@@ -6803,6 +6803,196 @@ class Program
         }
 
         [Fact]
+        public void OverloadResolution_DefaultValue_01()
+        {
+            var source1 = """
+                public class Z : Y<long>
+                {
+                    public override void M(int x = 3) => System.Console.Write(x);
+                    public override void M(long x = 4) { }
+                }
+
+                public abstract class Y<T> : X
+                {
+                    public abstract void M(T x = default);
+                    public override void M(int x = 2) { }
+                }
+
+                public abstract class X
+                {
+                    public abstract void M(int x = 1);
+                }
+                """;
+
+            var source2 = """
+                var d1 = new Z().M;
+                var d2 = ((Y<long>)(new Z())).M;
+                """;
+            CreateCompilation([source1, source2]).VerifyDiagnostics(
+                // (1,10): error CS8917: The delegate type could not be inferred.
+                // var d1 = new Z().M;
+                Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "new Z().M").WithLocation(1, 10),
+                // (2,10): error CS8917: The delegate type could not be inferred.
+                // var d2 = ((Y<long>)(new Z())).M;
+                Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "((Y<long>)(new Z())).M").WithLocation(2, 10));
+
+            var source3 = """
+                var d = ((X)(new Z())).M;
+                System.Console.WriteLine(d.GetType());
+                d();
+                """;
+            CompileAndVerify([source1, source3], expectedOutput: """
+                <>f__AnonymousDelegate0`1[System.Int32]
+                1
+                """).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void OverloadResolution_DefaultValue_02()
+        {
+            var source = """
+                public class Z : Y<int>
+                {
+                    public override void M(int x = default) { }
+                }
+
+                public abstract class Y<T> : X
+                {
+                    public abstract void M(T x = default);
+                    public override void M(int x) { }
+                }
+
+                public abstract class X
+                {
+                    public abstract void M(int x = 42);
+                }
+                """;
+            CreateCompilation(source).VerifyDiagnostics(
+                // (3,26): error CS0462: The inherited members 'Y<T>.M(T)' and 'Y<T>.M(int)' have the same signature in type 'Z', so they cannot be overridden
+                //     public override void M(int x = default) { }
+                Diagnostic(ErrorCode.ERR_AmbigOverride, "M").WithArguments("Y<T>.M(T)", "Y<T>.M(int)", "Z").WithLocation(3, 26),
+                // (8,26): warning CS1957: Member 'Z.M(int)' overrides 'Y<int>.M(int)'. There are multiple override candidates at run-time. It is implementation dependent which method will be called. Please use a newer runtime.
+                //     public abstract void M(T x = default);
+                Diagnostic(ErrorCode.WRN_MultipleRuntimeOverrideMatches, "M").WithArguments("Y<int>.M(int)", "Z.M(int)").WithLocation(8, 26));
+        }
+
+        [Fact]
+        public void OverloadResolution_DefaultValue_03()
+        {
+            var source = """
+                D d1 = new Z().M;
+                d1();
+
+                public class Z : Y<long>
+                {
+                    public override void M(int x = 3) { }
+                    public override void M(long x = 4) => System.Console.Write(x);
+                }
+
+                public abstract class Y<T> : X
+                {
+                    public abstract void M(T x = default);
+                    public override void M(int x = 2) { }
+                }
+
+                public abstract class X
+                {
+                    public abstract void M(int x = 1);
+                }
+
+                public delegate void D(long x = 5);
+                """;
+            CompileAndVerify(source, expectedOutput: "5").VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void OverloadResolution_DefaultValue_04()
+        {
+            var source = """
+                D d1 = new Z().M;
+                d1();
+
+                public class Z : Y<long>
+                {
+                    public override void M(int x = 3) { }
+                }
+
+                public abstract class Y<T> : X
+                {
+                    public virtual void M(T x = default) => System.Console.Write(x);
+                    public override void M(int x = 2) { }
+                }
+
+                public abstract class X
+                {
+                    public abstract void M(int x = 1);
+                }
+
+                public delegate void D(long x = 5);
+                """;
+            CompileAndVerify(source, expectedOutput: "5").VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void OverloadResolution_DefaultValue_05()
+        {
+            var source = """
+                D d1 = new Z().M;
+                d1();
+
+                public class Z : Y<long>
+                {
+                    public override void M(int x = 3) { }
+                }
+
+                public abstract class Y<T> : X
+                {
+                    public virtual void M(T x = default) => System.Console.Write(x);
+                    public override void M(int x = 2) { }
+                }
+
+                public abstract class X
+                {
+                    public abstract void M(int x = 1);
+                }
+
+                public delegate void D(long x = 5);
+                """;
+            CompileAndVerify(source, expectedOutput: "5").VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void OverloadResolution_DefaultValue_06()
+        {
+            var source = """
+                var d1 = new Z().M;
+                d1();
+
+                public class Z : Y<long>
+                {
+                    public new void M(int x = 3) { }
+                }
+
+                public abstract class Y<T> : X
+                {
+                    public virtual void M(T x = default) { }
+                    public override void M(int x = 2) { }
+                }
+
+                public abstract class X
+                {
+                    public abstract void M(int x = 1);
+                }
+
+                public delegate void D(long x = 5);
+                """;
+            CreateCompilation(source).VerifyDiagnostics(
+                // (1,10): error CS8917: The delegate type could not be inferred.
+                // var d1 = new Z().M;
+                Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "new Z().M").WithLocation(1, 10));
+        }
+
+        [Fact]
         public void BestCommonType_01()
         {
             var source =
