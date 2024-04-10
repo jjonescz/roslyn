@@ -1288,38 +1288,35 @@ outerDefault:
         }
 
 #nullable enable
-        internal static ImmutableArray<TMember> WithoutLessDerivedMembers<TMember>(ImmutableArray<TMember> members) where TMember : Symbol
+        internal ImmutableArray<TMember> WithoutLessDerivedMembers<TMember>(ImmutableArray<TMember> members) where TMember : Symbol
         {
             if (members.Length < 2)
             {
                 return members;
             }
 
-            ArrayBuilder<TMember>? result = null;
+            var result = OverloadResolutionResult<TMember>.GetInstance();
+            var results = result.ResultsBuilder;
             var useSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
 
-            for (int i = 0; i < members.Length; i++)
+            foreach (var member in members)
             {
-                var member = members[i];
-                if (MemberGroupContainsMoreDerivedOverride(members, member, checkOverrideContainingType: true, ref useSiteInfo))
+                if (!MemberGroupContainsMoreDerivedOverride(members, member, checkOverrideContainingType: true, ref useSiteInfo))
                 {
-                    if (result is null)
-                    {
-                        // Allocate the result array only if we actually filter some member out.
-                        result = ArrayBuilder<TMember>.GetInstance(capacity: members.Length);
-                        for (int j = 0; j < i; j++)
-                        {
-                            result.Add(members[j]);
-                        }
-                    }
-                }
-                else
-                {
-                    result?.Add(member);
+                    var leastOverriddenMember = (TMember)member.GetLeastOverriddenMember(_binder.ContainingType);
+                    results.Add(new MemberResolutionResult<TMember>(
+                        member,
+                        leastOverriddenMember,
+                        MemberAnalysisResult.NormalForm(argsToParamsOpt: default, conversions: default, hasAnyRefOmittedArgument: false),
+                        hasTypeArgumentInferredFromFunctionType: false));
                 }
             }
 
-            return result?.ToImmutableAndFree() ?? members;
+            RemoveLessDerivedMembers(results, ref useSiteInfo);
+
+            var applicableMembers = result.GetAllApplicableMembers();
+            result.Free();
+            return applicableMembers;
         }
 #nullable disable
 
