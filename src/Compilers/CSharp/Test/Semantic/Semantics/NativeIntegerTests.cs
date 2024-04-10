@@ -4369,14 +4369,21 @@ unsafe class Program
         yield return sizeof(nuint);
     }
 }";
-            var comp = CreateCompilation(source, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.Regular9);
-            comp.VerifyDiagnostics(
-                // (6,22): error CS1629: Unsafe code may not appear in iterators
+            var expectedDiagnostics = new[]
+            {
+                // (6,22): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         yield return sizeof(nint);
-                Diagnostic(ErrorCode.ERR_IllegalInnerUnsafe, "sizeof(nint)").WithLocation(6, 22),
-                // (7,22): error CS1629: Unsafe code may not appear in iterators
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(nint)").WithArguments("ref and unsafe in async and iterator methods").WithLocation(6, 22),
+                // (7,22): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         yield return sizeof(nuint);
-                Diagnostic(ErrorCode.ERR_IllegalInnerUnsafe, "sizeof(nuint)").WithLocation(7, 22));
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(nuint)").WithArguments("ref and unsafe in async and iterator methods").WithLocation(7, 22)
+            };
+
+            CreateCompilation(source, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.Regular9).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(source, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.Regular12).VerifyDiagnostics(expectedDiagnostics);
+
+            CreateCompilation(source, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
+            CreateCompilation(source, options: TestOptions.UnsafeReleaseDll).VerifyEmitDiagnostics();
         }
 
         [Fact]

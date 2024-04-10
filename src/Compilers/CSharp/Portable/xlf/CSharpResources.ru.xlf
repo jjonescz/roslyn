@@ -302,6 +302,11 @@
         <target state="translated">' {0} ' недопустим для 'использования статики'. Можно использовать только класс, структуру, интерфейс, перечисление, делегат или пространство имен.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_BadYieldInUnsafe">
+        <source>Cannot use 'yield return' in an 'unsafe' block</source>
+        <target state="new">Cannot use 'yield return' in an 'unsafe' block</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_BuilderAttributeDisallowed">
         <source>The AsyncMethodBuilder attribute is disallowed on anonymous methods without an explicit return type.</source>
         <target state="translated">Атрибут AsyncMethodBuilder запрещен для анонимных методов без явного типа возвращаемого значения.</target>
@@ -9150,11 +9155,6 @@ A catch() block after a catch (System.Exception e) block can catch non-CLS excep
       <trans-unit id="ERR_AnonDelegateCantUse">
         <source>Cannot use ref, out, or in parameter '{0}' inside an anonymous method, lambda expression, query expression, or local function</source>
         <target state="translated">Недопустимо использовать параметр "{0}" с модификаторами ref, out или in внутри анонимного метода, лямбда-выражения, выражения запроса или локальной функции</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_IllegalInnerUnsafe">
-        <source>Unsafe code may not appear in iterators</source>
-        <target state="translated">Небезопасный код не может использоваться в итераторах.</target>
         <note />
       </trans-unit>
       <trans-unit id="ERR_BadYieldInCatch">

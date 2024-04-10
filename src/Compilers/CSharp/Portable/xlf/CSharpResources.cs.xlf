@@ -302,6 +302,11 @@
         <target state="translated">Typ {0} není platný pro using static. Lze použít pouze třídu, strukturu, rozhraní, výčet, delegáta nebo obor názvů.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_BadYieldInUnsafe">
+        <source>Cannot use 'yield return' in an 'unsafe' block</source>
+        <target state="new">Cannot use 'yield return' in an 'unsafe' block</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_BuilderAttributeDisallowed">
         <source>The AsyncMethodBuilder attribute is disallowed on anonymous methods without an explicit return type.</source>
         <target state="translated">Atribut AsyncMethodBuilder je u anonymních metod bez explicitního návratového typu zakázaný.</target>
@@ -9149,11 +9154,6 @@ Blok catch() po bloku catch (System.Exception e) může zachytit výjimky, kter�
       <trans-unit id="ERR_AnonDelegateCantUse">
         <source>Cannot use ref, out, or in parameter '{0}' inside an anonymous method, lambda expression, query expression, or local function</source>
         <target state="translated">Parametr ref, out nebo in {0} nejde použít uvnitř anonymní metody, výrazu lambda, výrazu dotazu nebo lokální funkce.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_IllegalInnerUnsafe">
-        <source>Unsafe code may not appear in iterators</source>
-        <target state="translated">Iterátory nesmí obsahovat nezabezpečený kód.</target>
         <note />
       </trans-unit>
       <trans-unit id="ERR_BadYieldInCatch">

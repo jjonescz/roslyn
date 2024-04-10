@@ -792,7 +792,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         ERR_BadYieldInTryOfCatch = 1626,
         ERR_EmptyYield = 1627,
         ERR_AnonDelegateCantUse = 1628,
-        ERR_IllegalInnerUnsafe = 1629,
+        // ERR_IllegalInnerUnsafe = 1629,
         //ERR_BadWatsonMode = 1630,
         ERR_BadYieldInCatch = 1631,
         ERR_BadDelegateLeave = 1632,
@@ -2303,6 +2303,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         ERR_NoModifiersOnUsing = 9229,
 
         #endregion
+
+        ERR_BadYieldInUnsafe = 9230,
 
         // Note: you will need to do the following after adding warnings:
         //  1) Re-generate compiler code (eng\generate-compiler-code.cmd).
