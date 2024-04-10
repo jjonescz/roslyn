@@ -1288,28 +1288,45 @@ outerDefault:
         }
 
 #nullable enable
-        internal ImmutableArray<TMember> WithoutLessDerivedMembers<TMember>(ImmutableArray<TMember> members) where TMember : Symbol
+        /// <summary>
+        /// Removes less derived methods and methods without matching <paramref name="arity"/>.
+        /// </summary>
+        internal ImmutableArray<MethodSymbol> FilterMethodGroupMethods(ImmutableArray<MethodSymbol> methods, int arity)
         {
-            if (members.Length < 2)
+            if (methods.Length < 2)
             {
-                return members;
+                if (methods is [MethodSymbol method] && arity != method.Arity)
+                {
+                    return [];
+                }
+
+                return methods;
             }
 
-            var result = OverloadResolutionResult<TMember>.GetInstance();
+            var result = OverloadResolutionResult<MethodSymbol>.GetInstance();
             var results = result.ResultsBuilder;
             var useSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
 
-            foreach (var member in members)
+            foreach (var method in methods)
             {
-                if (!MemberGroupContainsMoreDerivedOverride(members, member, checkOverrideContainingType: true, ref useSiteInfo))
+                // We have no way of inferring type arguments, so if the given type arguments
+                // don't match the method's arity, the method is not a candidate
+                if (arity != method.Arity)
                 {
-                    var leastOverriddenMember = (TMember)member.GetLeastOverriddenMember(_binder.ContainingType);
-                    results.Add(new MemberResolutionResult<TMember>(
-                        member,
-                        leastOverriddenMember,
-                        MemberAnalysisResult.NormalForm(argsToParamsOpt: default, conversions: default, hasAnyRefOmittedArgument: false),
-                        hasTypeArgumentInferredFromFunctionType: false));
+                    continue;
                 }
+
+                if (MemberGroupContainsMoreDerivedOverride(methods, method, checkOverrideContainingType: true, ref useSiteInfo))
+                {
+                    continue;
+                }
+
+                var leastOverriddenMember = method.GetConstructedLeastOverriddenMethod(_binder.ContainingType, requireSameReturnType: false);
+                results.Add(new MemberResolutionResult<MethodSymbol>(
+                    method,
+                    leastOverriddenMember,
+                    MemberAnalysisResult.NormalForm(argsToParamsOpt: default, conversions: default, hasAnyRefOmittedArgument: false),
+                    hasTypeArgumentInferredFromFunctionType: false));
             }
 
             RemoveLessDerivedMembers(results, ref useSiteInfo);
