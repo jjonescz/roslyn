@@ -6802,6 +6802,249 @@ class Program
         }
 
         [Fact]
+        public void OverloadResolution_DefaultValue_01()
+        {
+            var source = """
+                var d1 = new Z().M;
+                System.Console.WriteLine(d1.GetType());
+                d1();
+
+                var d2 = ((Y<long>)(new Z())).M;
+                System.Console.WriteLine(d2.GetType());
+                d2();
+
+                var d3 = ((X)(new Z())).M;
+                System.Console.WriteLine(d3.GetType());
+                d3();
+
+                public class Z : Y<long>
+                {
+                    public override void M(int x = 3) => System.Console.WriteLine("I" + x);
+                    public override void M(long x = 4) => System.Console.WriteLine("L" + x);
+                }
+
+                public abstract class Y<T> : X
+                {
+                    public abstract void M(T x = default);
+                    public override void M(int x = 2) => System.Console.WriteLine("Y" + x);
+                }
+
+                public abstract class X
+                {
+                    public abstract void M(int x = 1);
+                }
+                """;
+            CompileAndVerify(source, expectedOutput: """
+                <>f__AnonymousDelegate0`1[System.Int64]
+                L4
+                <>f__AnonymousDelegate1`1[System.Int64]
+                L0
+                <>f__AnonymousDelegate2`1[System.Int32]
+                I1
+                """).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void OverloadResolution_DefaultValue_02()
+        {
+            var source = """
+                public class Z : Y<int>
+                {
+                    public override void M(int x = default) { }
+                }
+
+                public abstract class Y<T> : X
+                {
+                    public abstract void M(T x = default);
+                    public override void M(int x) { }
+                }
+
+                public abstract class X
+                {
+                    public abstract void M(int x = 42);
+                }
+                """;
+            CreateCompilation(source).VerifyDiagnostics(
+                // (3,26): error CS0462: The inherited members 'Y<T>.M(T)' and 'Y<T>.M(int)' have the same signature in type 'Z', so they cannot be overridden
+                //     public override void M(int x = default) { }
+                Diagnostic(ErrorCode.ERR_AmbigOverride, "M").WithArguments("Y<T>.M(T)", "Y<T>.M(int)", "Z").WithLocation(3, 26),
+                // (8,26): warning CS1957: Member 'Z.M(int)' overrides 'Y<int>.M(int)'. There are multiple override candidates at run-time. It is implementation dependent which method will be called. Please use a newer runtime.
+                //     public abstract void M(T x = default);
+                Diagnostic(ErrorCode.WRN_MultipleRuntimeOverrideMatches, "M").WithArguments("Y<int>.M(int)", "Z.M(int)").WithLocation(8, 26));
+        }
+
+        [Fact]
+        public void OverloadResolution_DefaultValue_03()
+        {
+            var source = """
+                D d = new Z().M;
+                d();
+
+                public class Z : Y<long>
+                {
+                    public override void M(int x = 3) { }
+                    public override void M(long x = 4) => System.Console.Write(x);
+                }
+
+                public abstract class Y<T> : X
+                {
+                    public abstract void M(T x = default);
+                    public override void M(int x = 2) { }
+                }
+
+                public abstract class X
+                {
+                    public abstract void M(int x = 1);
+                }
+
+                public delegate void D(long x = 5);
+                """;
+            CompileAndVerify(source, expectedOutput: "5").VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void OverloadResolution_DefaultValue_04()
+        {
+            var source = """
+                D d = new Z().M;
+                d();
+
+                public class Z : Y<long>
+                {
+                    public override void M(int x = 3) { }
+                }
+
+                public abstract class Y<T> : X
+                {
+                    public virtual void M(T x = default) => System.Console.Write(x);
+                    public override void M(int x = 2) { }
+                }
+
+                public abstract class X
+                {
+                    public abstract void M(int x = 1);
+                }
+
+                public delegate void D(long x = 5);
+                """;
+            CompileAndVerify(source, expectedOutput: "5").VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void OverloadResolution_DefaultValue_05()
+        {
+            var source = """
+                D d = new Z().M;
+                d();
+
+                public class Z : Y<long>
+                {
+                    public override void M(int x = 3) { }
+                }
+
+                public abstract class Y<T> : X
+                {
+                    public virtual void M(T x = default) => System.Console.Write(x);
+                    public override void M(int x = 2) { }
+                }
+
+                public abstract class X
+                {
+                    public abstract void M(int x = 1);
+                }
+
+                public delegate void D(long x = 5);
+                """;
+            CompileAndVerify(source, expectedOutput: "5").VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void OverloadResolution_DefaultValue_06()
+        {
+            var source = """
+                var d = new Z().M;
+                d();
+
+                public class Z : Y<long>
+                {
+                    public new void M(int x = 3) => System.Console.Write(x);
+                }
+
+                public abstract class Y<T> : X
+                {
+                    public virtual void M(T x = default) { }
+                    public override void M(int x = 2) { }
+                }
+
+                public abstract class X
+                {
+                    public abstract void M(int x = 1);
+                }
+                """;
+            CompileAndVerify(source, expectedOutput: "3").VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void OverloadResolution_DefaultValue_07()
+        {
+            var source = """
+                new B().M();
+
+                partial class B
+                {
+                    internal void M()
+                    {
+                        System.Delegate d = F;
+                        System.Console.WriteLine(d.GetType());
+                        d.DynamicInvoke(3);
+                    }
+                }
+                abstract class A
+                {
+                    internal void F(int x = 1) => System.Console.WriteLine("A" + x);
+                }
+                partial class B : A
+                {
+                    internal static new void F(int x = 2) => System.Console.WriteLine("B" + x);
+                }
+                """;
+            CompileAndVerify(source, expectedOutput: """
+                <>f__AnonymousDelegate0`1[System.Int32]
+                B3
+                """).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void OverloadResolution_DefaultValue_08()
+        {
+            var source = """
+                new B().M();
+
+                partial class B
+                {
+                    internal void M()
+                    {
+                        var d = F;
+                        System.Console.WriteLine(d.GetType());
+                        d(3);
+                    }
+                }
+                abstract class A
+                {
+                    internal void F(int x = 1) => System.Console.WriteLine("A" + x);
+                }
+                partial class B : A
+                {
+                    internal static new void F(int x = 2) => System.Console.WriteLine("B" + x);
+                }
+                """;
+            CompileAndVerify(source, expectedOutput: """
+                <>f__AnonymousDelegate0`1[System.Int32]
+                B3
+                """).VerifyDiagnostics();
+        }
+
+        [Fact]
         public void BestCommonType_01()
         {
             var source =
