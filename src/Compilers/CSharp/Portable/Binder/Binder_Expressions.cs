@@ -10154,12 +10154,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             var typeArguments = node.TypeArgumentsOpt;
             if (node.ResultKind == LookupResultKind.Viable)
             {
-                int arity = typeArguments.IsDefaultOrEmpty ? 0 : typeArguments.Length;
-                ImmutableArray<MethodSymbol> methods = OverloadResolution.FilterMethodGroupMethods(node.Methods, arity);
-                foreach (var memberMethod in methods)
+                var substitutedMethods = ArrayBuilder<MethodSymbol>.GetInstance(capacity: node.Methods.Length);
+                foreach (var memberMethod in node.Methods)
                 {
-                    Debug.Assert(memberMethod.Arity == arity);
-
                     switch (node.ReceiverOpt)
                     {
                         case BoundTypeExpression:
@@ -10173,12 +10170,27 @@ namespace Microsoft.CodeAnalysis.CSharp
                             break;
                     }
 
+                    int arity = typeArguments.IsDefaultOrEmpty ? 0 : typeArguments.Length;
+                    if (memberMethod.Arity != arity)
+                    {
+                        // We have no way of inferring type arguments, so if the given type arguments
+                        // don't match the method's arity, the method is not a candidate
+                        continue;
+                    }
+
                     var substituted = typeArguments.IsDefaultOrEmpty ? memberMethod : memberMethod.Construct(typeArguments);
                     if (!satisfiesConstraintChecks(substituted))
                     {
                         continue;
                     }
 
+                    substitutedMethods.Add(substituted);
+                }
+
+                OverloadResolution.RemoveLessDerivedMethods(substitutedMethods);
+
+                foreach (var substituted in substitutedMethods)
+                {
                     if (!isCandidateUnique(ref foundMethod, substituted))
                     {
                         return null;

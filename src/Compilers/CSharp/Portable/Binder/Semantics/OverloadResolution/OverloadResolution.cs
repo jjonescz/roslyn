@@ -1260,7 +1260,7 @@ outerDefault:
         /// <paramref name="members"/> are all in a type that derives from the type containing
         /// <paramref name="member"/>.</param>
         private static bool MemberGroupContainsMoreDerivedOverride<TMember>(
-            IReadOnlyList<TMember> members,
+            ArrayBuilder<TMember> members,
             TMember member,
             bool checkOverrideContainingType,
             ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
@@ -1289,18 +1289,13 @@ outerDefault:
 
 #nullable enable
         /// <summary>
-        /// Removes less derived methods and methods without matching <paramref name="arity"/>.
+        /// Removes less derived methods from the list.
         /// </summary>
-        internal ImmutableArray<MethodSymbol> FilterMethodGroupMethods(ImmutableArray<MethodSymbol> methods, int arity)
+        internal void RemoveLessDerivedMethods(ArrayBuilder<MethodSymbol> methods)
         {
-            if (methods.Length < 2)
+            if (methods.Count < 2)
             {
-                if (methods is [MethodSymbol method] && arity != method.Arity)
-                {
-                    return [];
-                }
-
-                return methods;
+                return;
             }
 
             var result = OverloadResolutionResult<MethodSymbol>.GetInstance();
@@ -1309,13 +1304,6 @@ outerDefault:
 
             foreach (var method in methods)
             {
-                // We have no way of inferring type arguments, so if the given type arguments
-                // don't match the method's arity, the method is not a candidate
-                if (arity != method.Arity)
-                {
-                    continue;
-                }
-
                 if (MemberGroupContainsMoreDerivedOverride(methods, method, checkOverrideContainingType: true, ref useSiteInfo))
                 {
                     continue;
@@ -1331,9 +1319,14 @@ outerDefault:
 
             RemoveLessDerivedMembers(results, ref useSiteInfo);
 
-            var applicableMembers = result.GetAllApplicableMembers();
+            var applicableMethods = result.GetAllApplicableMembers();
             result.Free();
-            return applicableMembers;
+
+            if (applicableMethods.Length != methods.Count)
+            {
+                methods.Clear();
+                methods.AddRange(applicableMethods);
+            }
         }
 #nullable disable
 
