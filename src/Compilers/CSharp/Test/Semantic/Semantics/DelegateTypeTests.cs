@@ -1098,32 +1098,32 @@ class Program
             yield return getData("internal static void F(object x) { }", "internal new void F(object x) { }", "F", "F", null, "System.Action<System.Object>"); // static and instance
             yield return getData("internal static void F(object x) { }", "internal new void F(object x) { }", "this.F", "F", null, "System.Action<System.Object>"); // static and instance
             yield return getData("internal static void F(object x) { }", "internal new void F(object x) { }", "base.F", "F"); // static and instance
-            yield return getData("internal void F(object x) { }", "internal static void F() { }", "F", "F"); // instance and static, different number of parameters
+            yield return getData("internal void F(object x) { }", "internal static void F() { }", "F", "F", null, "System.Action"); // instance and static, different number of parameters
             yield return getData("internal void F(object x) { }", "internal static void F() { }", "B.F", "F", null, "System.Action"); // instance and static, different number of parameters
             yield return getData("internal void F(object x) { }", "internal static void F() { }", "this.F", "F", null, "System.Action<System.Object>"); // instance and static, different number of parameters
             yield return getData("internal void F(object x) { }", "internal static void F() { }", "base.F", "F", null, "System.Action<System.Object>"); // instance and static, different number of parameters
-            yield return getData("internal static void F() { }", "internal void F(object x) { }", "F", "F"); // static and instance, different number of parameters
+            yield return getData("internal static void F() { }", "internal void F(object x) { }", "F", "F", null, "System.Action<System.Object>"); // static and instance, different number of parameters
             yield return getData("internal static void F() { }", "internal void F(object x) { }", "B.F", "F", null, "System.Action"); // static and instance, different number of parameters
             yield return getData("internal static void F() { }", "internal void F(object x) { }", "this.F", "F", null, "System.Action<System.Object>"); // static and instance, different number of parameters
             yield return getData("internal static void F() { }", "internal void F(object x) { }", "base.F", "F"); // static and instance, different number of parameters
-            yield return getData("internal static void F(object x) { }", "private static void F() { }", "F", "F"); // internal and private
+            yield return getData("internal static void F(object x) { }", "private static void F() { }", "F", "F", null, "System.Action"); // internal and private
             yield return getData("private static void F(object x) { }", "internal static void F() { }", "F", "F", null, "System.Action"); // internal and private
             yield return getData("internal abstract void F(object x);", "internal override void F(object x) { }", "F", "F", null, "System.Action<System.Object>"); // override
             yield return getData("internal virtual void F(object x) { }", "internal override void F(object x) { }", "F", "F", null, "System.Action<System.Object>"); // override
             yield return getData("internal void F(object x) { }", "internal void F(object x) { }", "F", "F", null, "System.Action<System.Object>"); // hiding
             yield return getData("internal void F(object x) { }", "internal new void F(object x) { }", "F", "F", null, "System.Action<System.Object>"); // hiding
             yield return getData("internal void F(object x) { }", "internal new void F(object y) { }", "F", "F", null, "System.Action<System.Object>"); // different parameter name
-            yield return getData("internal void F(object x) { }", "internal void F(string x) { }", "F", "F"); // different parameter type
-            yield return getData("internal void F(object x) { }", "internal void F(object x, object y) { }", "F", "F"); // different number of parameters
-            yield return getData("internal void F(object x) { }", "internal void F(ref object x) { }", "F", "F"); // different parameter ref kind
-            yield return getData("internal void F(ref object x) { }", "internal void F(object x) { }", "F", "F"); // different parameter ref kind
+            yield return getData("internal void F(object x) { }", "internal void F(string x) { }", "F", "F", null, "System.Action<System.String>"); // different parameter type
+            yield return getData("internal void F(object x) { }", "internal void F(object x, object y) { }", "F", "F", null, "System.Action<System.Object, System.Object>"); // different number of parameters
+            yield return getData("internal void F(object x) { }", "internal void F(ref object x) { }", "F", "F", null, "<>A{00000001}<System.Object>"); // different parameter ref kind
+            yield return getData("internal void F(ref object x) { }", "internal void F(object x) { }", "F", "F", null, "System.Action<System.Object>"); // different parameter ref kind
             yield return getData("internal abstract object F();", "internal override object F() => throw null;", "F", "F", null, "System.Func<System.Object>"); // override
             yield return getData("internal virtual object F() => throw null;", "internal override object F() => throw null;", "F", "F", null, "System.Func<System.Object>"); // override
             yield return getData("internal object F() => throw null;", "internal object F() => throw null;", "F", "F", null, "System.Func<System.Object>"); // hiding
             yield return getData("internal object F() => throw null;", "internal new object F() => throw null;", "F", "F", null, "System.Func<System.Object>"); // hiding
-            yield return getData("internal string F() => throw null;", "internal new object F() => throw null;", "F", "F"); // different return type
-            yield return getData("internal object F() => throw null;", "internal new ref object F() => throw null;", "F", "F"); // different return ref kind
-            yield return getData("internal ref object F() => throw null;", "internal new object F() => throw null;", "F", "F"); // different return ref kind
+            yield return getData("internal string F() => throw null;", "internal new object F() => throw null;", "F", "F", null, "System.Func<System.Object>"); // different return type
+            yield return getData("internal object F() => throw null;", "internal new ref object F() => throw null;", "F", "F", null, "<>F{00000001}<System.Object>"); // different return ref kind
+            yield return getData("internal ref object F() => throw null;", "internal new object F() => throw null;", "F", "F", null, "System.Func<System.Object>"); // different return ref kind
             yield return getData("internal void F(object x) { }", "internal new void F(dynamic x) { }", "F", "F", null, "System.Action<System.Object>"); // object/dynamic
             yield return getData("internal dynamic F() => throw null;", "internal new object F() => throw null;", "F", "F", null, "System.Func<System.Object>"); // object/dynamic
             yield return getData("internal void F((object, int) x) { }", "internal new void F((object a, int b) x) { }", "F", "F", null, "System.Action<System.ValueTuple<System.Object, System.Int32>>"); // tuple names
