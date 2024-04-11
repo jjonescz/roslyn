@@ -10069,6 +10069,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private MethodSymbol? GetUniqueSignatureFromMethodGroup_CSharp10(BoundMethodGroup node)
         {
             MethodSymbol? method = null;
+            var methods = ArrayBuilder<MethodSymbol>.GetInstance(capacity: node.Methods.Length);
             foreach (var m in node.Methods)
             {
                 switch (node.ReceiverOpt)
@@ -10083,13 +10084,23 @@ namespace Microsoft.CodeAnalysis.CSharp
                         if (m.IsStatic) continue;
                         break;
                 }
+                methods.Add(m);
+            }
+
+            OverloadResolution.FilterMethodsForUniqueSignature(methods);
+
+            foreach (var m in methods)
+            {
                 if (!isCandidateUnique(ref method, m))
                 {
+                    methods.Free();
                     return null;
                 }
             }
+
             if (node.SearchExtensionMethods)
             {
+                methods.Clear();
                 var receiver = node.ReceiverOpt!;
                 foreach (var scope in new ExtensionMethodScopes(this))
                 {
@@ -10097,16 +10108,28 @@ namespace Microsoft.CodeAnalysis.CSharp
                     PopulateExtensionMethodsFromSingleBinder(scope, methodGroup, node.Syntax, receiver, node.Name, node.TypeArgumentsOpt, BindingDiagnosticBag.Discarded);
                     foreach (var m in methodGroup.Methods)
                     {
-                        if (m.ReduceExtensionMethod(receiver.Type, Compilation) is { } reduced &&
-                            !isCandidateUnique(ref method, reduced))
+                        if (m.ReduceExtensionMethod(receiver.Type, Compilation) is { } reduced)
                         {
-                            methodGroup.Free();
-                            return null;
+                            methods.Add(reduced);
                         }
                     }
                     methodGroup.Free();
+
+                    OverloadResolution.FilterMethodsForUniqueSignature(methods);
+
+                    foreach (var reduced in methods)
+                    {
+                        if (!isCandidateUnique(ref method, reduced))
+                        {
+                            methods.Free();
+                            return null;
+                        }
+                    }
                 }
             }
+
+            methods.Free();
+
             if (method is null)
             {
                 return null;
@@ -10154,7 +10177,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var typeArguments = node.TypeArgumentsOpt;
             if (node.ResultKind == LookupResultKind.Viable)
             {
-                var substitutedMethods = ArrayBuilder<MethodSymbol>.GetInstance(capacity: node.Methods.Length);
+                var methods = ArrayBuilder<MethodSymbol>.GetInstance(capacity: node.Methods.Length);
                 foreach (var memberMethod in node.Methods)
                 {
                     switch (node.ReceiverOpt)
@@ -10184,18 +10207,21 @@ namespace Microsoft.CodeAnalysis.CSharp
                         continue;
                     }
 
-                    substitutedMethods.Add(substituted);
+                    methods.Add(substituted);
                 }
 
-                OverloadResolution.RemoveLessDerivedMethods(substitutedMethods);
+                OverloadResolution.FilterMethodsForUniqueSignature(methods);
 
-                foreach (var substituted in substitutedMethods)
+                foreach (var substituted in methods)
                 {
                     if (!isCandidateUnique(ref foundMethod, substituted))
                     {
+                        methods.Free();
                         return null;
                     }
                 }
+
+                methods.Free();
 
                 if (foundMethod is not null)
                 {
@@ -10211,6 +10237,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     methodGroup.Clear();
                     PopulateExtensionMethodsFromSingleBinder(scope, methodGroup, node.Syntax, receiver, node.Name, typeArguments, BindingDiagnosticBag.Discarded);
+                    var methods = ArrayBuilder<MethodSymbol>.GetInstance(capacity: methodGroup.Methods.Count);
                     foreach (var extensionMethod in methodGroup.Methods)
                     {
                         var substituted = typeArguments.IsDefaultOrEmpty ? extensionMethod : extensionMethod.Construct(typeArguments);
@@ -10232,13 +10259,22 @@ namespace Microsoft.CodeAnalysis.CSharp
                             continue;
                         }
 
-                        var wasUnique = isCandidateUnique(ref foundMethod, reduced);
-                        if (!wasUnique)
+                        methods.Add(reduced);
+                    }
+
+                    OverloadResolution.FilterMethodsForUniqueSignature(methods);
+
+                    foreach (var reduced in methods)
+                    {
+                        if (!isCandidateUnique(ref foundMethod, reduced))
                         {
+                            methods.Free();
                             methodGroup.Free();
                             return null;
                         }
                     }
+
+                    methods.Free();
 
                     if (foundMethod is not null)
                     {

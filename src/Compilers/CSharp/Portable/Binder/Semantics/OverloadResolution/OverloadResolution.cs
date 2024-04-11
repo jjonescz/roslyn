@@ -1288,10 +1288,7 @@ outerDefault:
         }
 
 #nullable enable
-        /// <summary>
-        /// Removes less derived methods from the list.
-        /// </summary>
-        internal void RemoveLessDerivedMethods(ArrayBuilder<MethodSymbol> methods)
+        internal void FilterMethodsForUniqueSignature(ArrayBuilder<MethodSymbol> methods)
         {
             if (methods.Count < 2)
             {
@@ -1301,6 +1298,7 @@ outerDefault:
             var result = OverloadResolutionResult<MethodSymbol>.GetInstance();
             var results = result.ResultsBuilder;
             var useSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
+            var changedOrder = false;
 
             foreach (var method in methods)
             {
@@ -1309,12 +1307,27 @@ outerDefault:
                     continue;
                 }
 
+                if (MemberGroupHidesByName(methods, method, ref useSiteInfo))
+                {
+                    continue;
+                }
+
                 var leastOverriddenMember = method.GetConstructedLeastOverriddenMethod(_binder.ContainingType, requireSameReturnType: false);
-                results.Add(new MemberResolutionResult<MethodSymbol>(
+                var res = new MemberResolutionResult<MethodSymbol>(
                     method,
                     leastOverriddenMember,
                     MemberAnalysisResult.NormalForm(argsToParamsOpt: default, conversions: default, hasAnyRefOmittedArgument: false),
-                    hasTypeArgumentInferredFromFunctionType: false));
+                    hasTypeArgumentInferredFromFunctionType: false);
+
+                if (IsValidParams(_binder, method))
+                {
+                    results.Insert(0, res);
+                    changedOrder = true;
+                }
+                else
+                {
+                    results.Add(res);
+                }
             }
 
             RemoveLessDerivedMembers(results, ref useSiteInfo);
@@ -1322,7 +1335,7 @@ outerDefault:
             var applicableMethods = result.GetAllApplicableMembers();
             result.Free();
 
-            if (applicableMethods.Length != methods.Count)
+            if (changedOrder || applicableMethods.Length != methods.Count)
             {
                 methods.Clear();
                 methods.AddRange(applicableMethods);

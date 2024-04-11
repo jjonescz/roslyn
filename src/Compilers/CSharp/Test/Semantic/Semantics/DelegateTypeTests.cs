@@ -6475,11 +6475,42 @@ class Program
 
                 static class E
                 {
-                    static public void Test1(this Program p, long[] a) => Console.Write(a.Length);
-                    static public void Test1(this object p, params long[] a) => Console.Write(a.Length);
+                    static public void Test1(this Program p, long[] a) => Console.Write("1a" + a.Length + " ");
+                    static public void Test1(this object p, params long[] a) => Console.Write("1b" + a.Length + " ");
 
-                    static public void Test2(this object p, params long[] a) => Console.Write(a.Length);
-                    static public void Test2(this Program p, long[] a) => Console.Write(a.Length);
+                    static public void Test2(this object p, params long[] a) => Console.Write("2a" + a.Length + " ");
+                    static public void Test2(this Program p, long[] a) => Console.Write("2b" + a.Length + " ");
+                }
+                """;
+            foreach (var languageVersion in new[] { CSharp.LanguageVersion.Preview, LanguageVersionFacts.CSharpNext, CSharp.LanguageVersion.CSharp12 })
+            {
+                CompileAndVerify(source, parseOptions: TestOptions.Regular.WithLanguageVersion(languageVersion),
+                    expectedOutput: "1a0 2b0").VerifyDiagnostics();
+            }
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/71333")]
+        public void OverloadResolution_CandidateOrdering_ParamsArray_Instance()
+        {
+            var source = """
+                using System;
+
+                class Program
+                {
+                    static void Main()
+                    {
+                        var x1 = new Program().Test1;
+                        var x2 = new Program().Test2;
+
+                        x1();
+                        x2();
+                    }
+
+                    public void Test1(int x, long[] a) => Console.Write(a.Length);
+                    public void Test1(long x, params long[] a) => Console.Write(a.Length);
+
+                    public void Test2(int x, params long[] a) => Console.Write(a.Length);
+                    public void Test2(long x, long[] a) => Console.Write(a.Length);
                 }
                 """;
             foreach (var languageVersion in new[] { CSharp.LanguageVersion.Preview, LanguageVersionFacts.CSharpNext, CSharp.LanguageVersion.CSharp12 })
@@ -6536,6 +6567,135 @@ class Program
                     // (20,45): error CS0231: A params parameter must be the last parameter in a parameter list
                     //     static public void Test2(this object p, params long[] a, long[] b) => Console.Write(a.Length);
                     Diagnostic(ErrorCode.ERR_ParamsLast, "params long[] a").WithLocation(20, 45));
+            }
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/71333")]
+        public void OverloadResolution_CandidateOrdering_ParamsArray_NotLastParameter_Instance()
+        {
+            var source = """
+                using System;
+
+                class Program
+                {
+                    static void Main()
+                    {
+                        var x1 = new Program().Test1;
+                        var x2 = new Program().Test2;
+
+                        x1();
+                        x2();
+                    }
+
+                    public void Test1(int x, long[] a, long[] b) => Console.Write(a.Length);
+                    public void Test1(long x, params long[] a, long[] b) => Console.Write(a.Length);
+
+                    public void Test2(int x, params long[] a, long[] b) => Console.Write(a.Length);
+                    public void Test2(long x, long[] a, long[] b) => Console.Write(a.Length);
+                }
+                """;
+            foreach (var languageVersion in new[] { CSharp.LanguageVersion.Preview, LanguageVersionFacts.CSharpNext, CSharp.LanguageVersion.CSharp12 })
+            {
+                CreateCompilation(source, parseOptions: TestOptions.Regular.WithLanguageVersion(languageVersion)).VerifyDiagnostics(
+                    // (7,18): error CS8917: The delegate type could not be inferred.
+                    //         var x1 = new Program().Test1;
+                    Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "new Program().Test1").WithLocation(7, 18),
+                    // (8,18): error CS8917: The delegate type could not be inferred.
+                    //         var x2 = new Program().Test2;
+                    Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "new Program().Test2").WithLocation(8, 18),
+                    // (15,31): error CS0231: A params parameter must be the last parameter in a parameter list
+                    //     public void Test1(long x, params long[] a, long[] b) => Console.Write(a.Length);
+                    Diagnostic(ErrorCode.ERR_ParamsLast, "params long[] a").WithLocation(15, 31),
+                    // (17,30): error CS0231: A params parameter must be the last parameter in a parameter list
+                    //     public void Test2(int x, params long[] a, long[] b) => Console.Write(a.Length);
+                    Diagnostic(ErrorCode.ERR_ParamsLast, "params long[] a").WithLocation(17, 30));
+            }
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/71333")]
+        public void OverloadResolution_CandidateOrdering_ParamsArray_NotLastParameter_02()
+        {
+            var source = """
+                using System;
+
+                class Program
+                {
+                    static void Main()
+                    {
+                        var x1 = new Program().Test1;
+                        var x2 = new Program().Test2;
+
+                        x1();
+                        x2();
+                    }
+                }
+
+                static class E
+                {
+                    static public void Test1(this Program p, long[] a, params long[] b) => Console.Write(a.Length);
+                    static public void Test1(this object p, params long[] a, long[] b) => Console.Write(a.Length);
+
+                    static public void Test2(this object p, params long[] a, long[] b) => Console.Write(a.Length);
+                    static public void Test2(this Program p, long[] a, params long[] b) => Console.Write(a.Length);
+                }
+                """;
+            foreach (var languageVersion in new[] { CSharp.LanguageVersion.Preview, LanguageVersionFacts.CSharpNext, CSharp.LanguageVersion.CSharp12 })
+            {
+                CreateCompilation(source, parseOptions: TestOptions.Regular.WithLanguageVersion(languageVersion)).VerifyDiagnostics(
+                    // (10,9): error CS7036: There is no argument given that corresponds to the required parameter 'arg1' of '<anonymous delegate>'
+                    //         x1();
+                    Diagnostic(ErrorCode.ERR_NoCorrespondingArgument, "x1").WithArguments("arg1", "<anonymous delegate>").WithLocation(10, 9),
+                    // (11,9): error CS7036: There is no argument given that corresponds to the required parameter 'arg1' of '<anonymous delegate>'
+                    //         x2();
+                    Diagnostic(ErrorCode.ERR_NoCorrespondingArgument, "x2").WithArguments("arg1", "<anonymous delegate>").WithLocation(11, 9),
+                    // (18,45): error CS0231: A params parameter must be the last parameter in a parameter list
+                    //     static public void Test1(this object p, params long[] a, long[] b) => Console.Write(a.Length);
+                    Diagnostic(ErrorCode.ERR_ParamsLast, "params long[] a").WithLocation(18, 45),
+                    // (20,45): error CS0231: A params parameter must be the last parameter in a parameter list
+                    //     static public void Test2(this object p, params long[] a, long[] b) => Console.Write(a.Length);
+                    Diagnostic(ErrorCode.ERR_ParamsLast, "params long[] a").WithLocation(20, 45));
+            }
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/71333")]
+        public void OverloadResolution_CandidateOrdering_ParamsArray_NotLastParameter_02_Instance()
+        {
+            var source = """
+                using System;
+
+                class Program
+                {
+                    static void Main()
+                    {
+                        var x1 = new Program().Test1;
+                        var x2 = new Program().Test2;
+
+                        x1();
+                        x2();
+                    }
+
+                    public void Test1(int x, long[] a, params long[] b) => Console.Write(a.Length);
+                    public void Test1(long x, params long[] a, long[] b) => Console.Write(a.Length);
+
+                    public void Test2(int x, params long[] a, long[] b) => Console.Write(a.Length);
+                    public void Test2(long x, long[] a, params long[] b) => Console.Write(a.Length);
+                }
+                """;
+            foreach (var languageVersion in new[] { CSharp.LanguageVersion.Preview, LanguageVersionFacts.CSharpNext, CSharp.LanguageVersion.CSharp12 })
+            {
+                CreateCompilation(source, parseOptions: TestOptions.Regular.WithLanguageVersion(languageVersion)).VerifyDiagnostics(
+                    // (7,18): error CS8917: The delegate type could not be inferred.
+                    //         var x1 = new Program().Test1;
+                    Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "new Program().Test1").WithLocation(7, 18),
+                    // (8,18): error CS8917: The delegate type could not be inferred.
+                    //         var x2 = new Program().Test2;
+                    Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "new Program().Test2").WithLocation(8, 18),
+                    // (15,31): error CS0231: A params parameter must be the last parameter in a parameter list
+                    //     public void Test1(long x, params long[] a, long[] b) => Console.Write(a.Length);
+                    Diagnostic(ErrorCode.ERR_ParamsLast, "params long[] a").WithLocation(15, 31),
+                    // (17,30): error CS0231: A params parameter must be the last parameter in a parameter list
+                    //     public void Test2(int x, params long[] a, long[] b) => Console.Write(a.Length);
+                    Diagnostic(ErrorCode.ERR_ParamsLast, "params long[] a").WithLocation(17, 30));
             }
         }
 
