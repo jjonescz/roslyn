@@ -1322,6 +1322,35 @@ outerDefault:
 
             RemoveLessDerivedMembers(results, ref useSiteInfo);
 
+            // Consider the signatures ambiguous
+            // if there's at least one with `params` and at least one without.
+            var seenValidParams = false;
+            var seenInvalidParams = false;
+            foreach (var res in results)
+            {
+                if (res.IsApplicable)
+                {
+                    if (IsValidParams(_binder, res.LeastOverriddenMember))
+                    {
+                        seenValidParams = true;
+                    }
+                    else
+                    {
+                        seenInvalidParams = true;
+                    }
+
+                    if (seenValidParams && seenInvalidParams)
+                    {
+                        break;
+                    }
+                }
+            }
+            if (seenValidParams && seenInvalidParams)
+            {
+                result.Free();
+                return false;
+            }
+
             var applicableMethods = result.GetAllApplicableMembers();
             result.Free();
 
@@ -1331,27 +1360,7 @@ outerDefault:
                 methods.AddRange(applicableMethods);
             }
 
-            // Consider the signatures ambiguous
-            // if there's at least one with `params` and one without.
-            var seenValidParams = false;
-            var seenInvalidParams = false;
-            foreach (var method in methods)
-            {
-                if (IsValidParams(_binder, method))
-                {
-                    seenValidParams = true;
-                }
-                else
-                {
-                    seenInvalidParams = true;
-                }
-
-                if (seenValidParams && seenInvalidParams)
-                {
-                    return false;
-                }
-            }
-            return !seenValidParams || !seenInvalidParams;
+            return true;
         }
 #nullable disable
 
