@@ -6484,8 +6484,13 @@ class Program
                 """;
             foreach (var languageVersion in new[] { CSharp.LanguageVersion.Preview, LanguageVersionFacts.CSharpNext, CSharp.LanguageVersion.CSharp12 })
             {
-                CompileAndVerify(source, parseOptions: TestOptions.Regular.WithLanguageVersion(languageVersion),
-                    expectedOutput: "1a0 2b0").VerifyDiagnostics();
+                CreateCompilation(source, parseOptions: TestOptions.Regular.WithLanguageVersion(languageVersion)).VerifyDiagnostics(
+                    // (7,18): error CS8917: The delegate type could not be inferred.
+                    //         var x1 = new Program().Test1;
+                    Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "new Program().Test1").WithLocation(7, 18),
+                    // (8,18): error CS8917: The delegate type could not be inferred.
+                    //         var x2 = new Program().Test2;
+                    Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "new Program().Test2").WithLocation(8, 18));
             }
         }
 
@@ -6642,12 +6647,12 @@ class Program
             foreach (var languageVersion in new[] { CSharp.LanguageVersion.Preview, LanguageVersionFacts.CSharpNext, CSharp.LanguageVersion.CSharp12 })
             {
                 CreateCompilation(source, parseOptions: TestOptions.Regular.WithLanguageVersion(languageVersion)).VerifyDiagnostics(
-                    // (10,9): error CS7036: There is no argument given that corresponds to the required parameter 'arg1' of '<anonymous delegate>'
-                    //         x1();
-                    Diagnostic(ErrorCode.ERR_NoCorrespondingArgument, "x1").WithArguments("arg1", "<anonymous delegate>").WithLocation(10, 9),
-                    // (11,9): error CS7036: There is no argument given that corresponds to the required parameter 'arg1' of '<anonymous delegate>'
-                    //         x2();
-                    Diagnostic(ErrorCode.ERR_NoCorrespondingArgument, "x2").WithArguments("arg1", "<anonymous delegate>").WithLocation(11, 9),
+                    // (7,18): error CS8917: The delegate type could not be inferred.
+                    //         var x1 = new Program().Test1;
+                    Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "new Program().Test1").WithLocation(7, 18),
+                    // (8,18): error CS8917: The delegate type could not be inferred.
+                    //         var x2 = new Program().Test2;
+                    Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "new Program().Test2").WithLocation(8, 18),
                     // (18,45): error CS0231: A params parameter must be the last parameter in a parameter list
                     //     static public void Test1(this object p, params long[] a, long[] b) => Console.Write(a.Length);
                     Diagnostic(ErrorCode.ERR_ParamsLast, "params long[] a").WithLocation(18, 45),

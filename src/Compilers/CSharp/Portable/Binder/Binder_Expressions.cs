@@ -10087,7 +10087,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 methods.Add(m);
             }
 
-            OverloadResolution.FilterMethodsForUniqueSignature(methods);
+            if (!OverloadResolution.FilterMethodsForUniqueSignature(methods))
+            {
+                methods.Free();
+                return null;
+            }
 
             foreach (var m in methods)
             {
@@ -10115,7 +10119,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
                     methodGroup.Free();
 
-                    OverloadResolution.FilterMethodsForUniqueSignature(methods);
+                    if (!OverloadResolution.FilterMethodsForUniqueSignature(methods))
+                    {
+                        methods.Free();
+                        return null;
+                    }
 
                     foreach (var reduced in methods)
                     {
@@ -10210,7 +10218,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                     methods.Add(substituted);
                 }
 
-                OverloadResolution.FilterMethodsForUniqueSignature(methods);
+                if (!OverloadResolution.FilterMethodsForUniqueSignature(methods))
+                {
+                    methods.Free();
+                    return null;
+                }
 
                 foreach (var substituted in methods)
                 {
@@ -10262,7 +10274,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                         methods.Add(reduced);
                     }
 
-                    OverloadResolution.FilterMethodsForUniqueSignature(methods);
+                    if (!OverloadResolution.FilterMethodsForUniqueSignature(methods))
+                    {
+                        methods.Free();
+                        methodGroup.Free();
+                        return null;
+                    }
 
                     foreach (var reduced in methods)
                     {

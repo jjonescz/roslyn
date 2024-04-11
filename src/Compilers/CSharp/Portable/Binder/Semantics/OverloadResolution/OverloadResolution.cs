@@ -1288,17 +1288,17 @@ outerDefault:
         }
 
 #nullable enable
-        internal void FilterMethodsForUniqueSignature(ArrayBuilder<MethodSymbol> methods)
+        /// <returns>false if the set does not have a unique signature</returns>
+        internal bool FilterMethodsForUniqueSignature(ArrayBuilder<MethodSymbol> methods)
         {
             if (methods.Count < 2)
             {
-                return;
+                return true;
             }
 
             var result = OverloadResolutionResult<MethodSymbol>.GetInstance();
             var results = result.ResultsBuilder;
             var useSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
-            var changedOrder = false;
 
             foreach (var method in methods)
             {
@@ -1313,21 +1313,11 @@ outerDefault:
                 }
 
                 var leastOverriddenMember = method.GetConstructedLeastOverriddenMethod(_binder.ContainingType, requireSameReturnType: false);
-                var res = new MemberResolutionResult<MethodSymbol>(
+                results.Add(new MemberResolutionResult<MethodSymbol>(
                     method,
                     leastOverriddenMember,
                     MemberAnalysisResult.NormalForm(argsToParamsOpt: default, conversions: default, hasAnyRefOmittedArgument: false),
-                    hasTypeArgumentInferredFromFunctionType: false);
-
-                if (IsValidParams(_binder, method))
-                {
-                    results.Insert(0, res);
-                    changedOrder = true;
-                }
-                else
-                {
-                    results.Add(res);
-                }
+                    hasTypeArgumentInferredFromFunctionType: false));
             }
 
             RemoveLessDerivedMembers(results, ref useSiteInfo);
@@ -1335,11 +1325,33 @@ outerDefault:
             var applicableMethods = result.GetAllApplicableMembers();
             result.Free();
 
-            if (changedOrder || applicableMethods.Length != methods.Count)
+            if (applicableMethods.Length != methods.Count)
             {
                 methods.Clear();
                 methods.AddRange(applicableMethods);
             }
+
+            // Consider the signatures ambiguous
+            // if there's at least one with `params` and one without.
+            var seenValidParams = false;
+            var seenInvalidParams = false;
+            foreach (var method in methods)
+            {
+                if (IsValidParams(_binder, method))
+                {
+                    seenValidParams = true;
+                }
+                else
+                {
+                    seenInvalidParams = true;
+                }
+
+                if (seenValidParams && seenInvalidParams)
+                {
+                    return false;
+                }
+            }
+            return !seenValidParams || !seenInvalidParams;
         }
 #nullable disable
 
