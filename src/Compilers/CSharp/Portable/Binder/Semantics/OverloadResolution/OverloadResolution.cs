@@ -1300,7 +1300,7 @@ outerDefault:
                 NamedTypeSymbol otherContainingType = otherMember.ContainingType;
                 if (HidesByName(otherMember) && otherContainingType.IsDerivedFrom(memberContainingType, TypeCompareKind.ConsiderEverything, useSiteInfo: ref useSiteInfo))
                 {
-                    return true;
+                    //return true;
                 }
             }
 
