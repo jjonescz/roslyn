@@ -1324,28 +1324,7 @@ outerDefault:
 
             // Consider the signatures ambiguous
             // if there's at least one with `params` and at least one without.
-            var seenValidParams = false;
-            var seenInvalidParams = false;
-            foreach (var res in results)
-            {
-                if (res.IsApplicable)
-                {
-                    if (IsValidParams(_binder, res.LeastOverriddenMember))
-                    {
-                        seenValidParams = true;
-                    }
-                    else
-                    {
-                        seenInvalidParams = true;
-                    }
-
-                    if (seenValidParams && seenInvalidParams)
-                    {
-                        break;
-                    }
-                }
-            }
-            if (seenValidParams && seenInvalidParams)
+            if (hasParamsAndNonParamsMethods(_binder, results))
             {
                 result.Free();
                 return false;
@@ -1361,6 +1340,32 @@ outerDefault:
             }
 
             return true;
+
+            static bool hasParamsAndNonParamsMethods(Binder binder, ArrayBuilder<MemberResolutionResult<MethodSymbol>> results)
+            {
+                var seenValidParams = false;
+                var seenInvalidParams = false;
+                foreach (var res in results)
+                {
+                    if (res.IsApplicable)
+                    {
+                        if (IsValidParams(binder, res.LeastOverriddenMember))
+                        {
+                            seenValidParams = true;
+                        }
+                        else
+                        {
+                            seenInvalidParams = true;
+                        }
+
+                        if (seenValidParams && seenInvalidParams)
+                        {
+                            return true;
+                        }
+                    }
+                }
+                return seenValidParams && seenInvalidParams;
+            }
         }
 #nullable disable
 
