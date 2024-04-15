@@ -7872,6 +7872,28 @@ public struct Vec4
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/71773")]
+        public void UserDefinedBinaryOperator_RefStruct_Nested()
+        {
+            var source = """
+                class C
+                {
+                    S M()
+                    {
+                        S s;
+                        s = default(S) + 100 + 200;
+                        return s;
+                    }
+                }
+
+                ref struct S
+                {
+                    public static S operator+(S y, in int x) => throw null;
+                }
+                """;
+            CreateCompilation(source).VerifyDiagnostics();
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/71773")]
         public void UserDefinedBinaryOperator_RefStruct_Scoped_Left()
         {
             var source = """
