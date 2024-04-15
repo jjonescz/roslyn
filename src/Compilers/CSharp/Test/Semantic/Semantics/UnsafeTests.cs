@@ -362,6 +362,87 @@ unsafe class C
         }
 
         [Fact]
+        public void Iterator_UnsafeBlock()
+        {
+            var code = """
+                foreach (var x in new C().M()) System.Console.Write(x);
+
+                class C
+                {
+                    public System.Collections.Generic.IEnumerable<int> M()
+                    {
+                        int x = 1;
+                        unsafe
+                        {
+                            int *p = &x;
+                            *p = *p + 1;
+                        }
+                        yield return x;
+                    }
+                }
+                """;
+            CompileAndVerify(code, expectedOutput: "2", options: TestOptions.UnsafeReleaseExe, verify: Verification.Fails).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void Iterator_UnsafeBlock_YieldBreak()
+        {
+            var code = """
+                foreach (var x in new C().M()) System.Console.Write(x);
+
+                class C
+                {
+                    public System.Collections.Generic.IEnumerable<int> M()
+                    {
+                        int x = 1;
+                        unsafe
+                        {
+                            int *p = &x;
+                            *p = *p + 1;
+                        }
+                        yield return x;
+                        unsafe
+                        {
+                            int *p = &x;
+                            *p = *p + 1;
+                        }
+                        yield return x;
+                        unsafe
+                        {
+                            int *p = &x;
+                            if (*p == 3) yield break;
+                        }
+                        yield return x;
+                    }
+                }
+                """;
+            CompileAndVerify(code, expectedOutput: "210", options: TestOptions.UnsafeReleaseExe, verify: Verification.Fails).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void Iterator_UnsafeMethod()
+        {
+            var code = """
+                foreach (var x in new C().M()) System.Console.Write("E" + x);
+
+                class C
+                {
+                    public unsafe System.Collections.Generic.IEnumerable<int> M()
+                    {
+                        int x = 1;
+                        int *p = &x;
+                        *p = *p + 1;
+                        System.Console.Write("I" + x);
+                        yield break;
+                #pragma warning disable CS0162 // Unreachable code detected
+                        System.Console.Write("B");
+                    }
+                }
+                """;
+            CompileAndVerify(code, expectedOutput: "I2", options: TestOptions.UnsafeReleaseExe, verify: Verification.Fails).VerifyDiagnostics();
+        }
+
+        [Fact]
         public void UnsafeContext_01()
         {
             var code = """
@@ -369,7 +450,7 @@ unsafe class C
                 using System.Threading.Tasks;
                 unsafe class C
                 {
-                    IEnumerable<int> M2()
+                    IEnumerable<int> M()
                     {
                         yield return 1;
                         var lam = async () => await Task.Yield();

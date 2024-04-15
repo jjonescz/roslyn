@@ -4383,7 +4383,52 @@ unsafe class Program
             CreateCompilation(source, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.Regular12).VerifyDiagnostics(expectedDiagnostics);
 
             CreateCompilation(source, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
-            CreateCompilation(source, options: TestOptions.UnsafeReleaseDll).VerifyEmitDiagnostics();
+            var verifier = CompileAndVerify(source, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+
+            verifier.VerifyIL("Program.<F>d__0.System.Collections.IEnumerator.MoveNext", """
+                {
+                  // Code size       92 (0x5c)
+                  .maxstack  2
+                  .locals init (int V_0)
+                  IL_0000:  ldarg.0
+                  IL_0001:  ldfld      "int Program.<F>d__0.<>1__state"
+                  IL_0006:  stloc.0
+                  IL_0007:  ldloc.0
+                  IL_0008:  switch    (
+                        IL_001b,
+                        IL_0037,
+                        IL_0053)
+                  IL_0019:  ldc.i4.0
+                  IL_001a:  ret
+                  IL_001b:  ldarg.0
+                  IL_001c:  ldc.i4.m1
+                  IL_001d:  stfld      "int Program.<F>d__0.<>1__state"
+                  IL_0022:  ldarg.0
+                  IL_0023:  sizeof     "System.IntPtr"
+                  IL_0029:  stfld      "int Program.<F>d__0.<>2__current"
+                  IL_002e:  ldarg.0
+                  IL_002f:  ldc.i4.1
+                  IL_0030:  stfld      "int Program.<F>d__0.<>1__state"
+                  IL_0035:  ldc.i4.1
+                  IL_0036:  ret
+                  IL_0037:  ldarg.0
+                  IL_0038:  ldc.i4.m1
+                  IL_0039:  stfld      "int Program.<F>d__0.<>1__state"
+                  IL_003e:  ldarg.0
+                  IL_003f:  sizeof     "System.UIntPtr"
+                  IL_0045:  stfld      "int Program.<F>d__0.<>2__current"
+                  IL_004a:  ldarg.0
+                  IL_004b:  ldc.i4.2
+                  IL_004c:  stfld      "int Program.<F>d__0.<>1__state"
+                  IL_0051:  ldc.i4.1
+                  IL_0052:  ret
+                  IL_0053:  ldarg.0
+                  IL_0054:  ldc.i4.m1
+                  IL_0055:  stfld      "int Program.<F>d__0.<>1__state"
+                  IL_005a:  ldc.i4.0
+                  IL_005b:  ret
+                }
+                """);
         }
 
         [Fact]
