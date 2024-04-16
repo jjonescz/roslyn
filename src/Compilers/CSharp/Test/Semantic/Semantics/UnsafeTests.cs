@@ -282,7 +282,7 @@ class C
 
             var expectedDiagnostics = new[]
             {
-                // (6,9): error CS9230: Cannot use 'yield return' in an 'unsafe' block
+                // (6,9): error CS9231: Cannot use 'yield return' in an 'unsafe' block
                 //         yield return 1;
                 Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(6, 9)
             };
@@ -1080,7 +1080,7 @@ unsafe class C<T>
 
             var expectedDiagnostics = new[]
             {
-                // (6,9): error CS9230: Cannot use 'yield return' in an 'unsafe' block
+                // (6,9): error CS9231: Cannot use 'yield return' in an 'unsafe' block
                 //         yield return 1;
                 Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(6, 9),
                 // (4,70): error CS1637: Iterators cannot have pointer type parameters
@@ -1101,7 +1101,7 @@ unsafe class C<T>
                 Diagnostic(ErrorCode.ERR_FeatureInPreview, "Iterator").WithArguments("ref and unsafe in async and iterator methods").WithLocation(4, 56)); //this is for putting "unsafe" on an iterator, not for the parameter type
 
             expectedDiagnostics = [
-                // (6,9): error CS9230: Cannot use 'yield return' in an 'unsafe' block
+                // (6,9): error CS9231: Cannot use 'yield return' in an 'unsafe' block
                 //         yield return 1;
                 Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(6, 9),
                 // (4,70): error CS1637: Iterators cannot have pointer type parameters
@@ -1145,7 +1145,7 @@ unsafe class C<T>
 
             var expectedDiagnostics = new[]
             {
-                // (6,9): error CS9230: Cannot use 'yield return' in an 'unsafe' block
+                // (6,9): error CS9231: Cannot use 'yield return' in an 'unsafe' block
                 //         yield return 1;
                 Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(6, 9)
             };
@@ -1161,7 +1161,7 @@ unsafe class C<T>
                 );
 
             expectedDiagnostics = [
-                // (6,9): error CS9230: Cannot use 'yield return' in an 'unsafe' block
+                // (6,9): error CS9231: Cannot use 'yield return' in an 'unsafe' block
                 //         yield return 1;
                 Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(6, 9)
             ];

@@ -2424,7 +2424,7 @@ class C
                 // (33,44): error CS1637: Iterators cannot have pointer type parameters
                 //     public unsafe IEnumerable<int> M4(int* a)
                 Diagnostic(ErrorCode.ERR_UnsafeIteratorArgType, "a").WithLocation(33, 44),
-                // (35,9): error CS9230: Cannot use 'yield return' in an 'unsafe' block
+                // (35,9): error CS9231: Cannot use 'yield return' in an 'unsafe' block
                 //         yield return new Func<int>(() =>
                 Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(35, 9),
                 // (37,45): error CS1637: Iterators cannot have pointer type parameters

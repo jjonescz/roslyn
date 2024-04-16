@@ -15304,7 +15304,7 @@ class C
 
             var expectedDiagnostics = new[]
             {
-                // (10,10): error CS9230: Cannot use 'yield return' in an 'unsafe' block
+                // (10,10): error CS9231: Cannot use 'yield return' in an 'unsafe' block
                 //          yield return *p;
                 Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(10, 10)
             };
