@@ -1379,7 +1379,7 @@ unsafe class Program
             CreateCompilation(source, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.Regular12, targetFramework: TargetFramework.Net70).VerifyDiagnostics(expectedDiagnostics);
 
             CreateCompilation(source, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.RegularNext, targetFramework: TargetFramework.Net70).VerifyEmitDiagnostics();
-            var verifier = CompileAndVerify(source, options: TestOptions.UnsafeReleaseDll, targetFramework: TargetFramework.Net70).VerifyDiagnostics();
+            var verifier = CompileAndVerify(source, options: TestOptions.UnsafeReleaseDll, targetFramework: TargetFramework.Net70, verify: Verification.FailsPEVerify).VerifyDiagnostics();
 
             verifier.VerifyIL("Program.<F>d__0.System.Collections.IEnumerator.MoveNext", """
                 {
