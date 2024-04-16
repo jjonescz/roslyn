@@ -302,6 +302,11 @@
         <target state="translated">Der Typ "{0}" ist für "using static" ungültig. Nur eine Klasse, Struktur, Schnittstelle, Enumeration, ein Delegat oder ein Namespace kann verwendet werden.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_BadYieldInUnsafe">
+        <source>Cannot use 'yield return' in an 'unsafe' block</source>
+        <target state="new">Cannot use 'yield return' in an 'unsafe' block</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_BuilderAttributeDisallowed">
         <source>The AsyncMethodBuilder attribute is disallowed on anonymous methods without an explicit return type.</source>
         <target state="translated">Das AsyncMethodBuilder-Attribut ist für anonyme Methoden ohne expliziten Rückgabetyp unzulässig.</target>
@@ -9159,11 +9164,6 @@ Ein catch()-Block nach einem catch (System.Exception e)-Block kann nicht-CLS-Aus
       <trans-unit id="ERR_AnonDelegateCantUse">
         <source>Cannot use ref, out, or in parameter '{0}' inside an anonymous method, lambda expression, query expression, or local function</source>
         <target state="translated">Der ref-, out-, oder in-Parameter "{0}" kann nicht in einer anonymen Methode, einem Lambdaausdruck, einem Abfrageausdruck oder einer lokalen Funktion verwendet werden.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_IllegalInnerUnsafe">
-        <source>Unsafe code may not appear in iterators</source>
-        <target state="translated">Unsicherer Code wird möglicherweise nicht in Iteratoren angezeigt.</target>
         <note />
       </trans-unit>
       <trans-unit id="ERR_BadYieldInCatch">

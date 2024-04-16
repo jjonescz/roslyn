@@ -302,6 +302,11 @@
         <target state="translated">'{0}' 유형은 '정적 사용'에 유효하지 않습니다. 클래스, 구조체, 인터페이스, 열거형, 대리자 또는 네임스페이스만 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_BadYieldInUnsafe">
+        <source>Cannot use 'yield return' in an 'unsafe' block</source>
+        <target state="new">Cannot use 'yield return' in an 'unsafe' block</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_BuilderAttributeDisallowed">
         <source>The AsyncMethodBuilder attribute is disallowed on anonymous methods without an explicit return type.</source>
         <target state="translated">AsyncMethodBuilder 특성은 명시적 반환 형식이 없는 익명 메서드에서 허용되지 않습니다.</target>
@@ -9159,11 +9164,6 @@ catch (System.Exception e) 블록 뒤의 catch() 블록은 RuntimeCompatibilityA
       <trans-unit id="ERR_AnonDelegateCantUse">
         <source>Cannot use ref, out, or in parameter '{0}' inside an anonymous method, lambda expression, query expression, or local function</source>
         <target state="translated">무명 메서드, 람다 식, 쿼리 식 또는 로컬 함수 안에서는 ref, out 또는 in 매개 변수 '{0}'을(를) 사용할 수 없습니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_IllegalInnerUnsafe">
-        <source>Unsafe code may not appear in iterators</source>
-        <target state="translated">반복기에는 안전하지 않은 코드를 사용할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="ERR_BadYieldInCatch">

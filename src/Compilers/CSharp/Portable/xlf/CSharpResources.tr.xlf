@@ -302,6 +302,11 @@
         <target state="translated">'{0}' türü 'using static' için geçerli değil. Yalnızca bir sınıf, yapı, arabirim, sabit liste, temsilci veya ad alanı kullanılabilir.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_BadYieldInUnsafe">
+        <source>Cannot use 'yield return' in an 'unsafe' block</source>
+        <target state="new">Cannot use 'yield return' in an 'unsafe' block</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_BuilderAttributeDisallowed">
         <source>The AsyncMethodBuilder attribute is disallowed on anonymous methods without an explicit return type.</source>
         <target state="translated">Açık dönüş türü olmadan, anonim yöntemlerde AsyncMethodBuilder özniteliğine izin verilmez.</target>
@@ -9159,11 +9164,6 @@ RuntimeCompatibilityAttribute AssemblyInfo.cs dosyasında false olarak ayarlanm�
       <trans-unit id="ERR_AnonDelegateCantUse">
         <source>Cannot use ref, out, or in parameter '{0}' inside an anonymous method, lambda expression, query expression, or local function</source>
         <target state="translated">Anonim metot, lambda ifadesi, sorgu ifadesi veya yerel işlev içinde '{0}' ref, out veya in parametresi kullanılamaz</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_IllegalInnerUnsafe">
-        <source>Unsafe code may not appear in iterators</source>
-        <target state="translated">Güvenli olmayan kod yineleyicilerde görünmeyebilir</target>
         <note />
       </trans-unit>
       <trans-unit id="ERR_BadYieldInCatch">
