@@ -2304,7 +2304,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         #endregion
 
-        ERR_BadYieldInUnsafe = 9230,
+        WRN_BadYieldInLock = 9230,
+        ERR_BadYieldInUnsafe = 9231,
 
         // Note: you will need to do the following after adding warnings:
         //  1) Re-generate compiler code (eng\generate-compiler-code.cmd).
