@@ -7905,4 +7905,7 @@ To remove the warning, you can use /reference instead (set the Embed Interop Typ
   <data name="ERR_BadYieldInUnsafe" xml:space="preserve">
     <value>Cannot use 'yield return' in an 'unsafe' block</value>
   </data>
+  <data name="ERR_AddressOfInIterator" xml:space="preserve">
+    <value>The '&amp;' operator cannot be used on parameters or local variables in iterator methods.</value>
+  </data>
 </root>

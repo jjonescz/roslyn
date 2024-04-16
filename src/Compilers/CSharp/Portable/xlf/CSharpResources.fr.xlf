@@ -32,6 +32,11 @@
         <target state="translated">'{0}' : un événement abstrait ne peut pas utiliser une syntaxe d'accesseur d'événement</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_AddressOfInIterator">
+        <source>The '&amp;' operator cannot be used on parameters or local variables in iterator methods.</source>
+        <target state="new">The '&amp;' operator cannot be used on parameters or local variables in iterator methods.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_AddressOfMethodGroupInExpressionTree">
         <source>'&amp;' on method groups cannot be used in expression trees</source>
         <target state="translated">'&amp;' des groupes de méthodes ne peut pas être utilisé dans les arborescences d'expression</target>
