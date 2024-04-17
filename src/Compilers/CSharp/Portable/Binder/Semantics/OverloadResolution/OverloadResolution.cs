@@ -1318,16 +1318,9 @@ outerDefault:
             // We do not have any arguments when determining unique signature.
             var arguments = AnalyzedArguments.GetInstance();
 
-            // Overload resolution helpers expect original definitions.
-            var methodOriginalDefinitions = ArrayBuilder<MethodSymbol>.GetInstance(methods.Count);
-            foreach (var method in methods)
-            {
-                methodOriginalDefinitions.Add(method.OriginalDefinition);
-            }
-
             PerformMemberOverloadResolution(
                 results,
-                methodOriginalDefinitions,
+                methods,
                 typeArguments,
                 receiver: null,
                 arguments: arguments,
@@ -1339,7 +1332,6 @@ outerDefault:
                 Options.InferringUniqueMethodGroupSignature | Options.IgnoreNormalFormIfHasValidParamsParameter,
                 checkOverriddenOrHidden: true);
 
-            methodOriginalDefinitions.Free();
             arguments.Free();
             typeArguments.Free();
 
