@@ -126,7 +126,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             IsFunctionPointerResolution = 0b_00010000,
             IsExtensionMethodResolution = 0b_00100000,
             DynamicResolution = 0b_01000000,
-            InferringUniqueMethodGroupSignature = 0b_10000000,
+            InferringUniqueMethodGroupSignature = 0b_10000000, // TODO: Rename to "arguments unavailable"?
         }
 
         // Perform overload resolution on the given method group, with the given arguments and
@@ -1294,6 +1294,7 @@ outerDefault:
             return false;
         }
 
+        // TODO: Move near to PerformMemberOverloadResolution?
 #nullable enable
         /// <returns>false if the set does not have a unique signature</returns>
         internal bool FilterMethodsForUniqueSignature(ArrayBuilder<MethodSymbol> methods, ImmutableArray<TypeWithAnnotations> typeArgumentsOpt)
@@ -1328,8 +1329,20 @@ outerDefault:
                 returnType: null,
                 callingConventionInfo: default,
                 ref useSiteInfo,
-                Options.InferringUniqueMethodGroupSignature,
+                Options.InferringUniqueMethodGroupSignature | Options.IgnoreNormalFormIfHasValidParamsParameter,
                 checkOverriddenOrHidden: true);
+
+            arguments.Free();
+            typeArguments.Free();
+
+            // If we have a candidate applicable in expanded form and a candidate applicable in normal form,
+            // that's an ambiguity (the candidates cannot have a unique signature).
+            if (results.Any(static r => r.Resolution == MemberResolutionKind.ApplicableInNormalForm) &&
+                results.Any(static r => r.Resolution == MemberResolutionKind.ApplicableInExpandedForm))
+            {
+                result.Free();
+                return false;
+            }
 
             var applicableMethods = result.GetAllApplicableMembers();
             result.Free();
@@ -1340,7 +1353,7 @@ outerDefault:
                 methods.AddRange(applicableMethods);
             }
 
-            return true; // TODO: Get rid of the return value if only true is ever returned.
+            return true;
         }
 #nullable disable
 
