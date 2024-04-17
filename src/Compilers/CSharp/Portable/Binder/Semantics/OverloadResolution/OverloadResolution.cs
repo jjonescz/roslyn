@@ -126,6 +126,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             IsFunctionPointerResolution = 0b_00010000,
             IsExtensionMethodResolution = 0b_00100000,
             DynamicResolution = 0b_01000000,
+            InferringUniqueMethodGroupSignature = 0b_10000000,
         }
 
         // Perform overload resolution on the given method group, with the given arguments and
@@ -326,6 +327,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     RemoveLessDerivedMembers(results, ref useSiteInfo);
                 }
+            }
+
+            // TODO: Extract helper instead of returning early to ensure the unused arguments are really unused.
+            if ((options & Options.InferringUniqueMethodGroupSignature) != 0)
+            {
+                return;
             }
 
             if (Compilation.LanguageVersion.AllowImprovedOverloadCandidates())
@@ -1289,9 +1296,9 @@ outerDefault:
 
 #nullable enable
         /// <returns>false if the set does not have a unique signature</returns>
-        internal bool FilterMethodsForUniqueSignature(ArrayBuilder<MethodSymbol> methods)
+        internal bool FilterMethodsForUniqueSignature(ArrayBuilder<MethodSymbol> methods, ImmutableArray<TypeWithAnnotations> typeArgumentsOpt)
         {
-            if (methods.Count < 2)
+            if (methods.Count == 0)
             {
                 return true;
             }
@@ -1300,35 +1307,29 @@ outerDefault:
             var results = result.ResultsBuilder;
             var useSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
 
-            foreach (var method in methods)
+            var arity = typeArgumentsOpt.IsDefault ? 0 : typeArgumentsOpt.Length;
+            var typeArguments = ArrayBuilder<TypeWithAnnotations>.GetInstance(capacity: arity);
+            if (arity != 0)
             {
-                if (MemberGroupContainsMoreDerivedOverride(methods, method, checkOverrideContainingType: true, ref useSiteInfo))
-                {
-                    continue;
-                }
-
-                if (MemberGroupHidesByName(methods, method, ref useSiteInfo))
-                {
-                    continue;
-                }
-
-                MethodSymbol leastOverriddenMethod = method.GetConstructedLeastOverriddenMethod(_binder.ContainingType, requireSameReturnType: false);
-                results.Add(new MemberResolutionResult<MethodSymbol>(
-                    method,
-                    leastOverriddenMethod,
-                    MemberAnalysisResult.NormalForm(argsToParamsOpt: default, conversions: default, hasAnyRefOmittedArgument: false),
-                    hasTypeArgumentInferredFromFunctionType: false));
+                typeArguments.AddRange(typeArgumentsOpt);
             }
 
-            RemoveLessDerivedMembers(results, ref useSiteInfo);
+            // We do not have any arguments when determining unique signature.
+            var arguments = AnalyzedArguments.GetInstance();
 
-            // Consider the signatures ambiguous
-            // if there's at least one with `params` and at least one without.
-            if (hasParamsAndNonParamsMethods(_binder, results))
-            {
-                result.Free();
-                return false;
-            }
+            PerformMemberOverloadResolution(
+                results,
+                methods,
+                typeArguments,
+                receiver: null,
+                arguments: arguments,
+                completeResults: true, // TODO: Needed or is the option enough?
+                returnRefKind: RefKind.None,
+                returnType: null,
+                callingConventionInfo: default,
+                ref useSiteInfo,
+                Options.InferringUniqueMethodGroupSignature,
+                checkOverriddenOrHidden: true);
 
             var applicableMethods = result.GetAllApplicableMembers();
             result.Free();
@@ -1339,33 +1340,7 @@ outerDefault:
                 methods.AddRange(applicableMethods);
             }
 
-            return true;
-
-            static bool hasParamsAndNonParamsMethods(Binder binder, ArrayBuilder<MemberResolutionResult<MethodSymbol>> results)
-            {
-                var seenValidParams = false;
-                var seenInvalidParams = false;
-                foreach (var res in results)
-                {
-                    if (res.IsApplicable)
-                    {
-                        if (IsValidParams(binder, res.LeastOverriddenMember))
-                        {
-                            seenValidParams = true;
-                        }
-                        else
-                        {
-                            seenInvalidParams = true;
-                        }
-
-                        if (seenValidParams && seenInvalidParams)
-                        {
-                            return true;
-                        }
-                    }
-                }
-                return seenValidParams && seenInvalidParams;
-            }
+            return true; // TODO: Get rid of the return value if only true is ever returned.
         }
 #nullable disable
 

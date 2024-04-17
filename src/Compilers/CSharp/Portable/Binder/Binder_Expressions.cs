@@ -10087,7 +10087,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 methods.Add(m);
             }
 
-            if (!OverloadResolution.FilterMethodsForUniqueSignature(methods))
+            if (!OverloadResolution.FilterMethodsForUniqueSignature(methods, node.TypeArgumentsOpt))
             {
                 methods.Free();
                 return null;
@@ -10119,7 +10119,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
                     methodGroup.Free();
 
-                    if (!OverloadResolution.FilterMethodsForUniqueSignature(methods))
+                    if (!OverloadResolution.FilterMethodsForUniqueSignature(methods, node.TypeArgumentsOpt))
                     {
                         methods.Free();
                         return null;
@@ -10218,7 +10218,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     methods.Add(substituted);
                 }
 
-                if (!OverloadResolution.FilterMethodsForUniqueSignature(methods))
+                if (!OverloadResolution.FilterMethodsForUniqueSignature(methods, node.TypeArgumentsOpt))
                 {
                     methods.Free();
                     return null;
@@ -10274,7 +10274,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         methods.Add(reduced);
                     }
 
-                    if (!OverloadResolution.FilterMethodsForUniqueSignature(methods))
+                    if (!OverloadResolution.FilterMethodsForUniqueSignature(methods, node.TypeArgumentsOpt))
                     {
                         methods.Free();
                         methodGroup.Free();
