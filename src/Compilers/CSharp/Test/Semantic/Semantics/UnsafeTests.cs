@@ -1151,6 +1151,42 @@ unsafe class C
         }
 
         [Fact]
+        public void Iterator_UnsafeMethod_04()
+        {
+            var code = """
+                class C
+                {
+                    public unsafe System.Collections.Generic.IEnumerable<int> M()
+                    {
+                        int x = sizeof(S);
+                        System.Console.Write("I" + x);
+                        yield return x;
+                    }
+                }
+                #pragma warning disable CS0169 // The field 'S.f' is never used
+                struct S { int f; }
+                """;
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (3,63): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     public unsafe System.Collections.Generic.IEnumerable<int> M()
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "M").WithArguments("ref and unsafe in async and iterator methods").WithLocation(3, 63),
+                // (5,17): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //         int x = sizeof(S);
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(S)").WithArguments("ref and unsafe in async and iterator methods").WithLocation(5, 17));
+
+            var expectedDiagnostics = new[]
+            {
+                // (7,9): error CS9231: Cannot use 'yield return' in an 'unsafe' block
+                //         yield return x;
+                Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(7, 9)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
         public void UnsafeContext_01()
         {
             var code = """
