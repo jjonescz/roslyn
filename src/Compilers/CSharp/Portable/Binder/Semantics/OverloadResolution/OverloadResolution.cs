@@ -249,28 +249,17 @@ namespace Microsoft.CodeAnalysis.CSharp
             return SingleValidResult(results);
         }
 
-        // Perform method/indexer overload resolution, storing the results into "results". If
-        // completeResults is false, then invalid results don't have to be stored. The results will
-        // still contain all possible successful resolution.
-        private void PerformMemberOverloadResolution<TMember>(
+        private void PerformMemberOverloadResolutionStart<TMember>(
             ArrayBuilder<MemberResolutionResult<TMember>> results,
             ArrayBuilder<TMember> members,
             ArrayBuilder<TypeWithAnnotations> typeArguments,
-            BoundExpression receiver,
             AnalyzedArguments arguments,
             bool completeResults,
-            RefKind returnRefKind,
-            TypeSymbol returnType,
-            in CallingConventionInfo callingConventionInfo,
             ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo,
             Options options,
             bool checkOverriddenOrHidden)
             where TMember : Symbol
         {
-            // SPEC: The binding-time processing of a method invocation of the form M(A), where M is a 
-            // SPEC: method group (possibly including a type-argument-list), and A is an optional 
-            // SPEC: argument-list, consists of the following steps:
-
             // NOTE: We use a quadratic algorithm to determine which members override/hide
             // each other (i.e. we compare them pairwise).  We could move to a linear
             // algorithm that builds the closure set of overridden/hidden members and then
@@ -328,12 +317,31 @@ namespace Microsoft.CodeAnalysis.CSharp
                     RemoveLessDerivedMembers(results, ref useSiteInfo);
                 }
             }
+        }
 
-            // TODO: Extract helper instead of returning early to ensure the unused arguments are really unused.
-            if ((options & Options.InferringUniqueMethodGroupSignature) != 0)
-            {
-                return;
-            }
+        // Perform method/indexer overload resolution, storing the results into "results". If
+        // completeResults is false, then invalid results don't have to be stored. The results will
+        // still contain all possible successful resolution.
+        private void PerformMemberOverloadResolution<TMember>(
+            ArrayBuilder<MemberResolutionResult<TMember>> results,
+            ArrayBuilder<TMember> members,
+            ArrayBuilder<TypeWithAnnotations> typeArguments,
+            BoundExpression receiver,
+            AnalyzedArguments arguments,
+            bool completeResults,
+            RefKind returnRefKind,
+            TypeSymbol returnType,
+            in CallingConventionInfo callingConventionInfo,
+            ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo,
+            Options options,
+            bool checkOverriddenOrHidden)
+            where TMember : Symbol
+        {
+            // SPEC: The binding-time processing of a method invocation of the form M(A), where M is a 
+            // SPEC: method group (possibly including a type-argument-list), and A is an optional 
+            // SPEC: argument-list, consists of the following steps:
+
+            PerformMemberOverloadResolutionStart(results, members, typeArguments, arguments, completeResults, ref useSiteInfo, options, checkOverriddenOrHidden);
 
             if (Compilation.LanguageVersion.AllowImprovedOverloadCandidates())
             {
@@ -1314,16 +1322,12 @@ outerDefault:
             // We do not have any arguments when determining unique signature.
             var arguments = AnalyzedArguments.GetInstance();
 
-            PerformMemberOverloadResolution(
+            PerformMemberOverloadResolutionStart(
                 results,
                 methods,
                 typeArguments,
-                receiver: null,
                 arguments,
                 completeResults: false,
-                returnRefKind: RefKind.None,
-                returnType: null,
-                callingConventionInfo: default,
                 ref useSiteInfo,
                 Options.InferringUniqueMethodGroupSignature | Options.IgnoreNormalFormIfHasValidParamsParameter,
                 checkOverriddenOrHidden: true);
