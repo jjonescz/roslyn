@@ -126,7 +126,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             IsFunctionPointerResolution = 0b_00010000,
             IsExtensionMethodResolution = 0b_00100000,
             DynamicResolution = 0b_01000000,
-            InferringUniqueMethodGroupSignature = 0b_10000000, // TODO: Rename to "arguments unavailable"?
+            InferringUniqueMethodGroupSignature = 0b_10000000,
         }
 
         // Perform overload resolution on the given method group, with the given arguments and
@@ -1297,7 +1297,7 @@ outerDefault:
         // TODO: Move near to PerformMemberOverloadResolution?
 #nullable enable
         /// <returns>false if the set does not have a unique signature</returns>
-        internal bool FilterMethodsForUniqueSignature(ArrayBuilder<MethodSymbol> methods, ImmutableArray<TypeWithAnnotations> typeArgumentsOpt)
+        internal bool FilterMethodsForUniqueSignature(ArrayBuilder<MethodSymbol> methods)
         {
             if (methods.Count == 0)
             {
@@ -1320,7 +1320,7 @@ outerDefault:
                 typeArguments,
                 receiver: null,
                 arguments,
-                completeResults: true, // TODO: Needed or is the option enough?
+                completeResults: false,
                 returnRefKind: RefKind.None,
                 returnType: null,
                 callingConventionInfo: default,
@@ -3860,7 +3860,8 @@ outerDefault:
             MethodSymbol method;
             EffectiveParameters constructedEffectiveParameters;
             bool hasTypeArgumentsInferredFromFunctionType = false;
-            if ((options & Options.InferringUniqueMethodGroupSignature) == 0 && member.Kind == SymbolKind.Method && (method = (MethodSymbol)(Symbol)member).Arity > 0)
+            if ((options & Options.InferringUniqueMethodGroupSignature) == 0 &&
+                member.Kind == SymbolKind.Method && (method = (MethodSymbol)(Symbol)member).Arity > 0)
             {
                 MethodSymbol leastOverriddenMethod = (MethodSymbol)(Symbol)leastOverriddenMember;
                 ImmutableArray<TypeWithAnnotations> typeArguments;
