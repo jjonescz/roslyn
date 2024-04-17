@@ -7053,19 +7053,7 @@ class Program
         [Fact]
         public void OverloadResolution_DefaultValue_01()
         {
-            var source = """
-                var d1 = new Z().M;
-                System.Console.WriteLine(d1.GetType());
-                d1();
-
-                var d2 = ((Y<long>)(new Z())).M;
-                System.Console.WriteLine(d2.GetType());
-                d2();
-
-                var d3 = ((X)(new Z())).M;
-                System.Console.WriteLine(d3.GetType());
-                d3();
-
+            var source1 = """
                 public class Z : Y<long>
                 {
                     public override void M(int x = 3) => System.Console.WriteLine("I" + x);
@@ -7083,25 +7071,50 @@ class Program
                     public abstract void M(int x = 1);
                 }
                 """;
-            CompileAndVerify(source, symbolValidator: validateSymbols, expectedOutput: """
-                <>f__AnonymousDelegate0`1[System.Int64]
-                L4
-                <>f__AnonymousDelegate1`1[System.Int64]
-                L0
-                <>f__AnonymousDelegate2`1[System.Int32]
+
+            var source2 = """
+                var d1 = new Z().M;
+                System.Console.WriteLine(d1.GetType());
+                d1();
+
+                var d2 = ((Y<long>)(new Z())).M;
+                System.Console.WriteLine(d2.GetType());
+                d2();
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (1,10): error CS8917: The delegate type could not be inferred.
+                // var d1 = new Z().M;
+                Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "new Z().M").WithLocation(1, 10),
+                // (5,31): error CS0123: No overload for 'M' matches delegate '<anonymous delegate>'
+                // var d2 = ((Y<long>)(new Z())).M;
+                Diagnostic(ErrorCode.ERR_MethDelegateMismatch, "M").WithArguments("M", "<anonymous delegate>").WithLocation(5, 31)
+            };
+
+            CreateCompilation([source1, source2], parseOptions: TestOptions.Regular12).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation([source1, source2], parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation([source1, source2]).VerifyDiagnostics(expectedDiagnostics);
+
+            var source3 = """
+                var d3 = ((X)(new Z())).M;
+                System.Console.WriteLine(d3.GetType());
+                d3();
+                """;
+
+            var expectedOutput = """
+                <>f__AnonymousDelegate0`1[System.Int32]
                 I1
-                """).VerifyDiagnostics();
+                """;
+
+            CompileAndVerify([source1, source3], parseOptions: TestOptions.Regular12, symbolValidator: validateSymbols, expectedOutput: expectedOutput).VerifyDiagnostics();
+            CompileAndVerify([source1, source3], parseOptions: TestOptions.RegularNext, symbolValidator: validateSymbols, expectedOutput: expectedOutput).VerifyDiagnostics();
+            CompileAndVerify([source1, source3], symbolValidator: validateSymbols, expectedOutput: expectedOutput).VerifyDiagnostics();
 
             static void validateSymbols(ModuleSymbol module)
             {
                 var m = module.GlobalNamespace.GetMember<MethodSymbol>("<>f__AnonymousDelegate0.Invoke");
-                Assert.Equal("void <>f__AnonymousDelegate0<T1>.Invoke([T1 arg = 4])", m.ToTestDisplayString());
-
-                m = module.GlobalNamespace.GetMember<MethodSymbol>("<>f__AnonymousDelegate1.Invoke");
-                Assert.Equal("void <>f__AnonymousDelegate1<T1>.Invoke([T1 arg = default(T1)])", m.ToTestDisplayString());
-
-                m = module.GlobalNamespace.GetMember<MethodSymbol>("<>f__AnonymousDelegate2.Invoke");
-                Assert.Equal("void <>f__AnonymousDelegate2<T1>.Invoke([T1 arg = 1])", m.ToTestDisplayString());
+                Assert.Equal("void <>f__AnonymousDelegate0<T1>.Invoke([T1 arg = 1])", m.ToTestDisplayString());
             }
         }
 
@@ -7243,16 +7256,17 @@ class Program
                     public abstract void M(int x = 1);
                 }
                 """;
-            CompileAndVerify(source, symbolValidator: validateSymbols, expectedOutput: """
-                <>f__AnonymousDelegate0`1[System.Int32]
-                3
-                """).VerifyDiagnostics();
 
-            static void validateSymbols(ModuleSymbol module)
+            var expectedDiagnostics = new[]
             {
-                var m = module.GlobalNamespace.GetMember<MethodSymbol>("<>f__AnonymousDelegate0.Invoke");
-                Assert.Equal("void <>f__AnonymousDelegate0<T1>.Invoke([T1 arg = 3])", m.ToTestDisplayString());
-            }
+                // (1,9): error CS8917: The delegate type could not be inferred.
+                // var d = new Z().M;
+                Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "new Z().M").WithLocation(1, 9)
+            };
+
+            CreateCompilation(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(source).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]
