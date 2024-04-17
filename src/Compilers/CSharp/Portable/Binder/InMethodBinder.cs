@@ -53,6 +53,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // Spec §13.3.1: "An iterator block always defines a safe context,
                 // even when its declaration is nested in an unsafe context."
+                // Note that if the iterator method itself has the unsafe modifier,
+                // its body binder will have the UnsafeRegion flag applied by the BinderFactory.
                 flags &= ~BinderFlags.UnsafeRegion;
             }
 
