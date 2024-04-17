@@ -1308,12 +1308,8 @@ outerDefault:
             var results = result.ResultsBuilder;
             var useSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
 
-            var arity = typeArgumentsOpt.IsDefault ? 0 : typeArgumentsOpt.Length;
-            var typeArguments = ArrayBuilder<TypeWithAnnotations>.GetInstance(capacity: arity);
-            if (arity != 0)
-            {
-                typeArguments.AddRange(typeArgumentsOpt);
-            }
+            // Type arguments are verified in the caller.
+            var typeArguments = ArrayBuilder<TypeWithAnnotations>.GetInstance(0);
 
             // We do not have any arguments when determining unique signature.
             var arguments = AnalyzedArguments.GetInstance();
@@ -3768,7 +3764,7 @@ outerDefault:
             // The applicability is checked based on effective parameters passed in.
             var applicableResult = IsApplicable(
                 member, leastOverriddenMemberConstructedFrom,
-                typeArguments, arguments, originalEffectiveParameters,
+                typeArguments, arguments, options, originalEffectiveParameters,
                 isExpanded: false,
                 argumentAnalysis.ArgsToParamsOpt,
                 hasAnyRefOmittedArgument: hasAnyRefOmittedArgument,
@@ -3831,7 +3827,7 @@ outerDefault:
             // The applicability is checked based on effective parameters passed in.
             var result = IsApplicable(
                 member, leastOverriddenMemberConstructedFrom,
-                typeArguments, arguments, originalEffectiveParameters,
+                typeArguments, arguments, options, originalEffectiveParameters,
                 isExpanded: true,
                 argumentAnalysis.ArgsToParamsOpt,
                 hasAnyRefOmittedArgument: hasAnyRefOmittedArgument,
@@ -3848,6 +3844,7 @@ outerDefault:
             TMember leastOverriddenMember, // method or property 
             ArrayBuilder<TypeWithAnnotations> typeArgumentsBuilder,
             AnalyzedArguments arguments,
+            Options options,
             EffectiveParameters originalEffectiveParameters,
             bool isExpanded,
             ImmutableArray<int> argsToParamsMap,
@@ -3863,7 +3860,7 @@ outerDefault:
             MethodSymbol method;
             EffectiveParameters constructedEffectiveParameters;
             bool hasTypeArgumentsInferredFromFunctionType = false;
-            if (member.Kind == SymbolKind.Method && (method = (MethodSymbol)(Symbol)member).Arity > 0)
+            if ((options & Options.InferringUniqueMethodGroupSignature) == 0 && member.Kind == SymbolKind.Method && (method = (MethodSymbol)(Symbol)member).Arity > 0)
             {
                 MethodSymbol leastOverriddenMethod = (MethodSymbol)(Symbol)leastOverriddenMember;
                 ImmutableArray<TypeWithAnnotations> typeArguments;
