@@ -1378,77 +1378,24 @@ unsafe class Program
             CreateCompilation(source, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.Regular9, targetFramework: TargetFramework.Net70).VerifyDiagnostics(expectedDiagnostics);
             CreateCompilation(source, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.Regular12, targetFramework: TargetFramework.Net70).VerifyDiagnostics(expectedDiagnostics);
 
-            CreateCompilation(source, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.RegularNext, targetFramework: TargetFramework.Net70).VerifyEmitDiagnostics();
-            var verifier = CompileAndVerify(source, options: TestOptions.UnsafeReleaseDll, targetFramework: TargetFramework.Net70, verify: Verification.FailsPEVerify).VerifyDiagnostics();
+            expectedDiagnostics = new[]
+            {
+                // (6,22): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(6, 22),
+                // (7,22): error CS0233: 'nuint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         yield return sizeof(nuint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nuint)").WithArguments("nuint").WithLocation(7, 22),
+                // (8,22): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         yield return sizeof(System.IntPtr);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(System.IntPtr)").WithArguments("nint").WithLocation(8, 22),
+                // (9,22): error CS0233: 'nuint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         yield return sizeof(System.UIntPtr);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(System.UIntPtr)").WithArguments("nuint").WithLocation(9, 22)
+            };
 
-            verifier.VerifyIL("Program.<F>d__0.System.Collections.IEnumerator.MoveNext", """
-                {
-                  // Code size      156 (0x9c)
-                  .maxstack  2
-                  .locals init (int V_0)
-                  IL_0000:  ldarg.0
-                  IL_0001:  ldfld      "int Program.<F>d__0.<>1__state"
-                  IL_0006:  stloc.0
-                  IL_0007:  ldloc.0
-                  IL_0008:  switch    (
-                        IL_0023,
-                        IL_003f,
-                        IL_005b,
-                        IL_0077,
-                        IL_0093)
-                  IL_0021:  ldc.i4.0
-                  IL_0022:  ret
-                  IL_0023:  ldarg.0
-                  IL_0024:  ldc.i4.m1
-                  IL_0025:  stfld      "int Program.<F>d__0.<>1__state"
-                  IL_002a:  ldarg.0
-                  IL_002b:  sizeof     "nint"
-                  IL_0031:  stfld      "int Program.<F>d__0.<>2__current"
-                  IL_0036:  ldarg.0
-                  IL_0037:  ldc.i4.1
-                  IL_0038:  stfld      "int Program.<F>d__0.<>1__state"
-                  IL_003d:  ldc.i4.1
-                  IL_003e:  ret
-                  IL_003f:  ldarg.0
-                  IL_0040:  ldc.i4.m1
-                  IL_0041:  stfld      "int Program.<F>d__0.<>1__state"
-                  IL_0046:  ldarg.0
-                  IL_0047:  sizeof     "nuint"
-                  IL_004d:  stfld      "int Program.<F>d__0.<>2__current"
-                  IL_0052:  ldarg.0
-                  IL_0053:  ldc.i4.2
-                  IL_0054:  stfld      "int Program.<F>d__0.<>1__state"
-                  IL_0059:  ldc.i4.1
-                  IL_005a:  ret
-                  IL_005b:  ldarg.0
-                  IL_005c:  ldc.i4.m1
-                  IL_005d:  stfld      "int Program.<F>d__0.<>1__state"
-                  IL_0062:  ldarg.0
-                  IL_0063:  sizeof     "nint"
-                  IL_0069:  stfld      "int Program.<F>d__0.<>2__current"
-                  IL_006e:  ldarg.0
-                  IL_006f:  ldc.i4.3
-                  IL_0070:  stfld      "int Program.<F>d__0.<>1__state"
-                  IL_0075:  ldc.i4.1
-                  IL_0076:  ret
-                  IL_0077:  ldarg.0
-                  IL_0078:  ldc.i4.m1
-                  IL_0079:  stfld      "int Program.<F>d__0.<>1__state"
-                  IL_007e:  ldarg.0
-                  IL_007f:  sizeof     "nuint"
-                  IL_0085:  stfld      "int Program.<F>d__0.<>2__current"
-                  IL_008a:  ldarg.0
-                  IL_008b:  ldc.i4.4
-                  IL_008c:  stfld      "int Program.<F>d__0.<>1__state"
-                  IL_0091:  ldc.i4.1
-                  IL_0092:  ret
-                  IL_0093:  ldarg.0
-                  IL_0094:  ldc.i4.m1
-                  IL_0095:  stfld      "int Program.<F>d__0.<>1__state"
-                  IL_009a:  ldc.i4.0
-                  IL_009b:  ret
-                }
-                """);
+            CreateCompilation(source, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.RegularNext, targetFramework: TargetFramework.Net70).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(source, options: TestOptions.UnsafeReleaseDll, targetFramework: TargetFramework.Net70).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]

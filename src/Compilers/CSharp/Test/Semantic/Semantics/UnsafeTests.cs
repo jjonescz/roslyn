@@ -509,8 +509,15 @@ unsafe class C
                 //         x = sizeof(nint);
                 Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(nint)").WithArguments("ref and unsafe in async and iterator methods").WithLocation(6, 13));
 
-            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
-            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+            var expectedDiagnostics = new[]
+            {
+                // (6,13): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         x = sizeof(nint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(6, 13)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]
@@ -533,8 +540,15 @@ unsafe class C
                 //         x = sizeof(nint);
                 Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(nint)").WithArguments("ref and unsafe in async and iterator methods").WithLocation(6, 13));
 
-            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
-            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+            var expectedDiagnostics = new[]
+            {
+                // (6,13): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         x = sizeof(nint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(6, 13)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]
@@ -1186,8 +1200,15 @@ unsafe class C
                 //         int* p = null;
                 Diagnostic(ErrorCode.ERR_FeatureInPreview, "int*").WithArguments("ref and unsafe in async and iterator methods").WithLocation(6, 9));
 
-            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
-            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyEmitDiagnostics();
+            var expectedDiagnostics = new[]
+            {
+                // (6,9): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //         int* p = null;
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(6, 9)
+            };
+
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]
@@ -1210,8 +1231,15 @@ unsafe class C
                 //         int* p = null;
                 Diagnostic(ErrorCode.ERR_FeatureInPreview, "int*").WithArguments("ref and unsafe in async and iterator methods").WithLocation(6, 9));
 
-            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
-            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyEmitDiagnostics();
+            var expectedDiagnostics = new[]
+            {
+                // (6,9): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //         int* p = null;
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(6, 9)
+            };
+
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]
@@ -1234,8 +1262,15 @@ unsafe class C
                 //         int* p = null;
                 Diagnostic(ErrorCode.ERR_FeatureInPreview, "int*").WithArguments("ref and unsafe in async and iterator methods").WithLocation(6, 9));
 
-            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
-            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyEmitDiagnostics();
+            var expectedDiagnostics = new[]
+            {
+                // (6,9): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //         int* p = null;
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(6, 9)
+            };
+
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]
@@ -1258,8 +1293,15 @@ unsafe class C
                 //         int* p = null;
                 Diagnostic(ErrorCode.ERR_FeatureInPreview, "int*").WithArguments("ref and unsafe in async and iterator methods").WithLocation(6, 9));
 
-            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
-            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyEmitDiagnostics();
+            var expectedDiagnostics = new[]
+            {
+                // (6,9): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //         int* p = null;
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(6, 9)
+            };
+
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]
@@ -9194,8 +9236,15 @@ struct S
                 //         yield return sizeof(S);
                 Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(S)").WithArguments("ref and unsafe in async and iterator methods").WithLocation(6, 22));
 
-            CreateCompilation(text, parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
-            CreateCompilation(text).VerifyEmitDiagnostics();
+            var expectedDiagnostics = new[]
+            {
+                // (6,22): error CS0233: 'S' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         yield return sizeof(S);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(S)").WithArguments("S").WithLocation(6, 22)
+            };
+
+            CreateCompilation(text, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(text).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]
@@ -9563,8 +9612,15 @@ struct S
                 //         var p = stackalloc int[1];
                 Diagnostic(ErrorCode.ERR_FeatureInPreview, "stackalloc int[1]").WithArguments("ref and unsafe in async and iterator methods").WithLocation(6, 17));
 
-            CreateCompilation(text, parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
-            CreateCompilation(text).VerifyEmitDiagnostics();
+            var expectedDiagnostics = new[]
+            {
+                // (6,17): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //         var p = stackalloc int[1];
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "stackalloc int[1]").WithLocation(6, 17)
+            };
+
+            CreateCompilation(text, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(text).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]
