@@ -1323,7 +1323,7 @@ outerDefault:
                 methods,
                 typeArguments,
                 receiver: null,
-                arguments: arguments,
+                arguments,
                 completeResults: true, // TODO: Needed or is the option enough?
                 returnRefKind: RefKind.None,
                 returnType: null,
