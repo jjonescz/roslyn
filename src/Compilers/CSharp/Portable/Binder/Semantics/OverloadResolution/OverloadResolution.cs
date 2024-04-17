@@ -1068,7 +1068,7 @@ outerDefault:
                         leastOverriddenMember,
                         typeArguments,
                         arguments,
-                        allowRefOmittedArguments: (options & Options.AllowRefOmittedArguments) != 0,
+                        options,
                         completeResults: completeResults,
                         useSiteInfo: ref useSiteInfo);
 
@@ -3710,7 +3710,9 @@ outerDefault:
         {
             // AnalyzeArguments matches arguments to parameter names and positions. 
             // For that purpose we use the most derived member.
-            var argumentAnalysis = AnalyzeArguments(member, arguments, isMethodGroupConversion: (options & Options.IsMethodGroupConversion) != 0, expanded: false);
+            var argumentAnalysis = (options & Options.InferringUniqueMethodGroupSignature) != 0
+                ? ArgumentAnalysisResult.NormalForm(argsToParamsOpt: default)
+                : AnalyzeArguments(member, arguments, isMethodGroupConversion: (options & Options.IsMethodGroupConversion) != 0, expanded: false);
             if (!argumentAnalysis.IsValid)
             {
                 switch (argumentAnalysis.Kind)
@@ -3776,14 +3778,16 @@ outerDefault:
             TMember leastOverriddenMember, // method or property
             ArrayBuilder<TypeWithAnnotations> typeArguments,
             AnalyzedArguments arguments,
-            bool allowRefOmittedArguments,
+            Options options,
             bool completeResults,
             ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
             where TMember : Symbol
         {
             // AnalyzeArguments matches arguments to parameter names and positions. 
             // For that purpose we use the most derived member.
-            var argumentAnalysis = AnalyzeArguments(member, arguments, isMethodGroupConversion: false, expanded: true);
+            var argumentAnalysis = (options & Options.InferringUniqueMethodGroupSignature) != 0
+                ? ArgumentAnalysisResult.NormalForm(argsToParamsOpt: default)
+                : AnalyzeArguments(member, arguments, isMethodGroupConversion: false, expanded: true);
             if (!argumentAnalysis.IsValid)
             {
                 return new MemberResolutionResult<TMember>(member, leastOverriddenMember, MemberAnalysisResult.ArgumentParameterMismatch(argumentAnalysis), hasTypeArgumentInferredFromFunctionType: false);
@@ -3804,11 +3808,11 @@ outerDefault:
                 arguments.Arguments.Count,
                 argumentAnalysis.ArgsToParamsOpt,
                 arguments.RefKinds,
-                options: allowRefOmittedArguments ? Options.AllowRefOmittedArguments : Options.None,
+                options: options & Options.AllowRefOmittedArguments,
                 _binder,
                 out hasAnyRefOmittedArgument);
 
-            Debug.Assert(!hasAnyRefOmittedArgument || allowRefOmittedArguments);
+            Debug.Assert(!hasAnyRefOmittedArgument || (options & Options.AllowRefOmittedArguments) != 0);
 
             // The member passed to the following call is returned in the result (possibly a constructed version of it).
             // The applicability is checked based on effective parameters passed in.
