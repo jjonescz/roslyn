@@ -218,6 +218,60 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
+#nullable enable
+        /// <returns>false if the set does not have a unique signature</returns>
+        internal bool FilterMethodsForUniqueSignature(ArrayBuilder<MethodSymbol> methods)
+        {
+            if (methods.Count == 0)
+            {
+                return true;
+            }
+
+            var result = OverloadResolutionResult<MethodSymbol>.GetInstance();
+            var results = result.ResultsBuilder;
+            var useSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
+
+            // Type arguments are verified in the caller.
+            var typeArguments = ArrayBuilder<TypeWithAnnotations>.GetInstance(0);
+
+            // We do not have any arguments when determining unique signature.
+            var arguments = AnalyzedArguments.GetInstance();
+
+            PerformMemberOverloadResolutionStart(
+                results,
+                methods,
+                typeArguments,
+                arguments,
+                completeResults: false,
+                ref useSiteInfo,
+                Options.InferringUniqueMethodGroupSignature | Options.IgnoreNormalFormIfHasValidParamsParameter,
+                checkOverriddenOrHidden: true);
+
+            arguments.Free();
+            typeArguments.Free();
+
+            // If we have a candidate applicable in expanded form and a candidate applicable in normal form,
+            // that's an ambiguity (the candidates cannot have a unique signature).
+            if (results.Any(static r => r.Resolution == MemberResolutionKind.ApplicableInNormalForm) &&
+                results.Any(static r => r.Resolution == MemberResolutionKind.ApplicableInExpandedForm))
+            {
+                result.Free();
+                return false;
+            }
+
+            var applicableMethods = result.GetAllApplicableMembers();
+            result.Free();
+
+            if (applicableMethods.Length != methods.Count)
+            {
+                methods.Clear();
+                methods.AddRange(applicableMethods);
+            }
+
+            return true;
+        }
+#nullable disable
+
         private static bool OverloadResolutionResultIsValid<TMember>(ArrayBuilder<MemberResolutionResult<TMember>> results, bool hasDynamicArgument)
             where TMember : Symbol
         {
@@ -1301,61 +1355,6 @@ outerDefault:
 
             return false;
         }
-
-        // TODO: Move near to PerformMemberOverloadResolution?
-#nullable enable
-        /// <returns>false if the set does not have a unique signature</returns>
-        internal bool FilterMethodsForUniqueSignature(ArrayBuilder<MethodSymbol> methods)
-        {
-            if (methods.Count == 0)
-            {
-                return true;
-            }
-
-            var result = OverloadResolutionResult<MethodSymbol>.GetInstance();
-            var results = result.ResultsBuilder;
-            var useSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
-
-            // Type arguments are verified in the caller.
-            var typeArguments = ArrayBuilder<TypeWithAnnotations>.GetInstance(0);
-
-            // We do not have any arguments when determining unique signature.
-            var arguments = AnalyzedArguments.GetInstance();
-
-            PerformMemberOverloadResolutionStart(
-                results,
-                methods,
-                typeArguments,
-                arguments,
-                completeResults: false,
-                ref useSiteInfo,
-                Options.InferringUniqueMethodGroupSignature | Options.IgnoreNormalFormIfHasValidParamsParameter,
-                checkOverriddenOrHidden: true);
-
-            arguments.Free();
-            typeArguments.Free();
-
-            // If we have a candidate applicable in expanded form and a candidate applicable in normal form,
-            // that's an ambiguity (the candidates cannot have a unique signature).
-            if (results.Any(static r => r.Resolution == MemberResolutionKind.ApplicableInNormalForm) &&
-                results.Any(static r => r.Resolution == MemberResolutionKind.ApplicableInExpandedForm))
-            {
-                result.Free();
-                return false;
-            }
-
-            var applicableMethods = result.GetAllApplicableMembers();
-            result.Free();
-
-            if (applicableMethods.Length != methods.Count)
-            {
-                methods.Clear();
-                methods.AddRange(applicableMethods);
-            }
-
-            return true;
-        }
-#nullable disable
 
         private static bool MemberGroupHidesByName<TMember>(ArrayBuilder<TMember> members, TMember member, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
             where TMember : Symbol
