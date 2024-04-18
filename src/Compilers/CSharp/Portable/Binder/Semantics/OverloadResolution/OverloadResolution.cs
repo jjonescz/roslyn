@@ -219,8 +219,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
 #nullable enable
-        /// <returns>false if the set does not have a unique signature</returns>
-        internal bool FilterMethodsForUniqueSignature(ArrayBuilder<MethodSymbol> methods)
+        /// <returns>false if there are ambiguous candidates in the set</returns>
+        /// <remarks><paramref name="useParams"/> is only changed if there are some applicable candidates</remarks>
+        internal bool FilterMethodsForUniqueSignature(ArrayBuilder<MethodSymbol> methods, ref bool useParams)
         {
             if (methods.Count == 0)
             {
@@ -252,8 +253,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // If we have a candidate applicable in expanded form and a candidate applicable in normal form,
             // that's an ambiguity (the candidates cannot have a unique signature).
-            if (results.Any(static r => r.Resolution == MemberResolutionKind.ApplicableInNormalForm) &&
-                results.Any(static r => r.Resolution == MemberResolutionKind.ApplicableInExpandedForm))
+            var hasExpandedForm = results.Any(static r => r.Resolution == MemberResolutionKind.ApplicableInExpandedForm);
+            if (hasExpandedForm && results.Any(static r => r.Resolution == MemberResolutionKind.ApplicableInNormalForm))
             {
                 result.Free();
                 return false;
@@ -268,6 +269,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                 methods.AddRange(applicableMethods);
             }
 
+            if (methods.Count != 0)
+            {
+                useParams = hasExpandedForm;
+            }
             return true;
         }
 #nullable disable
