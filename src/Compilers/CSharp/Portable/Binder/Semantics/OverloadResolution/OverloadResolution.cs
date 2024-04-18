@@ -1087,7 +1087,7 @@ outerDefault:
             var leastOverriddenMember = (TMember)member.GetLeastOverriddenMember(_binder.ContainingType);
 
             // Filter out members with unsupported metadata.
-            if (member.HasUnsupportedMetadata)
+            if ((options & Options.InferringUniqueMethodGroupSignature) == 0 && member.HasUnsupportedMetadata)
             {
                 Debug.Assert(!MemberAnalysisResult.UnsupportedMetadata().HasUseSiteDiagnosticToReportFor(member));
                 if (completeResults)
@@ -3749,7 +3749,7 @@ outerDefault:
 
             // Check after argument analysis, but before more complicated type inference and argument type validation.
             // NOTE: The diagnostic may not be reported (e.g. if the member is later removed as less-derived).
-            if (member.HasUseSiteError)
+            if ((options & Options.InferringUniqueMethodGroupSignature) == 0 && member.HasUseSiteError)
             {
                 return new MemberResolutionResult<TMember>(member, leastOverriddenMember, MemberAnalysisResult.UseSiteError(), hasTypeArgumentInferredFromFunctionType: false);
             }
@@ -3812,7 +3812,7 @@ outerDefault:
 
             // Check after argument analysis, but before more complicated type inference and argument type validation.
             // NOTE: The diagnostic may not be reported (e.g. if the member is later removed as less-derived).
-            if (member.HasUseSiteError)
+            if ((options & Options.InferringUniqueMethodGroupSignature) == 0 && member.HasUseSiteError)
             {
                 return new MemberResolutionResult<TMember>(member, leastOverriddenMember, MemberAnalysisResult.UseSiteError(), hasTypeArgumentInferredFromFunctionType: false);
             }
