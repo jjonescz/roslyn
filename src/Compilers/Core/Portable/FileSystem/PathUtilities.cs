@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.PooledObjects;
 
@@ -17,8 +18,10 @@ namespace Roslyn.Utilities
     // Contains path parsing utilities.
     // We need our own because System.IO.Path is insufficient for our purposes
     // For example we need to be able to work with invalid paths or paths containing wildcards
-    internal static class PathUtilities
+    internal static partial class PathUtilities
     {
+        private const string DirectorySeparatorsPattern = /* language=regex */ @"(?<!^)[\\/]+";
+
         // We consider '/' a directory separator on Unix like systems. 
         // On Windows both / and \ are equally accepted.
         internal static char DirectorySeparatorChar => Path.DirectorySeparatorChar;
@@ -28,6 +31,14 @@ namespace Roslyn.Utilities
         internal static readonly string DirectorySeparatorStr = new(DirectorySeparatorChar, 1);
         internal const char VolumeSeparatorChar = ':';
         internal static bool IsUnixLikePlatform => PlatformInformation.IsUnix;
+
+#if NETCOREAPP
+        [GeneratedRegex(DirectorySeparatorsPattern)]
+        private static partial Regex GetDirectorySeparatorsRegex();
+#else
+        private static readonly Regex s_directorySeparators = new Regex(DirectorySeparatorsPattern, RegexOptions.Compiled);
+        private static Regex GetDirectorySeparatorsRegex() => s_directorySeparators;
+#endif
 
         /// <summary>
         /// True if the character is the platform directory separator character or the alternate directory separator.
@@ -779,6 +790,9 @@ namespace Roslyn.Utilities
         /// </remarks>
         public static string NormalizeWithForwardSlash(string p)
             => DirectorySeparatorChar == '/' ? p : p.Replace(DirectorySeparatorChar, '/');
+
+        public static string CollapseWithForwardSlash(string p)
+            => GetDirectorySeparatorsRegex().Replace(p, "/");
 
         /// <summary>
         /// Takes an absolute path and attempts to expand any '..' or '.' into their equivalent representation.
