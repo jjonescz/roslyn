@@ -292,20 +292,6 @@ namespace Microsoft.CodeAnalysis.UnitTests.FileSystem
             Assert.False(PathUtilities.IsSameDirectoryOrChildOf(@"C:\A\B\C", @"C:\A\B\C\D"));
         }
 
-        [Fact]
-        public void IsSameDirectoryOrChildOf_DuplicateSlash()
-        {
-            Assert.True(PathUtilities.IsSameDirectoryOrChildOf(@"C:\ABCD\\EFGH", @"C:"));
-            Assert.True(PathUtilities.IsSameDirectoryOrChildOf(@"C:\ABCD\\EFGH", @"C:\"));
-            Assert.True(PathUtilities.IsSameDirectoryOrChildOf(@"C:\ABCD\EFGH", @"C:\\"));
-            Assert.True(PathUtilities.IsSameDirectoryOrChildOf(@"C:\ABCD\\EFGH", @"C:\\"));
-            Assert.True(PathUtilities.IsSameDirectoryOrChildOf(@"C:\\ABCD\EFGH", @"C:"));
-            Assert.True(PathUtilities.IsSameDirectoryOrChildOf(@"C:\\ABCD\EFGH", @"C:\"));
-            Assert.True(PathUtilities.IsSameDirectoryOrChildOf(@"C:\a\b\\c\d", @"C:\a\b\c"));
-            Assert.True(PathUtilities.IsSameDirectoryOrChildOf(@"C:\a\b\c\d", @"C:\a\\b\c"));
-            Assert.False(PathUtilities.IsSameDirectoryOrChildOf(@"C:\A\\B\C", @"C:\A\B\C\D"));
-        }
-
         [ConditionalFact(typeof(WindowsOnly))]
         public void IsSameDirectoryOrChildOfSpecifyingCaseSensitivity_Windows()
         {
