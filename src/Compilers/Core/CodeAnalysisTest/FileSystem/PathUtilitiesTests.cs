@@ -424,6 +424,7 @@ namespace Microsoft.CodeAnalysis.UnitTests.FileSystem
         [Theory]
         [InlineData(@"//a/b/c", @"//a/b/c")]
         [InlineData(@"/a\b/c/", @"/a/b/c/")]
+        [InlineData(@"\a\b/c/", @"/a/b/c/")]
         [InlineData(@"C:\\a", @"C:/a")]
         [InlineData(@"C:\a\b\c\", @"C:/a/b/c/")]
         [InlineData(@"/\a", @"//a")]
