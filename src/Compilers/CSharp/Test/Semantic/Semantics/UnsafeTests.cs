@@ -2216,32 +2216,45 @@ unsafe class C
             var comp = CreateCompilation(code, options: TestOptions.UnsafeReleaseDll);
             if (unsafeClass || unsafeMethod || unsafeBlock)
             {
+                // Lambda cannot be an iterator, hence it always inherits `unsafe`.
                 comp.VerifyDiagnostics(
-                    // (14,14): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
+                    // (12,14): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
                     //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(14, 14));
+                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(12, 14),
+                    // (14,22): error CS1643: Not all code paths return a value in lambda expression of type '<anonymous delegate>'
+                    //             (int* p) =>
+                    Diagnostic(ErrorCode.ERR_AnonymousReturnExpected, "=>").WithArguments("lambda expression", "<anonymous delegate>").WithLocation(14, 22),
+                    // (16,17): error CS1621: The yield statement cannot be used inside an anonymous method or lambda expression
+                    //                 yield return *p;
+                    Diagnostic(ErrorCode.ERR_YieldInAnonMeth, "yield").WithLocation(16, 17),
+                    // (16,17): error CS9231: Cannot use 'yield return' in an 'unsafe' block
+                    //                 yield return *p;
+                    Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(16, 17));
             }
             else
             {
                 comp.VerifyDiagnostics(
-                    // (14,14): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
+                    // (12,14): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
                     //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(14, 14),
-                    // (14,16): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(12, 14),
+                    // (12,16): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                     //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(14, 16),
-                    // (15,13): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             int*
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(15, 13),
-                    // (16,14): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             (int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(16, 14),
-                    // (16,19): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             (int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(16, 19),
-                    // (17,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //                 => p;
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(17, 20));
+                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(12, 16),
+                    // (14,14): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                    //             (int* p) =>
+                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(14, 14),
+                    // (14,19): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                    //             (int* p) =>
+                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(14, 19),
+                    // (14,22): error CS1643: Not all code paths return a value in lambda expression of type '<anonymous delegate>'
+                    //             (int* p) =>
+                    Diagnostic(ErrorCode.ERR_AnonymousReturnExpected, "=>").WithArguments("lambda expression", "<anonymous delegate>").WithLocation(14, 22),
+                    // (16,17): error CS1621: The yield statement cannot be used inside an anonymous method or lambda expression
+                    //                 yield return *p;
+                    Diagnostic(ErrorCode.ERR_YieldInAnonMeth, "yield").WithLocation(16, 17),
+                    // (16,31): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                    //                 yield return *p;
+                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(16, 31));
             }
         }
 
