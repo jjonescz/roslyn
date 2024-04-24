@@ -180,7 +180,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                         resultBinder = new InMethodBinder(method, resultBinder);
                     }
 
-                    resultBinder = resultBinder.WithUnsafeRegionIfNecessary(methodDecl.Modifiers);
+                    resultBinder = resultBinder.WithUnsafeRegionIfNecessary(methodDecl.Modifiers,
+                        isIterator: (method ?? GetMethodSymbol(methodDecl, resultBinder))?.IsIterator == true);
                     binderCache.TryAdd(key, resultBinder);
                 }
 
