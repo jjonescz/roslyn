@@ -166,22 +166,19 @@ namespace Microsoft.CodeAnalysis.CSharp
                         resultBinder = VisitCore(methodDecl.Parent);
                     }
 
-                    SourceMemberMethodSymbol method = null;
+                    SourceMemberMethodSymbol method = GetMethodSymbol(methodDecl, resultBinder);
 
                     if (usage != NodeUsage.Normal && methodDecl.TypeParameterList != null)
                     {
-                        method = GetMethodSymbol(methodDecl, resultBinder);
                         resultBinder = new WithMethodTypeParametersBinder(method, resultBinder);
                     }
 
                     if (usage == NodeUsage.MethodBody)
                     {
-                        method = method ?? GetMethodSymbol(methodDecl, resultBinder);
                         resultBinder = new InMethodBinder(method, resultBinder);
                     }
 
-                    resultBinder = resultBinder.WithUnsafeRegionIfNecessary(methodDecl.Modifiers,
-                        isIterator: (method ?? GetMethodSymbol(methodDecl, resultBinder))?.IsIterator == true);
+                    resultBinder = resultBinder.WithUnsafeRegionIfNecessary(methodDecl.Modifiers, isIterator: method.IsIterator);
                     binderCache.TryAdd(key, resultBinder);
                 }
 
