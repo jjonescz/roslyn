@@ -1829,6 +1829,20 @@ unsafe class C
                     //         get { yield return *p; }
                     Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(13, 15));
             }
+            else if (unsafeClass)
+            {
+                // Signature is unsafe (like the class), body is safe.
+                comp.VerifyDiagnostics(
+                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
+                    //     [A(null)]
+                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
+                    // (11,15): error CS1637: Iterators cannot have pointer type parameters
+                    //     this[int* p]
+                    Diagnostic(ErrorCode.ERR_UnsafeIteratorArgType, "p").WithLocation(11, 15),
+                    // (13,15): error CS9231: Cannot use 'yield return' in an 'unsafe' block
+                    //         get { yield return *p; }
+                    Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(13, 15));
+            }
             else
             {
                 comp.VerifyDiagnostics(
@@ -1930,6 +1944,17 @@ unsafe class C
             var comp = CreateCompilation(code, options: TestOptions.UnsafeReleaseDll);
             if (unsafeProperty)
             {
+                comp.VerifyDiagnostics(
+                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
+                    //     [A(null)]
+                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
+                    // (13,15): error CS9231: Cannot use 'yield return' in an 'unsafe' block
+                    //         get { yield return sizeof(nint); }
+                    Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(13, 15));
+            }
+            else if (unsafeClass)
+            {
+                // Signature is unsafe (like the class), body is unsafe.
                 comp.VerifyDiagnostics(
                     // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
                     //     [A(null)]
