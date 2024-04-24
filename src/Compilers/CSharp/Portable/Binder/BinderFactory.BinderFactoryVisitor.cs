@@ -340,7 +340,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                         resultBinder = new InMethodBinder(method, resultBinder);
                     }
 
-                    resultBinder = resultBinder.WithUnsafeRegionIfNecessary(parent.Modifiers);
+                    resultBinder = resultBinder.WithUnsafeRegionIfNecessary(parent.Modifiers,
+                        isIterator: inBody && method?.IsIterator == true);
 
                     binderCache.TryAdd(key, resultBinder);
                 }

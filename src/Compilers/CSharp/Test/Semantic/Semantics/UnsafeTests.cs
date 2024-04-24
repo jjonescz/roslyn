@@ -1712,7 +1712,27 @@ unsafe class C
                 comp.VerifyDiagnostics(
                     // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
                     //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6));
+                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
+                    // (11,25): error CS1637: Iterators cannot have pointer type parameters
+                    //     operator+(C c, int* p)
+                    Diagnostic(ErrorCode.ERR_UnsafeIteratorArgType, "p").WithLocation(11, 25),
+                    // (13,9): error CS9231: Cannot use 'yield return' in an 'unsafe' block
+                    //         yield return *p;
+                    Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(13, 9));
+            }
+            else if (unsafeClass)
+            {
+                // Signature is unsafe (like the class), body is safe.
+                comp.VerifyDiagnostics(
+                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
+                    //     [A(null)]
+                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
+                    // (11,25): error CS1637: Iterators cannot have pointer type parameters
+                    //     operator+(C c, int* p)
+                    Diagnostic(ErrorCode.ERR_UnsafeIteratorArgType, "p").WithLocation(11, 25),
+                    // (13,23): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                    //         yield return *p;
+                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(13, 23));
             }
             else
             {
@@ -1723,15 +1743,15 @@ unsafe class C
                     // (8,8): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                     //     [A(null)]
                     Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(8, 8),
-                    // (10,19): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     public static int*
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(10, 19),
                     // (11,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                     //     operator+(C c, int* p)
                     Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(11, 20),
-                    // (13,16): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         return p;
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(13, 16));
+                    // (11,25): error CS1637: Iterators cannot have pointer type parameters
+                    //     operator+(C c, int* p)
+                    Diagnostic(ErrorCode.ERR_UnsafeIteratorArgType, "p").WithLocation(11, 25),
+                    // (13,23): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                    //         yield return *p;
+                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(13, 23));
             }
         }
 
