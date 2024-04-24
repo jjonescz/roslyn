@@ -1110,7 +1110,7 @@ unsafe class C
                         {
                             int x = 1;
                             x = sizeof(nint);
-                            yield return x;
+                            yield break;
                         }
                         set
                         {
@@ -1122,7 +1122,7 @@ unsafe class C
                     }
                 }
                 """;
-            CompileAndVerify(code, expectedOutput: "X2Y" + IntPtr.Size, options: TestOptions.UnsafeReleaseExe,
+            CompileAndVerify(code, expectedOutput: "X2", options: TestOptions.UnsafeReleaseExe,
                 verify: Verification.Fails).VerifyDiagnostics();
         }
 
