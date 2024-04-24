@@ -1531,7 +1531,7 @@ unsafe class C
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
                     [A(null)]
-                    {{(unsafeMethod ? "unsafe" : "")}} 
+                    {{(unsafeMethod ? "unsafe" : "")}}
                     int*
                     M(int* p)
                     {
@@ -1580,7 +1580,7 @@ unsafe class C
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
                     [A(null)]
-                    {{(unsafeMethod ? "unsafe" : "")}} 
+                    {{(unsafeMethod ? "unsafe" : "")}}
                     System.Collections.Generic.IEnumerable<int>
                     M(int* p)
                     {
@@ -1649,7 +1649,7 @@ unsafe class C
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
                     [A(null)]
-                    {{(unsafeOperator ? "unsafe" : "")}} 
+                    {{(unsafeOperator ? "unsafe" : "")}}
                     public static int*
                     operator+(C c, int* p)
                     {
@@ -1698,7 +1698,7 @@ unsafe class C
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
                     [A(null)]
-                    {{(unsafeOperator ? "unsafe" : "")}} 
+                    {{(unsafeOperator ? "unsafe" : "")}}
                     public static System.Collections.Generic.IEnumerable<int>
                     operator+(C c, int* p)
                     {
@@ -1767,7 +1767,7 @@ unsafe class C
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
                     [A(null)]
-                    {{(unsafeIndexer ? "unsafe" : "")}} 
+                    {{(unsafeIndexer ? "unsafe" : "")}}
                     int*
                     this[int* p]
                     {
@@ -1826,7 +1826,7 @@ unsafe class C
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
                     [A(null)]
-                    {{(unsafeIndexer ? "unsafe" : "")}} 
+                    {{(unsafeIndexer ? "unsafe" : "")}}
                     System.Collections.Generic.IEnumerable<int>
                     this[int* p]
                     {
@@ -1902,7 +1902,7 @@ unsafe class C
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
                     [A(null)]
-                    {{(unsafeProperty ? "unsafe" : "")}} 
+                    {{(unsafeProperty ? "unsafe" : "")}}
                     int*
                     P
                     {
@@ -1952,7 +1952,7 @@ unsafe class C
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
                     [A(null)]
-                    {{(unsafeProperty ? "unsafe" : "")}} 
+                    {{(unsafeProperty ? "unsafe" : "")}}
                     System.Collections.Generic.IEnumerable<int>
                     P
                     {
@@ -2018,7 +2018,7 @@ unsafe class C
                     {
                         {{(unsafeBlock ? "unsafe" : "")}} {
                             [A(null)]
-                            {{(unsafeLocalFunction ? "unsafe" : "")}} 
+                            {{(unsafeLocalFunction ? "unsafe" : "")}}
                             int*
                             local(int* p)
                             {
@@ -2074,7 +2074,7 @@ unsafe class C
                     {
                         {{(unsafeBlock ? "unsafe" : "")}} {
                             [A(null)]
-                            {{(unsafeLocalFunction ? "unsafe" : "")}} 
+                            {{(unsafeLocalFunction ? "unsafe" : "")}}
                             System.Collections.Generic.IEnumerable<int>
                             local(int* p)
                             {
