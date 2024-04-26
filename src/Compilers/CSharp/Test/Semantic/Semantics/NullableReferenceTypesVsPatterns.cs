@@ -4,6 +4,7 @@
 
 #nullable disable
 
+using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities;
 using Roslyn.Test.Utilities;
@@ -3284,6 +3285,123 @@ class Container<T>
                 //     z.ToString();
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "z").WithLocation(8, 5)
                 );
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/72680")]
+        public void RepeatedNotNullPattern()
+        {
+            var source = """
+                #nullable enable
+
+                var d = new Derived();
+
+                var x = (object)d switch
+                {
+                    Derived { Prop: 4 } => 1,
+                    Base { Prop: { } p } => p.GetHashCode(),
+                    _ => 2,
+                };
+                System.Console.WriteLine(x);
+
+                public class Base
+                {
+                    private int _counter;
+                    public object? Prop => ++_counter switch
+                    {
+                        1 => 3,
+                        2 => 5,
+                        _ => throw null!,
+                    };
+                }
+
+                public class Derived : Base;
+                """;
+            var comp = CreateCompilation(source);
+
+            var tree = comp.SyntaxTrees.Single();
+            var switchExpr = tree.GetRoot().DescendantNodes().OfType<Syntax.SwitchExpressionSyntax>().First();
+            var model = (CSharpSemanticModel)comp.GetSemanticModel(tree);
+            var binder = model.GetEnclosingBinder(switchExpr.SpanStart);
+            var boundSwitch = (BoundSwitchExpression)binder.BindExpression(switchExpr, BindingDiagnosticBag.Discarded);
+            AssertEx.AssertEqualToleratingWhitespaceDifferences("""
+                [0]: t0 is Derived ? [1] : [9]
+                [1]: t1 = (Derived)t0; [2]
+                [2]: t2 = t1.Prop; [3]
+                [3]: t2 is int ? [4] : [10]
+                [4]: t3 = (int)t2; [5]
+                [5]: t3 == 4 ? [6] : [7]
+                [6]: leaf <arm> `Derived { Prop: 4 } => 1`
+                [7]: t4 = (Base)t0; [8]
+                [8]: t5 = t4.Prop; [13]
+                [9]: t0 is Base ? [10] : [15]
+                [10]: t4 = (Base)t0; [11]
+                [11]: t5 = t4.Prop; [12]
+                [12]: t5 != null ? [13] : [15]
+                [13]: when <true> ? [14] : <unreachable>
+                [14]: leaf <arm> `Base { Prop: { } p } => p.GetHashCode()`
+                [15]: leaf <arm> `_ => 2`
+                """, boundSwitch.ReachabilityDecisionDag.Dump());
+
+            CompileAndVerify(comp, expectedOutput: "5").VerifyDiagnostics();
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/72680")]
+        public void RepeatedNotNullPattern_Override()
+        {
+            var source = """
+                #nullable enable
+
+                var d = new Derived();
+
+                var x = (object)d switch
+                {
+                    Derived { Prop: 4 } => 1,
+                    Base { Prop: { } p } => p.GetHashCode(),
+                    _ => 2,
+                };
+                System.Console.WriteLine(x);
+
+                public class Base
+                {
+                    public virtual object? Prop => throw null!;
+                }
+
+                public class Derived : Base
+                {
+                    private int _counter;
+                    public override object? Prop => ++_counter switch
+                    {
+                        1 => 3,
+                        2 => 5,
+                        _ => throw null!,
+                    };
+                }
+                """;
+            var comp = CreateCompilation(source);
+
+            var tree = comp.SyntaxTrees.Single();
+            var switchExpr = tree.GetRoot().DescendantNodes().OfType<Syntax.SwitchExpressionSyntax>().First();
+            var model = (CSharpSemanticModel)comp.GetSemanticModel(tree);
+            var binder = model.GetEnclosingBinder(switchExpr.SpanStart);
+            var boundSwitch = (BoundSwitchExpression)binder.BindExpression(switchExpr, BindingDiagnosticBag.Discarded);
+            AssertEx.AssertEqualToleratingWhitespaceDifferences("""
+                [0]: t0 is Derived ? [1] : [7]
+                [1]: t1 = (Derived)t0; [2]
+                [2]: t2 = t1.Prop; [3]
+                [3]: t2 is int ? [4] : [8]
+                [4]: t3 = (int)t2; [5]
+                [5]: t3 == 4 ? [6] : [8]
+                [6]: leaf <arm> `Derived { Prop: 4 } => 1`
+                [7]: t0 is Base ? [8] : [13]
+                [8]: t4 = (Base)t0; [9]
+                [9]: t5 = t4.Prop; [10]
+                [10]: t5 != null ? [11] : [13]
+                [11]: when <true> ? [12] : <unreachable>
+                [12]: leaf <arm> `Base { Prop: { } p } => p.GetHashCode()`
+                [13]: leaf <arm> `_ => 2`
+                """, boundSwitch.ReachabilityDecisionDag.Dump());
+
+            CompileAndVerify(comp, expectedOutput: "5").VerifyDiagnostics();
         }
     }
 }
