@@ -373,6 +373,7 @@ unsafe class C
                 }
                 """;
 
+            // https://github.com/dotnet/roslyn/issues/73280 - diagnostics inside the unsafe block are unnecessary
             CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
                 // (6,9): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         unsafe
@@ -419,6 +420,7 @@ unsafe class C
                 }
                 """;
 
+            // https://github.com/dotnet/roslyn/issues/73280 - diagnostics inside the unsafe block are unnecessary
             CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
                 // (5,9): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         unsafe
@@ -1437,6 +1439,7 @@ unsafe class C
                 }
                 """;
 
+            // https://github.com/dotnet/roslyn/issues/73280 - these should ideally be langversion errors
             CreateCompilation(code, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
                 // (8,31): error CS4004: Cannot await in an unsafe context
                 //         var lam = async () => await Task.Yield();
@@ -1798,6 +1801,7 @@ unsafe class C
                     }
                 }
                 """;
+            // https://github.com/dotnet/roslyn/issues/73280 - should not be a langversion error since this remains an error in C# 13
             CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
                 // (5,22): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         yield return sizeof(nint);
@@ -1999,6 +2003,7 @@ unsafe class C
                     }
                 }
                 """;
+            // https://github.com/dotnet/roslyn/issues/73280 - should not be a langversion error since this remains an error in C# 13
             CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
                 // (5,22): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         yield return sizeof(nint);
@@ -2215,6 +2220,7 @@ unsafe class C
                     }
                 }
                 """;
+            // https://github.com/dotnet/roslyn/issues/73280 - should not be a langversion error since this remains an error in C# 13
             CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
                 // (5,28): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         get { yield return sizeof(nint); }
@@ -2465,6 +2471,7 @@ unsafe class C
                     }
                 }
                 """;
+            // https://github.com/dotnet/roslyn/issues/73280 - should not be a langversion error since this remains an error in C# 13
             CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
                 // (5,28): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         get { yield return sizeof(nint); }
@@ -2691,6 +2698,7 @@ unsafe class C
                     }
                 }
                 """;
+            // https://github.com/dotnet/roslyn/issues/73280 - should not be a langversion error since this remains an error in C# 13
             CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(
                 // (6,22): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         yield return sizeof(nint);
