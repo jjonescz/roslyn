@@ -1634,680 +1634,1262 @@ unsafe class C
         }
 
         [Theory, CombinatorialData]
-        public void UnsafeContext_Method(bool unsafeClass, bool unsafeMethod)
+        public void UnsafeContext_Method_Signature_Unsafe(bool unsafeClass, bool unsafeMethod)
         {
-            var code = $$"""
-                class A : System.Attribute
-                {
-                    public unsafe A(int* p) { }
-                }
+            if (!unsafeClass || !unsafeMethod)
+            {
+                return;
+            }
 
+            var code = $$"""
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
-                    [A(null)]
-                    {{(unsafeMethod ? "unsafe" : "")}}
-                    int*
-                    M(int* p)
-                    {
-                        return p;
-                    }
+                    {{(unsafeMethod ? "unsafe" : "")}} void M(int* p) { }
                 }
                 """;
-            var comp = CreateCompilation(code, options: TestOptions.UnsafeReleaseDll);
-            if (unsafeClass || unsafeMethod)
-            {
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6));
-            }
-            else
-            {
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
-                    // (8,8): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(8, 8),
-                    // (10,5): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     int*
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(10, 5),
-                    // (11,7): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     M(int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(11, 7),
-                    // (13,16): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         return p;
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(13, 16));
-            }
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_Method_Signature_Safe()
+        {
+            var code = """
+                class C
+                {
+                    void M(int* p) { }
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (3,12): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //     void M(int* p)
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(3, 12));
         }
 
         [Theory, CombinatorialData]
-        public void UnsafeContext_Method_Iterator(bool unsafeClass, bool unsafeMethod)
+        public void UnsafeContext_Method_Body_Unsafe(bool unsafeClass, bool unsafeMethod)
         {
-            var code = $$"""
-                class A : System.Attribute
-                {
-                    public unsafe A(int* p) { }
-                }
+            if (!unsafeClass || !unsafeMethod)
+            {
+                return;
+            }
 
+            var code = $$"""
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
-                    [A(null)]
-                    {{(unsafeMethod ? "unsafe" : "")}}
-                    System.Collections.Generic.IEnumerable<int>
-                    M(int* p)
+                    {{(unsafeMethod ? "unsafe" : "")}} int M()
                     {
-                        yield return *p;
+                        return sizeof(nint);
                     }
                 }
                 """;
-            var comp = CreateCompilation(code, options: TestOptions.UnsafeReleaseDll);
-            if (unsafeClass || unsafeMethod)
-            {
-                // Signature is unsafe, body is safe.
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
-                    // (11,12): error CS1637: Iterators cannot have pointer type parameters
-                    //     M(int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeIteratorArgType, "p").WithLocation(11, 12),
-                    // (13,23): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         yield return *p;
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(13, 23));
-            }
-            else
-            {
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
-                    // (8,8): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(8, 8),
-                    // (11,7): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     M(int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(11, 7),
-                    // (11,12): error CS1637: Iterators cannot have pointer type parameters
-                    //     M(int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeIteratorArgType, "p").WithLocation(11, 12),
-                    // (13,23): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         yield return *p;
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(13, 23));
-            }
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
         }
 
-        [Theory, CombinatorialData]
-        public void UnsafeContext_Operator(bool unsafeClass, bool unsafeOperator)
+        [Fact]
+        public void UnsafeContext_Method_Body_Safe()
         {
-            var code = $$"""
-                class A : System.Attribute
+            var code = """
+                class C
                 {
-                    public unsafe A(int* p) { }
-                }
-
-                {{(unsafeClass ? "unsafe" : "")}} class C
-                {
-                    [A(null)]
-                    {{(unsafeOperator ? "unsafe" : "")}}
-                    public static int*
-                    operator+(C c, int* p)
+                    int M()
                     {
-                        return p;
+                        return sizeof(nint);
                     }
                 }
                 """;
-            var comp = CreateCompilation(code, options: TestOptions.UnsafeReleaseDll);
-            if (unsafeClass || unsafeOperator)
-            {
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6));
-            }
-            else
-            {
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
-                    // (8,8): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(8, 8),
-                    // (10,19): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     public static int*
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(10, 19),
-                    // (11,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     operator+(C c, int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(11, 20),
-                    // (13,16): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         return p;
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(13, 16));
-            }
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (5,16): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(5, 16));
         }
 
-        [Theory, CombinatorialData]
-        public void UnsafeContext_Operator_Iterator(bool unsafeClass, bool unsafeOperator)
+        [Fact]
+        public void UnsafeContext_Method_Iterator_Signature_UnsafeClass()
         {
-            var code = $$"""
-                class A : System.Attribute
+            var code = """
+                unsafe class C
                 {
-                    public unsafe A(int* p) { }
-                }
-
-                {{(unsafeClass ? "unsafe" : "")}} class C
-                {
-                    [A(null)]
-                    {{(unsafeOperator ? "unsafe" : "")}}
-                    public static System.Collections.Generic.IEnumerable<int>
-                    operator+(C c, int* p)
+                    System.Collections.Generic.IEnumerable<int> M(int*[] p)
                     {
-                        yield return *p;
+                        yield break;
                     }
                 }
                 """;
-            var comp = CreateCompilation(code, options: TestOptions.UnsafeReleaseDll);
-            if (unsafeClass || unsafeOperator)
-            {
-                // Signature is unsafe, body is safe.
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
-                    // (11,25): error CS1637: Iterators cannot have pointer type parameters
-                    //     operator+(C c, int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeIteratorArgType, "p").WithLocation(11, 25),
-                    // (13,23): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         yield return *p;
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(13, 23));
-            }
-            else
-            {
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
-                    // (8,8): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(8, 8),
-                    // (11,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     operator+(C c, int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(11, 20),
-                    // (11,25): error CS1637: Iterators cannot have pointer type parameters
-                    //     operator+(C c, int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeIteratorArgType, "p").WithLocation(11, 25),
-                    // (13,23): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         yield return *p;
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(13, 23));
-            }
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
         }
 
         [Theory, CombinatorialData]
-        public void UnsafeContext_Indexer(bool unsafeClass, bool unsafeIndexer)
+        public void UnsafeContext_Method_Iterator_Signature_UnsafeMethod(bool unsafeClass)
         {
             var code = $$"""
-                class A : System.Attribute
-                {
-                    public unsafe A(int* p) { }
-                }
-
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
-                    [A(null)]
-                    {{(unsafeIndexer ? "unsafe" : "")}}
-                    int*
-                    this[int* p]
+                    unsafe System.Collections.Generic.IEnumerable<int> M(int*[] p)
                     {
-                        get => p;
-                        set { p = value; }
+                        yield break;
                     }
                 }
                 """;
-            var comp = CreateCompilation(code, options: TestOptions.UnsafeReleaseDll);
-            if (unsafeClass || unsafeIndexer)
-            {
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6));
-            }
-            else
-            {
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
-                    // (8,8): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(8, 8),
-                    // (10,5): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     int*
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(10, 5),
-                    // (11,10): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     this[int* p]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(11, 10),
-                    // (13,16): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         get => p;
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(13, 16),
-                    // (14,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         set { p = value; }
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(14, 15),
-                    // (14,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         set { p = value; }
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p = value").WithLocation(14, 15),
-                    // (14,19): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         set { p = value; }
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "value").WithLocation(14, 19));
-            }
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (3,56): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     unsafe System.Collections.Generic.IEnumerable<int> M(int*[] p)
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "M").WithArguments("ref and unsafe in async and iterator methods").WithLocation(3, 56));
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
         }
 
-        [Theory, CombinatorialData]
-        public void UnsafeContext_Indexer_Iterator(bool unsafeClass, bool unsafeIndexer)
+        [Fact]
+        public void UnsafeContext_Method_Iterator_Signature_Safe()
         {
-            var code = $$"""
-                class A : System.Attribute
+            var code = """
+                class C
                 {
-                    public unsafe A(int* p) { }
-                }
-
-                {{(unsafeClass ? "unsafe" : "")}} class C
-                {
-                    [A(null)]
-                    {{(unsafeIndexer ? "unsafe" : "")}}
-                    System.Collections.Generic.IEnumerable<int>
-                    this[int* p]
+                    System.Collections.Generic.IEnumerable<int> M(int*[] p)
                     {
-                        get { yield return *p; }
-                        set { p = null; }
+                        yield break;
                     }
                 }
                 """;
-            var comp = CreateCompilation(code, options: TestOptions.UnsafeReleaseDll);
-            if (unsafeClass || unsafeIndexer)
+
+            var expectedDiagnostics = new[]
             {
-                // Signature and setter is unsafe, getter is safe.
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
-                    // (11,15): error CS1637: Iterators cannot have pointer type parameters
-                    //     this[int* p]
-                    Diagnostic(ErrorCode.ERR_UnsafeIteratorArgType, "p").WithLocation(11, 15),
-                    // (13,29): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         get { yield return *p; }
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(13, 29));
-            }
-            else
-            {
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
-                    // (8,8): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(8, 8),
-                    // (11,10): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     this[int* p]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(11, 10),
-                    // (11,15): error CS1637: Iterators cannot have pointer type parameters
-                    //     this[int* p]
-                    Diagnostic(ErrorCode.ERR_UnsafeIteratorArgType, "p").WithLocation(11, 15),
-                    // (13,29): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         get { yield return *p; }
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(13, 29),
-                    // (14,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         set { p = null; }
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(14, 15),
-                    // (14,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         set { p = null; }
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p = null").WithLocation(14, 15));
-            }
+                // (3,51): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //     System.Collections.Generic.IEnumerable<int> M(int*[] p)
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(3, 51)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
         }
 
-        [Theory, CombinatorialData]
-        public void UnsafeContext_Property(bool unsafeClass, bool unsafeProperty)
+        [Fact]
+        public void UnsafeContext_Method_Iterator_Body_CSharp12_Safe()
         {
-            var code = $$"""
-                class A : System.Attribute
+            var code = """
+                class C
                 {
-                    public unsafe A(int* p) { }
-                }
-
-                {{(unsafeClass ? "unsafe" : "")}} class C
-                {
-                    [A(null)]
-                    {{(unsafeProperty ? "unsafe" : "")}}
-                    int*
-                    P
+                    System.Collections.Generic.IEnumerable<int> M()
                     {
-                        get => null;
-                        set { value = null; }
+                        yield return sizeof(nint);
                     }
                 }
                 """;
-            var comp = CreateCompilation(code, options: TestOptions.UnsafeReleaseDll);
-            if (unsafeClass || unsafeProperty)
-            {
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6));
-            }
-            else
-            {
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
-                    // (8,8): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(8, 8),
-                    // (10,5): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     int*
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(10, 5),
-                    // (14,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         set { value = null; }
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "value").WithLocation(14, 15),
-                    // (14,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //         set { value = null; }
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "value = null").WithLocation(14, 15));
-            }
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (5,22): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(5, 22));
+        }
+
+        [Fact]
+        public void UnsafeContext_Method_Iterator_Body_CSharp12_Unsafe()
+        {
+            var code = """
+                unsafe class C
+                {
+                    System.Collections.Generic.IEnumerable<int> M()
+                    {
+                        yield return sizeof(nint);
+                    }
+                }
+                """;
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (5,22): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //         yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(nint)").WithArguments("ref and unsafe in async and iterator methods").WithLocation(5, 22));
         }
 
         [Theory, CombinatorialData]
-        public void UnsafeContext_Property_Iterator(bool unsafeClass, bool unsafeProperty)
+        public void UnsafeContext_Method_Iterator_Body_CSharp13(bool unsafeClass, bool unsafeMethod)
         {
             var code = $$"""
-                class A : System.Attribute
-                {
-                    public unsafe A(int* p) { }
-                }
-
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
-                    [A(null)]
-                    {{(unsafeProperty ? "unsafe" : "")}}
-                    System.Collections.Generic.IEnumerable<int>
-                    P
+                    {{(unsafeMethod ? "unsafe" : "")}} System.Collections.Generic.IEnumerable<int> M()
+                    {
+                        yield return sizeof(nint);
+                    }
+                }
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (5,22): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(5, 22)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Theory, CombinatorialData]
+        public void UnsafeContext_Operator_Signature_Unsafe(bool unsafeClass, bool unsafeOperator)
+        {
+            if (!unsafeClass || !unsafeOperator)
+            {
+                return;
+            }
+
+            var code = $$"""
+                {{(unsafeClass ? "unsafe" : "")}} class C
+                {
+                    {{(unsafeOperator ? "unsafe" : "")}} public static C operator+(C c, int* p)
+                    {
+                        return c;
+                    }
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_Operator_Signature_Safe()
+        {
+            var code = """
+                class C
+                {
+                    public static C operator+(C c, int* p)
+                    {
+                        return c;
+                    }
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (3,36): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //     public static C operator+(C c, int* p)
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(3, 36));
+        }
+
+        [Theory, CombinatorialData]
+        public void UnsafeContext_Operator_Body_Unsafe(bool unsafeClass, bool unsafeOperator)
+        {
+            if (!unsafeClass || !unsafeOperator)
+            {
+                return;
+            }
+
+            var code = $$"""
+                {{(unsafeClass ? "unsafe" : "")}} class C
+                {
+                    {{(unsafeOperator ? "unsafe" : "")}} public static int operator+(C c1, C c2)
+                    {
+                        return sizeof(nint);
+                    }
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_Operator_Body_Safe()
+        {
+            var code = """
+                class C
+                {
+                    public static int operator+(C c1, C c2)
+                    {
+                        return sizeof(nint);
+                    }
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (5,16): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(5, 16));
+        }
+
+        [Fact]
+        public void UnsafeContext_Operator_Iterator_Signature_UnsafeClass()
+        {
+            var code = """
+                unsafe class C
+                {
+                    public static System.Collections.Generic.IEnumerable<int> operator+(C c, int*[] p)
+                    {
+                        yield break;
+                    }
+                }
+                """;
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+        }
+
+        [Theory, CombinatorialData]
+        public void UnsafeContext_Operator_Iterator_Signature_UnsafeOperator(bool unsafeClass)
+        {
+            var code = $$"""
+                {{(unsafeClass ? "unsafe" : "")}} class C
+                {
+                    public static unsafe System.Collections.Generic.IEnumerable<int> operator+(C c, int*[] p)
+                    {
+                        yield break;
+                    }
+                }
+                """;
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (3,78): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     public static unsafe System.Collections.Generic.IEnumerable<int> operator+(C c, int*[] p)
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "+").WithArguments("ref and unsafe in async and iterator methods").WithLocation(3, 78));
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_Operator_Iterator_Signature_Safe()
+        {
+            var code = """
+                class C
+                {
+                    public static System.Collections.Generic.IEnumerable<int> operator+(C c, int*[] p)
+                    {
+                        yield break;
+                    }
+                }
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (3,78): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //     public static System.Collections.Generic.IEnumerable<int> operator+(C c, int*[] p)
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(3, 78)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
+        public void UnsafeContext_Operator_Iterator_Body_CSharp12_Safe()
+        {
+            var code = """
+                class C
+                {
+                    public static System.Collections.Generic.IEnumerable<int> operator+(C c1, C c2)
+                    {
+                        yield return sizeof(nint);
+                    }
+                }
+                """;
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (5,22): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(5, 22));
+        }
+
+        [Fact]
+        public void UnsafeContext_Operator_Iterator_Body_CSharp12_Unsafe()
+        {
+            var code = """
+                unsafe class C
+                {
+                    public static System.Collections.Generic.IEnumerable<int> operator+(C c1, C c2)
+                    {
+                        yield return sizeof(nint);
+                    }
+                }
+                """;
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (5,22): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //         yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(nint)").WithArguments("ref and unsafe in async and iterator methods").WithLocation(5, 22));
+        }
+
+        [Theory, CombinatorialData]
+        public void UnsafeContext_Operator_Iterator_Body_CSharp13(bool unsafeClass, bool unsafeIndexer)
+        {
+            var code = $$"""
+                {{(unsafeClass ? "unsafe" : "")}} class C
+                {
+                    {{(unsafeIndexer ? "unsafe" : "")}} public static System.Collections.Generic.IEnumerable<int> operator+(C c1, C c2)
+                    {
+                        yield return sizeof(nint);
+                    }
+                }
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (5,22): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(5, 22)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Theory, CombinatorialData]
+        public void UnsafeContext_Indexer_Signature_Unsafe(bool unsafeClass, bool unsafeIndexer)
+        {
+            if (!unsafeClass || !unsafeIndexer)
+            {
+                return;
+            }
+
+            var code = $$"""
+                {{(unsafeClass ? "unsafe" : "")}} class C
+                {
+                    {{(unsafeIndexer ? "unsafe" : "")}} int this[int* p]
+                    {
+                        get { return 0; }
+                        set { }
+                    }
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_Indexer_Signature_Safe()
+        {
+            var code = """
+                class C
+                {
+                    int this[int* p]
+                    {
+                        get { return 0; }
+                        set { }
+                    }
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (3,14): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //     int this[int* p]
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(3, 14));
+        }
+
+        [Theory, CombinatorialData]
+        public void UnsafeContext_Indexer_Body_Unsafe(bool unsafeClass, bool unsafeIndexer)
+        {
+            if (!unsafeClass || !unsafeIndexer)
+            {
+                return;
+            }
+
+            var code = $$"""
+                {{(unsafeClass ? "unsafe" : "")}} class C
+                {
+                    {{(unsafeIndexer ? "unsafe" : "")}} int this[int x]
+                    {
+                        get { return sizeof(nint); }
+                        set { int* p = null; }
+                    }
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_Indexer_Body_Safe()
+        {
+            var code = """
+                class C
+                {
+                    int this[int x]
+                    {
+                        get { return sizeof(nint); }
+                        set { int* p = null; }
+                    }
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (5,22): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         get { return sizeof(nint); }
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(5, 22),
+                // (6,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //         set { int* p = null; }
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(6, 15));
+        }
+
+        [Fact]
+        public void UnsafeContext_Indexer_Iterator_Signature_UnsafeClass()
+        {
+            var code = """
+                unsafe class C
+                {
+                    System.Collections.Generic.IEnumerable<int> this[int*[] p]
+                    {
+                        get { yield break; }
+                        set { }
+                    }
+                }
+                """;
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+        }
+
+        [Theory, CombinatorialData]
+        public void UnsafeContext_Indexer_Iterator_Signature_UnsafeIndexer(bool unsafeClass)
+        {
+            var code = $$"""
+                {{(unsafeClass ? "unsafe" : "")}} class C
+                {
+                    unsafe System.Collections.Generic.IEnumerable<int> this[int*[] p]
+                    {
+                        get { yield break; }
+                        set { }
+                    }
+                }
+                """;
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (5,9): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //         get { yield break; }
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "get").WithArguments("ref and unsafe in async and iterator methods").WithLocation(5, 9));
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_Indexer_Iterator_Signature_Safe()
+        {
+            var code = """
+                class C
+                {
+                    System.Collections.Generic.IEnumerable<int> this[int*[] p]
+                    {
+                        get { yield break; }
+                        set { }
+                    }
+                }
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (3,54): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //     System.Collections.Generic.IEnumerable<int> this[int*[] p]
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(3, 54)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
+        public void UnsafeContext_Indexer_Iterator_Body_CSharp12_Safe()
+        {
+            var code = """
+                class C
+                {
+                    System.Collections.Generic.IEnumerable<int> this[int x]
                     {
                         get { yield return sizeof(nint); }
-                        set { int x = sizeof(nint); }
+                        set { int* p = null; }
                     }
                 }
                 """;
-            var comp = CreateCompilation(code, options: TestOptions.UnsafeReleaseDll);
-            if (unsafeClass || unsafeProperty)
-            {
-                // Signature and setter is unsafe, getter is safe.
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
-                    // (13,28): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
-                    //         get { yield return sizeof(nint); }
-                    Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(13, 28));
-            }
-            else
-            {
-                comp.VerifyDiagnostics(
-                    // (8,6): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(8, 6),
-                    // (8,8): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //     [A(null)]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(8, 8),
-                    // (13,28): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
-                    //         get { yield return sizeof(nint); }
-                    Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(13, 28),
-                    // (14,23): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
-                    //         set { int x = sizeof(nint); }
-                    Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(14, 23));
-            }
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (5,28): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         get { yield return sizeof(nint); }
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(5, 28),
+                // (6,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //         set { int* p = null; }
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(6, 15));
+        }
+
+        [Fact]
+        public void UnsafeContext_Indexer_Iterator_Body_CSharp12_Unsafe()
+        {
+            var code = """
+                unsafe class C
+                {
+                    System.Collections.Generic.IEnumerable<int> this[int x]
+                    {
+                        get { yield return sizeof(nint); }
+                        set { int* p = null; }
+                    }
+                }
+                """;
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (5,28): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //         get { yield return sizeof(nint); }
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(nint)").WithArguments("ref and unsafe in async and iterator methods").WithLocation(5, 28));
         }
 
         [Theory, CombinatorialData]
-        public void UnsafeContext_LocalFunction(bool unsafeClass, bool unsafeMethod, bool unsafeBlock, bool unsafeLocalFunction)
+        public void UnsafeContext_Indexer_Iterator_Body_CSharp13_Unsafe(bool unsafeClass, bool unsafeIndexer)
         {
+            if (!unsafeClass || !unsafeIndexer)
+            {
+                return;
+            }
+
             var code = $$"""
-                #pragma warning disable CS8321 // local function is never used
-
-                class A : System.Attribute
-                {
-                    public unsafe A(int* p) { }
-                }
-
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
-                    {{(unsafeMethod ? "unsafe" : "")}} void M()
+                    {{(unsafeIndexer ? "unsafe" : "")}} System.Collections.Generic.IEnumerable<int> this[int x]
                     {
-                        {{(unsafeBlock ? "unsafe" : "")}} {
-                            [A(null)]
-                            {{(unsafeLocalFunction ? "unsafe" : "")}}
-                            int*
-                            local(int* p)
-                            {
-                                return p;
-                            }
-                        }
+                        get { yield return sizeof(nint); }
+                        set { int* p = null; }
                     }
                 }
                 """;
-            var comp = CreateCompilation(code, options: TestOptions.UnsafeReleaseDll);
-            if (unsafeClass || unsafeMethod || unsafeBlock || unsafeLocalFunction)
+
+            var expectedDiagnostics = new[]
             {
-                comp.VerifyDiagnostics(
-                    // (13,14): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(13, 14));
-            }
-            else
+                // (5,28): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         get { yield return sizeof(nint); }
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(5, 28)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
+        public void UnsafeContext_Indexer_Iterator_Body_CSharp13_Safe()
+        {
+            var code = """
+                class C
+                {
+                    System.Collections.Generic.IEnumerable<int> this[int x]
+                    {
+                        get { yield return sizeof(nint); }
+                        set { int* p = null; }
+                    }
+                }
+                """;
+
+            var expectedDiagnostics = new[]
             {
-                comp.VerifyDiagnostics(
-                    // (13,14): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(13, 14),
-                    // (13,16): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(13, 16),
-                    // (15,13): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             int*
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(15, 13),
-                    // (16,19): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             local(int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(16, 19),
-                    // (18,24): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //                 return p;
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(18, 24));
-            }
+                // (5,28): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         get { yield return sizeof(nint); }
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(5, 28),
+                // (6,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //         set { int* p = null; }
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(6, 15)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Theory, CombinatorialData]
-        public void UnsafeContext_LocalFunction_Iterator(bool unsafeClass, bool unsafeMethod, bool unsafeBlock, bool unsafeLocalFunction)
+        public void UnsafeContext_Property_Signature_Unsafe(bool unsafeClass, bool unsafeProperty)
         {
+            if (!unsafeClass || !unsafeProperty)
+            {
+                return;
+            }
+
             var code = $$"""
-                #pragma warning disable CS8321 // local function is never used
-
-                class A : System.Attribute
-                {
-                    public unsafe A(int* p) { }
-                }
-
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
-                    {{(unsafeMethod ? "unsafe" : "")}} void M()
+                    {{(unsafeProperty ? "unsafe" : "")}} int* P
                     {
-                        {{(unsafeBlock ? "unsafe" : "")}} {
-                            [A(null)]
-                            {{(unsafeLocalFunction ? "unsafe" : "")}}
-                            System.Collections.Generic.IEnumerable<int>
-                            local(int* p)
-                            {
-                                yield return *p;
-                            }
-                        }
+                        get { throw null; }
+                        set { }
                     }
                 }
                 """;
-            var comp = CreateCompilation(code, options: TestOptions.UnsafeReleaseDll);
-            if (unsafeClass || unsafeMethod || unsafeBlock || unsafeLocalFunction)
-            {
-                // Signature is unsafe, body is safe.
-                comp.VerifyDiagnostics(
-                    // (13,14): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(13, 14),
-                    // (16,24): error CS1637: Iterators cannot have pointer type parameters
-                    //             local(int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeIteratorArgType, "p").WithLocation(16, 24),
-                    // (18,31): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //                 yield return *p;
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(18, 31));
-            }
-            else
-            {
-                comp.VerifyDiagnostics(
-                    // (13,14): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(13, 14),
-                    // (13,16): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(13, 16),
-                    // (16,19): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             local(int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(16, 19),
-                    // (16,24): error CS1637: Iterators cannot have pointer type parameters
-                    //             local(int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeIteratorArgType, "p").WithLocation(16, 24),
-                    // (18,31): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //                 yield return *p;
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(18, 31));
-            }
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_Property_Signature_Safe()
+        {
+            var code = """
+                class C
+                {
+                    int* P
+                    {
+                        get { throw null; }
+                        set { }
+                    }
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (3,5): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //     int* P
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(3, 5));
         }
 
         [Theory, CombinatorialData]
-        public void UnsafeContext_Lambda(bool unsafeClass, bool unsafeMethod, bool unsafeBlock)
+        public void UnsafeContext_Property_Body_Unsafe(bool unsafeClass, bool unsafeProperty)
         {
-            var code = $$"""
-                class A : System.Attribute
-                {
-                    public unsafe A(int* p) { }
-                }
+            if (!unsafeClass || !unsafeProperty)
+            {
+                return;
+            }
 
+            var code = $$"""
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
-                    {{(unsafeMethod ? "unsafe" : "")}} void M()
+                    {{(unsafeProperty ? "unsafe" : "")}} int P
                     {
-                        {{(unsafeBlock ? "unsafe" : "")}} {
-                            var lam =
-                            [A(null)]
-                            int*
-                            (int* p)
-                                => p;
-                        }
+                        get { return sizeof(nint); }
+                        set { int* p = null; }
                     }
                 }
                 """;
-            var comp = CreateCompilation(code, options: TestOptions.UnsafeReleaseDll);
-            if (unsafeClass || unsafeMethod || unsafeBlock)
-            {
-                comp.VerifyDiagnostics(
-                    // (12,14): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(12, 14));
-            }
-            else
-            {
-                comp.VerifyDiagnostics(
-                    // (12,14): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(12, 14),
-                    // (12,16): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(12, 16),
-                    // (13,13): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             int*
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(13, 13),
-                    // (14,14): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             (int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(14, 14),
-                    // (14,19): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             (int* p)
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(14, 19),
-                    // (15,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //                 => p;
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(15, 20));
-            }
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_Property_Body_Safe()
+        {
+            var code = """
+                class C
+                {
+                    int P
+                    {
+                        get { return sizeof(nint); }
+                        set { int* p = null; }
+                    }
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (5,22): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         get { return sizeof(nint); }
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(5, 22),
+                // (6,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //         set { int* p = null; }
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(6, 15));
+        }
+
+        [Fact]
+        public void UnsafeContext_Property_Iterator_Signature_UnsafeClass()
+        {
+            var code = """
+                unsafe class C
+                {
+                    System.Collections.Generic.IEnumerable<int*[]> P
+                    {
+                        get { yield break; }
+                        set { }
+                    }
+                }
+                """;
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
         }
 
         [Theory, CombinatorialData]
-        public void UnsafeContext_Lambda_Iterator(bool unsafeClass, bool unsafeMethod, bool unsafeBlock)
+        public void UnsafeContext_Property_Iterator_Signature_UnsafeIndexer(bool unsafeClass)
         {
             var code = $$"""
-                class A : System.Attribute
-                {
-                    public unsafe A(int* p) { }
-                }
-
                 {{(unsafeClass ? "unsafe" : "")}} class C
                 {
-                    {{(unsafeMethod ? "unsafe" : "")}} void M()
+                    unsafe System.Collections.Generic.IEnumerable<int*[]> P
                     {
-                        {{(unsafeBlock ? "unsafe" : "")}} {
-                            var lam =
-                            [A(null)]
-                            System.Collections.Generic.IEnumerable<int>
-                            (int* p) =>
-                            {
-                                yield return *p;
-                            };
-                        }
+                        get { yield break; }
+                        set { }
                     }
                 }
                 """;
-            var comp = CreateCompilation(code, options: TestOptions.UnsafeReleaseDll);
-            if (unsafeClass || unsafeMethod || unsafeBlock)
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (5,9): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //         get { yield break; }
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "get").WithArguments("ref and unsafe in async and iterator methods").WithLocation(5, 9));
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_Property_Iterator_Signature_Safe()
+        {
+            var code = """
+                class C
+                {
+                    System.Collections.Generic.IEnumerable<int*[]> P
+                    {
+                        get { yield break; }
+                        set { }
+                    }
+                }
+                """;
+
+            var expectedDiagnostics = new[]
             {
-                // Lambda cannot be an iterator, hence it always inherits `unsafe`.
-                comp.VerifyDiagnostics(
-                    // (12,14): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(12, 14),
-                    // (14,22): error CS1643: Not all code paths return a value in lambda expression of type '<anonymous delegate>'
-                    //             (int* p) =>
-                    Diagnostic(ErrorCode.ERR_AnonymousReturnExpected, "=>").WithArguments("lambda expression", "<anonymous delegate>").WithLocation(14, 22),
-                    // (16,17): error CS1621: The yield statement cannot be used inside an anonymous method or lambda expression
-                    //                 yield return *p;
-                    Diagnostic(ErrorCode.ERR_YieldInAnonMeth, "yield").WithLocation(16, 17),
-                    // (16,17): error CS9231: Cannot use 'yield return' in an 'unsafe' block
-                    //                 yield return *p;
-                    Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(16, 17));
-            }
-            else
+                // (3,44): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //     System.Collections.Generic.IEnumerable<int*[]> P
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(3, 44)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
+        public void UnsafeContext_Property_Iterator_Body_CSharp12_Safe()
+        {
+            var code = """
+                class C
+                {
+                    System.Collections.Generic.IEnumerable<int> P
+                    {
+                        get { yield return sizeof(nint); }
+                        set { int* p = null; }
+                    }
+                }
+                """;
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (5,28): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         get { yield return sizeof(nint); }
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(5, 28),
+                // (6,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //         set { int* p = null; }
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(6, 15));
+        }
+
+        [Fact]
+        public void UnsafeContext_Property_Iterator_Body_CSharp12_Unsafe()
+        {
+            var code = """
+                unsafe class C
+                {
+                    System.Collections.Generic.IEnumerable<int> P
+                    {
+                        get { yield return sizeof(nint); }
+                        set { int* p = null; }
+                    }
+                }
+                """;
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+                // (5,28): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //         get { yield return sizeof(nint); }
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(nint)").WithArguments("ref and unsafe in async and iterator methods").WithLocation(5, 28));
+        }
+
+        [Theory, CombinatorialData]
+        public void UnsafeContext_Property_Iterator_Body_CSharp13_Unsafe(bool unsafeClass, bool unsafeProperty)
+        {
+            if (!unsafeClass || !unsafeProperty)
             {
-                comp.VerifyDiagnostics(
-                    // (12,14): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
-                    //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*").WithLocation(12, 14),
-                    // (12,16): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             [A(null)]
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(12, 16),
-                    // (14,14): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             (int* p) =>
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(14, 14),
-                    // (14,19): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //             (int* p) =>
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(14, 19),
-                    // (14,22): error CS1643: Not all code paths return a value in lambda expression of type '<anonymous delegate>'
-                    //             (int* p) =>
-                    Diagnostic(ErrorCode.ERR_AnonymousReturnExpected, "=>").WithArguments("lambda expression", "<anonymous delegate>").WithLocation(14, 22),
-                    // (16,17): error CS1621: The yield statement cannot be used inside an anonymous method or lambda expression
-                    //                 yield return *p;
-                    Diagnostic(ErrorCode.ERR_YieldInAnonMeth, "yield").WithLocation(16, 17),
-                    // (16,31): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
-                    //                 yield return *p;
-                    Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(16, 31));
+                return;
             }
+
+            var code = $$"""
+                {{(unsafeClass ? "unsafe" : "")}} class C
+                {
+                    {{(unsafeProperty ? "unsafe" : "")}} System.Collections.Generic.IEnumerable<int> P
+                    {
+                        get { yield return sizeof(nint); }
+                        set { int* p = null; }
+                    }
+                }
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (5,28): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         get { yield return sizeof(nint); }
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(5, 28)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
+        public void UnsafeContext_Property_Iterator_Body_CSharp13_Safe()
+        {
+            var code = """
+                class C
+                {
+                    System.Collections.Generic.IEnumerable<int> P
+                    {
+                        get { yield return sizeof(nint); }
+                        set { int* p = null; }
+                    }
+                }
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (5,28): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         get { yield return sizeof(nint); }
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(5, 28),
+                // (6,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                //         set { int* p = null; }
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(6, 15)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Theory, CombinatorialData]
+        public void UnsafeContext_LocalFunction_Signature_Unsafe(bool unsafeBlock, bool unsafeFunction)
+        {
+            if (!unsafeBlock || !unsafeFunction)
+            {
+                return;
+            }
+
+            var code = $$"""
+                #pragma warning disable CS8321 // The local function 'M' is declared but never used
+                {{(unsafeBlock ? "unsafe" : "")}}
+                {
+                    {{(unsafeFunction ? "unsafe" : "")}} void M(int* p) { }
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_LocalFunction_Signature_Safe()
+        {
+            var code = """
+                #pragma warning disable CS8321 // The local function 'M' is declared but never used
+                void M(int* p) { }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(
+                // (2,8): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                // void M(int* p) { }
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(2, 8));
+        }
+
+        [Theory, CombinatorialData]
+        public void UnsafeContext_LocalFunction_Body_Unsafe(bool unsafeBlock, bool unsafeFunction)
+        {
+            if (!unsafeBlock || !unsafeFunction)
+            {
+                return;
+            }
+
+            var code = $$"""
+                #pragma warning disable CS8321 // The local function 'M' is declared but never used
+                {{(unsafeBlock ? "unsafe" : "")}}
+                {
+                    {{(unsafeFunction ? "unsafe" : "")}} int M()
+                    {
+                        return sizeof(nint);
+                    }
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_LocalFunction_Body_Safe()
+        {
+            var code = """
+                #pragma warning disable CS8321 // The local function 'M' is declared but never used
+                int M()
+                {
+                    return sizeof(nint);
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(
+                // (4,12): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //     return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(4, 12));
+        }
+
+        [Fact]
+        public void UnsafeContext_LocalFunction_Iterator_Signature_UnsafeBlock()
+        {
+            var code = """
+                #pragma warning disable CS8321 // The local function 'M' is declared but never used
+                unsafe
+                {
+                    System.Collections.Generic.IEnumerable<int> M(int*[] p)
+                    {
+                        yield break;
+                    }
+                }
+                """;
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics();
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics();
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics();
+        }
+
+        [Theory, CombinatorialData]
+        public void UnsafeContext_LocalFunction_Iterator_Signature_UnsafeFunction(bool unsafeBlock)
+        {
+            var code = $$"""
+                #pragma warning disable CS8321 // The local function 'M' is declared but never used
+                {{(unsafeBlock ? "unsafe" : "")}}
+                {
+                    unsafe System.Collections.Generic.IEnumerable<int> M(int*[] p)
+                    {
+                        yield break;
+                    }
+                }
+                """;
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(
+                // (4,56): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     unsafe System.Collections.Generic.IEnumerable<int> M(int*[] p)
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "M").WithArguments("ref and unsafe in async and iterator methods").WithLocation(4, 56));
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics();
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_LocalFunction_Iterator_Signature_Safe()
+        {
+            var code = """
+                #pragma warning disable CS8321 // The local function 'M' is declared but never used
+                System.Collections.Generic.IEnumerable<int> M(int*[] p)
+                {
+                    yield break;
+                }
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (2,47): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                // System.Collections.Generic.IEnumerable<int> M(int*[] p)
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(2, 47)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
+        public void UnsafeContext_LocalFunction_Iterator_Body_CSharp12_Safe()
+        {
+            var code = """
+                #pragma warning disable CS8321 // The local function 'M' is declared but never used
+                System.Collections.Generic.IEnumerable<int> M()
+                {
+                    yield return sizeof(nint);
+                }
+                """;
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(
+                // (4,18): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //     yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(4, 18));
+        }
+
+        [Fact]
+        public void UnsafeContext_LocalFunction_Iterator_Body_CSharp12_Unsafe()
+        {
+            var code = """
+                #pragma warning disable CS8321 // The local function 'M' is declared but never used
+                unsafe
+                {
+                    System.Collections.Generic.IEnumerable<int> M()
+                    {
+                        yield return sizeof(nint);
+                    }
+                }
+                """;
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(
+                // (6,22): error CS8652: The feature 'ref and unsafe in async and iterator methods' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //         yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(nint)").WithArguments("ref and unsafe in async and iterator methods").WithLocation(6, 22));
+        }
+
+        [Theory, CombinatorialData]
+        public void UnsafeContext_LocalFunction_Iterator_Body_CSharp13(bool unsafeBlock, bool unsafeFunction)
+        {
+            var code = $$"""
+                #pragma warning disable CS8321 // The local function 'M' is declared but never used
+                {{(unsafeBlock ? "unsafe" : "")}}
+                {
+                    {{(unsafeFunction ? "unsafe" : "")}} System.Collections.Generic.IEnumerable<int> M()
+                    {
+                        yield return sizeof(nint);
+                    }
+                }
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (6,22): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //         yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(6, 22)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
+        public void UnsafeContext_Lambda_Signature_Unsafe()
+        {
+            var code = """
+                unsafe
+                {
+                    var lam = (int* p) => { };
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_Lambda_Signature_Safe()
+        {
+            var code = """
+                var lam = (int* p) => { };
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(
+                // (1,12): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                // var lam = (int* p) => { };
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(1, 12),
+                // (1,17): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                // var lam = (int* p) => { };
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(1, 17));
+        }
+
+        [Fact]
+        public void UnsafeContext_Lambda_Body_Unsafe()
+        {
+            var code = """
+                unsafe
+                {
+                    var lam = () =>
+                    {
+                        return sizeof(nint);
+                    };
+                }
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void UnsafeContext_Lambda_Body_Safe()
+        {
+            var code = """
+                var lam = () =>
+                {
+                    return sizeof(nint);
+                };
+                """;
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(
+                // (3,12): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //     return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(3, 12));
+        }
+
+        [Fact]
+        public void UnsafeContext_Lambda_Iterator_Signature_Unsafe()
+        {
+            var code = """
+                unsafe
+                {
+                    var lam = (int*[] p) =>
+                    {
+                        yield break;
+                    };
+                }
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (5,9): error CS1621: The yield statement cannot be used inside an anonymous method or lambda expression
+                //         yield break;
+                Diagnostic(ErrorCode.ERR_YieldInAnonMeth, "yield").WithLocation(5, 9)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
+        public void UnsafeContext_Lambda_Iterator_Signature_Safe()
+        {
+            var code = """
+                var lam = (int*[] p) =>
+                {
+                    yield break;
+                };
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (1,12): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                // var lam = (int*[] p) =>
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(1, 12),
+                // (1,19): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+                // var lam = (int*[] p) =>
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "p").WithLocation(1, 19),
+                // (3,5): error CS1621: The yield statement cannot be used inside an anonymous method or lambda expression
+                //     yield break;
+                Diagnostic(ErrorCode.ERR_YieldInAnonMeth, "yield").WithLocation(3, 5)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
+        public void UnsafeContext_Lambda_Iterator_Body_Unsafe()
+        {
+            var code = """
+                unsafe
+                {
+                    var lam = () =>
+                    {
+                        yield return sizeof(nint);
+                    };
+                }
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (5,9): error CS1621: The yield statement cannot be used inside an anonymous method or lambda expression
+                //         yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_YieldInAnonMeth, "yield").WithLocation(5, 9)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+
+            expectedDiagnostics = [
+                // (5,9): error CS1621: The yield statement cannot be used inside an anonymous method or lambda expression
+                //         yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_YieldInAnonMeth, "yield").WithLocation(5, 9),
+                // (5,9): error CS9231: Cannot use 'yield return' in an 'unsafe' block
+                //         yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_BadYieldInUnsafe, "yield").WithLocation(5, 9)
+            ];
+
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact]
+        public void UnsafeContext_Lambda_Iterator_Body_Safe()
+        {
+            var code = """
+                var lam = () =>
+                {
+                    yield return sizeof(nint);
+                };
+                """;
+
+            var expectedDiagnostics = new[]
+            {
+                // (3,5): error CS1621: The yield statement cannot be used inside an anonymous method or lambda expression
+                //     yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_YieldInAnonMeth, "yield").WithLocation(3, 5),
+                // (3,18): error CS0233: 'nint' does not have a predefined size, therefore sizeof can only be used in an unsafe context
+                //     yield return sizeof(nint);
+                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(nint)").WithArguments("nint").WithLocation(3, 18)
+            };
+
+            CreateCompilation(code, parseOptions: TestOptions.Regular12, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(code, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Fact]
