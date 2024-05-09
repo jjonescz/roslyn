@@ -120,7 +120,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             // InterfacesAndTheirBaseInterfaces are cached and used in multiple places.
             MultiDictionary<NamedTypeSymbol, NamedTypeSymbol> interfacesAndTheirBases = this.InterfacesAndTheirBaseInterfacesNoUseSiteDiagnostics;
 
-            foreach (var @interface in this.AllInterfacesNoUseSiteDiagnostics)
+            var interfaces = this.AllInterfacesNoUseSiteDiagnostics.Distinct(SymbolEqualityComparer.IgnoringNullable);
+
+            foreach (var @interface in interfaces)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
