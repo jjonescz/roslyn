@@ -821,6 +821,20 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
         /// <summary>
+        /// Returns true if the conversion is a span conversion.
+        /// </summary>
+        /// <remarks>
+        /// Span conversion is available since C# 13 as part of the "first-class Span types" feature.
+        /// </remarks>
+        internal bool IsSpan // PROTOTYPE: Make part of public API
+        {
+            get
+            {
+                return Kind == ConversionKind.Span;
+            }
+        }
+
+        /// <summary>
         /// Returns true if the conversion is an implicit user-defined conversion or explicit user-defined conversion.
         /// </summary>
         /// <remarks>
