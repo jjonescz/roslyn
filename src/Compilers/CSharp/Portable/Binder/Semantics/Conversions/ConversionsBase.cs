@@ -623,7 +623,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ConversionKind.ImplicitPointer:
                 case ConversionKind.ImplicitPointerToVoid:
                 case ConversionKind.ImplicitTuple:
-                case ConversionKind.Span:
+                case ConversionKind.ImplicitSpan:
                     return true;
                 default:
                     return false;
@@ -749,7 +749,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions)) &&
                     HasIdentityConversionInternal(((NamedTypeSymbol)destination.OriginalDefinition).Construct(ImmutableArray.Create(elementType)), destination))
                 {
-                    return Conversion.Span;
+                    return Conversion.ImplicitSpan;
                 }
 
                 return Conversion.NoConversion;

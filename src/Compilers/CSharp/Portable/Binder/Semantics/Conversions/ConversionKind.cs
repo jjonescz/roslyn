@@ -69,6 +69,6 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         InlineArray, // A conversion from an inline array to Span/ReadOnlySpan
 
-        Span, // A conversion between array, (ReadOnly)Span, string - part of the "first-class Span types" feature
+        ImplicitSpan, // A conversion between array, (ReadOnly)Span, string - part of the "first-class Span types" feature
     }
 }

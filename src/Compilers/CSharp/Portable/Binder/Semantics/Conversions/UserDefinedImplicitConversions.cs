@@ -667,7 +667,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // Added for C# 12
                 case ConversionKind.InlineArray:
                 // Added for C# 13
-                case ConversionKind.Span:
+                case ConversionKind.ImplicitSpan:
                     return true;
 
                 default:

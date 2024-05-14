@@ -614,7 +614,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         return _factory.Call(null, createSpan, rewrittenOperand, _factory.Literal(length), useStrictArgumentRefKinds: true);
                     }
 
-                case ConversionKind.Span:
+                case ConversionKind.ImplicitSpan:
                     {
                         var spanType = (NamedTypeSymbol)rewrittenType;
 
