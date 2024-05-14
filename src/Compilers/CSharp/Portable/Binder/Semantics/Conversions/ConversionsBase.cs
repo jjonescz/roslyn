@@ -623,6 +623,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ConversionKind.ImplicitPointer:
                 case ConversionKind.ImplicitPointerToVoid:
                 case ConversionKind.ImplicitTuple:
+                case ConversionKind.Span:
                     return true;
                 default:
                     return false;
@@ -740,6 +741,14 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (tupleConversion.Exists)
                 {
                     return tupleConversion;
+                }
+
+                if (source is ArrayTypeSymbol { IsSZArray: true, ElementTypeWithAnnotations: { } elementType } &&
+                    (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_Span_T), TypeCompareKind.AllIgnoreOptions) ||
+                    destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions)) &&
+                    HasIdentityConversionInternal(((NamedTypeSymbol)destination.OriginalDefinition).Construct(ImmutableArray.Create(elementType)), destination))
+                {
+                    return Conversion.Span;
                 }
 
                 return Conversion.NoConversion;

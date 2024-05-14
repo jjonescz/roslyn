@@ -294,6 +294,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal static Conversion ImplicitPointer => new Conversion(ConversionKind.ImplicitPointer);
         internal static Conversion FunctionType => new Conversion(ConversionKind.FunctionType);
         internal static Conversion InlineArray => new Conversion(ConversionKind.InlineArray);
+        internal static Conversion Span => new Conversion(ConversionKind.Span);
 
         // trivial conversions that could be underlying in nullable conversion
         // NOTE: tuple conversions can be underlying as well, but they are not trivial 
