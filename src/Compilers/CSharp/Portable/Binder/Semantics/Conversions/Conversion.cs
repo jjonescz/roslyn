@@ -244,7 +244,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ConversionKind.InterpolatedString:
                 case ConversionKind.InterpolatedStringHandler:
                 case ConversionKind.InlineArray:
-                    // PROTOTYPE: ImplicitSpan
+                case ConversionKind.ImplicitSpan:
                     isTrivial = true;
                     break;
 

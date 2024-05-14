@@ -53,7 +53,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ObjectCreation:
                 case InlineArray:
                 case CollectionExpression:
-                    // PROTOTYPE: ImplicitSpan
+                case ImplicitSpan:
                     return true;
 
                 case ExplicitNumeric:
