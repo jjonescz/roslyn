@@ -8897,6 +8897,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
                     break;
 
+                // PROTOTYPE: ImplicitSpan
+
                 default:
                     Debug.Assert(targetType.IsValueType || targetType.IsErrorType());
                     break;
