@@ -34,7 +34,18 @@ public class FirstClassSpanTests : CSharpTestBase
                 }
             }
             """;
-        var comp = CreateCompilationWithSpan(source);
-        CompileAndVerify(comp, expectedOutput: "456").VerifyDiagnostics();
+
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+            // (3,5): error CS1503: Argument 1: cannot convert from 'C' to 'System.Span<int>'
+            // D.M(new C());
+            Diagnostic(ErrorCode.ERR_BadArgType, "new C()").WithArguments("1", "C", $"System.{destination}<int>").WithLocation(3, 5));
+
+        var expectedOutput = "456";
+
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        comp = CreateCompilationWithSpan(source);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 }
