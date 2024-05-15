@@ -91,6 +91,48 @@ public class FirstClassSpanTests : CSharpTestBase
     }
 
     [Fact]
+    public void Conversion_Array_Span_Implicit_SpanTwice()
+    {
+        static string getSpanSource(string output) => $$"""
+            namespace System
+            {
+                public readonly ref struct Span<T>
+                {
+                    public Span(T[] array) => Console.Write("{{output}}");
+                }
+            }
+            """;
+
+        var spanComp = CreateCompilation(getSpanSource("External"), assemblyName: "Span1")
+            .VerifyDiagnostics()
+            .EmitToImageReference();
+
+        var source = """
+            using System;
+            Span<int> s = arr();
+            static int[] arr() => new int[] { 1, 2, 3 };
+            """;
+
+        var comp = CreateCompilation([source, getSpanSource("Internal")], [spanComp], assemblyName: "Consumer");
+        var verifier = CompileAndVerify(comp, expectedOutput: "Internal");
+        verifier.VerifyDiagnostics(
+            // (2,1): warning CS0436: The type 'Span<T>' in '' conflicts with the imported type 'Span<T>' in 'Span1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'. Using the type defined in ''.
+            // Span<int> s = arr();
+            Diagnostic(ErrorCode.WRN_SameFullNameThisAggAgg, "Span<int>").WithArguments("", "System.Span<T>", "Span1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null", "System.Span<T>").WithLocation(2, 1));
+
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+            {
+              // Code size       12 (0xc)
+              .maxstack  1
+              IL_0000:  call       "int[] Program.<<Main>$>g__arr|0_0()"
+              IL_0005:  newobj     "System.Span<int>..ctor(int[])"
+              IL_000a:  pop
+              IL_000b:  ret
+            }
+            """);
+    }
+
+    [Fact]
     public void Conversion_Array_Span_Implicit_SemanticModel()
     {
         var source = """
