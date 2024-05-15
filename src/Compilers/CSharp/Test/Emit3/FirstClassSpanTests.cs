@@ -363,43 +363,113 @@ public class FirstClassSpanTests : CSharpTestBase
         var source = """
             using System;
 
-            var arr = new int[] { 7, 8, 9 };
-            arr.E();
+            C.M(new int[] { 7, 8, 9 });
 
             static class C
             {
-                 public static void E(this Span<int> arg) => Console.Write(arg[1]);
+                public static void M(int[] arg) => arg.E();
+                public static void E(this Span<int> arg) => Console.Write(arg[1]);
             }
             """;
         CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
-            // (4,1): error CS1929: 'int[]' does not contain a definition for 'E' and the best extension method overload 'C.E(Span<int>)' requires a receiver of type 'System.Span<int>'
-            // arr.E();
-            Diagnostic(ErrorCode.ERR_BadInstanceArgType, "arr").WithArguments("int[]", "E", "C.E(System.Span<int>)", "System.Span<int>").WithLocation(4, 1));
+            // (7,40): error CS1929: 'int[]' does not contain a definition for 'E' and the best extension method overload 'C.E(Span<int>)' requires a receiver of type 'System.Span<int>'
+            //     public static void M(int[] arg) => arg.E();
+            Diagnostic(ErrorCode.ERR_BadInstanceArgType, "arg").WithArguments("int[]", "E", "C.E(System.Span<int>)", "System.Span<int>").WithLocation(7, 40));
 
         var expectedOutput = "8";
 
+        var expectedIl = """
+            {
+              // Code size       12 (0xc)
+              .maxstack  1
+              IL_0000:  ldarg.0
+              IL_0001:  newobj     "System.Span<int>..ctor(int[])"
+              IL_0006:  call       "void C.E(System.Span<int>)"
+              IL_000b:  ret
+            }
+            """;
+
         var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
-        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", expectedIl);
 
         comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
-        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+        verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", expectedIl);
     }
 
-    [Theory, MemberData(nameof(LangVersions))]
-    public void Conversion_Array_Span_ExtensionMethodReceiver_Explicit(LanguageVersion langVersion)
+    [Fact]
+    public void Conversion_Array_Span_ExtensionMethodReceiver_Implicit_MissingCtor()
+    {
+        var source = """
+            using System;
+            
+            C.M(new int[] { 7, 8, 9 });
+            
+            static class C
+            {
+                public static void M(int[] arg) => arg.E();
+                public static void E(this Span<int> arg) => Console.Write(arg[1]);
+            }
+            """;
+        var comp = CreateCompilationWithSpan(source);
+        comp.MakeMemberMissing(WellKnownMember.System_Span_T__ctor_Array);
+        comp.VerifyDiagnostics(
+            // (7,40): error CS0656: Missing compiler required member 'System.Span`1..ctor'
+            //     public static void M(int[] arg) => arg.E();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "arg").WithArguments("System.Span`1", ".ctor").WithLocation(7, 40),
+            // (7,40): error CS0656: Missing compiler required member 'System.Span`1..ctor'
+            //     public static void M(int[] arg) => arg.E();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "arg").WithArguments("System.Span`1", ".ctor").WithLocation(7, 40));
+    }
+
+    [Fact]
+    public void Conversion_Array_Span_ExtensionMethodReceiver_Explicit()
     {
         var source = """
             using System;
 
-            var arr = new int[] { 7, 8, 9 };
-            ((Span<int>)arr).E();
+            C.M(new int[] { 7, 8, 9 });
 
             static class C
             {
-                 public static void E(this Span<int> arg) => Console.Write(arg[1]);
+                public static void M(int[] arg) => ((Span<int>)arg).E();
+                public static void E(this Span<int> arg) => Console.Write(arg[1]);
             }
             """;
-        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
-        CompileAndVerify(comp, expectedOutput: "8").VerifyDiagnostics();
+
+        var expectedOutput = "8";
+
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12);
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", """
+            {
+              // Code size       12 (0xc)
+              .maxstack  1
+              IL_0000:  ldarg.0
+              IL_0001:  call       "System.Span<int> System.Span<int>.op_Implicit(int[])"
+              IL_0006:  call       "void C.E(System.Span<int>)"
+              IL_000b:  ret
+            }
+            """);
+
+        var expectedIl = """
+            {
+              // Code size       12 (0xc)
+              .maxstack  1
+              IL_0000:  ldarg.0
+              IL_0001:  newobj     "System.Span<int>..ctor(int[])"
+              IL_0006:  call       "void C.E(System.Span<int>)"
+              IL_000b:  ret
+            }
+            """;
+
+        comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", expectedIl);
+
+        comp = CreateCompilationWithSpan(source);
+        verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", expectedIl);
     }
 }
