@@ -1928,6 +1928,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     return Conversion.ImplicitReference;
                 }
+
+                if (HasImplicitSpanConversion(sourceType, destination))
+                {
+                    return Conversion.ImplicitSpan;
+                }
             }
 
             if (sourceExpressionOpt?.Kind == BoundKind.TupleLiteral)
@@ -1989,6 +1994,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ConversionKind.Identity:
                 case ConversionKind.Boxing:
                 case ConversionKind.ImplicitReference:
+                case ConversionKind.ImplicitSpan:
                     return true;
 
                 case ConversionKind.ImplicitTuple:

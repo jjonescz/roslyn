@@ -376,7 +376,13 @@ public class FirstClassSpanTests : CSharpTestBase
             // arr.E();
             Diagnostic(ErrorCode.ERR_BadInstanceArgType, "arr").WithArguments("int[]", "E", "C.E(System.Span<int>)", "System.Span<int>").WithLocation(4, 1));
 
-        // PROTOTYPE: Should work in C# 13.
+        var expectedOutput = "8";
+
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 
     [Theory, MemberData(nameof(LangVersions))]
