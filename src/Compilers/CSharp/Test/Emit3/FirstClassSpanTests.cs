@@ -417,9 +417,6 @@ public class FirstClassSpanTests : CSharpTestBase
         comp.VerifyDiagnostics(
             // (7,40): error CS0656: Missing compiler required member 'System.Span`1..ctor'
             //     public static void M(int[] arg) => arg.E();
-            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "arg").WithArguments("System.Span`1", ".ctor").WithLocation(7, 40),
-            // (7,40): error CS0656: Missing compiler required member 'System.Span`1..ctor'
-            //     public static void M(int[] arg) => arg.E();
             Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "arg").WithArguments("System.Span`1", ".ctor").WithLocation(7, 40));
     }
 
