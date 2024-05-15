@@ -743,11 +743,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return tupleConversion;
                 }
 
-                if (Compilation.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) &&
-                    source is ArrayTypeSymbol { IsSZArray: true, ElementTypeWithAnnotations: { } elementType } &&
-                    (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_Span_T), TypeCompareKind.AllIgnoreOptions) ||
-                    destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions)) &&
-                    HasIdentityConversionInternal(((NamedTypeSymbol)destination.OriginalDefinition).Construct(ImmutableArray.Create(elementType)), destination))
+                if (HasImplicitSpanConversion(source, destination))
                 {
                     return Conversion.ImplicitSpan;
                 }
@@ -3827,6 +3823,15 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             return false;
+        }
+
+        private bool HasImplicitSpanConversion(TypeSymbol source, TypeSymbol destination)
+        {
+            return Compilation.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) &&
+                source is ArrayTypeSymbol { IsSZArray: true, ElementTypeWithAnnotations: { } elementType } &&
+                (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_Span_T), TypeCompareKind.AllIgnoreOptions) ||
+                destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions)) &&
+                HasIdentityConversionInternal(((NamedTypeSymbol)destination.OriginalDefinition).Construct(ImmutableArray.Create(elementType)), destination);
         }
     }
 }
