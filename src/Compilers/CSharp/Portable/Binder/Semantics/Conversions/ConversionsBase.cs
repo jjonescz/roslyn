@@ -912,6 +912,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     break;
 
+                case ConversionKind.ImplicitSpan:
+                    // Implicit span conversion, unlike other standard implicit conversions,
+                    // does not imply opposite standard explicit conversion.
+                    impliedExplicitConversion = Conversion.NoConversion;
+                    break;
+
                 default:
                     throw ExceptionUtilities.UnexpectedValue(oppositeConversion.Kind);
             }
