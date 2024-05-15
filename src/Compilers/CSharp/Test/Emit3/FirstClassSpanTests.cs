@@ -469,4 +469,68 @@ public class FirstClassSpanTests : CSharpTestBase
         verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
         verifier.VerifyIL("C.M", expectedIl);
     }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_Span_ExtensionMethodReceiver_Opposite_Implicit(LanguageVersion langVersion)
+    {
+        var source = """
+            static class C
+            {
+                static void M(System.Span<int> arg) => arg.E();
+                static void E(this int[] arg) { }
+            }
+            """;
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (3,44): error CS1929: 'Span<int>' does not contain a definition for 'E' and the best extension method overload 'C.E(int[])' requires a receiver of type 'int[]'
+            //     static void M(System.Span<int> arg) => arg.E();
+            Diagnostic(ErrorCode.ERR_BadInstanceArgType, "arg").WithArguments("System.Span<int>", "E", "C.E(int[])", "int[]").WithLocation(3, 44));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_Span_ExtensionMethodReceiver_Opposite_Explicit(LanguageVersion langVersion)
+    {
+        var source = """
+            static class C
+            {
+                static void M(System.Span<int> arg) => ((int[])arg).E();
+                static void E(this int[] arg) { }
+            }
+            """;
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (3,45): error CS0030: Cannot convert type 'System.Span<int>' to 'int[]'
+            //     static void M(System.Span<int> arg) => ((int[])arg).E();
+            Diagnostic(ErrorCode.ERR_NoExplicitConv, "(int[])arg").WithArguments("System.Span<int>", "int[]").WithLocation(3, 45));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_Span_ExtensionMethodReceiver_Opposite_Explicit_UserDefined(LanguageVersion langVersion)
+    {
+        var source = """
+            static class C
+            {
+                static void M(System.Span<int> arg) => ((int[])arg).E();
+                static void E(this int[] arg) { }
+            }
+
+            namespace System
+            {
+                readonly ref struct Span<T>
+                {
+                    public static explicit operator T[](Span<T> span) => throw null;
+                }
+            }
+            """;
+        var verifier = CompileAndVerify(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
+        verifier.VerifyDiagnostics();
+        verifier.VerifyIL("C.M", """
+            {
+              // Code size       12 (0xc)
+              .maxstack  1
+              IL_0000:  ldarg.0
+              IL_0001:  call       "int[] System.Span<int>.op_Explicit(System.Span<int>)"
+              IL_0006:  call       "void C.E(int[])"
+              IL_000b:  ret
+            }
+            """);
+    }
 }
