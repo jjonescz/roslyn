@@ -356,4 +356,44 @@ public class FirstClassSpanTests : CSharpTestBase
             }
         }
     }
+
+    [Fact]
+    public void Conversion_Array_Span_ExtensionMethodReceiver_Implicit()
+    {
+        var source = """
+            using System;
+
+            var arr = new int[] { 7, 8, 9 };
+            arr.E();
+
+            static class C
+            {
+                 public static void E(this Span<int> arg) => Console.Write(arg[1]);
+            }
+            """;
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+            // (4,1): error CS1929: 'int[]' does not contain a definition for 'E' and the best extension method overload 'C.E(Span<int>)' requires a receiver of type 'System.Span<int>'
+            // arr.E();
+            Diagnostic(ErrorCode.ERR_BadInstanceArgType, "arr").WithArguments("int[]", "E", "C.E(System.Span<int>)", "System.Span<int>").WithLocation(4, 1));
+
+        // PROTOTYPE: Should work in C# 13.
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_Span_ExtensionMethodReceiver_Explicit(LanguageVersion langVersion)
+    {
+        var source = """
+            using System;
+
+            var arr = new int[] { 7, 8, 9 };
+            ((Span<int>)arr).E();
+
+            static class C
+            {
+                 public static void E(this Span<int> arg) => Console.Write(arg[1]);
+            }
+            """;
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
+        CompileAndVerify(comp, expectedOutput: "8").VerifyDiagnostics();
+    }
 }
