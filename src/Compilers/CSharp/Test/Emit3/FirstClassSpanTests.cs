@@ -6,6 +6,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities;
+using Roslyn.Test.Utilities;
 using Xunit;
 
 namespace Microsoft.CodeAnalysis.CSharp.UnitTests;
@@ -20,6 +21,63 @@ public class FirstClassSpanTests : CSharpTestBase
             LanguageVersionFacts.CSharpNext,
             LanguageVersion.Preview,
         };
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/runtime/issues/101261")]
+    public void Example_StringValuesAmbiguity()
+    {
+        var source = """
+            using System;
+
+            Console.Write(C.M(new StringValues()));
+
+            static class C
+            {
+                public static string M(StringValues sv) => StringExtensions.Join(",", sv);
+            }
+
+            static class StringExtensions
+            {
+                public static string Join(string separator, params string[] values) => "array";
+                public static string Join(string separator, params ReadOnlySpan<string> values) => "span";
+            }
+
+            readonly struct StringValues
+            {
+                public static implicit operator string(StringValues values) => null;
+                public static implicit operator string[](StringValues value) => null;
+            }
+            """;
+
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+            // (7,65): error CS0121: The call is ambiguous between the following methods or properties: 'StringExtensions.Join(string, params string[])' and 'StringExtensions.Join(string, params ReadOnlySpan<string>)'
+            //     public static string M(StringValues sv) => StringExtensions.Join(",", sv);
+            Diagnostic(ErrorCode.ERR_AmbigCall, "Join").WithArguments("StringExtensions.Join(string, params string[])", "StringExtensions.Join(string, params System.ReadOnlySpan<string>)").WithLocation(7, 65),
+            // (13,49): error CS8652: The feature 'params collections' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     public static string Join(string separator, params ReadOnlySpan<string> values) => "span";
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "params ReadOnlySpan<string> values").WithArguments("params collections").WithLocation(13, 49));
+
+        var expectedOutput = "array";
+
+        var expectedIl = """
+            {
+              // Code size       17 (0x11)
+              .maxstack  2
+              IL_0000:  ldstr      ","
+              IL_0005:  ldarg.0
+              IL_0006:  call       "string[] StringValues.op_Implicit(StringValues)"
+              IL_000b:  call       "string StringExtensions.Join(string, params string[])"
+              IL_0010:  ret
+            }
+            """;
+
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", expectedIl);
+
+        comp = CreateCompilationWithSpan(source);
+        verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", expectedIl);
     }
 
     [Theory, CombinatorialData]
