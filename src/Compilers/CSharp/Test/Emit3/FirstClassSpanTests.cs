@@ -23,6 +23,9 @@ public class FirstClassSpanTests : CSharpTestBase
         };
     }
 
+    private sealed class CombinatorialLangVersions()
+        : CombinatorialValuesAttribute(LangVersions().Select(d => d.Single()).ToArray());
+
     [Fact, WorkItem("https://github.com/dotnet/runtime/issues/101261")]
     public void Example_StringValuesAmbiguity()
     {
@@ -340,7 +343,7 @@ public class FirstClassSpanTests : CSharpTestBase
     }
 
     [Theory, CombinatorialData]
-    public void Conversion_Array_ReadOnlySpan_Covariant_Nested(bool cast)
+    public void Conversion_Array_ReadOnlySpan_Interface_Covariant(bool cast)
     {
         var source = $$"""
             using System;
@@ -385,6 +388,197 @@ public class FirstClassSpanTests : CSharpTestBase
         comp = CreateCompilationWithSpan(source);
         verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify).VerifyDiagnostics();
         verifier.VerifyIL("C.M", expectedIl);
+    }
+
+    [Theory, CombinatorialData]
+    public void Conversion_Array_ReadOnlySpan_Interface_Outside(
+        [CombinatorialLangVersions] LanguageVersion langVersion,
+        [CombinatorialValues("", "in", "out")] string variance)
+    {
+        var source = $$"""
+            using System;
+
+            class C
+            {
+                I<ReadOnlySpan<object>> M(I<string[]> x) => x;
+            }
+
+            interface I<{{variance}} T> { }
+            """;
+        // PROTOTYPE: Use `where T : allows ref struct` to get rid of the first error.
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (5,29): error CS0306: The type 'ReadOnlySpan<object>' may not be used as a type argument
+            //     I<ReadOnlySpan<object>> M(I<string[]> x) => x;
+            Diagnostic(ErrorCode.ERR_BadTypeArgument, "M").WithArguments("System.ReadOnlySpan<object>").WithLocation(5, 29),
+            // (5,49): error CS0266: Cannot implicitly convert type 'I<string[]>' to 'I<System.ReadOnlySpan<object>>'. An explicit conversion exists (are you missing a cast?)
+            //     I<ReadOnlySpan<object>> M(I<string[]> x) => x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("I<string[]>", "I<System.ReadOnlySpan<object>>").WithLocation(5, 49));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_ReadOnlySpan_Interface_Invariant(LanguageVersion langVersion)
+    {
+        var source = """
+            using System;
+
+            class C
+            {
+                ReadOnlySpan<I<object>> M(I<string>[] x) => x;
+            }
+
+            interface I<T> { }
+            """;
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (5,49): error CS0029: Cannot implicitly convert type 'I<string>[]' to 'System.ReadOnlySpan<I<object>>'
+            //     ReadOnlySpan<I<object>> M(I<string>[] x) => x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "x").WithArguments("I<string>[]", "System.ReadOnlySpan<I<object>>").WithLocation(5, 49));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_ReadOnlySpan_Interface_Contravariant(LanguageVersion langVersion)
+    {
+        var source = """
+            using System;
+
+            class C
+            {
+                ReadOnlySpan<I<object>> M(I<string>[] x) => x;
+            }
+
+            interface I<in T> { }
+            """;
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (5,49): error CS0266: Cannot implicitly convert type 'I<string>[]' to 'System.ReadOnlySpan<I<object>>'. An explicit conversion exists (are you missing a cast?)
+            //     ReadOnlySpan<I<object>> M(I<string>[] x) => x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("I<string>[]", "System.ReadOnlySpan<I<object>>").WithLocation(5, 49));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_ReadOnlySpan_Interface_Contravariant_Cast(LanguageVersion langVersion)
+    {
+        var source = """
+            using System;
+
+            C.M(new[] { new C() })[0].Report();
+
+            class C : I<object>
+            {
+                public void Report() => Console.Write("C");
+                public static ReadOnlySpan<I<object>> M(I<string>[] x) => (ReadOnlySpan<I<object>>)x;
+            }
+
+            interface I<in T>
+            {
+                void Report();
+            }
+            """;
+
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
+        var verifier = CompileAndVerify(comp, expectedOutput: "C", verify: Verification.FailsILVerify).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", """
+            {
+              // Code size       12 (0xc)
+              .maxstack  1
+              IL_0000:  ldarg.0
+              IL_0001:  castclass  "I<object>[]"
+              IL_0006:  call       "System.ReadOnlySpan<I<object>> System.ReadOnlySpan<I<object>>.op_Implicit(I<object>[])"
+              IL_000b:  ret
+            }
+            """);
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_ReadOnlySpan_Covariant_ValueType(LanguageVersion langVersion)
+    {
+        var source = """
+            using System;
+
+            class C
+            {
+                ReadOnlySpan<long> M(int[] x) => x;
+            }
+            """;
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (5,38): error CS0029: Cannot implicitly convert type 'int[]' to 'System.ReadOnlySpan<long>'
+            //     ReadOnlySpan<long> M(int[] x) => x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "x").WithArguments("int[]", "System.ReadOnlySpan<long>").WithLocation(5, 38));
+    }
+
+    [Fact]
+    public void Conversion_Array_ReadOnlySpan_Covariant_TypeParameter()
+    {
+        var source = """
+            using System;
+
+            class C<T>
+            {
+                ReadOnlySpan<T> M(T[] x) => x;
+            }
+            """;
+
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12);
+        var verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify).VerifyDiagnostics();
+        verifier.VerifyIL("C<T>.M", """
+            {
+              // Code size        7 (0x7)
+              .maxstack  1
+              IL_0000:  ldarg.1
+              IL_0001:  call       "System.ReadOnlySpan<T> System.ReadOnlySpan<T>.op_Implicit(T[])"
+              IL_0006:  ret
+            }
+            """);
+
+        var expectedIl = """
+            {
+              // Code size        7 (0x7)
+              .maxstack  1
+              IL_0000:  ldarg.1
+              IL_0001:  newobj     "System.ReadOnlySpan<T>..ctor(T[])"
+              IL_0006:  ret
+            }
+            """;
+
+        comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify).VerifyDiagnostics();
+        verifier.VerifyIL("C<T>.M", expectedIl);
+
+        comp = CreateCompilationWithSpan(source);
+        verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify).VerifyDiagnostics();
+        verifier.VerifyIL("C<T>.M", expectedIl);
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_ReadOnlySpan_Covariant_TypeParameter_NullableValueType_01(LanguageVersion langVersion)
+    {
+        var source = """
+            using System;
+
+            class C<T> where T : struct
+            {
+                ReadOnlySpan<T> M(T?[] x) => x;
+            }
+            """;
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (5,34): error CS0029: Cannot implicitly convert type 'T?[]' to 'System.ReadOnlySpan<T>'
+            //     ReadOnlySpan<T> M(T?[] x) => x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "x").WithArguments("T?[]", "System.ReadOnlySpan<T>").WithLocation(5, 34));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_ReadOnlySpan_Covariant_TypeParameter_NullableValueType_02(LanguageVersion langVersion)
+    {
+        var source = """
+            using System;
+
+            class C<T> where T : struct
+            {
+                ReadOnlySpan<T?> M(T[] x) => x;
+            }
+            """;
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (5,34): error CS0029: Cannot implicitly convert type 'T[]' to 'System.ReadOnlySpan<T?>'
+            //     ReadOnlySpan<T?> M(T[] x) => x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "x").WithArguments("T[]", "System.ReadOnlySpan<T?>").WithLocation(5, 34));
     }
 
     [Theory, CombinatorialData]
