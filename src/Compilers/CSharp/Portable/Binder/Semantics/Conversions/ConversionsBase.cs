@@ -3839,11 +3839,29 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private bool HasImplicitSpanConversion(TypeSymbol source, TypeSymbol destination)
         {
-            return Compilation.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) &&
-                source is ArrayTypeSymbol { IsSZArray: true, ElementTypeWithAnnotations: { } elementType } &&
-                (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_Span_T), TypeCompareKind.AllIgnoreOptions) ||
-                destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions)) &&
-                HasIdentityConversionInternal(((NamedTypeSymbol)destination.OriginalDefinition).Construct(ImmutableArray.Create(elementType)), destination);
+            if (!Compilation.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan))
+            {
+                return false;
+            }
+
+            // SPEC: From any single-dimensional `array_type` with element type `Ei`...
+            if (source is ArrayTypeSymbol { IsSZArray: true, ElementTypeWithAnnotations: { } elementType })
+            {
+                // SPEC: ...to `System.Span<Ei>`.
+                if (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_Span_T), TypeCompareKind.AllIgnoreOptions))
+                {
+                    return HasIdentityConversionInternal(((NamedTypeSymbol)destination.OriginalDefinition).Construct([elementType]), destination);
+                }
+
+                // SPEC: ...to `System.ReadOnlySpan<Ui>`, provided that `Ei` is covariance-convertible to `Ui`.
+                if (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions))
+                {
+                    // PROTOTYPE: covariance
+                    return HasIdentityConversionInternal(((NamedTypeSymbol)destination.OriginalDefinition).Construct([elementType]), destination);
+                }
+            }
+
+            return false;
         }
     }
 }
