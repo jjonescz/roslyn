@@ -1807,6 +1807,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             return HasIdentityConversionInternal(type1, type2, IncludeNullability);
         }
 
+        private bool HasIdentityConversion(TypeWithAnnotations source, TypeWithAnnotations destination)
+        {
+            return HasIdentityConversionInternal(source.Type, destination.Type) &&
+                HasTopLevelNullabilityIdentityConversion(source, destination);
+        }
+
         /// <summary>
         /// Returns true if:
         /// - Either type has no nullability information (oblivious).
@@ -3850,14 +3856,15 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // SPEC: ...to `System.Span<Ei>`.
                 if (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_Span_T), TypeCompareKind.AllIgnoreOptions))
                 {
-                    return HasIdentityConversionInternal(((NamedTypeSymbol)destination.OriginalDefinition).Construct([elementType]), destination);
+                    var spanElementType = ((NamedTypeSymbol)destination).TypeArgumentsWithDefinitionUseSiteDiagnostics(ref useSiteInfo)[0];
+                    return HasIdentityConversion(elementType, spanElementType);
                 }
 
                 // SPEC: ...to `System.ReadOnlySpan<Ui>`, provided that `Ei` is covariance-convertible to `Ui`.
                 if (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions))
                 {
                     var spanElementType = ((NamedTypeSymbol)destination).TypeArgumentsWithDefinitionUseSiteDiagnostics(ref useSiteInfo)[0];
-                    return HasIdentityConversionInternal(((NamedTypeSymbol)destination.OriginalDefinition).Construct([elementType]), destination) ||
+                    return HasIdentityConversion(elementType, spanElementType) ||
                         HasImplicitReferenceConversion(elementType, spanElementType, ref useSiteInfo);
                 }
             }
