@@ -294,6 +294,100 @@ public class FirstClassSpanTests : CSharpTestBase
     }
 
     [Theory, CombinatorialData]
+    public void Conversion_Array_ReadOnlySpan_Covariant(bool cast)
+    {
+        var source = $$"""
+            using System;
+
+            class C
+            {
+                ReadOnlySpan<object> M(string[] x) => {{(cast ? "(ReadOnlySpan<object>)" : "")}}x;
+            }
+            """;
+
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12);
+        var verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", """
+            {
+              // Code size        9 (0x9)
+              .maxstack  1
+              .locals init (object[] V_0)
+              IL_0000:  ldarg.1
+              IL_0001:  stloc.0
+              IL_0002:  ldloc.0
+              IL_0003:  call       "System.ReadOnlySpan<object> System.ReadOnlySpan<object>.op_Implicit(object[])"
+              IL_0008:  ret
+            }
+            """);
+
+        var expectedIl = """
+            {
+              // Code size        7 (0x7)
+              .maxstack  1
+              IL_0000:  ldarg.1
+              IL_0001:  newobj     "System.ReadOnlySpan<object>..ctor(object[])"
+              IL_0006:  ret
+            }
+            """;
+
+        comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", expectedIl);
+
+        comp = CreateCompilationWithSpan(source);
+        verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", expectedIl);
+    }
+
+    [Theory, CombinatorialData]
+    public void Conversion_Array_ReadOnlySpan_Covariant_Nested(bool cast)
+    {
+        var source = $$"""
+            using System;
+
+            class C
+            {
+                ReadOnlySpan<I<object>> M(I<string>[] x) => {{(cast ? "(ReadOnlySpan<I<object>>)" : "")}}x;
+            }
+
+            interface I<out T> { }
+            """;
+
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12);
+        var verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", """
+            {
+              // Code size        9 (0x9)
+              .maxstack  1
+              .locals init (I<object>[] V_0)
+              IL_0000:  ldarg.1
+              IL_0001:  stloc.0
+              IL_0002:  ldloc.0
+              IL_0003:  call       "System.ReadOnlySpan<I<object>> System.ReadOnlySpan<I<object>>.op_Implicit(I<object>[])"
+              IL_0008:  ret
+            }
+            """);
+
+        var expectedIl = """
+            {
+              // Code size        7 (0x7)
+              .maxstack  1
+              IL_0000:  ldarg.1
+              IL_0001:  newobj     "System.ReadOnlySpan<I<object>>..ctor(I<object>[])"
+              IL_0006:  ret
+            }
+            """;
+
+        comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", expectedIl);
+
+        comp = CreateCompilationWithSpan(source);
+        verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", expectedIl);
+    }
+
+    [Theory, CombinatorialData]
     public void Conversion_Array_Span_ThroughUserImplicit(
         [CombinatorialValues("Span", "ReadOnlySpan")] string destination)
     {

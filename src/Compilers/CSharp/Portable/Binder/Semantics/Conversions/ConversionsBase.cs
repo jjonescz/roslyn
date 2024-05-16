@@ -743,7 +743,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return tupleConversion;
                 }
 
-                if (HasImplicitSpanConversion(source, destination))
+                if (HasImplicitSpanConversion(source, destination, ref useSiteInfo))
                 {
                     return Conversion.ImplicitSpan;
                 }
@@ -1929,7 +1929,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return Conversion.ImplicitReference;
                 }
 
-                if (HasImplicitSpanConversion(sourceType, destination))
+                if (HasImplicitSpanConversion(sourceType, destination, ref useSiteInfo))
                 {
                     return Conversion.ImplicitSpan;
                 }
@@ -3837,7 +3837,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return false;
         }
 
-        private bool HasImplicitSpanConversion(TypeSymbol source, TypeSymbol destination)
+        private bool HasImplicitSpanConversion(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
             if (!Compilation.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan))
             {
@@ -3856,8 +3856,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // SPEC: ...to `System.ReadOnlySpan<Ui>`, provided that `Ei` is covariance-convertible to `Ui`.
                 if (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions))
                 {
-                    // PROTOTYPE: covariance
-                    return HasIdentityConversionInternal(((NamedTypeSymbol)destination.OriginalDefinition).Construct([elementType]), destination);
+                    var spanElementType = ((NamedTypeSymbol)destination).TypeArgumentsWithDefinitionUseSiteDiagnostics(ref useSiteInfo)[0];
+                    return HasIdentityConversionInternal(((NamedTypeSymbol)destination.OriginalDefinition).Construct([elementType]), destination) ||
+                        HasImplicitReferenceConversion(elementType, spanElementType, ref useSiteInfo);
                 }
             }
 
