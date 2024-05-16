@@ -1807,12 +1807,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             return HasIdentityConversionInternal(type1, type2, IncludeNullability);
         }
 
-        private bool HasIdentityConversion(TypeWithAnnotations source, TypeWithAnnotations destination)
-        {
-            return HasIdentityConversionInternal(source.Type, destination.Type) &&
-                HasTopLevelNullabilityIdentityConversion(source, destination);
-        }
-
         /// <summary>
         /// Returns true if:
         /// - Either type has no nullability information (oblivious).
@@ -3857,19 +3851,30 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_Span_T), TypeCompareKind.AllIgnoreOptions))
                 {
                     var spanElementType = ((NamedTypeSymbol)destination).TypeArgumentsWithDefinitionUseSiteDiagnostics(ref useSiteInfo)[0];
-                    return HasIdentityConversion(elementType, spanElementType);
+                    return hasIdentityConversion(elementType, spanElementType);
                 }
 
                 // SPEC: ...to `System.ReadOnlySpan<Ui>`, provided that `Ei` is covariance-convertible to `Ui`.
                 if (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions))
                 {
                     var spanElementType = ((NamedTypeSymbol)destination).TypeArgumentsWithDefinitionUseSiteDiagnostics(ref useSiteInfo)[0];
-                    return HasIdentityConversion(elementType, spanElementType) ||
-                        HasImplicitReferenceConversion(elementType, spanElementType, ref useSiteInfo);
+                    return hasCovariantConversion(elementType, spanElementType, ref useSiteInfo);
                 }
             }
 
             return false;
+
+            bool hasCovariantConversion(TypeWithAnnotations source, TypeWithAnnotations destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
+            {
+                return hasIdentityConversion(source, destination) ||
+                    HasImplicitReferenceConversion(source, destination, ref useSiteInfo);
+            }
+
+            bool hasIdentityConversion(TypeWithAnnotations source, TypeWithAnnotations destination)
+            {
+                return HasIdentityConversionInternal(source.Type, destination.Type) &&
+                    HasTopLevelNullabilityIdentityConversion(source, destination);
+            }
         }
     }
 }
