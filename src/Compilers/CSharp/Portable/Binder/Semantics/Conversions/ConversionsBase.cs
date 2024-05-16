@@ -2968,7 +2968,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         // The rules for variant interface and delegate conversions are the same:
         //
         // An interface/delegate type S is convertible to an interface/delegate type T 
-        // if and only if T is U<S1, ... Sn> and T is U<T1, ... Tn> such that for all
+        // if and only if S is U<S1, ... Sn> and T is U<T1, ... Tn> such that for all
         // parameters of U:
         //
         // * if the ith parameter of U is invariant then Si is exactly equal to Ti.
