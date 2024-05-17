@@ -8890,14 +8890,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                     break;
 
                 case ConversionKind.InlineArray:
+                case ConversionKind.ImplicitSpan:
                     if (checkConversion)
                     {
                         conversion = GenerateConversion(_conversions, conversionOperand, operandType.Type, targetType, fromExplicitCast, extensionMethodThisArgument, isChecked: conversionOpt?.Checked ?? false);
                         canConvertNestedNullability = conversion.Exists;
                     }
                     break;
-
-                // PROTOTYPE: ImplicitSpan
 
                 default:
                     Debug.Assert(targetType.IsValueType || targetType.IsErrorType());

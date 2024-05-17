@@ -237,6 +237,64 @@ public class FirstClassSpanTests : CSharpTestBase
     }
 
     [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_Span_Implicit_NullableAnalysis(LanguageVersion langVersion)
+    {
+        var source = """
+            #nullable enable
+            class C
+            {
+                System.Span<string> M1(string[] arg) => arg;
+                System.Span<string> M2(string?[] arg) => arg;
+                System.Span<string?> M3(string[] arg) => arg;
+                System.Span<string?> M4(string?[] arg) => arg;
+                System.Span<int> M5(int?[] arg) => arg;
+                System.Span<int?> M6(int[] arg) => arg;
+                System.Span<int?> M7(int?[] arg) => arg;
+            }
+            """;
+        var targetType = langVersion > LanguageVersion.CSharp12 ? "System.Span<string>" : "string[]";
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (5,46): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'string[]'.
+            //     System.Span<string> M2(string?[] arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[]", targetType).WithLocation(5, 46),
+            // (8,40): error CS0029: Cannot implicitly convert type 'int?[]' to 'System.Span<int>'
+            //     System.Span<int> M5(int?[] arg) => arg;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("int?[]", "System.Span<int>").WithLocation(8, 40),
+            // (9,40): error CS0029: Cannot implicitly convert type 'int[]' to 'System.Span<int?>'
+            //     System.Span<int?> M6(int[] arg) => arg;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("int[]", "System.Span<int?>").WithLocation(9, 40));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_Span_Implicit_NullableAnalysis_Nested(LanguageVersion langVersion)
+    {
+        var source = """
+            #nullable enable
+            class C
+            {
+                System.Span<string[]> M1(string[][] arg) => arg;
+                System.Span<string[]> M2(string?[][] arg) => arg;
+                System.Span<string?[]> M3(string[][] arg) => arg;
+                System.Span<string?[]> M4(string?[][] arg) => arg;
+                System.Span<int[]> M5(int?[][] arg) => arg;
+                System.Span<int?[]> M6(int[][] arg) => arg;
+                System.Span<int?[]> M7(int?[][] arg) => arg;
+            }
+            """;
+        var targetType = langVersion > LanguageVersion.CSharp12 ? "System.Span<string[]>" : "string[][]";
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (5,50): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'string[][]'.
+            //     System.Span<string[]> M2(string?[][] arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[][]", targetType).WithLocation(5, 50),
+            // (8,44): error CS0029: Cannot implicitly convert type 'int?[][]' to 'System.Span<int[]>'
+            //     System.Span<int[]> M5(int?[][] arg) => arg;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("int?[][]", "System.Span<int[]>").WithLocation(8, 44),
+            // (9,44): error CS0029: Cannot implicitly convert type 'int[][]' to 'System.Span<int?[]>'
+            //     System.Span<int?[]> M6(int[][] arg) => arg;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("int[][]", "System.Span<int?[]>").WithLocation(9, 44));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
     public void Conversion_Array_Span_Opposite_Implicit(LanguageVersion langVersion)
     {
         var source = """
