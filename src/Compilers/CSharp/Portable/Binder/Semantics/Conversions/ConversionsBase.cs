@@ -3839,7 +3839,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private bool HasImplicitSpanConversion(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
-            if (!Compilation.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan))
+            if (Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) != true)
             {
                 return false;
             }
