@@ -1521,6 +1521,126 @@ public class FirstClassSpanTests : CSharpTestBase
     }
 
     [Fact]
+    public void Conversion_Array_Span_ExtensionMethodReceiver_Implicit_Generic_01()
+    {
+        var source = """
+            using System;
+            static class C
+            {
+                public static void M(int[] arg) => arg.E();
+                public static void E<T>(this Span<T> arg) { }
+            }
+            """;
+        // PROTOTYPE: Needs type inference to work.
+        CreateCompilationWithSpan(source).VerifyDiagnostics(
+            // (4,44): error CS1061: 'int[]' does not contain a definition for 'E' and no accessible extension method 'E' accepting a first argument of type 'int[]' could be found (are you missing a using directive or an assembly reference?)
+            //     public static void M(int[] arg) => arg.E();
+            Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "E").WithArguments("int[]", "E").WithLocation(4, 44));
+    }
+
+    [Fact]
+    public void Conversion_Array_Span_ExtensionMethodReceiver_Implicit_Generic_02()
+    {
+        var source = """
+            using System;
+            static class C
+            {
+                public static void M(int[] arg) => arg.E<int>();
+                public static void E<T>(this Span<T> arg) { }
+            }
+            """;
+        var comp = CreateCompilationWithSpan(source);
+        var verifier = CompileAndVerify(comp).VerifyDiagnostics();
+        verifier.VerifyILMultiple("C.M", """
+            {
+              // Code size       14 (0xe)
+              .maxstack  2
+              IL_0000:  ldarg.0
+              IL_0001:  newobj     "System.Span<int>..ctor(int[])"
+              IL_0006:  ldc.i4.s   42
+              IL_0008:  call       "void C.E<int>(System.Span<int>, int)"
+              IL_000d:  ret
+            }
+            """);
+
+        var tree = comp.SyntaxTrees.Single();
+        var invocation = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
+        Assert.Equal("arg.E(42)", invocation.ToString());
+
+        var model = comp.GetSemanticModel(tree);
+        var info = model.GetSymbolInfo(invocation);
+        Assert.Equal("void System.Span<System.Int32>.E<System.Int32>()", info.Symbol!.ToTestDisplayString());
+    }
+
+    [Fact]
+    public void Conversion_Array_Span_ExtensionMethodReceiver_Implicit_Generic_03()
+    {
+        var source = """
+            using System;
+            static class C
+            {
+                public static void M(int[] arg) => arg.E(42);
+                public static void E<T>(this Span<T> arg, T x) { }
+            }
+            """;
+        var comp = CreateCompilationWithSpan(source);
+        var verifier = CompileAndVerify(comp).VerifyDiagnostics();
+        verifier.VerifyILMultiple("C.M", """
+            {
+              // Code size       14 (0xe)
+              .maxstack  2
+              IL_0000:  ldarg.0
+              IL_0001:  newobj     "System.Span<int>..ctor(int[])"
+              IL_0006:  ldc.i4.s   42
+              IL_0008:  call       "void C.E<int>(System.Span<int>, int)"
+              IL_000d:  ret
+            }
+            """);
+
+        var tree = comp.SyntaxTrees.Single();
+        var invocation = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
+        Assert.Equal("arg.E(42)", invocation.ToString());
+
+        var model = comp.GetSemanticModel(tree);
+        var info = model.GetSymbolInfo(invocation);
+        Assert.Equal("void System.Span<System.Int32>.E<System.Int32>(System.Int32 x)", info.Symbol!.ToTestDisplayString());
+    }
+
+    [Fact]
+    public void Conversion_Array_Span_ExtensionMethodReceiver_Implicit_Generic_04()
+    {
+        var source = """
+            using System;
+            static class C
+            {
+                public static void M(int[] arg) => arg.E<int>(42);
+                public static void E<T>(this Span<T> arg, T x) { }
+            }
+            """;
+        var comp = CreateCompilationWithSpan(source);
+        var verifier = CompileAndVerify(comp).VerifyDiagnostics();
+        verifier.VerifyILMultiple("C.M", """
+            {
+              // Code size       14 (0xe)
+              .maxstack  2
+              IL_0000:  ldarg.0
+              IL_0001:  newobj     "System.Span<int>..ctor(int[])"
+              IL_0006:  ldc.i4.s   42
+              IL_0008:  call       "void C.E<int>(System.Span<int>, int)"
+              IL_000d:  ret
+            }
+            """);
+
+        var tree = comp.SyntaxTrees.Single();
+        var invocation = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
+        Assert.Equal("arg.E<int>(42)", invocation.ToString());
+
+        var model = comp.GetSemanticModel(tree);
+        var info = model.GetSymbolInfo(invocation);
+        Assert.Equal("void System.Span<System.Int32>.E<System.Int32>(System.Int32 x)", info.Symbol!.ToTestDisplayString());
+    }
+
+    [Fact]
     public void Conversion_Array_Span_ExtensionMethodReceiver_Explicit()
     {
         var source = """
