@@ -480,6 +480,61 @@ public class FirstClassSpanTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_NotRefStructConstraintNotSatisfied, "M2").WithArguments("System.Nullable<T>", "T", "System.ReadOnlySpan<string>").WithLocation(5, 34));
     }
 
+    [Fact]
+    public void Conversion_Array_Span_Implicit_NullableAnalysis_ExtensionMethodReceiver()
+    {
+        var source = """
+            #nullable enable
+            static class C
+            {
+                static void MS(string[] a, string?[] b)
+                {
+                    a.M1(); b.M1();
+                    a.M2(); b.M2();
+                    a.M3(); b.M3();
+                    a.M4(); b.M4();
+                }
+                static void M1(this System.Span<string> arg) { }
+                static void M2(this System.Span<string?> arg) { }
+                static void M3(this System.ReadOnlySpan<string> arg) { }
+                static void M4(this System.ReadOnlySpan<string?> arg) { }
+                static void MI(int[] a, int?[] b)
+                {
+                    a.M5(); b.M5();
+                    a.M6(); b.M6();
+                    a.M7(); b.M7();
+                    a.M8(); b.M8();
+                }
+                static void M5(this System.Span<int?> arg) { }
+                static void M6(this System.Span<int> arg) { }
+                static void M7(this System.ReadOnlySpan<int?> arg) { }
+                static void M8(this System.ReadOnlySpan<int> arg) { }
+            }
+            """;
+        CreateCompilationWithSpan(source).VerifyDiagnostics(
+            // (6,17): warning CS8620: Argument of type 'string?[]' cannot be used for parameter 'arg' of type 'Span<string>' in 'void C.M1(Span<string> arg)' due to differences in the nullability of reference types.
+            //         a.M1(); b.M1();
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "b").WithArguments("string?[]", "System.Span<string>", "arg", "void C.M1(Span<string> arg)").WithLocation(6, 17),
+            // (7,9): warning CS8620: Argument of type 'string[]' cannot be used for parameter 'arg' of type 'Span<string?>' in 'void C.M2(Span<string?> arg)' due to differences in the nullability of reference types.
+            //         a.M2(); b.M2();
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "a").WithArguments("string[]", "System.Span<string?>", "arg", "void C.M2(Span<string?> arg)").WithLocation(7, 9),
+            // (8,17): warning CS8620: Argument of type 'string?[]' cannot be used for parameter 'arg' of type 'ReadOnlySpan<string>' in 'void C.M3(ReadOnlySpan<string> arg)' due to differences in the nullability of reference types.
+            //         a.M3(); b.M3();
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "b").WithArguments("string?[]", "System.ReadOnlySpan<string>", "arg", "void C.M3(ReadOnlySpan<string> arg)").WithLocation(8, 17),
+            // (17,9): error CS1929: 'int[]' does not contain a definition for 'M5' and the best extension method overload 'C.M5(Span<int?>)' requires a receiver of type 'System.Span<int?>'
+            //         a.M5(); b.M5();
+            Diagnostic(ErrorCode.ERR_BadInstanceArgType, "a").WithArguments("int[]", "M5", "C.M5(System.Span<int?>)", "System.Span<int?>").WithLocation(17, 9),
+            // (18,17): error CS1929: 'int?[]' does not contain a definition for 'M6' and the best extension method overload 'C.M6(Span<int>)' requires a receiver of type 'System.Span<int>'
+            //         a.M6(); b.M6();
+            Diagnostic(ErrorCode.ERR_BadInstanceArgType, "b").WithArguments("int?[]", "M6", "C.M6(System.Span<int>)", "System.Span<int>").WithLocation(18, 17),
+            // (19,9): error CS1929: 'int[]' does not contain a definition for 'M7' and the best extension method overload 'C.M7(ReadOnlySpan<int?>)' requires a receiver of type 'System.ReadOnlySpan<int?>'
+            //         a.M7(); b.M7();
+            Diagnostic(ErrorCode.ERR_BadInstanceArgType, "a").WithArguments("int[]", "M7", "C.M7(System.ReadOnlySpan<int?>)", "System.ReadOnlySpan<int?>").WithLocation(19, 9),
+            // (20,17): error CS1929: 'int?[]' does not contain a definition for 'M8' and the best extension method overload 'C.M8(ReadOnlySpan<int>)' requires a receiver of type 'System.ReadOnlySpan<int>'
+            //         a.M8(); b.M8();
+            Diagnostic(ErrorCode.ERR_BadInstanceArgType, "b").WithArguments("int?[]", "M8", "C.M8(System.ReadOnlySpan<int>)", "System.ReadOnlySpan<int>").WithLocation(20, 17));
+    }
+
     [Theory, CombinatorialData]
     public void Conversion_Array_Span_Implicit_Ref_01(
         [CombinatorialValues("ref", "ref readonly", "in")] string modifier)
