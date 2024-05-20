@@ -1564,7 +1564,7 @@ public class FirstClassSpanTests : CSharpTestBase
 
         var tree = comp.SyntaxTrees.Single();
         var invocation = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
-        Assert.Equal("arg.E(42)", invocation.ToString());
+        Assert.Equal("arg.E<int>()", invocation.ToString());
 
         var model = comp.GetSemanticModel(tree);
         var info = model.GetSymbolInfo(invocation);
