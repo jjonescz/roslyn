@@ -472,12 +472,12 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
         CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
-            // (4,26): error CS0306: The type 'Span<string>' may not be used as a type argument
+            // (4,26): error CS9244: The type 'Span<string>' may not be a ref struct or a type parameter allowing ref structs in order to use it as parameter 'T' in the generic type or method 'Nullable<T>'
             //     System.Span<string>? M1(string[] arg) => arg;
-            Diagnostic(ErrorCode.ERR_BadTypeArgument, "M1").WithArguments("System.Span<string>").WithLocation(4, 26),
-            // (5,34): error CS0306: The type 'ReadOnlySpan<string>' may not be used as a type argument
+            Diagnostic(ErrorCode.ERR_NotRefStructConstraintNotSatisfied, "M1").WithArguments("System.Nullable<T>", "T", "System.Span<string>").WithLocation(4, 26),
+            // (5,34): error CS9244: The type 'ReadOnlySpan<string>' may not be a ref struct or a type parameter allowing ref structs in order to use it as parameter 'T' in the generic type or method 'Nullable<T>'
             //     System.ReadOnlySpan<string>? M2(string[] arg) => arg;
-            Diagnostic(ErrorCode.ERR_BadTypeArgument, "M2").WithArguments("System.ReadOnlySpan<string>").WithLocation(5, 34));
+            Diagnostic(ErrorCode.ERR_NotRefStructConstraintNotSatisfied, "M2").WithArguments("System.Nullable<T>", "T", "System.ReadOnlySpan<string>").WithLocation(5, 34));
     }
 
     [Theory, CombinatorialData]
@@ -866,11 +866,30 @@ public class FirstClassSpanTests : CSharpTestBase
 
             interface I<{{variance}} T> { }
             """;
-        // PROTOTYPE: Use `where T : allows ref struct` to get rid of the first error.
         CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
-            // (5,29): error CS0306: The type 'ReadOnlySpan<object>' may not be used as a type argument
+            // (5,29): error CS9244: The type 'ReadOnlySpan<object>' may not be a ref struct or a type parameter allowing ref structs in order to use it as parameter 'T' in the generic type or method 'I<T>'
             //     I<ReadOnlySpan<object>> M(I<string[]> x) => x;
-            Diagnostic(ErrorCode.ERR_BadTypeArgument, "M").WithArguments("System.ReadOnlySpan<object>").WithLocation(5, 29),
+            Diagnostic(ErrorCode.ERR_NotRefStructConstraintNotSatisfied, "M").WithArguments("I<T>", "T", "System.ReadOnlySpan<object>").WithLocation(5, 29),
+            // (5,49): error CS0266: Cannot implicitly convert type 'I<string[]>' to 'I<System.ReadOnlySpan<object>>'. An explicit conversion exists (are you missing a cast?)
+            //     I<ReadOnlySpan<object>> M(I<string[]> x) => x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("I<string[]>", "I<System.ReadOnlySpan<object>>").WithLocation(5, 49));
+    }
+
+    [Theory, CombinatorialData]
+    public void Conversion_Array_ReadOnlySpan_Interface_Outside_AllowsRefStruct(
+        [CombinatorialValues("", "in", "out")] string variance)
+    {
+        var source = $$"""
+            using System;
+
+            class C
+            {
+                I<ReadOnlySpan<object>> M(I<string[]> x) => x;
+            }
+
+            interface I<{{variance}} T> where T : allows ref struct { }
+            """;
+        CreateCompilation(source, targetFramework: TargetFramework.Net90).VerifyDiagnostics(
             // (5,49): error CS0266: Cannot implicitly convert type 'I<string[]>' to 'I<System.ReadOnlySpan<object>>'. An explicit conversion exists (are you missing a cast?)
             //     I<ReadOnlySpan<object>> M(I<string[]> x) => x;
             Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("I<string[]>", "I<System.ReadOnlySpan<object>>").WithLocation(5, 49));
