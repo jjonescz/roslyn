@@ -1553,13 +1553,12 @@ public class FirstClassSpanTests : CSharpTestBase
         var verifier = CompileAndVerify(comp).VerifyDiagnostics();
         verifier.VerifyILMultiple("C.M", """
             {
-              // Code size       14 (0xe)
-              .maxstack  2
+              // Code size       12 (0xc)
+              .maxstack  1
               IL_0000:  ldarg.0
               IL_0001:  newobj     "System.Span<int>..ctor(int[])"
-              IL_0006:  ldc.i4.s   42
-              IL_0008:  call       "void C.E<int>(System.Span<int>, int)"
-              IL_000d:  ret
+              IL_0006:  call       "void C.E<int>(System.Span<int>)"
+              IL_000b:  ret
             }
             """);
 
