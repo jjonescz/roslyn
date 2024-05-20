@@ -285,7 +285,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         IDS_FeatureRefUnsafeInIteratorAsync = MessageBase + 12843,
 
-        IDS_FeatureFirstClassSpan = MessageBase + 12844,
+        IDS_FeatureRefStructInterfaces = MessageBase + 12844,
+
+        IDS_FeatureFirstClassSpan = MessageBase + 12845,
     }
 
     // Message IDs may refer to strings that need to be localized.
@@ -471,6 +473,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case MessageID.IDS_FeatureLockObject:
                 case MessageID.IDS_FeatureParamsCollections:
                 case MessageID.IDS_FeatureRefUnsafeInIteratorAsync:
+                case MessageID.IDS_FeatureRefStructInterfaces:
                 case MessageID.IDS_FeatureFirstClassSpan:
                     return LanguageVersion.Preview;
 
