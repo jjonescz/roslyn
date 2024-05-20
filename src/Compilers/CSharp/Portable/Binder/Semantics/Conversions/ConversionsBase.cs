@@ -602,6 +602,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ConversionKind.StackAllocToPointerType:
                 case ConversionKind.StackAllocToSpanType:
                 case ConversionKind.InlineArray:
+                case ConversionKind.ImplicitSpan:
                     return true;
                 default:
                     return false;
@@ -623,7 +624,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ConversionKind.ImplicitPointer:
                 case ConversionKind.ImplicitPointerToVoid:
                 case ConversionKind.ImplicitTuple:
-                case ConversionKind.ImplicitSpan:
                     return true;
                 default:
                     return false;
@@ -741,11 +741,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (tupleConversion.Exists)
                 {
                     return tupleConversion;
-                }
-
-                if (HasImplicitSpanConversion(source, destination, ref useSiteInfo))
-                {
-                    return Conversion.ImplicitSpan;
                 }
 
                 return Conversion.NoConversion;
@@ -1024,6 +1019,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (HasImplicitDynamicConversionFromExpression(source, destination))
             {
                 return Conversion.ImplicitDynamic;
+            }
+
+            if (HasImplicitSpanConversion(source, destination, ref useSiteInfo))
+            {
+                return Conversion.ImplicitSpan;
             }
 
             // The following conversions only exist for certain form of expressions, 
@@ -3839,7 +3839,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private bool HasImplicitSpanConversion(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
-            if (Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) != true)
+            if (!Compilation.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan))
             {
                 return false;
             }
