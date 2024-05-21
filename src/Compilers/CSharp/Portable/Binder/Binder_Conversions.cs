@@ -1253,7 +1253,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                             if (thisTypeIsOpen)
                             {
                                 Debug.Assert(constructed is not null);
-                                var conversion = addMethodBinder.Conversions.ConvertExtensionMethodThisArg(constructed.Parameters[0].Type, receiverType, ref useSiteInfo);
+                                var conversions = constructed.ContainingAssembly.CorLibrary.TypeConversions;
+                                var conversion = conversions.ConvertExtensionMethodThisArg(constructed.Parameters[0].Type, receiverType, ref useSiteInfo);
                                 if (!conversion.Exists)
                                 {
                                     continue; // Conversion to 'this' parameter failed
