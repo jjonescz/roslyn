@@ -1929,7 +1929,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return Conversion.ImplicitReference;
                 }
 
-                if (HasImplicitSpanConversion(sourceType, destination, ref useSiteInfo))
+                // PROTOTYPE: Investigate callers where Compilation is null.
+                if (Compilation is not null && HasImplicitSpanConversion(sourceType, destination, ref useSiteInfo))
                 {
                     return Conversion.ImplicitSpan;
                 }
