@@ -2767,9 +2767,24 @@ outerDefault:
                 return BetterResult.Neither;
             }
 
+            if (isLeftBetterImplicitSpan(conv1.Kind, conv2.Kind))
+            {
+                return BetterResult.Left;
+            }
+            if (isLeftBetterImplicitSpan(conv2.Kind, conv1.Kind))
+            {
+                return BetterResult.Right;
+            }
+
             // - T1 is a better conversion target than T2 and either C1 and C2 are both conditional expression
             //   conversions or neither is a conditional expression conversion.
             return BetterConversionTarget(node, t1, conv1, t2, conv2, ref useSiteInfo, out okToDowngradeToNeither);
+
+            static bool isLeftBetterImplicitSpan(ConversionKind left, ConversionKind right)
+            {
+                return left is ConversionKind.ImplicitSpan &&
+                    right is not (ConversionKind.ImplicitSpan or ConversionKind.Identity);
+            }
         }
 
         // Implements the rules for
