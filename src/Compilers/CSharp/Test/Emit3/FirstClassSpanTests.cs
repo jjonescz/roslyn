@@ -206,7 +206,7 @@ public class FirstClassSpanTests : CSharpTestBase
         var source = """
             using System;
             using System.Collections.Generic;
-            
+
             var arr = new char[] { '/' };
             arr.M('/');
 
@@ -214,10 +214,78 @@ public class FirstClassSpanTests : CSharpTestBase
             {
                 public static void M<T>(this Span<T> s, T x) => Console.Write(1);
                 public static void M<T>(this IEnumerable<T> e, T x) => Console.Write(2);
-                public static void M<T>(this T[] a, T x)=> Console.Write(3);
+                public static void M<T>(this T[] a, T x) => Console.Write(3);
+            }
+            """;
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
+        var verifier = CompileAndVerify(comp, expectedOutput: "3").VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+            {
+              // Code size       19 (0x13)
+              .maxstack  4
+              IL_0000:  ldc.i4.1
+              IL_0001:  newarr     "char"
+              IL_0006:  dup
+              IL_0007:  ldc.i4.0
+              IL_0008:  ldc.i4.s   47
+              IL_000a:  stelem.i2
+              IL_000b:  ldc.i4.s   47
+              IL_000d:  call       "void E.M<char>(char[], char)"
+              IL_0012:  ret
+            }
+            """);
+    }
+
+    [Fact]
+    public void BreakingChange_ExtensionMethodLookup_SpanVsIEnumerable_MethodConversion()
+    {
+        var source = """
+            using System;
+            using System.Collections.Generic;
+            
+            var arr = new int[] { 123 };
+            E.R(arr.M);
+
+            static class E
+            {
+                public static void R(Action<int> a) => a(-1);
+                public static void M<T>(this Span<T> s, T x) => Console.Write(1);
+                public static void M<T>(this IEnumerable<T> e, T x) => Console.Write(2);
             }
             """;
 
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12);
+        CompileAndVerify(comp, expectedOutput: "2").VerifyDiagnostics();
+
+        var expectedDiagnostics = new[]
+        {
+            // (5,5): error CS0121: The call is ambiguous between the following methods or properties: 'E.M<T>(Span<T>, T)' and 'E.M<T>(IEnumerable<T>, T)'
+            // E.R(arr.M);
+            Diagnostic(ErrorCode.ERR_AmbigCall, "arr.M").WithArguments("E.M<T>(System.Span<T>, T)", "E.M<T>(System.Collections.Generic.IEnumerable<T>, T)").WithLocation(5, 5)
+        };
+
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilationWithSpan(source).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void BreakingChange_ExtensionMethodLookup_SpanVsIEnumerable_MethodConversion_Workaround(LanguageVersion langVersion)
+    {
+        var source = """
+            using System;
+            using System.Collections.Generic;
+            
+            var arr = new int[] { 123 };
+            E.R(arr.M);
+            
+            static class E
+            {
+                public static void R(Action<int> a) => a(-1);
+                public static void M<T>(this Span<T> s, T x) => Console.Write(1);
+                public static void M<T>(this IEnumerable<T> e, T x) => Console.Write(2);
+                public static void M<T>(this T[] a, T x) => Console.Write(3);
+            }
+            """;
         var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
         CompileAndVerify(comp, expectedOutput: "3").VerifyDiagnostics();
     }
