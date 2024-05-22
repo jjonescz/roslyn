@@ -259,9 +259,9 @@ public class FirstClassSpanTests : CSharpTestBase
 
         var expectedDiagnostics = new[]
         {
-            // (5,5): error CS0121: The call is ambiguous between the following methods or properties: 'E.M<T>(Span<T>, T)' and 'E.M<T>(IEnumerable<T>, T)'
+            // (5,5): error CS1113: Extension method 'E.M<int>(Span<int>, int)' defined on value type 'Span<int>' cannot be used to create delegates
             // E.R(arr.M);
-            Diagnostic(ErrorCode.ERR_AmbigCall, "arr.M").WithArguments("E.M<T>(System.Span<T>, T)", "E.M<T>(System.Collections.Generic.IEnumerable<T>, T)").WithLocation(5, 5)
+            Diagnostic(ErrorCode.ERR_ValueTypeExtDelegate, "arr.M").WithArguments("E.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(5, 5)
         };
 
         CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
