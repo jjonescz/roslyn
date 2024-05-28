@@ -1346,12 +1346,11 @@ public class FirstClassSpanTests : CSharpTestBase
             // var d3 = (int x) => a.M(x);
             Diagnostic(ErrorCode.ERR_BadInstanceArgType, "a").WithArguments("int[]", "M", "C.M(System.Span<int>, int)", "System.Span<int>").WithLocation(6, 21));
 
-        // PROTOTYPE: Implicit span conversion is not considered because compilation in ConversionsBase is null.
         var expectedDiagnostics = new[]
         {
-            // (4,10): error CS8917: The delegate type could not be inferred.
+            // (4,10): error CS1113: Extension method 'C.M(Span<int>, int)' defined on value type 'Span<int>' cannot be used to create delegates
             // var d1 = a.M;
-            Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "a.M").WithLocation(4, 10),
+            Diagnostic(ErrorCode.ERR_ValueTypeExtDelegate, "a.M").WithArguments("C.M(System.Span<int>, int)", "System.Span<int>").WithLocation(4, 10),
             // (5,10): error CS8917: The delegate type could not be inferred.
             // var d2 = x => a.M(x);
             Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "x => a.M(x)").WithLocation(5, 10)
@@ -1368,9 +1367,7 @@ public class FirstClassSpanTests : CSharpTestBase
         var d1Access = tree.GetRoot().DescendantNodes().OfType<MemberAccessExpressionSyntax>()
             .First(s => s.Expression.ToString() == "a");
         var lookupResult = model.LookupSymbols(d1Access.Name.SpanStart, aSymbol.Type, "M", includeReducedExtensionMethods: true);
-        // PROTOTYPE: Implicit span conversion is not considered because compilation in ConversionsBase is null.
-        Assert.Empty(lookupResult);
-        //AssertEx.Equal("System.Int32 System.Span<System.Int32>.M(System.Int32 y)", lookupResult.Single().ToTestDisplayString());
+        AssertEx.Equal("System.Int32 System.Span<System.Int32>.M(System.Int32 y)", lookupResult.Single().ToTestDisplayString());
     }
 
     [Fact]
@@ -1407,7 +1404,6 @@ public class FirstClassSpanTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_BadInstanceArgType, "a").WithArguments("int[]", "M", "C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(7, 10));
 
         // PROTOTYPE: Some of these need type inference to work.
-        // PROTOTYPE: In others, implicit span conversion is not considered because compilation in ConversionsBase is null.
         var expectedDiagnostics = new[]
         {
             // (4,5): error CS1061: 'int[]' does not contain a definition for 'M' and no accessible extension method 'M' accepting a first argument of type 'int[]' could be found (are you missing a using directive or an assembly reference?)
@@ -1466,7 +1462,6 @@ public class FirstClassSpanTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_BadInstanceArgType, "a").WithArguments("int[]", "M", "C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(9, 21));
 
         // PROTOTYPE: Some of these need type inference to work.
-        // PROTOTYPE: In others, implicit span conversion is not considered because compilation in ConversionsBase is null.
         var expectedDiagnostics = new[]
         {
             // (4,10): error CS8917: The delegate type could not be inferred.
@@ -1478,9 +1473,9 @@ public class FirstClassSpanTests : CSharpTestBase
             // (6,23): error CS1061: 'int[]' does not contain a definition for 'M' and no accessible extension method 'M' accepting a first argument of type 'int[]' could be found (are you missing a using directive or an assembly reference?)
             // var d3 = (int x) => a.M(x);
             Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "M").WithArguments("int[]", "M").WithLocation(6, 23),
-            // (7,10): error CS8917: The delegate type could not be inferred.
+            // (7,10): error CS1113: Extension method 'C.M<int>(Span<int>, int)' defined on value type 'Span<int>' cannot be used to create delegates
             // var d4 = a.M<int>;
-            Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "a.M<int>").WithLocation(7, 10),
+            Diagnostic(ErrorCode.ERR_ValueTypeExtDelegate, "a.M<int>").WithArguments("C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(7, 10),
             // (8,10): error CS8917: The delegate type could not be inferred.
             // var d5 = x => a.M<int>(x);
             Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "x => a.M<int>(x)").WithLocation(8, 10)
@@ -2200,7 +2195,6 @@ public class FirstClassSpanTests : CSharpTestBase
 
         // Reduce the extension method with array receiver.
         // PROTOTYPE: This needs type inference to work.
-        // PROTOTYPE: The implicit span conversion is not considered because the compilation in ConversionsBase is null.
         reduced = unreducedSymbol.ReduceExtensionMethod(arrayType);
         Assert.Null(reduced);
     }
