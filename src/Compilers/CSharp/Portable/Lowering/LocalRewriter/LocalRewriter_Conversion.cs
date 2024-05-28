@@ -618,25 +618,33 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         var spanType = (NamedTypeSymbol)rewrittenType;
 
-                        WellKnownMember ctorMember;
+                        WellKnownMember member;
                         if (spanType.OriginalDefinition.Equals(_compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions))
                         {
-                            ctorMember = WellKnownMember.System_ReadOnlySpan_T__ctor_Array;
+                            member = WellKnownMember.System_ReadOnlySpan_T__op_Implicit_Array;
                         }
                         else
                         {
                             Debug.Assert(spanType.OriginalDefinition.Equals(_compilation.GetWellKnownType(WellKnownType.System_Span_T), TypeCompareKind.AllIgnoreOptions));
-                            ctorMember = WellKnownMember.System_Span_T__ctor_Array;
+                            member = WellKnownMember.System_Span_T__op_Implicit_Array;
                         }
 
-                        if (!TryGetWellKnownTypeMember(rewrittenOperand.Syntax, ctorMember, out MethodSymbol? ctor))
+                        if (!TryGetWellKnownTypeMember(rewrittenOperand.Syntax, member, out MethodSymbol? symbol))
                         {
-                            Debug.Fail("We should have reported an error during binding for missing members for span conversion.");
-                            return BadExpression(rewrittenOperand.Syntax, rewrittenType, []);
+                            throw ExceptionUtilities.Unreachable();
                         }
                         else
                         {
-                            return new BoundObjectCreationExpression(rewrittenOperand.Syntax, ctor.AsMember((NamedTypeSymbol)rewrittenType), rewrittenOperand);
+                            MethodSymbol method = symbol.AsMember(spanType);
+
+                            rewrittenOperand = _factory.Convert(method.ParameterTypesWithAnnotations[0].Type, rewrittenOperand);
+
+                            if (member == WellKnownMember.System_ReadOnlySpan_T__op_Implicit_Array)
+                            {
+                                return new BoundReadOnlySpanFromArray(syntax, rewrittenOperand, method, spanType) { WasCompilerGenerated = true };
+                            }
+
+                            return _factory.Call(null, method, rewrittenOperand);
                         }
                     }
 
