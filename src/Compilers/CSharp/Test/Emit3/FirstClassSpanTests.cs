@@ -2673,24 +2673,20 @@ public class FirstClassSpanTests : CSharpTestBase
 
             static class C
             {
-                public static void M(this object[] x) => Console.Write(" s" + x[0]);
-                public static void M(this ReadOnlySpan<string> x) => Console.Write(" o" + x[0]);
+                public static void M(this object[] x) => Console.Write(" o" + x[0]);
+                public static void M(this ReadOnlySpan<string> x) => Console.Write(" s" + x[0]);
             }
             """;
         var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12);
-        CompileAndVerify(comp, expectedOutput: "sa").VerifyDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "oa").VerifyDiagnostics();
 
-        // PROTOTYPE: This break should go away with betterness rule.
+        var expectedOutput = "sa";
 
-        var expectedDiagnostics = new[]
-        {
-            // (4,3): error CS0121: The call is ambiguous between the following methods or properties: 'C.M(object[])' and 'C.M(ReadOnlySpan<string>)'
-            // a.M();
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M").WithArguments("C.M(object[])", "C.M(System.ReadOnlySpan<string>)").WithLocation(4, 3)
-        };
+        comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
 
-        CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
-        CreateCompilationWithSpan(source).VerifyDiagnostics(expectedDiagnostics);
+        comp = CreateCompilationWithSpan(source);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 
     [Theory, MemberData(nameof(LangVersions))]
@@ -2704,12 +2700,12 @@ public class FirstClassSpanTests : CSharpTestBase
 
             static class C
             {
-                public static void M(this object[] x) => Console.Write(" s" + x[0]);
-                public static void M(this ReadOnlySpan<string> x) => Console.Write(" o" + x[0]);
+                public static void M(this object[] x) => Console.Write(" o" + x[0]);
+                public static void M(this ReadOnlySpan<string> x) => Console.Write(" s" + x[0]);
             }
             """;
         var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
-        CompileAndVerify(comp, expectedOutput: "sa").VerifyDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "oa").VerifyDiagnostics();
     }
 
     [Fact]
