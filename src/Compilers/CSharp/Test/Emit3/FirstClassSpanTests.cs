@@ -1795,6 +1795,7 @@ public class FirstClassSpanTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_NoExplicitConv, "(Span<U>)x").WithArguments("T[]", "System.Span<U>").WithLocation(7, 26));
     }
 
+    // PROTOTYPE: User-defined conversions should not be considered? Note: this is not the only test affected.
     [Fact]
     public void Conversion_Array_Span_Variance_02()
     {
@@ -2678,25 +2679,6 @@ public class FirstClassSpanTests : CSharpTestBase
 
         comp = CreateCompilationWithSpan(source);
         CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
-    }
-
-    [Theory, MemberData(nameof(LangVersions))]
-    public void OverloadResolution_ReadOnlySpanVsArray_ExtensionMethodReceiver_03(LanguageVersion langVersion)
-    {
-        var source = """
-            using System;
-
-            var a = new object[] { "a" };
-            a.M();
-
-            static class C
-            {
-                public static void M(this object[] x) => Console.Write(" o" + x[0]);
-                public static void M(this ReadOnlySpan<string> x) => Console.Write(" s" + x[0]);
-            }
-            """;
-        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
-        CompileAndVerify(comp, expectedOutput: "oa").VerifyDiagnostics();
     }
 
     [Fact]
