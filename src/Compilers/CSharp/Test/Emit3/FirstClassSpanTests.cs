@@ -2738,8 +2738,8 @@ public class FirstClassSpanTests : CSharpTestBase
         CompileAndVerify(comp, expectedOutput: "S R").VerifyDiagnostics();
     }
 
-    [Theory, MemberData(nameof(LangVersions))]
-    public void OverloadResolution_ReadOnlySpanVsArrayVsSpan(LanguageVersion langVersion)
+    [Fact]
+    public void OverloadResolution_ReadOnlySpanVsArrayVsSpan()
     {
         var source = """
             using System;
@@ -2767,8 +2767,16 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M(IEnumerable<object> x) => Console.Write(" e" + x.First());
             }
             """;
-        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12);
         CompileAndVerify(comp, expectedOutput: "aa rSystem.String[] ra ra ra ab rSystem.Object[] rb rb").VerifyDiagnostics();
+
+        var expectedOutput = "ra rSystem.String[] ra ra ra ab rSystem.Object[] rb rb";
+
+        comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        comp = CreateCompilationWithSpan(source);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 
     [Fact]
@@ -2801,11 +2809,11 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
         var comp = CreateCompilationWithSpan(source);
-        CompileAndVerify(comp, expectedOutput: "aa rSystem.String[] ra ra ra ab rSystem.Object[] rb rb").VerifyDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "ra rSystem.String[] ra ra ra ab rSystem.Object[] rb rb").VerifyDiagnostics();
     }
 
-    [Theory, MemberData(nameof(LangVersions))]
-    public void OverloadResolution_ReadOnlySpanVsArrayVsSpan_ExtensionMethodReceiver(LanguageVersion langVersion)
+    [Fact]
+    public void OverloadResolution_ReadOnlySpanVsArrayVsSpan_ExtensionMethodReceiver()
     {
         var source = """
             using System;
@@ -2826,7 +2834,15 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M(this IEnumerable<object> x) => Console.Write(" e" + x.First());
             }
             """;
-        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12);
         CompileAndVerify(comp, expectedOutput: "aa ab").VerifyDiagnostics();
+
+        var expectedOutput = "ra ab";
+
+        comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        comp = CreateCompilationWithSpan(source);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 }
