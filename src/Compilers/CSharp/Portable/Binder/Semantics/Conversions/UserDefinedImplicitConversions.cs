@@ -245,6 +245,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return;
             }
 
+            if (IgnoreUserDefinedSpanConversions(source, target))
+            {
+                return;
+            }
+
             bool haveInterfaces = false;
 
             foreach ((NamedTypeSymbol declaringType, TypeParameterSymbol constrainedToTypeOpt) in d)

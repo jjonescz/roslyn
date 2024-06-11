@@ -3961,5 +3961,30 @@ namespace Microsoft.CodeAnalysis.CSharp
                     HasTopLevelNullabilityIdentityConversion(source, destination);
             }
         }
+
+        private bool IgnoreUserDefinedSpanConversions(TypeSymbol source, TypeSymbol target)
+        {
+            // PROTOTYPE: Is it fine that this check is not performed when Compilation is null?
+            return Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) == true &&
+                (ignoreUserDefinedSpanConversionsInOneDirection(Compilation, source, target) ||
+                ignoreUserDefinedSpanConversionsInOneDirection(Compilation, target, source));
+
+            static bool ignoreUserDefinedSpanConversionsInOneDirection(CSharpCompilation compilation, TypeSymbol a, TypeSymbol b)
+            {
+                // SPEC: User-defined conversions are not considered when converting between
+                // SPEC: - any single-dimensional `array_type` and `System.Span<T>`/`System.ReadOnlySpan<T>`
+                if (a is ArrayTypeSymbol { IsSZArray: true } &&
+                    (b.OriginalDefinition.Equals(compilation.GetWellKnownType(WellKnownType.System_Span_T), TypeCompareKind.AllIgnoreOptions) ||
+                    b.OriginalDefinition.Equals(compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions)))
+                {
+                    return true;
+                }
+
+                // PROTOTYPE: - any combination of `System.Span<T>`/`System.ReadOnlySpan<T>`
+                // PROTOTYPE: - `string` and `System.ReadOnlySpan<char>`
+
+                return false;
+            }
+        }
     }
 }
