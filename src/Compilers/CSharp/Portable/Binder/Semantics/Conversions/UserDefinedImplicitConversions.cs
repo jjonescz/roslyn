@@ -644,6 +644,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ConversionKind.IntPtr:
                 case ConversionKind.ExplicitTupleLiteral:
                 case ConversionKind.ExplicitTuple:
+                case ConversionKind.ExplicitSpan:
                     return false;
 
                 // Spec'd in C# 4.

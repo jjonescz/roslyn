@@ -577,6 +577,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return DeriveStandardExplicitFromOppositeStandardImplicitConversion(source, destination, ref useSiteInfo);
             }
 
+            if (HasExplicitSpanConversion(source, destination, ref useSiteInfo))
+            {
+                return Conversion.ExplicitSpan;
+            }
+
             return Conversion.NoConversion;
         }
 
@@ -848,6 +853,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return Conversion.ExplicitDynamic;
             }
 
+            if (HasExplicitSpanConversion(source, destination, ref useSiteInfo))
+            {
+                return Conversion.ExplicitSpan;
+            }
+
             return Conversion.NoConversion;
         }
 
@@ -995,6 +1005,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ConversionKind.ImplicitTupleLiteral:
                 case ConversionKind.ImplicitNullable:
                 case ConversionKind.ConditionalExpression:
+                case ConversionKind.ImplicitSpan:
                     return true;
 
                 default:
@@ -3960,6 +3971,31 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return HasIdentityConversionInternal(source.Type, destination.Type) &&
                     HasTopLevelNullabilityIdentityConversion(source, destination);
             }
+        }
+
+        /// <remarks>
+        /// This does not check implicit span conversions, that should be done by the caller.
+        /// </remarks>
+        private bool HasExplicitSpanConversion(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
+        {
+            // PROTOTYPE: Is it fine that this conversion does not exists when Compilation is null?
+            if (Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) != true)
+            {
+                return false;
+            }
+
+            // SPEC: From any single-dimensional `array_type` with element type `Ti`
+            // to `System.Span<Ui>` or `System.ReadOnlySpan<Ui>`
+            // provided an explicit reference conversion exists from `Ti` to `Ui`.
+            if (source is ArrayTypeSymbol { IsSZArray: true, ElementTypeWithAnnotations: { } elementType } &&
+                (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_Span_T), TypeCompareKind.AllIgnoreOptions) ||
+                 destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions)))
+            {
+                var spanElementType = ((NamedTypeSymbol)destination).TypeArgumentsWithDefinitionUseSiteDiagnostics(ref useSiteInfo)[0];
+                return HasIdentityOrReferenceConversion(elementType.Type, spanElementType.Type, ref useSiteInfo);
+            }
+
+            return false;
         }
 
         private bool IgnoreUserDefinedSpanConversions(TypeSymbol source, TypeSymbol target)

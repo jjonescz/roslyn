@@ -8891,6 +8891,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 case ConversionKind.InlineArray:
                 case ConversionKind.ImplicitSpan:
+                case ConversionKind.ExplicitSpan:
                     if (checkConversion)
                     {
                         conversion = GenerateConversion(_conversions, conversionOperand, operandType.Type, targetType, fromExplicitCast, extensionMethodThisArgument, isChecked: conversionOpt?.Checked ?? false);
