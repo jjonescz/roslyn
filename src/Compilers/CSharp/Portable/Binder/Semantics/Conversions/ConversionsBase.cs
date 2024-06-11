@@ -3932,7 +3932,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             return false;
         }
 
-        private bool HasImplicitSpanConversion(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
+#nullable enable
+        private bool HasImplicitSpanConversion(TypeSymbol? source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
             // PROTOTYPE: Is it fine that this conversion does not exists when Compilation is null?
             if (Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) != true)
@@ -3976,7 +3977,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <remarks>
         /// This does not check implicit span conversions, that should be done by the caller.
         /// </remarks>
-        private bool HasExplicitSpanConversion(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
+        private bool HasExplicitSpanConversion(TypeSymbol? source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
             // PROTOTYPE: Is it fine that this conversion does not exists when Compilation is null?
             if (Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) != true)
@@ -3998,8 +3999,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             return false;
         }
 
-        private bool IgnoreUserDefinedSpanConversions(TypeSymbol source, TypeSymbol target)
+        private bool IgnoreUserDefinedSpanConversions(TypeSymbol? source, TypeSymbol? target)
         {
+            // PROTOTYPE: Is this the right thing to do?
+            if (source is null || target is null)
+            {
+                return false;
+            }
+
             // PROTOTYPE: Is it fine that this check is not performed when Compilation is null?
             return Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) == true &&
                 (ignoreUserDefinedSpanConversionsInOneDirection(Compilation, source, target) ||
