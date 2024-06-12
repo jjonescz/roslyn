@@ -3993,7 +3993,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                  destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions)))
             {
                 var spanElementType = ((NamedTypeSymbol)destination).TypeArgumentsWithDefinitionUseSiteDiagnostics(ref useSiteInfo)[0];
-                return HasIdentityOrReferenceConversion(elementType.Type, spanElementType.Type, ref useSiteInfo);
+                return HasIdentityOrReferenceConversion(elementType.Type, spanElementType.Type, ref useSiteInfo) &&
+                    HasTopLevelNullabilityIdentityConversion(elementType, spanElementType);
             }
 
             return false;
