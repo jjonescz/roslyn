@@ -7911,7 +7911,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private Conversion GenerateConversion(Conversions conversions, BoundExpression? sourceExpression, TypeSymbol? sourceType, TypeSymbol destinationType, bool fromExplicitCast, bool extensionMethodThisArgument, bool isChecked)
         {
             var discardedUseSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
-            bool useExpression = sourceType is null || UseExpressionForConversion(sourceExpression);
+            bool useExpression = sourceType is null || UseExpressionForConversion(sourceExpression, sourceType, destinationType);
             if (extensionMethodThisArgument)
             {
                 return conversions.ClassifyImplicitExtensionMethodThisArgConversion(
@@ -7936,7 +7936,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// do not have an explicit type but there are several other cases as well.
         /// (See expressions handled in ClassifyImplicitBuiltInConversionFromExpression.)
         /// </summary>
-        private bool UseExpressionForConversion([NotNullWhen(true)] BoundExpression? value)
+        private bool UseExpressionForConversion([NotNullWhen(true)] BoundExpression? value, TypeSymbol? sourceType, TypeSymbol destinationType)
         {
             if (value is null)
             {
@@ -7954,6 +7954,14 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (!_binder.InAttributeArgument && !_binder.InParameterDefaultValue && // These checks prevent cycles caused by attribute binding when HasInlineArrayAttribute check triggers that.
                         value.Type.HasInlineArrayAttribute(out _) == true &&
                         value.Type.TryGetInlineArrayElementField() is not null)
+                    {
+                        return true;
+                    }
+
+                    // Span conversion is "from expression".
+                    // PROTOTYPE: Should it be "from type" instead?
+                    var discardedUseSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
+                    if (_conversions.HasSpanConversion(sourceType, destinationType, ref discardedUseSiteInfo))
                     {
                         return true;
                     }

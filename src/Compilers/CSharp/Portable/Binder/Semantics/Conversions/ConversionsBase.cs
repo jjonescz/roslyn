@@ -3933,6 +3933,12 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
 #nullable enable
+        internal bool HasSpanConversion(TypeSymbol? source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
+        {
+            return HasImplicitSpanConversion(source, destination, ref useSiteInfo) ||
+                HasExplicitSpanConversion(source, destination, ref useSiteInfo);
+        }
+
         private bool HasImplicitSpanConversion(TypeSymbol? source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
             // PROTOTYPE: Is it fine that this conversion does not exists when Compilation is null?
