@@ -622,11 +622,10 @@ public class FirstClassSpanTests : CSharpTestBase
                 ReadOnlySpan<string> M2(string?[] arg) => arg;
                 ReadOnlySpan<string?> M3(string[] arg) => arg;
                 ReadOnlySpan<string?> M4(string?[] arg) => arg;
-                ReadOnlySpan<string> M5(string?[] arg) => arg;
-                ReadOnlySpan<object> M6(string?[] arg) => arg;
+                ReadOnlySpan<object> M5(string?[] arg) => arg;
 
-                ReadOnlySpan<string> M7(string?[] arg) => (ReadOnlySpan<string>)arg;
-                ReadOnlySpan<string> M8(object?[] arg) => (ReadOnlySpan<string>)arg;
+                ReadOnlySpan<string> M6(string?[] arg) => (ReadOnlySpan<string>)arg;
+                ReadOnlySpan<string> M7(object?[] arg) => (ReadOnlySpan<string>)arg;
             }
             """;
 
@@ -634,36 +633,30 @@ public class FirstClassSpanTests : CSharpTestBase
             // (6,47): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'string[]'.
             //     ReadOnlySpan<string> M2(string?[] arg) => arg;
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[]", "string[]").WithLocation(6, 47),
-            // (9,47): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'string[]'.
-            //     ReadOnlySpan<string> M5(string?[] arg) => arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[]", "string[]").WithLocation(9, 47),
-            // (10,47): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'object[]'.
-            //     ReadOnlySpan<object> M6(string?[] arg) => arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[]", "object[]").WithLocation(10, 47),
-            // (12,47): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'string[]'.
-            //     ReadOnlySpan<string> M7(string?[] arg) => (ReadOnlySpan<string>)arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string>)arg").WithArguments("string?[]", "string[]").WithLocation(12, 47),
-            // (13,47): warning CS8619: Nullability of reference types in value of type 'object?[]' doesn't match target type 'string[]'.
-            //     ReadOnlySpan<string> M8(object?[] arg) => (ReadOnlySpan<string>)arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string>)arg").WithArguments("object?[]", "string[]").WithLocation(13, 47));
+            // (9,47): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'object[]'.
+            //     ReadOnlySpan<object> M5(string?[] arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[]", "object[]").WithLocation(9, 47),
+            // (11,47): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'string[]'.
+            //     ReadOnlySpan<string> M6(string?[] arg) => (ReadOnlySpan<string>)arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string>)arg").WithArguments("string?[]", "string[]").WithLocation(11, 47),
+            // (12,47): warning CS8619: Nullability of reference types in value of type 'object?[]' doesn't match target type 'string[]'.
+            //     ReadOnlySpan<string> M7(object?[] arg) => (ReadOnlySpan<string>)arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string>)arg").WithArguments("object?[]", "string[]").WithLocation(12, 47));
 
         var expectedDiagnostics = new[]
         {
             // (6,47): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'ReadOnlySpan<string>'.
             //     ReadOnlySpan<string> M2(string?[] arg) => arg;
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[]", "System.ReadOnlySpan<string>").WithLocation(6, 47),
-            // (9,47): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'ReadOnlySpan<string>'.
-            //     ReadOnlySpan<string> M5(string?[] arg) => arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[]", "System.ReadOnlySpan<string>").WithLocation(9, 47),
-            // (10,47): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'ReadOnlySpan<object>'.
-            //     ReadOnlySpan<object> M6(string?[] arg) => arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[]", "System.ReadOnlySpan<object>").WithLocation(10, 47),
-            // (12,47): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'ReadOnlySpan<string>'.
-            //     ReadOnlySpan<string> M7(string?[] arg) => (ReadOnlySpan<string>)arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string>)arg").WithArguments("string?[]", "System.ReadOnlySpan<string>").WithLocation(12, 47),
-            // (13,47): warning CS8619: Nullability of reference types in value of type 'object?[]' doesn't match target type 'ReadOnlySpan<string>'.
-            //     ReadOnlySpan<string> M8(object?[] arg) => (ReadOnlySpan<string>)arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string>)arg").WithArguments("object?[]", "System.ReadOnlySpan<string>").WithLocation(13, 47)
+            // (9,47): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'ReadOnlySpan<object>'.
+            //     ReadOnlySpan<object> M5(string?[] arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[]", "System.ReadOnlySpan<object>").WithLocation(9, 47),
+            // (11,47): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'ReadOnlySpan<string>'.
+            //     ReadOnlySpan<string> M6(string?[] arg) => (ReadOnlySpan<string>)arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string>)arg").WithArguments("string?[]", "System.ReadOnlySpan<string>").WithLocation(11, 47),
+            // (12,47): warning CS8619: Nullability of reference types in value of type 'object?[]' doesn't match target type 'ReadOnlySpan<string>'.
+            //     ReadOnlySpan<string> M7(object?[] arg) => (ReadOnlySpan<string>)arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string>)arg").WithArguments("object?[]", "System.ReadOnlySpan<string>").WithLocation(12, 47)
         };
 
         CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -724,11 +717,10 @@ public class FirstClassSpanTests : CSharpTestBase
                 ReadOnlySpan<string[]> M2(string?[][] arg) => arg;
                 ReadOnlySpan<string?[]> M3(string[][] arg) => arg;
                 ReadOnlySpan<string?[]> M4(string?[][] arg) => arg;
-                ReadOnlySpan<string[]> M5(string?[][] arg) => arg;
-                ReadOnlySpan<object[]> M6(string?[][] arg) => arg;
+                ReadOnlySpan<object[]> M5(string?[][] arg) => arg;
 
-                ReadOnlySpan<string[]> M7(string?[][] arg) => (ReadOnlySpan<string[]>)arg;
-                ReadOnlySpan<string[]> M8(object?[][] arg) => (ReadOnlySpan<string[]>)arg;
+                ReadOnlySpan<string[]> M6(string?[][] arg) => (ReadOnlySpan<string[]>)arg;
+                ReadOnlySpan<string[]> M7(object?[][] arg) => (ReadOnlySpan<string[]>)arg;
             }
             """;
 
@@ -736,33 +728,27 @@ public class FirstClassSpanTests : CSharpTestBase
             // (6,51): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'string[][]'.
             //     ReadOnlySpan<string[]> M2(string?[][] arg) => arg;
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[][]", "string[][]").WithLocation(6, 51),
-            // (9,51): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'string[][]'.
-            //     ReadOnlySpan<string[]> M5(string?[][] arg) => arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[][]", "string[][]").WithLocation(9, 51),
-            // (10,51): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'object[][]'.
-            //     ReadOnlySpan<object[]> M6(string?[][] arg) => arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[][]", "object[][]").WithLocation(10, 51),
-            // (12,51): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'string[][]'.
-            //     ReadOnlySpan<string[]> M7(string?[][] arg) => (ReadOnlySpan<string[]>)arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string[]>)arg").WithArguments("string?[][]", "string[][]").WithLocation(12, 51),
-            // (13,51): warning CS8619: Nullability of reference types in value of type 'object?[][]' doesn't match target type 'string[][]'.
-            //     ReadOnlySpan<string[]> M8(object?[][] arg) => (ReadOnlySpan<string[]>)arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string[]>)arg").WithArguments("object?[][]", "string[][]").WithLocation(13, 51));
+            // (9,51): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'object[][]'.
+            //     ReadOnlySpan<object[]> M5(string?[][] arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[][]", "object[][]").WithLocation(9, 51),
+            // (11,51): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'string[][]'.
+            //     ReadOnlySpan<string[]> M6(string?[][] arg) => (ReadOnlySpan<string[]>)arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string[]>)arg").WithArguments("string?[][]", "string[][]").WithLocation(11, 51),
+            // (12,51): warning CS8619: Nullability of reference types in value of type 'object?[][]' doesn't match target type 'string[][]'.
+            //     ReadOnlySpan<string[]> M7(object?[][] arg) => (ReadOnlySpan<string[]>)arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string[]>)arg").WithArguments("object?[][]", "string[][]").WithLocation(12, 51));
 
         var expectedDiagnostics = new[]
         {
             // (6,51): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'ReadOnlySpan<string[]>'.
             //     ReadOnlySpan<string[]> M2(string?[][] arg) => arg;
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[][]", "System.ReadOnlySpan<string[]>").WithLocation(6, 51),
-            // (9,51): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'ReadOnlySpan<string[]>'.
-            //     ReadOnlySpan<string[]> M5(string?[][] arg) => arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[][]", "System.ReadOnlySpan<string[]>").WithLocation(9, 51),
-            // (10,51): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'ReadOnlySpan<object[]>'.
-            //     ReadOnlySpan<object[]> M6(string?[][] arg) => arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[][]", "System.ReadOnlySpan<object[]>").WithLocation(10, 51),
-            // (12,51): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'ReadOnlySpan<string[]>'.
-            //     ReadOnlySpan<string[]> M7(string?[][] arg) => (ReadOnlySpan<string[]>)arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string[]>)arg").WithArguments("string?[][]", "System.ReadOnlySpan<string[]>").WithLocation(12, 51)
+            // (9,51): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'ReadOnlySpan<object[]>'.
+            //     ReadOnlySpan<object[]> M5(string?[][] arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[][]", "System.ReadOnlySpan<object[]>").WithLocation(9, 51),
+            // (11,51): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'ReadOnlySpan<string[]>'.
+            //     ReadOnlySpan<string[]> M6(string?[][] arg) => (ReadOnlySpan<string[]>)arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string[]>)arg").WithArguments("string?[][]", "System.ReadOnlySpan<string[]>").WithLocation(11, 51)
         };
 
         CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -813,11 +799,10 @@ public class FirstClassSpanTests : CSharpTestBase
                 ReadOnlySpan<S<string>> M2(S<string?>[] arg) => arg;
                 ReadOnlySpan<S<string?>> M3(S<string>[] arg) => arg;
                 ReadOnlySpan<S<string?>> M4(S<string?>[] arg) => arg;
-                ReadOnlySpan<S<string>> M5(S<string?>[] arg) => arg;
-                ReadOnlySpan<S<object>> M6(S<string?>[] arg) => arg;
+                ReadOnlySpan<S<object>> M5(S<string?>[] arg) => arg;
 
-                ReadOnlySpan<S<string>> M7(S<string?>[] arg) => (ReadOnlySpan<S<string>>)arg;
-                ReadOnlySpan<S<string>> M8(S<object?>[] arg) => (ReadOnlySpan<S<string>>)arg;
+                ReadOnlySpan<S<string>> M6(S<string?>[] arg) => (ReadOnlySpan<S<string>>)arg;
+                ReadOnlySpan<S<string>> M7(S<object?>[] arg) => (ReadOnlySpan<S<string>>)arg;
             }
             struct S<T> { }
             """;
@@ -828,18 +813,15 @@ public class FirstClassSpanTests : CSharpTestBase
             // (7,53): warning CS8619: Nullability of reference types in value of type 'S<string>[]' doesn't match target type 'S<string?>[]'.
             //     ReadOnlySpan<S<string?>> M3(S<string>[] arg) => arg;
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("S<string>[]", targetType("string?")).WithLocation(7, 53),
-            // (9,53): warning CS8619: Nullability of reference types in value of type 'S<string?>[]' doesn't match target type 'S<string>[]'.
-            //     ReadOnlySpan<S<string>> M5(S<string?>[] arg) => arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("S<string?>[]", targetType("string")).WithLocation(9, 53),
-            // (10,53): error CS0029: Cannot implicitly convert type 'S<string?>[]' to 'System.ReadOnlySpan<S<object>>'
-            //     ReadOnlySpan<S<object>> M6(S<string?>[] arg) => arg;
-            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("S<string?>[]", "System.ReadOnlySpan<S<object>>").WithLocation(10, 53),
-            // (12,53): warning CS8619: Nullability of reference types in value of type 'S<string?>[]' doesn't match target type 'S<string>[]'.
-            //     ReadOnlySpan<S<string>> M7(S<string?>[] arg) => (ReadOnlySpan<S<string>>)arg;
-            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<S<string>>)arg").WithArguments("S<string?>[]", targetType("string")).WithLocation(12, 53),
-            // (13,53): error CS0030: Cannot convert type 'S<object?>[]' to 'System.ReadOnlySpan<S<string>>'
-            //     ReadOnlySpan<S<string>> M8(S<object?>[] arg) => (ReadOnlySpan<S<string>>)arg;
-            Diagnostic(ErrorCode.ERR_NoExplicitConv, "(ReadOnlySpan<S<string>>)arg").WithArguments("S<object?>[]", "System.ReadOnlySpan<S<string>>").WithLocation(13, 53));
+            // (9,53): error CS0029: Cannot implicitly convert type 'S<string?>[]' to 'System.ReadOnlySpan<S<object>>'
+            //     ReadOnlySpan<S<object>> M5(S<string?>[] arg) => arg;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("S<string?>[]", "System.ReadOnlySpan<S<object>>").WithLocation(9, 53),
+            // (11,53): warning CS8619: Nullability of reference types in value of type 'S<string?>[]' doesn't match target type 'S<string>[]'.
+            //     ReadOnlySpan<S<string>> M6(S<string?>[] arg) => (ReadOnlySpan<S<string>>)arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<S<string>>)arg").WithArguments("S<string?>[]", targetType("string")).WithLocation(11, 53),
+            // (12,53): error CS0030: Cannot convert type 'S<object?>[]' to 'System.ReadOnlySpan<S<string>>'
+            //     ReadOnlySpan<S<string>> M7(S<object?>[] arg) => (ReadOnlySpan<S<string>>)arg;
+            Diagnostic(ErrorCode.ERR_NoExplicitConv, "(ReadOnlySpan<S<string>>)arg").WithArguments("S<object?>[]", "System.ReadOnlySpan<S<string>>").WithLocation(12, 53));
 
         string targetType(string inner)
             => langVersion > LanguageVersion.CSharp12 ? $"System.ReadOnlySpan<S<{inner}>>" : $"S<{inner}>[]";
