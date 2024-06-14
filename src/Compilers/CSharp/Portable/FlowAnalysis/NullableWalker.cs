@@ -7911,7 +7911,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private Conversion GenerateConversion(Conversions conversions, BoundExpression? sourceExpression, TypeSymbol? sourceType, TypeSymbol destinationType, bool fromExplicitCast, bool extensionMethodThisArgument, bool isChecked, bool forceFromExpression = false)
         {
             var discardedUseSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
-            bool useExpression = forceFromExpression || sourceType is null || UseExpressionForConversion(sourceExpression, sourceType, destinationType);
+            bool useExpression = forceFromExpression || sourceType is null || UseExpressionForConversion(sourceExpression);
             if (extensionMethodThisArgument)
             {
                 return conversions.ClassifyImplicitExtensionMethodThisArgConversion(
@@ -7936,7 +7936,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// do not have an explicit type but there are several other cases as well.
         /// (See expressions handled in ClassifyImplicitBuiltInConversionFromExpression.)
         /// </summary>
-        private bool UseExpressionForConversion([NotNullWhen(true)] BoundExpression? value, TypeSymbol? sourceType, TypeSymbol destinationType)
+        private bool UseExpressionForConversion([NotNullWhen(true)] BoundExpression? value)
         {
             if (value is null)
             {
