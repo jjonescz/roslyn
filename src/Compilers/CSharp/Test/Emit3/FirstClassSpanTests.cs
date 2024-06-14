@@ -1996,6 +1996,78 @@ public class FirstClassSpanTests : CSharpTestBase
         CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 
+    [Theory, CombinatorialData]
+    public void Conversion_Array_Span_ThroughUserImplicit_Cast_01(
+        [CombinatorialValues("Span", "ReadOnlySpan")] string destination,
+        [CombinatorialValues("implicit", "explicit")] string op)
+    {
+        var source = $$"""
+            using System;
+
+            D.M(({{destination}}<int>)new C());
+
+            class C
+            {
+                public static {{op}} operator int[](C c) => new int[] { 4, 5, 6 };
+            }
+
+            static class D
+            {
+                public static void M({{destination}}<int> xs)
+                {
+                    foreach (var x in xs)
+                    {
+                        Console.Write(x);
+                    }
+                }
+            }
+            """;
+
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+            // (3,5): error CS0030: Cannot convert type 'C' to 'System.Span<int>'
+            // D.M((Span<int>)new C());
+            Diagnostic(ErrorCode.ERR_NoExplicitConv, $"({destination}<int>)new C()").WithArguments("C", $"System.{destination}<int>").WithLocation(3, 5));
+
+        var expectedOutput = "456";
+
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        comp = CreateCompilationWithSpan(source);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+    }
+
+    [Theory, CombinatorialData]
+    public void Conversion_Array_Span_ThroughUserImplicit_Cast_02(
+        [CombinatorialValues("Span", "ReadOnlySpan")] string destination,
+        [CombinatorialValues("implicit", "explicit")] string op,
+        [CombinatorialLangVersions] LanguageVersion langVersion)
+    {
+        var source = $$"""
+            using System;
+
+            D.M((int[])new C());
+
+            class C
+            {
+                public static {{op}} operator int[](C c) => new int[] { 4, 5, 6 };
+            }
+
+            static class D
+            {
+                public static void M({{destination}}<int> xs)
+                {
+                    foreach (var x in xs)
+                    {
+                        Console.Write(x);
+                    }
+                }
+            }
+            """;
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
+        CompileAndVerify(comp, expectedOutput: "456").VerifyDiagnostics();
+    }
+
     [Fact]
     public void Conversion_Array_Span_ThroughUserImplicit_MissingHelper()
     {
