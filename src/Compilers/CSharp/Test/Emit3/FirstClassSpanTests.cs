@@ -73,7 +73,7 @@ public class FirstClassSpanTests : CSharpTestBase
         CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
         CreateCompilationWithSpan(source).VerifyDiagnostics(expectedDiagnostics);
 
-        // PROTOTYPE: Can we make this work?
+        // PROTOTYPE: Need to consider "implicit span conversion" in "better conversion target" for this to work.
 
         //var expectedOutput = "array";
 
