@@ -577,11 +577,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return DeriveStandardExplicitFromOppositeStandardImplicitConversion(source, destination, ref useSiteInfo);
             }
 
-            if (HasExplicitSpanConversion(source, destination, ref useSiteInfo))
-            {
-                return Conversion.ExplicitSpan;
-            }
-
             return Conversion.NoConversion;
         }
 
