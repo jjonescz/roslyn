@@ -4002,7 +4002,6 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private bool IgnoreUserDefinedSpanConversions(TypeSymbol? source, TypeSymbol? target)
         {
-            // PROTOTYPE: Is this the right thing to do?
             if (source is null || target is null)
             {
                 return false;
