@@ -2875,6 +2875,40 @@ public class FirstClassSpanTests : CSharpTestBase
     }
 
     [Fact]
+    public void OverloadResolution_ReadOnlySpanVsArray_05()
+    {
+        var source = """
+            using System;
+
+            C.M(null);
+            C.M(default);
+
+            static class C
+            {
+                public static void M(object[] x) => Console.Write(1);
+                public static void M(ReadOnlySpan<object> x) => Console.Write(2);
+            }
+            """;
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12);
+        CompileAndVerify(comp, expectedOutput: "11").VerifyDiagnostics();
+
+        // PROTOTYPE: Need to consider "implicit span conversion" in "better conversion target" for this to work.
+
+        var expectedDiagnostics = new[]
+        {
+            // (3,3): error CS0121: The call is ambiguous between the following methods or properties: 'C.M(object[])' and 'C.M(ReadOnlySpan<object>)'
+            // C.M(null);
+            Diagnostic(ErrorCode.ERR_AmbigCall, "M").WithArguments("C.M(object[])", "C.M(System.ReadOnlySpan<object>)").WithLocation(3, 3),
+            // (4,3): error CS0121: The call is ambiguous between the following methods or properties: 'C.M(object[])' and 'C.M(ReadOnlySpan<object>)'
+            // C.M(default);
+            Diagnostic(ErrorCode.ERR_AmbigCall, "M").WithArguments("C.M(object[])", "C.M(System.ReadOnlySpan<object>)").WithLocation(4, 3)
+        };
+
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilationWithSpan(source).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact]
     public void OverloadResolution_ReadOnlySpanVsArray_Params_01()
     {
         var source = """
@@ -2967,6 +3001,33 @@ public class FirstClassSpanTests : CSharpTestBase
         CompileAndVerify(comp, expectedOutput: "aa rSystem.Object[] ra ra").VerifyDiagnostics();
     }
 
+    [Fact]
+    public void OverloadResolution_ReadOnlySpanVsArray_Params_05()
+    {
+        var source = """
+            using System;
+
+            C.M(null);
+            C.M(default);
+
+            static class C
+            {
+                public static void M(params object[] x) => Console.Write(1);
+                public static void M(params ReadOnlySpan<object> x) => Console.Write(2);
+            }
+            """;
+
+        // PROTOTYPE: Need to consider "implicit span conversion" in "better conversion target" for this to work.
+
+        CreateCompilationWithSpan(source).VerifyDiagnostics(
+            // (3,3): error CS0121: The call is ambiguous between the following methods or properties: 'C.M(params object[])' and 'C.M(params ReadOnlySpan<object>)'
+            // C.M(null);
+            Diagnostic(ErrorCode.ERR_AmbigCall, "M").WithArguments("C.M(params object[])", "C.M(params System.ReadOnlySpan<object>)").WithLocation(3, 3),
+            // (4,3): error CS0121: The call is ambiguous between the following methods or properties: 'C.M(params object[])' and 'C.M(params ReadOnlySpan<object>)'
+            // C.M(default);
+            Diagnostic(ErrorCode.ERR_AmbigCall, "M").WithArguments("C.M(params object[])", "C.M(params System.ReadOnlySpan<object>)").WithLocation(4, 3));
+    }
+
     [Theory, MemberData(nameof(LangVersions))]
     public void OverloadResolution_ReadOnlySpanVsArray_ExtensionMethodReceiver_01(LanguageVersion langVersion)
     {
@@ -3057,6 +3118,25 @@ public class FirstClassSpanTests : CSharpTestBase
             """;
         var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
         CompileAndVerify(comp, expectedOutput: "aa").VerifyDiagnostics();
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void OverloadResolution_ReadOnlySpanVsArray_ExtensionMethodReceiver_05(LanguageVersion langVersion)
+    {
+        var source = """
+            using System;
+
+            ((object[])null).M();
+            default(object[]).M();
+
+            static class C
+            {
+                public static void M(this object[] x) => Console.Write(1);
+                public static void M(this ReadOnlySpan<object> x) => Console.Write(2);
+            }
+            """;
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
+        CompileAndVerify(comp, expectedOutput: "11").VerifyDiagnostics();
     }
 
     [Theory, MemberData(nameof(LangVersions))]
