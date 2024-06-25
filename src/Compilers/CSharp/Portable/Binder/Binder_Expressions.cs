@@ -10394,6 +10394,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// have the same signature, ignoring parameter names and custom modifiers. The particular
         /// method returned is not important since the caller is interested in the signature only.
         /// </summary>
+        /// <param name="useParams">Consider the unique signature to have the 'params' modifier.</param>
         private MethodSymbol? GetUniqueSignatureFromMethodGroup_CSharp10(BoundMethodGroup node, out bool useParams)
         {
             MethodSymbol? method = null;
@@ -10432,10 +10433,10 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (node.SearchExtensionMethods)
             {
-                methods.Clear();
                 var receiver = node.ReceiverOpt!;
                 foreach (var scope in new ExtensionMethodScopes(this))
                 {
+                    methods.Clear();
                     var methodGroup = MethodGroup.GetInstance();
                     PopulateExtensionMethodsFromSingleBinder(scope, methodGroup, node.Syntax, receiver, node.Name, node.TypeArgumentsOpt, BindingDiagnosticBag.Discarded);
                     foreach (var m in methodGroup.Methods)
@@ -10507,6 +10508,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// in the nearest scope, have the same signature ignoring parameter names and custom modifiers.
         /// The particular method returned is not important since the caller is interested in the signature only.
         /// </summary>
+        /// <param name="useParams">Consider the unique signature to have the 'params' modifier.</param>
         private MethodSymbol? GetUniqueSignatureFromMethodGroup(BoundMethodGroup node, out bool useParams)
         {
             if (Compilation.LanguageVersion < LanguageVersionFacts.CSharpNext)
@@ -10608,16 +10610,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                         methods.Add(reduced);
                     }
 
-                    if (!OverloadResolution.FilterMethodsForUniqueSignature(methods, out bool useParamsForScope))
+                    if (!OverloadResolution.FilterMethodsForUniqueSignature(methods, out useParams))
                     {
                         methods.Free();
                         methodGroup.Free();
                         return null;
-                    }
-
-                    if (methods.Count != 0)
-                    {
-                        useParams = useParamsForScope;
                     }
 
                     foreach (var reduced in methods)
