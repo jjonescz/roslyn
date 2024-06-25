@@ -10422,6 +10422,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return null;
             }
 
+            var seenAnyApplicableCandidates = methods.Count != 0;
+
             foreach (var m in methods)
             {
                 if (!isCandidateUnique(ref method, m))
@@ -10454,9 +10456,18 @@ namespace Microsoft.CodeAnalysis.CSharp
                         return null;
                     }
 
+                    // `useParams` from the `FilterMethodsForUniqueSignature` helper is only interesting if there are some applicable candidates.
                     if (methods.Count != 0)
                     {
+                        // If we had some candidates that differ in `params` from the current scope, we don't have a unique signature.
+                        if (seenAnyApplicableCandidates && useParamsForScope != useParams)
+                        {
+                            methods.Free();
+                            return null;
+                        }
+
                         useParams = useParamsForScope;
+                        seenAnyApplicableCandidates = true;
                     }
 
                     foreach (var reduced in methods)
