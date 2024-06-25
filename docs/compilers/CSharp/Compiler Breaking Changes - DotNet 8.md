@@ -2,7 +2,7 @@
 
 ## Default and params parameters are considered in method group natural type
 
-***Introduced in Visual Studio 2022 version 17.11***
+***Introduced in Visual Studio 2022 version 17.12***
 
 Previously the compiler [unexpectedly](https://github.com/dotnet/roslyn/issues/71333)
 inferred different delegate type depending on the order of candidates in source
