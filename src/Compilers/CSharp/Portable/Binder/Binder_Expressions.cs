@@ -10450,25 +10450,28 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
                     methodGroup.Free();
 
+                    if (methods.Count == 0)
+                    {
+                        continue;
+                    }
+
                     if (!OverloadResolution.FilterMethodsForUniqueSignature(methods, out bool useParamsForScope))
                     {
                         methods.Free();
                         return null;
                     }
 
-                    // `useParams` from the `FilterMethodsForUniqueSignature` helper is only interesting if there are some applicable candidates.
-                    if (methods.Count != 0)
-                    {
-                        // If we had some candidates that differ in `params` from the current scope, we don't have a unique signature.
-                        if (seenAnyApplicableCandidates && useParamsForScope != useParams)
-                        {
-                            methods.Free();
-                            return null;
-                        }
+                    Debug.Assert(methods.Count != 0);
 
-                        useParams = useParamsForScope;
-                        seenAnyApplicableCandidates = true;
+                    // If we had some candidates that differ in `params` from the current scope, we don't have a unique signature.
+                    if (seenAnyApplicableCandidates && useParamsForScope != useParams)
+                    {
+                        methods.Free();
+                        return null;
                     }
+
+                    useParams = useParamsForScope;
+                    seenAnyApplicableCandidates = true;
 
                     foreach (var reduced in methods)
                     {
