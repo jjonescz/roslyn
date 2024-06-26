@@ -33,6 +33,23 @@ static class E
 }
 ```
 
+Also in `LangVersion=12` or lower, `params` modifier must match across all methods to infer a unique delegate signature.
+Note that this does not affect `LangVersion=13` and later because of [a different delegate inference algorithm](https://github.com/dotnet/csharplang/issues/7429).
+
+```cs
+var d = new C().M; // previously inferred Action<int[]> - now error CS8917: the delegate type could not be inferred
+
+static class E
+{
+    public static void M(this C c, params int[] x) { }
+}
+
+class C
+{
+    public void M(int[] x) { }
+}
+```
+
 ## Ref modifiers of dynamic arguments should be compatible with ref modifiers of corresponding parameters
 
 ***Introduced in Visual Studio 2022 version 17.10***
