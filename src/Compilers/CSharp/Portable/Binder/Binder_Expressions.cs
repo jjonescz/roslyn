@@ -10394,7 +10394,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// have the same signature, ignoring parameter names and custom modifiers. The particular
         /// method returned is not important since the caller is interested in the signature only.
         /// </summary>
-        /// <param name="useParams">Consider the unique signature to have the 'params' modifier.</param>
+        /// <param name="useParams">
+        /// Whether all candidates (instance methods and extension methods from all scopes) are applicable in expanded form.
+        /// </param>
         private MethodSymbol? GetUniqueSignatureFromMethodGroup_CSharp10(BoundMethodGroup node, out bool useParams)
         {
             MethodSymbol? method = null;
@@ -10522,7 +10524,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// in the nearest scope, have the same signature ignoring parameter names and custom modifiers.
         /// The particular method returned is not important since the caller is interested in the signature only.
         /// </summary>
-        /// <param name="useParams">Consider the unique signature to have the 'params' modifier.</param>
+        /// <param name="useParams">
+        /// Whether the found candidates (either instance methods or extension methods in the nearest scope) are applicable in expanded form.
+        /// </param>
         private MethodSymbol? GetUniqueSignatureFromMethodGroup(BoundMethodGroup node, out bool useParams)
         {
             if (Compilation.LanguageVersion < LanguageVersionFacts.CSharpNext)
