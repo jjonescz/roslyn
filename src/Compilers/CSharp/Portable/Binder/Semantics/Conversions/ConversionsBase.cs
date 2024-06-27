@@ -3944,14 +3944,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (source is ArrayTypeSymbol { IsSZArray: true, ElementTypeWithAnnotations: { } elementType })
             {
                 // SPEC: ...to `System.Span<Ei>`.
-                if (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_Span_T), TypeCompareKind.AllIgnoreOptions))
+                if (destination.OriginalDefinition.IsSpan())
                 {
                     var spanElementType = ((NamedTypeSymbol)destination).TypeArgumentsWithDefinitionUseSiteDiagnostics(ref useSiteInfo)[0];
                     return hasIdentityConversion(elementType, spanElementType);
                 }
 
                 // SPEC: ...to `System.ReadOnlySpan<Ui>`, provided that `Ei` is covariance-convertible to `Ui`.
-                if (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions))
+                if (destination.OriginalDefinition.IsReadOnlySpan())
                 {
                     var spanElementType = ((NamedTypeSymbol)destination).TypeArgumentsWithDefinitionUseSiteDiagnostics(ref useSiteInfo)[0];
                     return hasCovariantConversion(elementType, spanElementType, ref useSiteInfo);
@@ -3988,8 +3988,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // to `System.Span<Ui>` or `System.ReadOnlySpan<Ui>`
             // provided an explicit reference conversion exists from `Ti` to `Ui`.
             if (source is ArrayTypeSymbol { IsSZArray: true, ElementTypeWithAnnotations: { } elementType } &&
-                (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_Span_T), TypeCompareKind.AllIgnoreOptions) ||
-                 destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions)))
+                (destination.OriginalDefinition.IsSpan() || destination.OriginalDefinition.IsReadOnlySpan()))
             {
                 var spanElementType = ((NamedTypeSymbol)destination).TypeArgumentsWithDefinitionUseSiteDiagnostics(ref useSiteInfo)[0];
                 return HasIdentityOrReferenceConversion(elementType.Type, spanElementType.Type, ref useSiteInfo) &&
@@ -4008,16 +4007,15 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // Note: when Compilation is null, we assume latest LangVersion.
             return Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) != false &&
-                (ignoreUserDefinedSpanConversionsInOneDirection(Compilation, source, target) ||
-                ignoreUserDefinedSpanConversionsInOneDirection(Compilation, target, source));
+                (ignoreUserDefinedSpanConversionsInOneDirection(source, target) ||
+                ignoreUserDefinedSpanConversionsInOneDirection(target, source));
 
-            static bool ignoreUserDefinedSpanConversionsInOneDirection(CSharpCompilation compilation, TypeSymbol a, TypeSymbol b)
+            static bool ignoreUserDefinedSpanConversionsInOneDirection(TypeSymbol a, TypeSymbol b)
             {
                 // SPEC: User-defined conversions are not considered when converting between
                 // SPEC: - any single-dimensional `array_type` and `System.Span<T>`/`System.ReadOnlySpan<T>`
                 if (a is ArrayTypeSymbol { IsSZArray: true } &&
-                    (b.OriginalDefinition.Equals(compilation.GetWellKnownType(WellKnownType.System_Span_T), TypeCompareKind.AllIgnoreOptions) ||
-                    b.OriginalDefinition.Equals(compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions)))
+                    (b.OriginalDefinition.IsSpan() || b.OriginalDefinition.IsReadOnlySpan()))
                 {
                     return true;
                 }
