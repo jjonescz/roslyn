@@ -3934,7 +3934,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 #nullable enable
         private bool HasImplicitSpanConversion(TypeSymbol? source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
-            // PROTOTYPE: Is it fine that this conversion always exists when Compilation is null?
+            // Note: when Compilation is null, we assume latest LangVersion.
             if (Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) == false)
             {
                 return false;
@@ -3978,7 +3978,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </remarks>
         private bool HasExplicitSpanConversion(TypeSymbol? source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
-            // PROTOTYPE: Is it fine that this conversion always exists when Compilation is null?
+            // Note: when Compilation is null, we assume latest LangVersion.
             if (Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) == false)
             {
                 return false;
@@ -4006,7 +4006,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return false;
             }
 
-            // PROTOTYPE: Is it fine that this check is always performed when Compilation is null?
+            // Note: when Compilation is null, we assume latest LangVersion.
             return Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) != false &&
                 (ignoreUserDefinedSpanConversionsInOneDirection(Compilation, source, target) ||
                 ignoreUserDefinedSpanConversionsInOneDirection(Compilation, target, source));
