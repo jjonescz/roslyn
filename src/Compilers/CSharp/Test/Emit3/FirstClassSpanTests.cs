@@ -2408,6 +2408,23 @@ public class FirstClassSpanTests : CSharpTestBase
         var model = comp.GetSemanticModel(tree);
         var info = model.GetSymbolInfo(invocation);
         Assert.Equal("void System.Span<System.Int32>.E<System.Int32>(System.Int32 x)", info.Symbol!.ToTestDisplayString());
+
+        var methodSymbol = (IMethodSymbol)info.Symbol!;
+        var spanType = methodSymbol.ReceiverType!;
+        Assert.Equal("System.Span<System.Int32>", spanType.ToTestDisplayString());
+
+        // Reduce the extension method with Span receiver.
+        var unreducedSymbol = methodSymbol.ReducedFrom!;
+        var reduced = unreducedSymbol.ReduceExtensionMethod(spanType);
+        Assert.Equal(methodSymbol, reduced);
+
+        var arrayType = comp.GetMember<MethodSymbol>("C.M").GetPublicSymbol().Parameters.Single().Type;
+        Assert.Equal("System.Int32[]", arrayType.ToTestDisplayString());
+
+        // Reduce the extension method with array receiver.
+        // PROTOTYPE: This needs type inference to work.
+        reduced = unreducedSymbol.ReduceExtensionMethod(arrayType);
+        Assert.Null(reduced);
     }
 
     [Fact]
@@ -2442,6 +2459,122 @@ public class FirstClassSpanTests : CSharpTestBase
         var model = comp.GetSemanticModel(tree);
         var info = model.GetSymbolInfo(invocation);
         Assert.Equal("void System.Span<System.Int32>.E<System.Int32>(System.Int32 x)", info.Symbol!.ToTestDisplayString());
+
+        var methodSymbol = (IMethodSymbol)info.Symbol!;
+        var spanType = methodSymbol.ReceiverType!;
+        Assert.Equal("System.Span<System.Int32>", spanType.ToTestDisplayString());
+
+        // Reduce the extension method with Span receiver.
+        var unreducedSymbol = methodSymbol.ReducedFrom!;
+        var reduced = unreducedSymbol.ReduceExtensionMethod(spanType);
+        Assert.Equal(methodSymbol, reduced);
+
+        var arrayType = comp.GetMember<MethodSymbol>("C.M").GetPublicSymbol().Parameters.Single().Type;
+        Assert.Equal("System.Int32[]", arrayType.ToTestDisplayString());
+
+        // Reduce the extension method with array receiver.
+        // PROTOTYPE: This needs type inference to work.
+        reduced = unreducedSymbol.ReduceExtensionMethod(arrayType);
+        Assert.Null(reduced);
+    }
+
+    [Fact]
+    public void Conversion_Array_Span_ExtensionMethodReceiver_Implicit_Generic_05()
+    {
+        var source = """
+            using System;
+            static class C
+            {
+                public static void M(int[] arg) => arg.E("abc");
+                public static void E<T>(this Span<int> arg, T x) { }
+            }
+            """;
+        var comp = CreateCompilationWithSpan(source);
+        var verifier = CompileAndVerify(comp).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", """
+            {
+              // Code size       17 (0x11)
+              .maxstack  2
+              IL_0000:  ldarg.0
+              IL_0001:  call       "System.Span<int> System.Span<int>.op_Implicit(int[])"
+              IL_0006:  ldstr      "abc"
+              IL_000b:  call       "void C.E<string>(System.Span<int>, string)"
+              IL_0010:  ret
+            }
+            """);
+
+        var tree = comp.SyntaxTrees.Single();
+        var invocation = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
+        Assert.Equal("""arg.E("abc")""", invocation.ToString());
+
+        var model = comp.GetSemanticModel(tree);
+        var info = model.GetSymbolInfo(invocation);
+        Assert.Equal("void System.Span<System.Int32>.E<System.String>(System.String x)", info.Symbol!.ToTestDisplayString());
+
+        var methodSymbol = (IMethodSymbol)info.Symbol!;
+        var spanType = methodSymbol.ReceiverType!;
+        Assert.Equal("System.Span<System.Int32>", spanType.ToTestDisplayString());
+
+        // Reduce the extension method with Span receiver.
+        var unreducedSymbol = methodSymbol.ReducedFrom!;
+        var reduced = unreducedSymbol.ReduceExtensionMethod(spanType);
+        Assert.Equal("void System.Span<System.Int32>.E<T>(T x)", reduced.ToTestDisplayString());
+
+        var arrayType = comp.GetMember<MethodSymbol>("C.M").GetPublicSymbol().Parameters.Single().Type;
+        Assert.Equal("System.Int32[]", arrayType.ToTestDisplayString());
+
+        // Reduce the extension method with array receiver.
+        reduced = unreducedSymbol.ReduceExtensionMethod(arrayType);
+        Assert.Equal("void System.Span<System.Int32>.E<T>(T x)", reduced.ToTestDisplayString());
+    }
+
+    [Fact]
+    public void Conversion_Array_Span_ExtensionMethodReceiver_Implicit_Reduced_01()
+    {
+        var source = """
+            using System;
+            static class C
+            {
+                public static void M(int[] arg) => arg.E();
+                public static void E(this Span<int> arg) { }
+            }
+            """;
+        var comp = CreateCompilationWithSpan(source);
+        var verifier = CompileAndVerify(comp).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", """
+            {
+              // Code size       12 (0xc)
+              .maxstack  1
+              IL_0000:  ldarg.0
+              IL_0001:  call       "System.Span<int> System.Span<int>.op_Implicit(int[])"
+              IL_0006:  call       "void C.E(System.Span<int>)"
+              IL_000b:  ret
+            }
+            """);
+
+        var tree = comp.SyntaxTrees.Single();
+        var invocation = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
+        Assert.Equal("arg.E()", invocation.ToString());
+
+        var model = comp.GetSemanticModel(tree);
+        var info = model.GetSymbolInfo(invocation);
+        Assert.Equal("void System.Span<System.Int32>.E()", info.Symbol!.ToTestDisplayString());
+
+        var methodSymbol = (IMethodSymbol)info.Symbol!;
+        var spanType = methodSymbol.ReceiverType!;
+        Assert.Equal("System.Span<System.Int32>", spanType.ToTestDisplayString());
+
+        // Reduce the extension method with Span receiver.
+        var unreducedSymbol = methodSymbol.ReducedFrom!;
+        var reduced = unreducedSymbol.ReduceExtensionMethod(spanType);
+        Assert.Equal("void System.Span<System.Int32>.E()", reduced.ToTestDisplayString());
+
+        var arrayType = comp.GetMember<MethodSymbol>("C.M").GetPublicSymbol().Parameters.Single().Type;
+        Assert.Equal("System.Int32[]", arrayType.ToTestDisplayString());
+
+        // Reduce the extension method with array receiver.
+        reduced = unreducedSymbol.ReduceExtensionMethod(arrayType);
+        Assert.Equal("void System.Span<System.Int32>.E()", reduced.ToTestDisplayString());
     }
 
     [Theory, MemberData(nameof(LangVersions))]
