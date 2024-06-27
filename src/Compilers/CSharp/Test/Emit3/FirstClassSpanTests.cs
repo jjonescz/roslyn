@@ -63,39 +63,27 @@ public class FirstClassSpanTests : CSharpTestBase
             //     public static string Join(string separator, params ReadOnlySpan<string> values) => "span";
             Diagnostic(ErrorCode.ERR_FeatureInPreview, "params ReadOnlySpan<string> values").WithArguments("params collections").WithLocation(13, 49));
 
-        var expectedDiagnostics = new[]
-        {
-            // (7,65): error CS0121: The call is ambiguous between the following methods or properties: 'StringExtensions.Join(string, params string[])' and 'StringExtensions.Join(string, params ReadOnlySpan<string>)'
-            //     public static string M(StringValues sv) => StringExtensions.Join(",", sv);
-            Diagnostic(ErrorCode.ERR_AmbigCall, "Join").WithArguments("StringExtensions.Join(string, params string[])", "StringExtensions.Join(string, params System.ReadOnlySpan<string>)").WithLocation(7, 65)
-        };
+        var expectedOutput = "array";
 
-        CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
-        CreateCompilationWithSpan(source).VerifyDiagnostics(expectedDiagnostics);
+        var expectedIl = """
+            {
+              // Code size       17 (0x11)
+              .maxstack  2
+              IL_0000:  ldstr      ","
+              IL_0005:  ldarg.0
+              IL_0006:  call       "string[] StringValues.op_Implicit(StringValues)"
+              IL_000b:  call       "string StringExtensions.Join(string, params string[])"
+              IL_0010:  ret
+            }
+            """;
 
-        // PROTOTYPE: Need to consider "implicit span conversion" in "better conversion target" for this to work.
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", expectedIl);
 
-        //var expectedOutput = "array";
-
-        //var expectedIl = """
-        //    {
-        //      // Code size       17 (0x11)
-        //      .maxstack  2
-        //      IL_0000:  ldstr      ","
-        //      IL_0005:  ldarg.0
-        //      IL_0006:  call       "string[] StringValues.op_Implicit(StringValues)"
-        //      IL_000b:  call       "string StringExtensions.Join(string, params string[])"
-        //      IL_0010:  ret
-        //    }
-        //    """;
-
-        //var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
-        //var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
-        //verifier.VerifyIL("C.M", expectedIl);
-
-        //comp = CreateCompilationWithSpan(source);
-        //verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
-        //verifier.VerifyIL("C.M", expectedIl);
+        comp = CreateCompilationWithSpan(source);
+        verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+        verifier.VerifyIL("C.M", expectedIl);
     }
 
     [Fact]
@@ -2874,8 +2862,8 @@ public class FirstClassSpanTests : CSharpTestBase
         CompileAndVerify(comp, expectedOutput: "aa rSystem.Object[] ra ra").VerifyDiagnostics();
     }
 
-    [Fact]
-    public void OverloadResolution_ReadOnlySpanVsArray_05()
+    [Theory, MemberData(nameof(LangVersions))]
+    public void OverloadResolution_ReadOnlySpanVsArray_05(LanguageVersion langVersion)
     {
         var source = """
             using System;
@@ -2889,23 +2877,8 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M(ReadOnlySpan<object> x) => Console.Write(2);
             }
             """;
-        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
         CompileAndVerify(comp, expectedOutput: "11").VerifyDiagnostics();
-
-        // PROTOTYPE: Need to consider "implicit span conversion" in "better conversion target" for this to work.
-
-        var expectedDiagnostics = new[]
-        {
-            // (3,3): error CS0121: The call is ambiguous between the following methods or properties: 'C.M(object[])' and 'C.M(ReadOnlySpan<object>)'
-            // C.M(null);
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M").WithArguments("C.M(object[])", "C.M(System.ReadOnlySpan<object>)").WithLocation(3, 3),
-            // (4,3): error CS0121: The call is ambiguous between the following methods or properties: 'C.M(object[])' and 'C.M(ReadOnlySpan<object>)'
-            // C.M(default);
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M").WithArguments("C.M(object[])", "C.M(System.ReadOnlySpan<object>)").WithLocation(4, 3)
-        };
-
-        CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
-        CreateCompilationWithSpan(source).VerifyDiagnostics(expectedDiagnostics);
     }
 
     [Fact]
@@ -3016,16 +2989,8 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M(params ReadOnlySpan<object> x) => Console.Write(2);
             }
             """;
-
-        // PROTOTYPE: Need to consider "implicit span conversion" in "better conversion target" for this to work.
-
-        CreateCompilationWithSpan(source).VerifyDiagnostics(
-            // (3,3): error CS0121: The call is ambiguous between the following methods or properties: 'C.M(params object[])' and 'C.M(params ReadOnlySpan<object>)'
-            // C.M(null);
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M").WithArguments("C.M(params object[])", "C.M(params System.ReadOnlySpan<object>)").WithLocation(3, 3),
-            // (4,3): error CS0121: The call is ambiguous between the following methods or properties: 'C.M(params object[])' and 'C.M(params ReadOnlySpan<object>)'
-            // C.M(default);
-            Diagnostic(ErrorCode.ERR_AmbigCall, "M").WithArguments("C.M(params object[])", "C.M(params System.ReadOnlySpan<object>)").WithLocation(4, 3));
+        var comp = CreateCompilationWithSpan(source);
+        CompileAndVerify(comp, expectedOutput: "11").VerifyDiagnostics();
     }
 
     [Theory, MemberData(nameof(LangVersions))]

@@ -602,7 +602,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ConversionKind.StackAllocToPointerType:
                 case ConversionKind.StackAllocToSpanType:
                 case ConversionKind.InlineArray:
-                case ConversionKind.ImplicitSpan:
                     return true;
                 default:
                     return false;
@@ -624,6 +623,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ConversionKind.ImplicitPointer:
                 case ConversionKind.ImplicitPointerToVoid:
                 case ConversionKind.ImplicitTuple:
+                case ConversionKind.ImplicitSpan:
                     return true;
                 default:
                     return false;
@@ -741,6 +741,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (tupleConversion.Exists)
                 {
                     return tupleConversion;
+                }
+
+                if (HasImplicitSpanConversion(source, destination, ref useSiteInfo))
+                {
+                    return Conversion.ImplicitSpan;
                 }
 
                 return Conversion.NoConversion;
@@ -912,6 +917,10 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     break;
 
+                case ConversionKind.ImplicitSpan:
+                    impliedExplicitConversion = Conversion.NoConversion;
+                    break;
+
                 default:
                     throw ExceptionUtilities.UnexpectedValue(oppositeConversion.Kind);
             }
@@ -1019,11 +1028,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (HasImplicitDynamicConversionFromExpression(source, destination))
             {
                 return Conversion.ImplicitDynamic;
-            }
-
-            if (HasImplicitSpanConversion(source, destination, ref useSiteInfo))
-            {
-                return Conversion.ImplicitSpan;
             }
 
             // The following conversions only exist for certain form of expressions, 
@@ -1909,8 +1913,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public Conversion ClassifyImplicitExtensionMethodThisArgConversion(BoundExpression sourceExpressionOpt, TypeSymbol sourceType, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
             Debug.Assert(sourceExpressionOpt is null || Compilation is not null);
-            // PROTOTYPE: Revert `TypeSymbol.Equals(...)` to `(object)sourceExpressionOpt.Type == sourceType` when implicit span is a "conversion from type".
-            Debug.Assert(sourceExpressionOpt == null || TypeSymbol.Equals(sourceExpressionOpt.Type, sourceType, TypeCompareKind.ConsiderEverything));
+            Debug.Assert(sourceExpressionOpt == null || (object)sourceExpressionOpt.Type == sourceType);
             Debug.Assert((object)destination != null);
 
             if ((object)sourceType != null)
@@ -3931,8 +3934,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 #nullable enable
         private bool HasImplicitSpanConversion(TypeSymbol? source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
-            // PROTOTYPE: Is it fine that this conversion does not exists when Compilation is null?
-            if (Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) != true)
+            // PROTOTYPE: Is it fine that this conversion always exists when Compilation is null?
+            if (Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) == false)
             {
                 return false;
             }
@@ -3975,8 +3978,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </remarks>
         private bool HasExplicitSpanConversion(TypeSymbol? source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
-            // PROTOTYPE: Is it fine that this conversion does not exists when Compilation is null?
-            if (Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) != true)
+            // PROTOTYPE: Is it fine that this conversion always exists when Compilation is null?
+            if (Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) == false)
             {
                 return false;
             }
@@ -4003,8 +4006,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return false;
             }
 
-            // PROTOTYPE: Is it fine that this check is not performed when Compilation is null?
-            return Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) == true &&
+            // PROTOTYPE: Is it fine that this check is always performed when Compilation is null?
+            return Compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) != false &&
                 (ignoreUserDefinedSpanConversionsInOneDirection(Compilation, source, target) ||
                 ignoreUserDefinedSpanConversionsInOneDirection(Compilation, target, source));
 

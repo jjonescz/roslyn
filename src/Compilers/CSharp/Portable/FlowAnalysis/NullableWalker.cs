@@ -7908,10 +7908,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             return conversion;
         }
 
-        private Conversion GenerateConversion(Conversions conversions, BoundExpression? sourceExpression, TypeSymbol? sourceType, TypeSymbol destinationType, bool fromExplicitCast, bool extensionMethodThisArgument, bool isChecked, bool forceFromExpression = false)
+        private Conversion GenerateConversion(Conversions conversions, BoundExpression? sourceExpression, TypeSymbol? sourceType, TypeSymbol destinationType, bool fromExplicitCast, bool extensionMethodThisArgument, bool isChecked)
         {
             var discardedUseSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
-            bool useExpression = forceFromExpression || sourceType is null || UseExpressionForConversion(sourceExpression);
+            bool useExpression = sourceType is null || UseExpressionForConversion(sourceExpression);
             if (extensionMethodThisArgument)
             {
                 return conversions.ClassifyImplicitExtensionMethodThisArgConversion(
@@ -8902,10 +8902,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (checkConversion)
                     {
                         var previousKind = conversion.Kind;
-                        conversion = GenerateConversion(_conversions, conversionOperand, operandType.Type, targetType, fromExplicitCast, extensionMethodThisArgument, isChecked: conversionOpt?.Checked ?? false,
-                            // Span conversion is "from expression".
-                            // PROTOTYPE: Should it be "from type" instead?
-                            forceFromExpression: true);
+                        conversion = GenerateConversion(_conversions, conversionOperand, operandType.Type, targetType, fromExplicitCast, extensionMethodThisArgument, isChecked: conversionOpt?.Checked ?? false);
                         Debug.Assert(!conversion.Exists || conversion.Kind == previousKind);
                         canConvertNestedNullability = conversion.Exists;
                     }
