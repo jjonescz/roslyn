@@ -338,9 +338,9 @@ public class FirstClassSpanTests : CSharpTestBase
         var comp = CreateCompilationWithSpan(source);
         comp.MakeMemberMissing(WellKnownMember.System_Span_T__op_Implicit_Array);
         comp.VerifyDiagnostics(
-            // (2,15): error CS0656: Missing compiler required member 'System.Span`1.op_Implicit'
+            // (2,15): error CS0656: Missing compiler required member 'System.Span<T>.op_Implicit'
             // Span<int> s = arr();
-            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "arr()").WithArguments("System.Span`1", "op_Implicit").WithLocation(2, 15));
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "arr()").WithArguments("System.Span<T>", "op_Implicit").WithLocation(2, 15));
     }
 
     [Theory, MemberData(nameof(LangVersions))]
@@ -391,15 +391,16 @@ public class FirstClassSpanTests : CSharpTestBase
             """);
     }
 
-    [Fact]
-    public void Conversion_Array_Span_Implicit_SpanTwice()
+    [Theory, CombinatorialData]
+    public void Conversion_Array_Span_Implicit_MultipleSpans_01(
+        [CombinatorialValues("Span", "ReadOnlySpan")] string type)
     {
-        static string getSpanSource(string output) => $$"""
+        string getSpanSource(string output) => $$"""
             namespace System
             {
-                public readonly ref struct Span<T>
+                public readonly ref struct {{type}}<T>
                 {
-                    public static implicit operator Span<T>(T[] array)
+                    public static implicit operator {{type}}<T>(T[] array)
                     {
                         Console.Write("{{output}}");
                         return default;
@@ -412,10 +413,12 @@ public class FirstClassSpanTests : CSharpTestBase
             .VerifyDiagnostics()
             .EmitToImageReference();
 
-        var source = """
+        var source = $$"""
             using System;
-            Span<int> s = arr();
+            {{type}}<int> s = arr();
+            use(s);
             static int[] arr() => new int[] { 1, 2, 3 };
+            static void use({{type}}<int> s) { }
             """;
 
         var comp = CreateCompilation([source, getSpanSource("Internal")], [spanComp], assemblyName: "Consumer");
@@ -423,17 +426,64 @@ public class FirstClassSpanTests : CSharpTestBase
         verifier.VerifyDiagnostics(
             // (2,1): warning CS0436: The type 'Span<T>' in '' conflicts with the imported type 'Span<T>' in 'Span1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'. Using the type defined in ''.
             // Span<int> s = arr();
-            Diagnostic(ErrorCode.WRN_SameFullNameThisAggAgg, "Span<int>").WithArguments("", "System.Span<T>", "Span1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null", "System.Span<T>").WithLocation(2, 1),
+            Diagnostic(ErrorCode.WRN_SameFullNameThisAggAgg, $"{type}<int>").WithArguments("", $"System.{type}<T>", "Span1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null", $"System.{type}<T>").WithLocation(2, 1),
+            // (5,17): warning CS0436: The type 'Span<T>' in '' conflicts with the imported type 'Span<T>' in 'Span1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'. Using the type defined in ''.
+            // static void use(Span<int> s) { }
+            Diagnostic(ErrorCode.WRN_SameFullNameThisAggAgg, $"{type}<int>").WithArguments("", $"System.{type}<T>", "Span1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null", $"System.{type}<T>").WithLocation(5, 17),
             // (5,41): warning CS0436: The type 'Span<T>' in '' conflicts with the imported type 'Span<T>' in 'Span1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'. Using the type defined in ''.
             //         public static implicit operator Span<T>(T[] array)
-            Diagnostic(ErrorCode.WRN_SameFullNameThisAggAgg, "Span<T>").WithArguments("", "System.Span<T>", "Span1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null", "System.Span<T>").WithLocation(5, 41));
+            Diagnostic(ErrorCode.WRN_SameFullNameThisAggAgg, $"{type}<T>").WithArguments("", $"System.{type}<T>", "Span1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null", $"System.{type}<T>").WithLocation(5, 41));
 
-        verifier.VerifyIL("<top-level-statements-entry-point>", """
+        verifier.VerifyIL("<top-level-statements-entry-point>", $$"""
+            {
+              // Code size       16 (0x10)
+              .maxstack  1
+              IL_0000:  call       "int[] Program.<<Main>$>g__arr|0_0()"
+              IL_0005:  call       "System.{{type}}<int> System.{{type}}<int>.op_Implicit(int[])"
+              IL_000a:  call       "void Program.<<Main>$>g__use|0_1(System.{{type}}<int>)"
+              IL_000f:  ret
+            }
+            """);
+    }
+
+    [Theory, CombinatorialData]
+    public void Conversion_Array_Span_Implicit_MultipleSpans_02(
+        [CombinatorialValues("Span", "ReadOnlySpan")] string type)
+    {
+        string getSpanSource(string output) => $$"""
+            namespace System
+            {
+                public readonly ref struct {{type}}<T>
+                {
+                    public static implicit operator {{type}}<T>(T[] array)
+                    {
+                        Console.Write("{{output}}");
+                        return default;
+                    }
+                }
+            }
+            """;
+
+        var spanComp = CreateCompilation(getSpanSource("External"), assemblyName: "Span1")
+            .VerifyDiagnostics()
+            .EmitToImageReference(aliases: ["lib"]);
+
+        var source = $$"""
+            extern alias lib;
+            lib::System.{{type}}<int> s = arr();
+            static int[] arr() => new int[] { 1, 2, 3 };
+            """;
+
+        var comp = CreateCompilation([source, getSpanSource("Internal")], [spanComp], assemblyName: "Consumer");
+        var verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify, expectedOutput: "External");
+        verifier.VerifyDiagnostics();
+
+        verifier.VerifyIL("<top-level-statements-entry-point>", $$"""
             {
               // Code size       12 (0xc)
               .maxstack  1
               IL_0000:  call       "int[] Program.<<Main>$>g__arr|0_0()"
-              IL_0005:  call       "System.Span<int> System.Span<int>.op_Implicit(int[])"
+              IL_0005:  call       "System.{{type}}<int> System.{{type}}<int>.op_Implicit(int[])"
               IL_000a:  pop
               IL_000b:  ret
             }
