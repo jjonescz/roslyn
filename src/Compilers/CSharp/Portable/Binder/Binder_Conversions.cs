@@ -491,7 +491,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     CheckFeatureAvailability(syntax, MessageID.IDS_FeatureFirstClassSpan, diagnostics);
 
                     // PROTOTYPE: Check runtime APIs used for other span conversions once they are implemented.
-                    // NOTE: Span conversions do not use well-known types because they are "conversions from type".
+                    // NOTE: Span conversions do not use well-known types because they are "conversions from type" and hence don't have access to Compilation.
                     if (TryFindImplicitOperatorFromArray(destination.OriginalDefinition) is { } method)
                     {
                         diagnostics.ReportUseSite(method, syntax);
