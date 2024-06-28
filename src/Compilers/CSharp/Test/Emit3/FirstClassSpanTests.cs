@@ -333,11 +333,15 @@ public class FirstClassSpanTests : CSharpTestBase
             using System;
             Span<int> s = arr();
             static int[] arr() => new int[] { 1, 2, 3 };
-            """;
 
-        var comp = CreateCompilationWithSpan(source);
-        comp.MakeMemberMissing(WellKnownMember.System_Span_T__op_Implicit_Array);
-        comp.VerifyDiagnostics(
+            namespace System
+            {
+                public readonly ref struct Span<T>
+                {
+                }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
             // (2,15): error CS0656: Missing compiler required member 'System.Span<T>.op_Implicit'
             // Span<int> s = arr();
             Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "arr()").WithArguments("System.Span<T>", "op_Implicit").WithLocation(2, 15));
@@ -2121,12 +2125,32 @@ public class FirstClassSpanTests : CSharpTestBase
 
             static class D
             {
-                public static void M(Span<int> xs)
+                public static void M(Span<int> xs) { }
+            }
+            """;
+
+        var missingRosHelper = """
+            namespace System
+            {
+                public readonly ref struct Span<T>
                 {
-                    foreach (var x in xs)
-                    {
-                        Console.Write(x);
-                    }
+                    public static implicit operator Span<T>(T[] array) => throw null;
+                }
+                public readonly ref struct ReadOnlySpan<T>
+                {
+                }
+            }
+            """;
+
+        var missingSpanHelper = """
+            namespace System
+            {
+                public readonly ref struct Span<T>
+                {
+                }
+                public readonly ref struct ReadOnlySpan<T>
+                {
+                    public static implicit operator ReadOnlySpan<T>(T[] array) => throw null;
                 }
             }
             """;
@@ -2138,33 +2162,24 @@ public class FirstClassSpanTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_BadArgType, "new C()").WithArguments("1", "C", "System.Span<int>").WithLocation(3, 5)
         };
 
-        verifyWithMissing(WellKnownMember.System_ReadOnlySpan_T__op_Implicit_Array, TestOptions.Regular12, expectedDiagnostics);
-        verifyWithMissing(WellKnownMember.System_Span_T__op_Implicit_Array, TestOptions.Regular12, expectedDiagnostics);
+        verifyWithMissing(missingRosHelper, TestOptions.Regular12, expectedDiagnostics);
+        verifyWithMissing(missingSpanHelper, TestOptions.Regular12, expectedDiagnostics);
 
         expectedDiagnostics = [
-            // (3,5): error CS0656: Missing compiler required member 'System.Span`1.op_Implicit'
+            // (3,5): error CS0656: Missing compiler required member 'System.Span<T>.op_Implicit'
             // D.M(new C());
-            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "new C()").WithArguments("System.Span`1", "op_Implicit").WithLocation(3, 5)
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "new C()").WithArguments("System.Span<T>", "op_Implicit").WithLocation(3, 5)
         ];
 
-        verifyWithMissing(WellKnownMember.System_ReadOnlySpan_T__op_Implicit_Array, TestOptions.RegularNext);
-        verifyWithMissing(WellKnownMember.System_Span_T__op_Implicit_Array, TestOptions.RegularNext, expectedDiagnostics);
+        verifyWithMissing(missingRosHelper, TestOptions.RegularNext);
+        verifyWithMissing(missingSpanHelper, TestOptions.RegularNext, expectedDiagnostics);
 
-        verifyWithMissing(WellKnownMember.System_ReadOnlySpan_T__op_Implicit_Array, TestOptions.RegularPreview);
-        verifyWithMissing(WellKnownMember.System_Span_T__op_Implicit_Array, TestOptions.RegularPreview, expectedDiagnostics);
+        verifyWithMissing(missingRosHelper, TestOptions.RegularPreview);
+        verifyWithMissing(missingSpanHelper, TestOptions.RegularPreview, expectedDiagnostics);
 
-        void verifyWithMissing(WellKnownMember member, CSharpParseOptions parseOptions, params DiagnosticDescription[] expected)
+        void verifyWithMissing(string source2, CSharpParseOptions parseOptions, params DiagnosticDescription[] expected)
         {
-            var comp = CreateCompilationWithSpan(source, parseOptions: parseOptions);
-            comp.MakeMemberMissing(member);
-            if (expected.Length == 0)
-            {
-                CompileAndVerify(comp, expectedOutput: "456").VerifyDiagnostics();
-            }
-            else
-            {
-                comp.VerifyDiagnostics(expected);
-            }
+            CreateCompilation([source, source2], parseOptions: parseOptions).VerifyDiagnostics(expected);
         }
     }
 
@@ -2183,12 +2198,32 @@ public class FirstClassSpanTests : CSharpTestBase
 
             static class D
             {
-                public static void M(ReadOnlySpan<int> xs)
+                public static void M(ReadOnlySpan<int> xs) { }
+            }
+            """;
+
+        var missingRosHelper = """
+            namespace System
+            {
+                public readonly ref struct Span<T>
                 {
-                    foreach (var x in xs)
-                    {
-                        Console.Write(x);
-                    }
+                    public static implicit operator Span<T>(T[] array) => throw null;
+                }
+                public readonly ref struct ReadOnlySpan<T>
+                {
+                }
+            }
+            """;
+
+        var missingSpanHelper = """
+            namespace System
+            {
+                public readonly ref struct Span<T>
+                {
+                }
+                public readonly ref struct ReadOnlySpan<T>
+                {
+                    public static implicit operator ReadOnlySpan<T>(T[] array) => throw null;
                 }
             }
             """;
@@ -2200,33 +2235,24 @@ public class FirstClassSpanTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_BadArgType, "new C()").WithArguments("1", "C", "System.ReadOnlySpan<int>").WithLocation(3, 5)
         };
 
-        verifyWithMissing(WellKnownMember.System_ReadOnlySpan_T__op_Implicit_Array, TestOptions.Regular12, expectedDiagnostics);
-        verifyWithMissing(WellKnownMember.System_Span_T__op_Implicit_Array, TestOptions.Regular12, expectedDiagnostics);
+        verifyWithMissing(missingRosHelper, TestOptions.Regular12, expectedDiagnostics);
+        verifyWithMissing(missingSpanHelper, TestOptions.Regular12, expectedDiagnostics);
 
         expectedDiagnostics = [
-            // (3,5): error CS0656: Missing compiler required member 'System.ReadOnlySpan`1.op_Implicit'
+            // (3,5): error CS0656: Missing compiler required member 'System.ReadOnlySpan<T>.op_Implicit'
             // D.M(new C());
-            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "new C()").WithArguments("System.ReadOnlySpan`1", "op_Implicit").WithLocation(3, 5)
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "new C()").WithArguments("System.ReadOnlySpan<T>", "op_Implicit").WithLocation(3, 5)
         ];
 
-        verifyWithMissing(WellKnownMember.System_ReadOnlySpan_T__op_Implicit_Array, TestOptions.RegularNext, expectedDiagnostics);
-        verifyWithMissing(WellKnownMember.System_Span_T__op_Implicit_Array, TestOptions.RegularNext);
+        verifyWithMissing(missingRosHelper, TestOptions.RegularNext, expectedDiagnostics);
+        verifyWithMissing(missingSpanHelper, TestOptions.RegularNext);
 
-        verifyWithMissing(WellKnownMember.System_ReadOnlySpan_T__op_Implicit_Array, TestOptions.RegularPreview, expectedDiagnostics);
-        verifyWithMissing(WellKnownMember.System_Span_T__op_Implicit_Array, TestOptions.RegularPreview);
+        verifyWithMissing(missingRosHelper, TestOptions.RegularPreview, expectedDiagnostics);
+        verifyWithMissing(missingSpanHelper, TestOptions.RegularPreview);
 
-        void verifyWithMissing(WellKnownMember member, CSharpParseOptions parseOptions, params DiagnosticDescription[] expected)
+        void verifyWithMissing(string source2, CSharpParseOptions parseOptions, params DiagnosticDescription[] expected)
         {
-            var comp = CreateCompilationWithSpan(source, parseOptions: parseOptions);
-            comp.MakeMemberMissing(member);
-            if (expected.Length == 0)
-            {
-                CompileAndVerify(comp, expectedOutput: "456").VerifyDiagnostics();
-            }
-            else
-            {
-                comp.VerifyDiagnostics(expected);
-            }
+            CreateCompilation([source, source2], parseOptions: parseOptions).VerifyDiagnostics(expected);
         }
     }
 
@@ -2347,15 +2373,20 @@ public class FirstClassSpanTests : CSharpTestBase
             static class C
             {
                 public static void M(int[] arg) => arg.E();
-                public static void E(this Span<int> arg) => Console.Write(arg[1]);
+                public static void E(this Span<int> arg) { }
+            }
+            
+            namespace System
+            {
+                public readonly ref struct Span<T>
+                {
+                }
             }
             """;
-        var comp = CreateCompilationWithSpan(source);
-        comp.MakeMemberMissing(WellKnownMember.System_Span_T__op_Implicit_Array);
-        comp.VerifyDiagnostics(
-            // (7,40): error CS0656: Missing compiler required member 'System.Span`1.op_Implicit'
+        CreateCompilation(source).VerifyDiagnostics(
+            // (7,40): error CS0656: Missing compiler required member 'System.Span<T>.op_Implicit'
             //     public static void M(int[] arg) => arg.E();
-            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "arg").WithArguments("System.Span`1", "op_Implicit").WithLocation(7, 40));
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "arg").WithArguments("System.Span<T>", "op_Implicit").WithLocation(7, 40));
     }
 
     [Fact]
