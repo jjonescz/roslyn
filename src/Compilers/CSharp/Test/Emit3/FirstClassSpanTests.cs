@@ -482,7 +482,7 @@ public class FirstClassSpanTests : CSharpTestBase
         var verifier = CompileAndVerify([source, SpanSource],
             references: [spanDll],
             expectedOutput: "12",
-            verify: Verification.FailsILVerify,
+            verify: Verification.Fails,
             // warning CS0436: Type conflicts with imported type
             options: TestOptions.UnsafeReleaseExe.WithSpecificDiagnosticOptions("CS0436", ReportDiagnostic.Suppress),
             parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
