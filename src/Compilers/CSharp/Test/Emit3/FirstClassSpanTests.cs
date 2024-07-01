@@ -348,6 +348,28 @@ public class FirstClassSpanTests : CSharpTestBase
     }
 
     [Fact]
+    public void Conversion_Array_Span_Implicit_DifferentOperator()
+    {
+        var source = """
+            using System;
+            Span<int> s = arr();
+            static int[] arr() => new int[] { 1, 2, 3 };
+
+            namespace System
+            {
+                public readonly ref struct Span<T>
+                {
+                    public static implicit operator Span<T>(int[] array) => throw null;
+                }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (2,15): error CS0656: Missing compiler required member 'System.Span<T>.op_Implicit'
+            // Span<int> s = arr();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "arr()").WithArguments("System.Span<T>", "op_Implicit").WithLocation(2, 15));
+    }
+
+    [Fact]
     public void Conversion_Array_Span_Implicit_UnrecognizedModreq()
     {
         /*
