@@ -347,6 +347,52 @@ public class FirstClassSpanTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "arr()").WithArguments("System.Span<T>", "op_Implicit").WithLocation(2, 15));
     }
 
+    [Fact]
+    public void Conversion_Array_Span_Implicit_UnrecognizedModreq()
+    {
+        /*
+            public struct Span<T>
+            {
+                public static implicit operator modreq(A) Span<T>(T[] array) => throw null;
+            }
+            public class A { }
+            public static class C
+            {
+                public static void M(Span<int> s) { }
+            }
+         */
+        var ilSource = """
+            .class public sequential ansi sealed beforefieldinit System.Span`1<T> extends System.ValueType
+            {
+                .pack 0
+                .size 1
+                .method public hidebysig specialname static valuetype System.Span`1<!T> modreq(A) op_Implicit(!T[] 'array') cil managed
+                {
+                    .maxstack 1
+                    ret
+                }
+            }
+            .class public auto ansi sealed beforefieldinit A extends System.Object
+            {
+            }
+            .class public auto ansi abstract sealed beforefieldinit C extends System.Object
+            {
+                .method public hidebysig static void M(valuetype System.Span`1<int32> s) cil managed 
+                {
+                    .maxstack 1
+                    ret
+                }
+            }
+            """;
+        var source = """
+            C.M(new int[] { 1, 2, 3 });
+            """;
+        CreateCompilationWithIL(source, ilSource).VerifyDiagnostics(
+            // (1,5): error CS0570: 'Span<T>.implicit operator Span<T>(T[])' is not supported by the language
+            // C.M(new int[] { 1, 2, 3 });
+            Diagnostic(ErrorCode.ERR_BindToBogus, "new int[] { 1, 2, 3 }").WithArguments("System.Span<T>.implicit operator System.Span<T>(T[])").WithLocation(1, 5));
+    }
+
     [Theory, MemberData(nameof(LangVersions))]
     public void Conversion_Array_Span_Implicit_ConstantData(LanguageVersion langVersion)
     {
