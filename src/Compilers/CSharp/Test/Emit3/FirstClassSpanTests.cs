@@ -441,6 +441,55 @@ public class FirstClassSpanTests : CSharpTestBase
             """);
     }
 
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_Span_Implicit_ConstantData_NotWellKnownSpan(LanguageVersion langVersion)
+    {
+        var source = """
+            extern alias span;
+            C.M1(new[] { 1 });
+            C.M2(new[] { 2 });
+            static class C
+            {
+                public static void M1(span::System.Span<int> s) => System.Console.Write(s[0]);
+                public static void M2(span::System.ReadOnlySpan<int> s) => System.Console.Write(s[0]);
+            }
+            """;
+        var spanDll = CreateCompilation(SpanSource, options: TestOptions.UnsafeReleaseDll)
+            .VerifyDiagnostics()
+            .EmitToImageReference(aliases: ["span"]);
+        var verifier = CompileAndVerify([source, SpanSource],
+            references: [spanDll],
+            expectedOutput: "12",
+            verify: Verification.FailsILVerify,
+            // warning CS0436: Type conflicts with imported type
+            options: TestOptions.UnsafeReleaseExe.WithSpecificDiagnosticOptions("CS0436", ReportDiagnostic.Suppress),
+            parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
+        verifier.VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+            {
+              // Code size       41 (0x29)
+              .maxstack  4
+              IL_0000:  ldc.i4.1
+              IL_0001:  newarr     "int"
+              IL_0006:  dup
+              IL_0007:  ldc.i4.0
+              IL_0008:  ldc.i4.1
+              IL_0009:  stelem.i4
+              IL_000a:  call       "System.Span<int> System.Span<int>.op_Implicit(int[])"
+              IL_000f:  call       "void C.M1(System.Span<int>)"
+              IL_0014:  ldc.i4.1
+              IL_0015:  newarr     "int"
+              IL_001a:  dup
+              IL_001b:  ldc.i4.0
+              IL_001c:  ldc.i4.2
+              IL_001d:  stelem.i4
+              IL_001e:  call       "System.ReadOnlySpan<int> System.ReadOnlySpan<int>.op_Implicit(int[])"
+              IL_0023:  call       "void C.M2(System.ReadOnlySpan<int>)"
+              IL_0028:  ret
+            }
+            """);
+    }
+
     [Theory, CombinatorialData]
     public void Conversion_Array_Span_Implicit_MultipleSpans_01(
         [CombinatorialValues("Span", "ReadOnlySpan")] string type)
