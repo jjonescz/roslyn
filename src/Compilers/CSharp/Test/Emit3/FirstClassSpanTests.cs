@@ -1726,10 +1726,11 @@ public class FirstClassSpanTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_MethFuncPtrMismatch, "&C.M").WithArguments("C.M(System.Span<int>)", "delegate*<int[], void>").WithLocation(5, 9));
     }
 
-    [Fact]
-    public void Conversion_Array_Span_Implicit_ExpressionTree_01()
+    [Theory, CombinatorialData]
+    public void Conversion_Array_Span_Implicit_ExpressionTree_01(
+        [CombinatorialValues("Span", "ReadOnlySpan")] string type)
     {
-        var source = """
+        var source = $$"""
             using System;
             using System.Linq.Expressions;
 
@@ -1738,7 +1739,7 @@ public class FirstClassSpanTests : CSharpTestBase
             static class C
             {
                 public static void R(Expression<Action<string[]>> e) => e.Compile()(new string[] { "a" });
-                public static void M(Span<string> x) => Console.Write(x.Length + " " + x[0]);
+                public static void M({{type}}<string> x) => Console.Write(x.Length + " " + x[0]);
             }
             """;
 
@@ -1746,7 +1747,7 @@ public class FirstClassSpanTests : CSharpTestBase
 
         var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12);
         var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
-        verifier.VerifyIL("<top-level-statements-entry-point>", """
+        verifier.VerifyIL("<top-level-statements-entry-point>", $$"""
             {
               // Code size      108 (0x6c)
               .maxstack  9
@@ -1757,7 +1758,7 @@ public class FirstClassSpanTests : CSharpTestBase
               IL_000f:  call       "System.Linq.Expressions.ParameterExpression System.Linq.Expressions.Expression.Parameter(System.Type, string)"
               IL_0014:  stloc.0
               IL_0015:  ldnull
-              IL_0016:  ldtoken    "void C.M(System.Span<string>)"
+              IL_0016:  ldtoken    "void C.M(System.{{type}}<string>)"
               IL_001b:  call       "System.Reflection.MethodBase System.Reflection.MethodBase.GetMethodFromHandle(System.RuntimeMethodHandle)"
               IL_0020:  castclass  "System.Reflection.MethodInfo"
               IL_0025:  ldc.i4.1
@@ -1765,10 +1766,10 @@ public class FirstClassSpanTests : CSharpTestBase
               IL_002b:  dup
               IL_002c:  ldc.i4.0
               IL_002d:  ldloc.0
-              IL_002e:  ldtoken    "System.Span<string>"
+              IL_002e:  ldtoken    "System.{{type}}<string>"
               IL_0033:  call       "System.Type System.Type.GetTypeFromHandle(System.RuntimeTypeHandle)"
-              IL_0038:  ldtoken    "System.Span<string> System.Span<string>.op_Implicit(string[])"
-              IL_003d:  ldtoken    "System.Span<string>"
+              IL_0038:  ldtoken    "System.{{type}}<string> System.{{type}}<string>.op_Implicit(string[])"
+              IL_003d:  ldtoken    "System.{{type}}<string>"
               IL_0042:  call       "System.Reflection.MethodBase System.Reflection.MethodBase.GetMethodFromHandle(System.RuntimeMethodHandle, System.RuntimeTypeHandle)"
               IL_0047:  castclass  "System.Reflection.MethodInfo"
               IL_004c:  call       "System.Linq.Expressions.UnaryExpression System.Linq.Expressions.Expression.Convert(System.Linq.Expressions.Expression, System.Type, System.Reflection.MethodInfo)"
@@ -1786,7 +1787,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """);
 
-        var expectedIl = """
+        var expectedIl = $$"""
             {
               // Code size      108 (0x6c)
               .maxstack  11
@@ -1797,7 +1798,7 @@ public class FirstClassSpanTests : CSharpTestBase
               IL_000f:  call       "System.Linq.Expressions.ParameterExpression System.Linq.Expressions.Expression.Parameter(System.Type, string)"
               IL_0014:  stloc.0
               IL_0015:  ldnull
-              IL_0016:  ldtoken    "void C.M(System.Span<string>)"
+              IL_0016:  ldtoken    "void C.M(System.{{type}}<string>)"
               IL_001b:  call       "System.Reflection.MethodBase System.Reflection.MethodBase.GetMethodFromHandle(System.RuntimeMethodHandle)"
               IL_0020:  castclass  "System.Reflection.MethodInfo"
               IL_0025:  ldc.i4.1
@@ -1805,8 +1806,8 @@ public class FirstClassSpanTests : CSharpTestBase
               IL_002b:  dup
               IL_002c:  ldc.i4.0
               IL_002d:  ldnull
-              IL_002e:  ldtoken    "System.Span<string> System.Span<string>.op_Implicit(string[])"
-              IL_0033:  ldtoken    "System.Span<string>"
+              IL_002e:  ldtoken    "System.{{type}}<string> System.{{type}}<string>.op_Implicit(string[])"
+              IL_0033:  ldtoken    "System.{{type}}<string>"
               IL_0038:  call       "System.Reflection.MethodBase System.Reflection.MethodBase.GetMethodFromHandle(System.RuntimeMethodHandle, System.RuntimeTypeHandle)"
               IL_003d:  castclass  "System.Reflection.MethodInfo"
               IL_0042:  ldc.i4.1
@@ -1839,10 +1840,12 @@ public class FirstClassSpanTests : CSharpTestBase
         verifier.VerifyIL("<top-level-statements-entry-point>", expectedIl);
     }
 
-    [Theory, MemberData(nameof(LangVersions))]
-    public void Conversion_Array_Span_Implicit_ExpressionTree_02(LanguageVersion langVersion)
+    [Theory, CombinatorialData]
+    public void Conversion_Array_Span_Implicit_ExpressionTree_02(
+        [CombinatorialLangVersions] LanguageVersion langVersion,
+        [CombinatorialValues("Span", "ReadOnlySpan")] string type)
     {
-        var source = """
+        var source = $$"""
             using System;
             using System.Linq.Expressions;
 
@@ -1851,17 +1854,17 @@ public class FirstClassSpanTests : CSharpTestBase
             static class C
             {
                 public static void R(Expression<Action> e) { }
-                public static void M(Span<string> x) { }
+                public static void M({{type}}<string> x) { }
             }
             """;
         var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
         var verifier = CompileAndVerify(comp).VerifyDiagnostics();
-        verifier.VerifyIL("<top-level-statements-entry-point>", """
+        verifier.VerifyIL("<top-level-statements-entry-point>", $$"""
             {
               // Code size       97 (0x61)
               .maxstack  9
               IL_0000:  ldnull
-              IL_0001:  ldtoken    "void C.M(System.Span<string>)"
+              IL_0001:  ldtoken    "void C.M(System.{{type}}<string>)"
               IL_0006:  call       "System.Reflection.MethodBase System.Reflection.MethodBase.GetMethodFromHandle(System.RuntimeMethodHandle)"
               IL_000b:  castclass  "System.Reflection.MethodInfo"
               IL_0010:  ldc.i4.1
@@ -1872,10 +1875,10 @@ public class FirstClassSpanTests : CSharpTestBase
               IL_0019:  ldtoken    "string[]"
               IL_001e:  call       "System.Type System.Type.GetTypeFromHandle(System.RuntimeTypeHandle)"
               IL_0023:  call       "System.Linq.Expressions.ConstantExpression System.Linq.Expressions.Expression.Constant(object, System.Type)"
-              IL_0028:  ldtoken    "System.Span<string>"
+              IL_0028:  ldtoken    "System.{{type}}<string>"
               IL_002d:  call       "System.Type System.Type.GetTypeFromHandle(System.RuntimeTypeHandle)"
-              IL_0032:  ldtoken    "System.Span<string> System.Span<string>.op_Implicit(string[])"
-              IL_0037:  ldtoken    "System.Span<string>"
+              IL_0032:  ldtoken    "System.{{type}}<string> System.{{type}}<string>.op_Implicit(string[])"
+              IL_0037:  ldtoken    "System.{{type}}<string>"
               IL_003c:  call       "System.Reflection.MethodBase System.Reflection.MethodBase.GetMethodFromHandle(System.RuntimeMethodHandle, System.RuntimeTypeHandle)"
               IL_0041:  castclass  "System.Reflection.MethodInfo"
               IL_0046:  call       "System.Linq.Expressions.UnaryExpression System.Linq.Expressions.Expression.Convert(System.Linq.Expressions.Expression, System.Type, System.Reflection.MethodInfo)"
@@ -1889,10 +1892,12 @@ public class FirstClassSpanTests : CSharpTestBase
             """);
     }
 
-    [Theory, MemberData(nameof(LangVersions))]
-    public void Conversion_Array_Span_Implicit_ExpressionTree_03(LanguageVersion langVersion)
+    [Theory, CombinatorialData]
+    public void Conversion_Array_Span_Implicit_ExpressionTree_03(
+        [CombinatorialLangVersions] LanguageVersion langVersion,
+        [CombinatorialValues("Span", "ReadOnlySpan")] string type)
     {
-        var source = """
+        var source = $$"""
             using System;
             using System.Linq.Expressions;
 
@@ -1901,14 +1906,14 @@ public class FirstClassSpanTests : CSharpTestBase
             static class C
             {
                 public static void R(Expression<Action> e) => e.Compile()();
-                public static void M(Span<string> x) => Console.Write(x.Length);
+                public static void M({{type}}<string> x) => Console.Write(x.Length);
             }
             """;
 
         CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
             // (4,15): error CS8640: Expression tree cannot contain value of ref struct or restricted type 'Span'.
             // C.R(() => C.M(default));
-            Diagnostic(ErrorCode.ERR_ExpressionTreeCantContainRefStruct, "default").WithArguments("Span").WithLocation(4, 15));
+            Diagnostic(ErrorCode.ERR_ExpressionTreeCantContainRefStruct, "default").WithArguments(type).WithLocation(4, 15));
     }
 
     [Theory, CombinatorialData]
