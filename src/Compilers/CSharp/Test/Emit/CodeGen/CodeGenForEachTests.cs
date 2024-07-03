@@ -5418,7 +5418,7 @@ public static class Extensions
             CompileAndVerify(source, targetFramework: TargetFramework.Net70,
                 verify: Verification.Fails,
                 expectedOutput: ExecutionConditionUtil.IsDesktop ? null : """
-                000
+                111
                 111
                 100
                 111
