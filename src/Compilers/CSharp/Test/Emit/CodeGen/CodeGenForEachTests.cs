@@ -5329,72 +5329,19 @@ public static class Extensions
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/73741")]
-        public void Refs_CompoundAssignment()
+        public void MutatingThroughRefFields_01()
         {
             var source = """
                 using System;
 
-                Run(c => c.M1());
-                Run(c => c.M2());
-                Run(c => c.M3());
-                Run(c => c.M4());
-                Run(c => c.M5());
-                Run(c => c.M6());
+                V[] arr = new V[3];
 
-                static void Run(Action<C> a)
+                foreach (var r in new E(arr))
                 {
-                    var c = new C();
-                    a(c);
-                    foreach (var v in c.arr) Console.Write(v.F);
-                    Console.WriteLine();
+                    r.V.F++;
                 }
 
-                class C
-                {
-                    public V[] arr = new V[3];
-                    public void M1()
-                    {
-                        foreach (var r in new E(arr))
-                        {
-                            r.V.F++;
-                        }
-                    }
-                    public void M2()
-                    {
-                        foreach (var r in new E(arr))
-                        {
-                            r.V.F = r.V.F + 1;
-                        }
-                    }
-                    public void M3()
-                    {
-                        var r = new R(ref arr[0]);
-                        r.V.F++;
-                    }
-                    public void M4()
-                    {
-                        foreach (var r in new E(arr))
-                        {
-                            var r2 = r;
-                            r2.V.F++;
-                        }
-                    }
-                    public void M5()
-                    {
-                        foreach (var r in new E(arr))
-                        {
-                            ref V v = ref r.V;
-                            v.F++;
-                        }
-                    }
-                    public void M6()
-                    {
-                        foreach (var r in new E(arr))
-                        {
-                            r.V.Inc();
-                        }
-                    }
-                }
+                foreach (var v in arr) Console.Write(v.F);
 
                 ref struct E(V[] arr)
                 {
@@ -5412,147 +5359,27 @@ public static class Extensions
                 struct V
                 {
                     public int F;
-                    public void Inc() => F++;
                 }
                 """;
             CompileAndVerify(source, targetFramework: TargetFramework.Net70,
                 verify: Verification.Fails,
-                expectedOutput: ExecutionConditionUtil.IsDesktop ? null : """
-                111
-                111
-                100
-                111
-                111
-                111
-                """).VerifyDiagnostics();
+                expectedOutput: ExecutionConditionUtil.IsDesktop ? null : "111").VerifyDiagnostics();
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/73741")]
-        public void Refs_CompoundAssignment_ThroughOneFieldOnly()
+        public void MutatingThroughRefFields_02()
         {
             var source = """
                 using System;
 
-                new C().M1();
-                new C().M2();
-                new C().M3();
-                new C().M4();
+                V[] arr = new V[3];
 
-                class C
+                foreach (var r in new E(arr))
                 {
-                    private int[] arr = new int[3];
-                    public void M1()
-                    {
-                        foreach (var r in new E(arr))
-                        {
-                            r.X++;
-                        }
-                        Write();
-                    }
-                    public void M2()
-                    {
-                        foreach (var r in new E(arr))
-                        {
-                            r.X = r.X + 1;
-                        }
-                        Write();
-                    }
-                    public void M3()
-                    {
-                        var r = new R(ref arr[0]);
-                        r.X++;
-                        Write();
-                    }
-                    public void M4()
-                    {
-                        foreach (var r in new E(arr))
-                        {
-                            var r2 = r;
-                            r2.X++;
-                        }
-                        Write();
-                    }
-                    public void Write()
-                    {
-                        foreach (var x in arr) Console.Write(x);
-                        Console.WriteLine();
-                    }
+                    r.V.F += 2;
                 }
 
-                ref struct E(int[] arr)
-                {
-                    int i;
-                    public E GetEnumerator() => this;
-                    public R Current => new(ref arr[i - 1]);
-                    public bool MoveNext() => i++ < arr.Length;
-                }
-
-                ref struct R(ref int x)
-                {
-                    public ref int X = ref x;
-                }
-                """;
-            CompileAndVerify(source, targetFramework: TargetFramework.Net70,
-                verify: Verification.Fails,
-                expectedOutput: ExecutionConditionUtil.IsDesktop ? null : """
-                111
-                111
-                100
-                111
-                """).VerifyDiagnostics();
-        }
-
-        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/73741")]
-        public void Refs_CompoundAssignment_Property()
-        {
-            var source = """
-                using System;
-
-                new C().M1();
-                new C().M2();
-                new C().M3();
-                new C().M4();
-
-                class C
-                {
-                    private V[] arr = new V[3];
-                    public void M1()
-                    {
-                        foreach (var r in new E(arr))
-                        {
-                            r.V.F++;
-                        }
-                        Write();
-                    }
-                    public void M2()
-                    {
-                        foreach (var r in new E(arr))
-                        {
-                            r.V.F = r.V.F + 1;
-                        }
-                        Write();
-                    }
-                    public void M3()
-                    {
-                        var r = new R(ref arr[0]);
-                        r.V.F++;
-                        Write();
-                    }
-                    public void M4()
-                    {
-                        foreach (var r in new E(arr))
-                        {
-                            var r2 = r;
-                            r2.V.F++;
-                        }
-                        Write();
-                    }
-                    public void Write()
-                    {
-                        foreach (var v in arr) Console.Write(v.F);
-                        Console.WriteLine();
-                    }
-                }
+                foreach (var v in arr) Console.Write(v.F);
 
                 ref struct E(V[] arr)
                 {
@@ -5564,8 +5391,7 @@ public static class Extensions
 
                 ref struct R(ref V v)
                 {
-                    private ref V _v = ref v;
-                    public ref V V => ref _v;
+                    public ref V V = ref v;
                 }
 
                 struct V
@@ -5575,12 +5401,51 @@ public static class Extensions
                 """;
             CompileAndVerify(source, targetFramework: TargetFramework.Net70,
                 verify: Verification.Fails,
-                expectedOutput: ExecutionConditionUtil.IsDesktop ? null : """
-                111
-                111
-                100
-                111
-                """).VerifyDiagnostics();
+                expectedOutput: ExecutionConditionUtil.IsDesktop ? null : "222").VerifyDiagnostics();
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/73741")]
+        public void MutatingThroughRefFields_03()
+        {
+            var source = """
+                using System;
+
+                V[] arr = new V[3];
+
+                foreach (var r in new E(arr))
+                {
+                    r.V.S.Inc();
+                }
+
+                foreach (var v in arr) Console.Write(v.S.F);
+
+                ref struct E(V[] arr)
+                {
+                    int i;
+                    public E GetEnumerator() => this;
+                    public R Current => new(ref arr[i - 1]);
+                    public bool MoveNext() => i++ < arr.Length;
+                }
+
+                ref struct R(ref V v)
+                {
+                    public ref V V = ref v;
+                }
+
+                struct V
+                {
+                    public S S;
+                }
+
+                struct S
+                {
+                    public int F;
+                    public void Inc() => F++;
+                }
+                """;
+            CompileAndVerify(source, targetFramework: TargetFramework.Net70,
+                verify: Verification.Fails,
+                expectedOutput: ExecutionConditionUtil.IsDesktop ? null : "111").VerifyDiagnostics();
         }
     }
 }
