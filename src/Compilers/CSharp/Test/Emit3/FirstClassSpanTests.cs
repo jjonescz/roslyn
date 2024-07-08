@@ -408,9 +408,7 @@ public class FirstClassSpanTests : CSharpTestBase
     }
 
     [Theory, CombinatorialData]
-    public void Conversion_String_ReadOnlySpan_Implicit(
-        [CombinatorialLangVersions] LanguageVersion langVersion,
-        bool cast)
+    public void Conversion_String_ReadOnlySpan_Implicit(bool cast)
     {
         var source = $$"""
             using System;
@@ -422,7 +420,7 @@ public class FirstClassSpanTests : CSharpTestBase
 
         var expectedOutput = "a b c";
 
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
         var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", """
@@ -430,11 +428,32 @@ public class FirstClassSpanTests : CSharpTestBase
               // Code size       16 (0x10)
               .maxstack  1
               IL_0000:  call       "string Program.<<Main>$>g__source|0_0()"
-              IL_0005:  call       "System.ReadOnlySpan<char> System.MemoryExtensions.AsSpan(string)"
+              IL_0005:  call       "System.ReadOnlySpan<char> System.ReadOnlySpan<char>.op_Implicit(string)"
               IL_000a:  call       "void Program.<<Main>$>g__report|0_1(System.ReadOnlySpan<char>)"
               IL_000f:  ret
             }
             """);
+
+        var expectedIL = """
+            {
+              // Code size       16 (0x10)
+              .maxstack  1
+              IL_0000:  call       "string Program.<<Main>$>g__source|0_0()"
+              IL_0005:  call       "System.ReadOnlySpan<char> System.MemoryExtensions.AsSpan(string)"
+              IL_000a:  call       "void Program.<<Main>$>g__report|0_1(System.ReadOnlySpan<char>)"
+              IL_000f:  ret
+            }         
+            """;
+
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext);
+        verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
+        verifier.VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
+
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source);
+        verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
+        verifier.VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
     }
 
     [Fact]
