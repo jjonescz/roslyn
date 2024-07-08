@@ -644,7 +644,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         Arity: 0,
                         IsStatic: true,
                         DeclaredAccessibility: Accessibility.Public,
-                        Parameters: [{ Type: { SpecialType: SpecialType.System_String } }]
+                        Parameters: [{ Type.SpecialType: SpecialType.System_String }]
                     } method ? method : null) is { } selected &&
                     selected.ReturnType.Equals(readOnlySpanType, TypeCompareKind.ConsiderEverything))
                 {
