@@ -1182,6 +1182,108 @@ public class FirstClassSpanTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("int[]", "System.Span<string>").WithLocation(3, 41));
     }
 
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_Span_Explicit_UnrelatedElementType(LanguageVersion langVersion)
+    {
+        var source = """
+            using System;
+            class C
+            {
+                Span<string> M(int[] arg) => (Span<string>)arg;
+            }
+            """;
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (4,34): error CS0030: Cannot convert type 'int[]' to 'System.Span<string>'
+            //     Span<string> M(int[] arg) => (Span<string>)arg;
+            Diagnostic(ErrorCode.ERR_NoExplicitConv, "(Span<string>)arg").WithArguments("int[]", "System.Span<string>").WithLocation(4, 34));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_ReadOnlySpan_Implicit_UnrelatedElementType(LanguageVersion langVersion)
+    {
+        var source = """
+            class C
+            {
+                System.ReadOnlySpan<string> M(int[] arg) => arg;
+            }
+            """;
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (3,49): error CS0029: Cannot implicitly convert type 'int[]' to 'System.ReadOnlySpan<string>'
+            //     System.ReadOnlySpan<string> M(int[] arg) => arg;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("int[]", "System.ReadOnlySpan<string>").WithLocation(3, 49));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_ReadOnlySpan_Implicit_UnrelatedElementType_HelperWithoutInheritsConstraint(LanguageVersion langVersion)
+    {
+        var source = """
+            class C
+            {
+                System.ReadOnlySpan<string> M(int[] arg) => arg;
+            }
+
+            namespace System
+            {
+                public readonly ref struct ReadOnlySpan<T>
+                {
+                    public static ReadOnlySpan<T> CastUp<TDerived>(ReadOnlySpan<TDerived> items) where TDerived : class => throw null;
+                }
+            }
+            """;
+        CreateCompilation(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (3,49): error CS0029: Cannot implicitly convert type 'int[]' to 'System.ReadOnlySpan<string>'
+            //     System.ReadOnlySpan<string> M(int[] arg) => arg;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("int[]", "System.ReadOnlySpan<string>").WithLocation(3, 49));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Array_ReadOnlySpan_Explicit_UnrelatedElementType(LanguageVersion langVersion)
+    {
+        var source = """
+            using System;
+            class C
+            {
+                ReadOnlySpan<string> M(int[] arg) => (ReadOnlySpan<string>)arg;
+            }
+            """;
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (4,42): error CS0030: Cannot convert type 'int[]' to 'System.ReadOnlySpan<string>'
+            //     ReadOnlySpan<string> M(int[] arg) => (ReadOnlySpan<string>)arg;
+            Diagnostic(ErrorCode.ERR_NoExplicitConv, "(ReadOnlySpan<string>)arg").WithArguments("int[]", "System.ReadOnlySpan<string>").WithLocation(4, 42));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit_UnrelatedElementType(LanguageVersion langVersion)
+    {
+        var source = """
+            using System;
+            class C
+            {
+                ReadOnlySpan<string> M(ReadOnlySpan<int> arg) => arg;
+            }
+            """;
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (4,54): error CS0029: Cannot implicitly convert type 'System.ReadOnlySpan<int>' to 'System.ReadOnlySpan<string>'
+            //     ReadOnlySpan<string> M(ReadOnlySpan<int> arg) => arg;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("System.ReadOnlySpan<int>", "System.ReadOnlySpan<string>").WithLocation(4, 54));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_Explicit_UnrelatedElementType(LanguageVersion langVersion)
+    {
+        var source = """
+            using System;
+            class C
+            {
+                ReadOnlySpan<string> M(ReadOnlySpan<int> arg) => (ReadOnlySpan<string>)arg;
+            }
+            """;
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+            // (4,54): error CS0030: Cannot convert type 'System.ReadOnlySpan<int>' to 'System.ReadOnlySpan<string>'
+            //     ReadOnlySpan<string> M(ReadOnlySpan<int> arg) => (ReadOnlySpan<string>)arg;
+            Diagnostic(ErrorCode.ERR_NoExplicitConv, "(ReadOnlySpan<string>)arg").WithArguments("System.ReadOnlySpan<int>", "System.ReadOnlySpan<string>").WithLocation(4, 54));
+    }
+
     [Fact]
     public void Conversion_Array_Span_Implicit_NullableAnalysis()
     {
