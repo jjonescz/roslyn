@@ -357,6 +357,58 @@ public class FirstClassSpanTests : CSharpTestBase
     }
 
     [Theory, CombinatorialData]
+    public void Conversion_Span_ReadOnlySpan_CastUp_Implicit(bool cast)
+    {
+        var source = $$"""
+            using System;
+            ReadOnlySpan<object> s = {{(cast ? "(ReadOnlySpan<object>)" : "")}}source();
+            report(s);
+            static Span<string> source() => new Span<string>(new[] { "a", "b" });
+            static void report(ReadOnlySpan<object> s) { foreach (var x in s) { Console.Write(x); } }
+            """;
+
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12);
+        if (!cast)
+        {
+            comp.VerifyDiagnostics(
+                // (2,26): error CS0029: Cannot implicitly convert type 'System.Span<string>' to 'System.ReadOnlySpan<object>'
+                // ReadOnlySpan<object> s = source();
+                Diagnostic(ErrorCode.ERR_NoImplicitConv, "source()").WithArguments("System.Span<string>", "System.ReadOnlySpan<object>").WithLocation(2, 26));
+        }
+        else
+        {
+            comp.VerifyDiagnostics(
+                // (2,26): error CS0030: Cannot convert type 'System.Span<string>' to 'System.ReadOnlySpan<object>'
+                // ReadOnlySpan<object> s = (ReadOnlySpan<object>)source();
+                Diagnostic(ErrorCode.ERR_NoExplicitConv, "(ReadOnlySpan<object>)source()").WithArguments("System.Span<string>", "System.ReadOnlySpan<object>").WithLocation(2, 26));
+        }
+
+        var expectedOutput = "ab";
+
+        var expectedIL = """
+            {
+              // Code size       21 (0x15)
+              .maxstack  1
+              IL_0000:  call       "System.Span<string> Program.<<Main>$>g__source|0_0()"
+              IL_0005:  call       "System.ReadOnlySpan<string> System.Span<string>.op_Implicit(System.Span<string>)"
+              IL_000a:  call       "System.ReadOnlySpan<object> System.ReadOnlySpan<object>.CastUp<string>(System.ReadOnlySpan<string>)"
+              IL_000f:  call       "void Program.<<Main>$>g__report|0_1(System.ReadOnlySpan<object>)"
+              IL_0014:  ret
+            }
+            """;
+
+        comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics();
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
+        verifier.VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
+
+        comp = CreateCompilationWithSpan(source).VerifyDiagnostics();
+        verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
+        verifier.VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
+    }
+
+    [Theory, CombinatorialData]
     public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit(bool cast)
     {
         var source = $$"""

@@ -665,7 +665,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                                     throw ExceptionUtilities.Unreachable();
                                 }
 
-                                MethodSymbol castUpMethod = castUpMethodDefinition.AsMember(destinationType);
+                                TypeWithAnnotations sourceElementType = ((NamedTypeSymbol)sourceType).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0];
+                                MethodSymbol castUpMethod = castUpMethodDefinition.AsMember(destinationType).Construct([sourceElementType]);
 
                                 return _factory.Call(null, castUpMethod, rewrittenOperand);
                             }
@@ -685,8 +686,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 throw ExceptionUtilities.Unreachable();
                             }
 
-                            TypeWithAnnotations elementType = ((NamedTypeSymbol)sourceType).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0];
-                            MethodSymbol method = methodDefinition.AsMember(destinationType).Construct([elementType]);
+                            TypeWithAnnotations sourceElementType = ((NamedTypeSymbol)sourceType).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0];
+                            MethodSymbol method = methodDefinition.AsMember(destinationType).Construct([sourceElementType]);
 
                             rewrittenOperand = _factory.Convert(method.ParameterTypesWithAnnotations[0].Type, rewrittenOperand);
                             return _factory.Call(null, method, rewrittenOperand);
