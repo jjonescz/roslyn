@@ -397,12 +397,12 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics();
+        comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
         var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
 
-        comp = CreateCompilationWithSpan(source).VerifyDiagnostics();
+        comp = CreateCompilationWithSpan(source);
         verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
@@ -448,12 +448,12 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics();
+        comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
         var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
 
-        comp = CreateCompilationWithSpan(source).VerifyDiagnostics();
+        comp = CreateCompilationWithSpan(source);
         verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
@@ -829,6 +829,60 @@ public class FirstClassSpanTests : CSharpTestBase
               IL_0005:  call       "System.Span<int> System.Span<int>.op_Implicit(int[])"
               IL_000a:  call       "void C.M(System.Span<int>)"
               IL_000f:  ret
+            }
+            """);
+    }
+
+    [Theory]
+    [InlineData("where TDerived : T")]
+    [InlineData("")]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit_MissingClassConstraint(string constraints)
+    {
+        var source = $$"""
+            using System;
+            ReadOnlySpan<object> s = source();
+            static ReadOnlySpan<string> source() => throw null;
+            
+            namespace System
+            {
+                public readonly ref struct ReadOnlySpan<T>
+                {
+                    public static ReadOnlySpan<T> CastUp<TDerived>(ReadOnlySpan<TDerived> items) {{constraints}} => throw null;
+                }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (2,26): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.CastUp'
+            // ReadOnlySpan<object> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "CastUp").WithLocation(2, 26));
+    }
+
+    [Fact]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit_MissingInheritsConstraint()
+    {
+        var source = """
+            using System;
+            ReadOnlySpan<object> s = source();
+            static ReadOnlySpan<string> source() => throw null;
+            
+            namespace System
+            {
+                public readonly ref struct ReadOnlySpan<T>
+                {
+                    public static ReadOnlySpan<T> CastUp<TDerived>(ReadOnlySpan<TDerived> items) where TDerived : class => throw null;
+                }
+            }
+            """;
+        var verifier = CompileAndVerify(source);
+        verifier.VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+            {
+              // Code size       12 (0xc)
+              .maxstack  1
+              IL_0000:  call       "System.ReadOnlySpan<string> Program.<<Main>$>g__source|0_0()"
+              IL_0005:  call       "System.ReadOnlySpan<object> System.ReadOnlySpan<object>.CastUp<string>(System.ReadOnlySpan<string>)"
+              IL_000a:  pop
+              IL_000b:  ret
             }
             """);
     }
