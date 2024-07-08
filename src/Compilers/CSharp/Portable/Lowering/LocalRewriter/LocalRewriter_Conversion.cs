@@ -698,12 +698,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                             Debug.Assert(destinationType.IsReadOnlySpan());
                             Debug.Assert(conversion.Kind is ConversionKind.ImplicitSpan);
 
-                            if (Binder.TryFindAsSpanCharMethod(_compilation, destinationType) is not { } methodDefinition)
+                            if (Binder.TryFindAsSpanCharMethod(_compilation, destinationType) is not { } method)
                             {
                                 throw ExceptionUtilities.Unreachable();
                             }
-
-                            MethodSymbol method = methodDefinition.AsMember(destinationType);
 
                             rewrittenOperand = _factory.Convert(method.ParameterTypesWithAnnotations[0].Type, rewrittenOperand);
                             return _factory.Call(null, method, rewrittenOperand);

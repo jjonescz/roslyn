@@ -429,9 +429,9 @@ public class FirstClassSpanTests : CSharpTestBase
             {
               // Code size       16 (0x10)
               .maxstack  1
-              IL_0000:  call       "System.Span<int> Program.<<Main>$>g__source|0_0()"
-              IL_0005:  call       "System.ReadOnlySpan<int> System.Span<int>.op_Implicit(System.Span<int>)"
-              IL_000a:  call       "void Program.<<Main>$>g__report|0_1(System.ReadOnlySpan<int>)"
+              IL_0000:  call       "string Program.<<Main>$>g__source|0_0()"
+              IL_0005:  call       "System.ReadOnlySpan<char> System.MemoryExtensions.AsSpan(string)"
+              IL_000a:  call       "void Program.<<Main>$>g__report|0_1(System.ReadOnlySpan<char>)"
               IL_000f:  ret
             }
             """);
