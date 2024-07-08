@@ -2402,6 +2402,13 @@ namespace System
             }
 
             public static implicit operator ReadOnlySpan<T>(T[] array) => array == null ? default : new ReadOnlySpan<T>(array);
+
+#nullable enable
+            public static ReadOnlySpan<T> CastUp<TDerived>(ReadOnlySpan<TDerived> items) where TDerived : class?, T
+            {
+                return new ReadOnlySpan<T>(items.arr, 0, items.Length);
+            }
+#nullable restore
         }
 
         public readonly ref struct SpanLike<T>
