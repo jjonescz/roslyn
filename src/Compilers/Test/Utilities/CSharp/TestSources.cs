@@ -158,6 +158,9 @@ namespace System
 
         public static implicit operator ReadOnlySpan<T>(T[] array) => array == null ? default : new ReadOnlySpan<T>(array);
 
+        // NOTE: This is defined on String in the BCL (and the target type is non-generic ReadOnlySpan<char>).
+        public static implicit operator ReadOnlySpan<T>(string stringValue) => string.IsNullOrEmpty(stringValue) ? default : new ReadOnlySpan<T>((T[])(object)stringValue.ToCharArray());
+
         public ReadOnlySpan<T> Slice(int offset, int length) => new ReadOnlySpan<T>(this.arr, offset, length);
 
 #nullable enable
@@ -189,12 +192,12 @@ namespace System
                 return null;
             }
 
-            if (typeof(T) == typeof(int))
+            if (typeof(T) == typeof(sbyte))
             {
-                var arr = new int[count];
+                var arr = new sbyte[count];
                 for(int i = 0; i < count; i++)
                 {
-                    arr[i] = ((int*)ptr)[i];
+                    arr[i] = ((sbyte*)ptr)[i];
                 }
 
                 return (T[])(object)arr;
@@ -206,6 +209,72 @@ namespace System
                 for(int i = 0; i < count; i++)
                 {
                     arr[i] = ((byte*)ptr)[i];
+                }
+
+                return (T[])(object)arr;
+            }
+
+            if (typeof(T) == typeof(short))
+            {
+                var arr = new short[count];
+                for(int i = 0; i < count; i++)
+                {
+                    arr[i] = ((short*)ptr)[i];
+                }
+
+                return (T[])(object)arr;
+            }
+
+            if (typeof(T) == typeof(ushort))
+            {
+                var arr = new ushort[count];
+                for(int i = 0; i < count; i++)
+                {
+                    arr[i] = ((ushort*)ptr)[i];
+                }
+
+                return (T[])(object)arr;
+            }
+
+            if (typeof(T) == typeof(int))
+            {
+                var arr = new int[count];
+                for(int i = 0; i < count; i++)
+                {
+                    arr[i] = ((int*)ptr)[i];
+                }
+
+                return (T[])(object)arr;
+            }
+
+            if (typeof(T) == typeof(uint))
+            {
+                var arr = new uint[count];
+                for(int i = 0; i < count; i++)
+                {
+                    arr[i] = ((uint*)ptr)[i];
+                }
+
+                return (T[])(object)arr;
+            }
+
+            if (typeof(T) == typeof(long))
+            {
+                var arr = new long[count];
+                for(int i = 0; i < count; i++)
+                {
+                    arr[i] = ((long*)ptr)[i];
+                }
+
+                return (T[])(object)arr;
+            }
+
+            if (typeof(T) == typeof(ulong))
+            {
+                var arr = new ulong[count];
+                for(int i = 0; i < count; i++)
+                {
+                    arr[i] = ((ulong*)ptr)[i];
                 }
 
                 return (T[])(object)arr;
