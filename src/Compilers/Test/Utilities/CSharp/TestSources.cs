@@ -18,6 +18,7 @@ namespace System
         public ref T this[int i] => ref arr[i];
         public override int GetHashCode() => 1;
         public int Length { get; }
+        public bool IsEmpty => Length == 0;
 
         unsafe public Span(void* pointer, int length)
         {
@@ -29,6 +30,13 @@ namespace System
         {
             this.arr = arr;
             this.Length = arr is null ? 0 : arr.Length;
+        }
+
+        public Span(T[] arr, int start, int length)
+        {
+            this.arr = new T[length];
+            Array.Copy(arr, start, this.arr, 0, length);
+            this.Length = length;
         }
 
         public void CopyTo(Span<T> other) { }
@@ -76,12 +84,7 @@ namespace System
 
         public static implicit operator ReadOnlySpan<T>(Span<T> span) => new ReadOnlySpan<T>(span.arr);
 
-        public Span<T> Slice(int offset, int length)
-        {
-            var copy = new T[length];
-            Array.Copy(arr, offset, copy, 0, length);
-            return new Span<T>(copy);
-        }
+        public Span<T> Slice(int offset, int length) => new Span<T>(this.arr, offset, length);
     }
 
     public readonly ref struct ReadOnlySpan<T>
@@ -91,6 +94,7 @@ namespace System
         public ref readonly T this[int i] => ref arr[i];
         public override int GetHashCode() => 2;
         public int Length { get; }
+        public bool IsEmpty => Length == 0;
 
         unsafe public ReadOnlySpan(void* pointer, int length)
         {
@@ -102,6 +106,13 @@ namespace System
         {
             this.arr = arr;
             this.Length = arr is null ? 0 : arr.Length;
+        }
+
+        public ReadOnlySpan(T[] arr, int start, int length)
+        {
+            this.arr = new T[length];
+            Array.Copy(arr, start, this.arr, 0, length);
+            this.Length = length;
         }
 
         public void CopyTo(Span<T> other) { }
@@ -147,14 +158,14 @@ namespace System
 
         public static implicit operator ReadOnlySpan<T>(T[] array) => array == null ? default : new ReadOnlySpan<T>(array);
 
-        public static implicit operator ReadOnlySpan<T>(string stringValue) => string.IsNullOrEmpty(stringValue) ? default : new ReadOnlySpan<T>((T[])(object)stringValue.ToCharArray());
+        public ReadOnlySpan<T> Slice(int offset, int length) => new ReadOnlySpan<T>(this.arr, offset, length);
 
-        public ReadOnlySpan<T> Slice(int offset, int length)
+#nullable enable
+        public static ReadOnlySpan<T> CastUp<TDerived>(ReadOnlySpan<TDerived> items) where TDerived : class?, T
         {
-            var copy = new T[length];
-            Array.Copy(arr, offset, copy, 0, length);
-            return new ReadOnlySpan<T>(copy);
+            return new ReadOnlySpan<T>(items.arr, 0, items.Length);
         }
+#nullable restore
     }
 
     public readonly ref struct SpanLike<T>
