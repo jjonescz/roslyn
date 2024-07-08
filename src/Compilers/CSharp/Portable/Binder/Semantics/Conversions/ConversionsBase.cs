@@ -4047,7 +4047,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
 
                 // SPEC: - `string` and `System.ReadOnlySpan<char>`
-                if (a.IsStringType() && b.OriginalDefinition.IsReadOnlySpanChar())
+                if (a.IsStringType() && b.IsReadOnlySpanChar())
                 {
                     return true;
                 }
