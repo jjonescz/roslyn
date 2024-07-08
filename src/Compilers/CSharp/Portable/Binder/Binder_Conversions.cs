@@ -540,7 +540,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (source.Type.IsStringType())
                     {
                         reportUseSiteOrMissing(
-                            TryFindAsSpanCharMethod(Compilation, destination.OriginalDefinition),
+                            TryFindAsSpanCharMethod(Compilation, destination),
                             WellKnownMemberNames.MemoryExtensionsTypeFullName,
                             WellKnownMemberNames.AsSpanMethodName,
                             syntax,
@@ -637,7 +637,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             MethodSymbol? result = null;
             foreach (var memoryExtensionsType in compilation.GetTypesByMetadataName(WellKnownMemberNames.MemoryExtensionsTypeFullName))
             {
-                if (TryFindSingleMember((NamedTypeSymbol)memoryExtensionsType, WellKnownMemberNames.AsSpanMethodName, 0,
+                if (TryFindSingleMember(memoryExtensionsType.GetSymbol<NamedTypeSymbol>(), WellKnownMemberNames.AsSpanMethodName, 0,
                     static (_, member) => member is MethodSymbol
                     {
                         ParameterCount: 1,

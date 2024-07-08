@@ -698,7 +698,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             Debug.Assert(destinationType.IsReadOnlySpan());
                             Debug.Assert(conversion.Kind is ConversionKind.ImplicitSpan);
 
-                            if (Binder.TryFindAsSpanCharMethod(_compilation, destinationType.OriginalDefinition) is not { } methodDefinition)
+                            if (Binder.TryFindAsSpanCharMethod(_compilation, destinationType) is not { } methodDefinition)
                             {
                                 throw ExceptionUtilities.Unreachable();
                             }
