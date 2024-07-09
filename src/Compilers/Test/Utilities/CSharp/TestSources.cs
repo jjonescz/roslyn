@@ -8,7 +8,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Test.Utilities
 {
     internal static class TestSources
     {
-        internal const string Span = @"
+        internal static readonly string Span = @"
 namespace System
 {
     public readonly ref struct Span<T>
@@ -307,7 +307,7 @@ namespace System
     }
 }";
 
-        internal const string Index = @"
+        internal static readonly string Index = @"
 
 namespace System
 {
@@ -403,7 +403,7 @@ namespace System
     }
 }";
 
-        internal const string Range = @"
+        internal static readonly string Range = @"
 namespace System
 {
     using System.Runtime.CompilerServices;
@@ -473,7 +473,7 @@ namespace System
     }
 }";
 
-        public const string GetSubArray = @"
+        public static readonly string GetSubArray = @"
 namespace System.Runtime.CompilerServices
 {
     public static class RuntimeHelpers
@@ -490,7 +490,7 @@ namespace System.Runtime.CompilerServices
     }
 }";
 
-        public const string ITuple = @"
+        public static readonly string ITuple = @"
 namespace System.Runtime.CompilerServices
 {
     public interface ITuple
@@ -500,7 +500,7 @@ namespace System.Runtime.CompilerServices
     }
 }";
 
-        public const string MemoryExtensions = @"
+        public static readonly string MemoryExtensions = @"
 namespace System
 {
     public static class MemoryExtensions
