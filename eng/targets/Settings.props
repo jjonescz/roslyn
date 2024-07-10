@@ -68,7 +68,7 @@
     <BuildWithNetFrameworkHostedCompiler>false</BuildWithNetFrameworkHostedCompiler>
 
     <!-- https://github.com/dotnet/msbuild/issues/10306 -->
-    <CoreCompileDependsOn>$(CoreCompileDependsOn);ResolveKeySource</CoreCompileDependsOn> 
+    <CoreCompileDependsOn>$(CoreCompileDependsOn);ResolveKeySource;PrepareResources</CoreCompileDependsOn> 
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)TargetFrameworks.props" />
