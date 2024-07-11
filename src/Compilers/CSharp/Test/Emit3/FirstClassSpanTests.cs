@@ -342,7 +342,7 @@ public class FirstClassSpanTests : CSharpTestBase
         var expectedOutput = "123";
 
         var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
-        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput, verify: Verification.FailsILVerify);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", """
             {
@@ -398,12 +398,12 @@ public class FirstClassSpanTests : CSharpTestBase
             """;
 
         comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
-        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput, verify: Verification.FailsILVerify);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
 
         comp = CreateCompilationWithSpan(source);
-        verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
+        verifier = CompileAndVerify(comp, expectedOutput: expectedOutput, verify: Verification.FailsILVerify);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
     }
@@ -449,12 +449,12 @@ public class FirstClassSpanTests : CSharpTestBase
             """;
 
         comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
-        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput, verify: Verification.FailsILVerify);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
 
         comp = CreateCompilationWithSpan(source);
-        verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
+        verifier = CompileAndVerify(comp, expectedOutput: expectedOutput, verify: Verification.FailsILVerify);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
     }
