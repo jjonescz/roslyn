@@ -571,12 +571,18 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal static MethodSymbol? TryFindImplicitOperatorFromArray(TypeSymbol type)
         {
+            Debug.Assert(type.IsSpan() || type.IsReadOnlySpan());
+            Debug.Assert(type.IsDefinition);
+
             return TryFindImplicitOperator(type, 0, static (_, parameterType) =>
                 parameterType is ArrayTypeSymbol { IsSZArray: true, ElementType: TypeParameterSymbol });
         }
 
         internal static MethodSymbol? TryFindImplicitOperatorFromSpan(TypeSymbol spanType, TypeSymbol readonlySpanType)
         {
+            Debug.Assert(spanType.IsSpan() && readonlySpanType.IsReadOnlySpan());
+            Debug.Assert(spanType.IsDefinition && readonlySpanType.IsDefinition);
+
             return TryFindImplicitOperator(spanType, readonlySpanType,
                 parameterPredicate: static (_, parameterType) => parameterType.IsSpan(),
                 returnTypePredicate: static (readonlySpanType, returnType) => readonlySpanType.Equals(returnType.OriginalDefinition, TypeCompareKind.ConsiderEverything));
@@ -587,18 +593,23 @@ namespace Microsoft.CodeAnalysis.CSharp
             Func<TArg, TypeSymbol, bool>? returnTypePredicate = null)
         {
             return TryFindSingleMember(type, WellKnownMemberNames.ImplicitConversionName, (parameterPredicate, returnTypePredicate, arg),
-                static (arg, member) => member is MethodSymbol
+                static (arg, method) => method is
                 {
                     ParameterCount: 1,
                     Arity: 0,
                     IsStatic: true,
                     DeclaredAccessibility: Accessibility.Public,
                     Parameters: [{ Type: { } parameterType }],
-                } method && arg.parameterPredicate(arg.arg, parameterType) && arg.returnTypePredicate?.Invoke(arg.arg, method.ReturnType) != false ? method : null);
+                } && arg.parameterPredicate(arg.arg, parameterType) &&
+                    arg.returnTypePredicate?.Invoke(arg.arg, method.ReturnType) != false);
         }
 
         internal static bool NeedsSpanCastUp(TypeSymbol source, TypeSymbol destination)
         {
+            Debug.Assert(source.OriginalDefinition.IsSpan() || source.OriginalDefinition.IsReadOnlySpan());
+            Debug.Assert(destination.OriginalDefinition.IsReadOnlySpan());
+            Debug.Assert(!source.IsDefinition && !destination.IsDefinition);
+
             var sourceElementType = ((NamedTypeSymbol)source).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0].Type;
             var destinationElementType = ((NamedTypeSymbol)destination).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0].Type;
 
@@ -619,8 +630,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal static MethodSymbol? TryFindCastUpMethod(TypeSymbol readOnlySpanType)
         {
+            Debug.Assert(readOnlySpanType.IsReadOnlySpan());
+            Debug.Assert(readOnlySpanType.IsDefinition);
+
             return TryFindSingleMember(readOnlySpanType, WellKnownMemberNames.CastUpMethodName, readOnlySpanType,
-                static (readOnlySpanType, member) => member is MethodSymbol
+                static (readOnlySpanType, method) => method is
                 {
                     ParameterCount: 1,
                     Arity: 1,
@@ -628,27 +642,30 @@ namespace Microsoft.CodeAnalysis.CSharp
                     DeclaredAccessibility: Accessibility.Public,
                     Parameters: [{ } parameter],
                     TypeArgumentsWithAnnotations: [{ } typeArgument],
-                } method && readOnlySpanType.Equals(parameter.Type.OriginalDefinition, TypeCompareKind.ConsiderEverything) &&
+                } && readOnlySpanType.Equals(parameter.Type.OriginalDefinition, TypeCompareKind.ConsiderEverything) &&
                     readOnlySpanType.Equals(method.ReturnType.OriginalDefinition, TypeCompareKind.ConsiderEverything) &&
                     typeArgument.Type.IsReferenceType &&
-                    ((NamedTypeSymbol)parameter.Type).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0].Type.Equals(typeArgument.Type, TypeCompareKind.ConsiderEverything) ? method : null);
+                    ((NamedTypeSymbol)parameter.Type).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0].Type.Equals(typeArgument.Type, TypeCompareKind.ConsiderEverything));
         }
 
         internal static MethodSymbol? TryFindAsSpanCharMethod(CSharpCompilation compilation, TypeSymbol readOnlySpanType)
         {
+            Debug.Assert(readOnlySpanType.IsReadOnlySpan());
+            Debug.Assert(!readOnlySpanType.IsDefinition);
+
             MethodSymbol? result = null;
             foreach (var memoryExtensionsType in compilation.GetTypesByMetadataName(WellKnownMemberNames.MemoryExtensionsTypeFullName))
             {
                 if (TryFindSingleMember(memoryExtensionsType.GetSymbol<NamedTypeSymbol>(), WellKnownMemberNames.AsSpanMethodName, 0,
-                    static (_, member) => member is MethodSymbol
+                    static (_, method) => method is
                     {
                         ParameterCount: 1,
                         Arity: 0,
                         IsStatic: true,
                         DeclaredAccessibility: Accessibility.Public,
                         Parameters: [{ Type.SpecialType: SpecialType.System_String }]
-                    } method ? method : null) is { } selected &&
-                    selected.ReturnType.Equals(readOnlySpanType, TypeCompareKind.ConsiderEverything))
+                    }) is { } method &&
+                    method.ReturnType.Equals(readOnlySpanType, TypeCompareKind.ConsiderEverything))
                 {
                     if (result is not null)
                     {
@@ -656,20 +673,20 @@ namespace Microsoft.CodeAnalysis.CSharp
                         return null;
                     }
 
-                    result = selected;
+                    result = method;
                 }
             }
 
             return result;
         }
 
-        private static T? TryFindSingleMember<T, TArg>(TypeSymbol type, string name, TArg arg, Func<TArg, Symbol, T?> predicate) where T : class
+        private static MethodSymbol? TryFindSingleMember<TArg>(TypeSymbol type, string name, TArg arg, Func<TArg, MethodSymbol, bool> predicate)
         {
             var members = type.GetMembers(name);
-            T? result = null;
+            MethodSymbol? result = null;
             foreach (var member in members)
             {
-                if (predicate(arg, member) is { } selected)
+                if (member is MethodSymbol method && predicate(arg, method))
                 {
                     if (result is not null)
                     {
@@ -677,7 +694,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         return null;
                     }
 
-                    result = selected;
+                    result = method;
                 }
             }
 
