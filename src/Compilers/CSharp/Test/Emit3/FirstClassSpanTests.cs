@@ -2567,7 +2567,9 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M({{type}}<string> x) { }
             }
             """;
-        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source,
+            parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion),
+            noStringToReadOnlySpanConversionInSource: true);
         var verifier = CompileAndVerify(comp).VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", $$"""
             {
