@@ -475,12 +475,13 @@ public class FirstClassSpanTests : CSharpTestBase
         var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
         var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
         verifier.VerifyDiagnostics();
-        verifier.VerifyIL("<top-level-statements-entry-point>", """
+        var owner = ExecutionConditionUtil.IsCoreClr ? "string" : "System.ReadOnlySpan<char>";
+        verifier.VerifyIL("<top-level-statements-entry-point>", $$"""
             {
               // Code size       16 (0x10)
               .maxstack  1
               IL_0000:  call       "string Program.<<Main>$>g__source|0_0()"
-              IL_0005:  call       "System.ReadOnlySpan<char> System.ReadOnlySpan<char>.op_Implicit(string)"
+              IL_0005:  call       "System.ReadOnlySpan<char> {{owner}}.op_Implicit(string)"
               IL_000a:  call       "void Program.<<Main>$>g__report|0_1(System.ReadOnlySpan<char>)"
               IL_000f:  ret
             }
