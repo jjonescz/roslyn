@@ -648,7 +648,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             Debug.Assert(destinationType.IsReadOnlySpan());
                             Debug.Assert(conversion.Kind is ConversionKind.ImplicitSpan);
 
-                            if (Binder.TryFindImplicitOperatorFromSpan(sourceType.OriginalDefinition) is not { } implicitOperatorDefinition)
+                            if (Binder.TryFindImplicitOperatorFromSpan(sourceType.OriginalDefinition, destinationType.OriginalDefinition) is not { } implicitOperatorDefinition)
                             {
                                 throw ExceptionUtilities.Unreachable();
                             }

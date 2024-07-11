@@ -1106,6 +1106,118 @@ public class FirstClassSpanTests : CSharpTestBase
             """);
     }
 
+    [Fact]
+    public void Conversion_Span_ReadOnlySpan_Implicit_MultipleSpans_01()
+    {
+        static string getSpanSource(string output) => $$"""
+            namespace System
+            {
+                public readonly ref struct ReadOnlySpan<T>;
+                public readonly ref struct Span<T>
+                {
+                    public static implicit operator ReadOnlySpan<T>(Span<T> span)
+                    {
+                        Console.Write("{{output}}");
+                        return default;
+                    }
+                }
+            }
+            """;
+
+        var spanComp = CreateCompilation(getSpanSource("External"), assemblyName: "Span1")
+            .VerifyDiagnostics()
+            .EmitToImageReference();
+
+        var source = """
+            using System;
+            ReadOnlySpan<int> s = source();
+            use(s);
+            static Span<int> source() => default;
+            static void use(ReadOnlySpan<int> s) { }
+            """;
+
+        var comp = CreateCompilation([source, getSpanSource("Internal")], [spanComp], assemblyName: "Consumer",
+            // warning CS0436: Type conflicts with imported type
+            options: TestOptions.UnsafeReleaseExe.WithSpecificDiagnosticOptions("CS0436", ReportDiagnostic.Suppress));
+        var verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify, expectedOutput: "Internal");
+        verifier.VerifyDiagnostics();
+
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+            {
+              // Code size       16 (0x10)
+              .maxstack  1
+              IL_0000:  call       "System.Span<int> Program.<<Main>$>g__source|0_0()"
+              IL_0005:  call       "System.ReadOnlySpan<int> System.Span<int>.op_Implicit(System.Span<int>)"
+              IL_000a:  call       "void Program.<<Main>$>g__use|0_1(System.ReadOnlySpan<int>)"
+              IL_000f:  ret
+            }
+            """);
+    }
+
+    [Fact]
+    public void Conversion_Span_ReadOnlySpan_Implicit_MultipleSpans_02()
+    {
+        static string getSpanSource(string output) => $$"""
+            namespace System
+            {
+                public readonly ref struct ReadOnlySpan<T>;
+                public readonly ref struct Span<T>
+                {
+                    public static implicit operator ReadOnlySpan<T>(Span<T> span)
+                    {
+                        Console.Write("{{output}}");
+                        return default;
+                    }
+                }
+            }
+            """;
+
+        var spanComp = CreateCompilation(getSpanSource("External"), assemblyName: "Span1")
+            .VerifyDiagnostics()
+            .EmitToImageReference(aliases: ["lib"]);
+
+        var source = """
+            extern alias lib;
+            lib::System.ReadOnlySpan<int> s = source();
+            static lib::System.Span<int> source() => default;
+            """;
+
+        var comp = CreateCompilation([source, getSpanSource("Internal")], [spanComp], assemblyName: "Consumer");
+        var verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify, expectedOutput: "External");
+        verifier.VerifyDiagnostics();
+
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+            {
+              // Code size       12 (0xc)
+              .maxstack  1
+              IL_0000:  call       "System.Span<int> Program.<<Main>$>g__source|0_0()"
+              IL_0005:  call       "System.ReadOnlySpan<int> System.Span<int>.op_Implicit(System.Span<int>)"
+              IL_000a:  pop
+              IL_000b:  ret
+            }
+            """);
+
+        source = """
+            extern alias lib;
+            lib::System.ReadOnlySpan<int> s = source();
+            static System.Span<int> source() => default;
+            """;
+        CreateCompilation([source, getSpanSource("Internal")], [spanComp], assemblyName: "Consumer").VerifyDiagnostics(
+            // (2,35): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.op_Implicit'
+            // lib::System.ReadOnlySpan<int> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "op_Implicit").WithLocation(2, 35));
+
+        source = """
+            extern alias lib;
+            System.ReadOnlySpan<int> s = source();
+            static lib::System.Span<int> source() => default;
+            """;
+        CreateCompilation([source, getSpanSource("Internal")], [spanComp], assemblyName: "Consumer").VerifyDiagnostics(
+            // (2,30): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.op_Implicit'
+            // System.ReadOnlySpan<int> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "op_Implicit").WithLocation(2, 30));
+    }
+
     [Theory, CombinatorialData]
     public void Conversion_Array_Span_Implicit_SemanticModel(
         [CombinatorialValues("Span", "ReadOnlySpan")] string destination)
