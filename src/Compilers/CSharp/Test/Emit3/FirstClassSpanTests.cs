@@ -887,6 +887,29 @@ public class FirstClassSpanTests : CSharpTestBase
             """);
     }
 
+    [Fact]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit_AdditionalConstraint()
+    {
+        var source = $$"""
+            using System;
+            ReadOnlySpan<object> s = source();
+            static ReadOnlySpan<string> source() => throw null;
+
+            public class C { }
+            namespace System
+            {
+                public readonly ref struct ReadOnlySpan<T>
+                {
+                    public static ReadOnlySpan<T> CastUp<TDerived>(ReadOnlySpan<TDerived> items) where TDerived : C => throw null;
+                }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (2,26): error CS0311: The type 'string' cannot be used as type parameter 'TDerived' in the generic type or method 'ReadOnlySpan<object>.CastUp<TDerived>(ReadOnlySpan<TDerived>)'. There is no implicit reference conversion from 'string' to 'C'.
+            // ReadOnlySpan<object> s = source();
+            Diagnostic(ErrorCode.ERR_GenericConstraintNotSatisfiedRefType, "source()").WithArguments("System.ReadOnlySpan<object>.CastUp<TDerived>(System.ReadOnlySpan<TDerived>)", "C", "TDerived", "string").WithLocation(2, 26));
+    }
+
     [Theory, MemberData(nameof(LangVersions))]
     public void Conversion_Array_Span_Implicit_ConstantData(LanguageVersion langVersion)
     {

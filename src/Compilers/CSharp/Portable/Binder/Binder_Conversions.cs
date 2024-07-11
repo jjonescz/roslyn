@@ -532,7 +532,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 WellKnownMemberNames.CastUpMethodName,
                                 syntax,
                                 diagnostics);
-                            castUpMethod?.CheckConstraints(new ConstraintsHelper.CheckConstraintsArgs(Compilation, Conversions, syntax.Location, diagnostics));
+                            castUpMethod?
+                                .AsMember((NamedTypeSymbol)destination)
+                                .Construct([((NamedTypeSymbol)source.Type).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0]])
+                                .CheckConstraints(new ConstraintsHelper.CheckConstraintsArgs(Compilation, Conversions, syntax.Location, diagnostics));
                         }
                     }
 
