@@ -18,9 +18,10 @@ namespace System
 {
     public readonly ref struct Span<T>
     {
-        private readonly T[] arr;
+        internal readonly T[] arr;
+        internal readonly int start;
 
-        public ref T this[int i] => ref arr[i];
+        public ref T this[int i] => ref arr[start + i];
         public override int GetHashCode() => 1;
         public int Length { get; }
         public bool IsEmpty => Length == 0;
@@ -39,12 +40,15 @@ namespace System
 
         public Span(T[] arr, int start, int length)
         {
-            this.arr = new T[length];
-            Array.Copy(arr, start, this.arr, 0, length);
+            this.arr = arr;
+            this.start = start;
             this.Length = length;
         }
 
-        public void CopyTo(Span<T> other) { }
+        public void CopyTo(Span<T> other)
+        {
+            Array.Copy(arr, start, other.arr, other.start, Length);
+        }
 
         /// <summary>Gets an enumerator for this span.</summary>
         public Enumerator GetEnumerator() => new Enumerator(this);
@@ -95,8 +99,9 @@ namespace System
     public readonly ref struct ReadOnlySpan<T>
     {
         private readonly T[] arr;
+        private readonly int start;
 
-        public ref readonly T this[int i] => ref arr[i];
+        public ref readonly T this[int i] => ref arr[start + i];
         public override int GetHashCode() => 2;
         public int Length { get; }
         public bool IsEmpty => Length == 0;
@@ -115,12 +120,15 @@ namespace System
 
         public ReadOnlySpan(T[] arr, int start, int length)
         {
-            this.arr = new T[length];
-            Array.Copy(arr, start, this.arr, 0, length);
+            this.arr = arr;
+            this.start = start;
             this.Length = length;
         }
 
-        public void CopyTo(Span<T> other) { }
+        public void CopyTo(Span<T> other)
+        {
+            Array.Copy(arr, start, other.arr, other.start, Length);
+        }
 
         /// <summary>Gets an enumerator for this span.</summary>
         public Enumerator GetEnumerator() => new Enumerator(this);
