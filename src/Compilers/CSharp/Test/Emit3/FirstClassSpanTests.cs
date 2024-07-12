@@ -4,6 +4,7 @@
 
 using System.Collections.Immutable;
 using System.Linq;
+using ICSharpCode.Decompiler.IL;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
@@ -4653,8 +4654,8 @@ public class FirstClassSpanTests : CSharpTestBase
         CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 
-    [Theory, MemberData(nameof(LangVersions))]
-    public void OverloadResolution_SpanVsReadOnlySpan_03(LanguageVersion langVersion)
+    [Fact]
+    public void OverloadResolution_SpanVsReadOnlySpan_03()
     {
         var source = """
             using System;
@@ -4664,17 +4665,25 @@ public class FirstClassSpanTests : CSharpTestBase
 
             static class C
             {
-                public static void M(Span<object> arg) { }
-                public static void M(ReadOnlySpan<object> arg) { }
+                public static void M(Span<object> arg) => Console.Write(1);
+                public static void M(ReadOnlySpan<object> arg) => Console.Write(2);
             }
             """;
-        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
             // (3,5): error CS1503: Argument 1: cannot convert from 'System.Span<string>' to 'System.Span<object>'
             // C.M(default(Span<string>));
             Diagnostic(ErrorCode.ERR_BadArgType, "default(Span<string>)").WithArguments("1", "System.Span<string>", "System.Span<object>").WithLocation(3, 5),
             // (4,5): error CS1503: Argument 1: cannot convert from 'System.ReadOnlySpan<string>' to 'System.Span<object>'
             // C.M(default(ReadOnlySpan<string>));
             Diagnostic(ErrorCode.ERR_BadArgType, "default(ReadOnlySpan<string>)").WithArguments("1", "System.ReadOnlySpan<string>", "System.Span<object>").WithLocation(4, 5));
+
+        var expectedOutput = "22";
+
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        comp = CreateCompilationWithSpan(source);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 
     [Fact]
@@ -4756,8 +4765,8 @@ public class FirstClassSpanTests : CSharpTestBase
         CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 
-    [Theory, MemberData(nameof(LangVersions))]
-    public void OverloadResolution_SpanVsReadOnlySpan_ExtensionMethodReceiver_04(LanguageVersion langVersion)
+    [Fact]
+    public void OverloadResolution_SpanVsReadOnlySpan_ExtensionMethodReceiver_04()
     {
         var source = """
             using System;
@@ -4767,11 +4776,11 @@ public class FirstClassSpanTests : CSharpTestBase
 
             static class C
             {
-                public static void E(this Span<object> arg) { }
-                public static void E(this ReadOnlySpan<object> arg) { }
+                public static void E(this Span<object> arg) => Console.Write(1);
+                public static void E(this ReadOnlySpan<object> arg) => Console.Write(2);
             }
             """;
-        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+        CreateCompilationWithSpan(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
             // (3,1): error CS1929: 'Span<string>' does not contain a definition for 'E' and the best extension method overload 'C.E(Span<object>)' requires a receiver of type 'System.Span<object>'
             // default(Span<string>).E();
             Diagnostic(ErrorCode.ERR_BadInstanceArgType, "default(Span<string>)").WithArguments("System.Span<string>", "E", "C.E(System.Span<object>)", "System.Span<object>").WithLocation(3, 1),
@@ -4779,7 +4788,13 @@ public class FirstClassSpanTests : CSharpTestBase
             // default(ReadOnlySpan<string>).E();
             Diagnostic(ErrorCode.ERR_BadInstanceArgType, "default(ReadOnlySpan<string>)").WithArguments("System.ReadOnlySpan<string>", "E", "C.E(System.Span<object>)", "System.Span<object>").WithLocation(4, 1));
 
-        // PROTOTYPE: Should work in C# 13 when ROS->ROS conversion is implemented.
+        var expectedOutput = "22";
+
+        var comp = CreateCompilationWithSpan(source, parseOptions: TestOptions.RegularNext);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        comp = CreateCompilationWithSpan(source);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 
     [Fact]
