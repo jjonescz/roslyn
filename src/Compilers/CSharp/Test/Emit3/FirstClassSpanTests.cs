@@ -597,10 +597,7 @@ public class FirstClassSpanTests : CSharpTestBase
         {
             // (2,26): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.op_Implicit'
             // ReadOnlySpan<object> s = source();
-            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "op_Implicit").WithLocation(2, 26),
-            // (2,26): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.CastUp'
-            // ReadOnlySpan<object> s = source();
-            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "CastUp").WithLocation(2, 26)
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "op_Implicit").WithLocation(2, 26)
         };
 
         CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -688,6 +685,42 @@ public class FirstClassSpanTests : CSharpTestBase
             // (2,15): error CS0656: Missing compiler required member 'System.Span<T>.op_Implicit'
             // Span<int> s = arr();
             Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "arr()").WithArguments("System.Span<T>", "op_Implicit").WithLocation(2, 15));
+    }
+
+    [Theory]
+    [InlineData("ReadOnlySpan<char> AsSpan(string s)", true)]
+    [InlineData("ReadOnlySpan<int> AsSpan(string s)", false)]
+    [InlineData("ReadOnlySpan<T> AsSpan<T>(string s)", false)]
+    [InlineData("ReadOnlySpan<char> AsSpan(object o)", false)]
+    public void Conversion_Array_Span_Implicit_DifferentHelper(string signature, bool works)
+    {
+        var source = $$"""
+            using System;
+            ReadOnlySpan<char> s = source();
+            static string source() => "";
+
+            namespace System
+            {
+                public readonly ref struct ReadOnlySpan<T> { }
+                public static class MemoryExtensions
+                {
+                    public static {{signature}} => default;
+                }
+            }
+            """;
+        var comp = CreateCompilation(source);
+        if (works)
+        {
+            // Make sure the code above can work so we are testing something useful.
+            comp.VerifyDiagnostics();
+        }
+        else
+        {
+            comp.VerifyDiagnostics(
+                // (2,24): error CS0656: Missing compiler required member 'System.MemoryExtensions.AsSpan'
+                // ReadOnlySpan<char> s = source();
+                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.MemoryExtensions", "AsSpan").WithLocation(2, 24));
+        }
     }
 
     [Fact]
@@ -910,6 +943,42 @@ public class FirstClassSpanTests : CSharpTestBase
             // (2,26): error CS0311: The type 'string' cannot be used as type parameter 'TDerived' in the generic type or method 'ReadOnlySpan<object>.CastUp<TDerived>(ReadOnlySpan<TDerived>)'. There is no implicit reference conversion from 'string' to 'C'.
             // ReadOnlySpan<object> s = source();
             Diagnostic(ErrorCode.ERR_GenericConstraintNotSatisfiedRefType, "source()").WithArguments("System.ReadOnlySpan<object>.CastUp<TDerived>(System.ReadOnlySpan<TDerived>)", "C", "TDerived", "string").WithLocation(2, 26));
+    }
+
+    [Theory]
+    [InlineData("T", "T", false)]
+    [InlineData("T", "TDerived", false)]
+    [InlineData("TDerived", "TDerived", false)]
+    [InlineData("TDerived", "T", true)]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit_WrongTypeArgument(string arg, string result, bool works)
+    {
+        var source = $$"""
+            using System;
+            ReadOnlySpan<object> s = source();
+            static ReadOnlySpan<string> source() => throw null;
+
+            public class C { }
+            namespace System
+            {
+                public readonly ref struct ReadOnlySpan<T>
+                {
+                    public static ReadOnlySpan<{{result}}> CastUp<TDerived>(ReadOnlySpan<{{arg}}> items) where TDerived : class, T => throw null;
+                }
+            }
+            """;
+        var comp = CreateCompilation(source);
+        if (works)
+        {
+            // Make sure the code above can work so we are testing something useful.
+            comp.VerifyDiagnostics();
+        }
+        else
+        {
+            comp.VerifyDiagnostics(
+                // (2,26): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.CastUp'
+                // ReadOnlySpan<object> s = source();
+                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "CastUp").WithLocation(2, 26));
+        }
     }
 
     [Theory, MemberData(nameof(LangVersions))]
@@ -1218,6 +1287,307 @@ public class FirstClassSpanTests : CSharpTestBase
             // (2,30): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.op_Implicit'
             // System.ReadOnlySpan<int> s = source();
             Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "op_Implicit").WithLocation(2, 30));
+    }
+
+    [Fact]
+    public void Conversion_Span_ReadOnlySpan_Implicit_MultipleSpans_03()
+    {
+        var span1 = CreateCompilation("""
+            namespace System;
+            public readonly ref struct ReadOnlySpan<T>;
+            public readonly ref struct Span<T>;
+            """, assemblyName: "Span1")
+            .VerifyDiagnostics()
+            .EmitToImageReference(aliases: ["span1"]);
+        var span2 = CreateCompilation("""
+            extern alias span1;
+            namespace System;
+            public readonly ref struct ReadOnlySpan<T>;
+            public readonly ref struct Span<T>
+            {
+                public static implicit operator span1::System.ReadOnlySpan<T>(Span<T> span)
+                {
+                    Console.Write("Span2");
+                    return default;
+                }
+            }
+            """, [span1], assemblyName: "Span2")
+            .VerifyDiagnostics()
+            .EmitToImageReference(aliases: ["span2"]);
+
+        var source = """
+            extern alias span1;
+            extern alias span2;
+            span1::System.ReadOnlySpan<int> s = source();
+            static span2::System.Span<int> source() => default;
+            """;
+
+        var comp = CreateCompilation(source, [span1, span2], assemblyName: "Consumer");
+        var verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify, expectedOutput: "Span2");
+        verifier.VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+            {
+              // Code size       12 (0xc)
+              .maxstack  1
+              IL_0000:  call       "System.Span<int> Program.<<Main>$>g__source|0_0()"
+              IL_0005:  call       "System.ReadOnlySpan<int> System.Span<int>.op_Implicit(System.Span<int>)"
+              IL_000a:  pop
+              IL_000b:  ret
+            }
+            """);
+
+        source = """
+            extern alias span2;
+            span2::System.ReadOnlySpan<int> s = source();
+            static span2::System.Span<int> source() => default;
+            """;
+        CreateCompilation(source, [span2], assemblyName: "Consumer").VerifyDiagnostics(
+            // (2,37): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.op_Implicit'
+            // span2::System.ReadOnlySpan<int> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "op_Implicit").WithLocation(2, 37));
+
+        source = """
+            extern alias span1;
+            extern alias span2;
+            span2::System.ReadOnlySpan<int> s = source();
+            static span1::System.Span<int> source() => default;
+            """;
+        CreateCompilation(source, [span1, span2], assemblyName: "Consumer").VerifyDiagnostics(
+            // (3,37): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.op_Implicit'
+            // span2::System.ReadOnlySpan<int> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "op_Implicit").WithLocation(3, 37));
+    }
+
+    [Fact]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit_MultipleSpans_01()
+    {
+        static string getSpanSource(string output) => $$"""
+            namespace System
+            {
+                public readonly ref struct ReadOnlySpan<T>
+                {
+                    public static ReadOnlySpan<T> CastUp<TDerived>(ReadOnlySpan<TDerived> other) where TDerived : class, T
+                    {
+                        Console.Write("{{output}}");
+                        return default;
+                    }
+                }
+            }
+            """;
+
+        var spanComp = CreateCompilation(getSpanSource("External"), assemblyName: "Span1")
+            .VerifyDiagnostics()
+            .EmitToImageReference();
+
+        var source = """
+            using System;
+            ReadOnlySpan<object> s = source();
+            use(s);
+            static ReadOnlySpan<string> source() => default;
+            static void use(ReadOnlySpan<object> s) { }
+            """;
+
+        var comp = CreateCompilation([source, getSpanSource("Internal")], [spanComp], assemblyName: "Consumer",
+            // warning CS0436: Type conflicts with imported type
+            options: TestOptions.UnsafeReleaseExe.WithSpecificDiagnosticOptions("CS0436", ReportDiagnostic.Suppress));
+        var verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify, expectedOutput: "Internal");
+        verifier.VerifyDiagnostics();
+
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+            {
+              // Code size       16 (0x10)
+              .maxstack  1
+              IL_0000:  call       "System.ReadOnlySpan<string> Program.<<Main>$>g__source|0_0()"
+              IL_0005:  call       "System.ReadOnlySpan<object> System.ReadOnlySpan<object>.CastUp<string>(System.ReadOnlySpan<string>)"
+              IL_000a:  call       "void Program.<<Main>$>g__use|0_1(System.ReadOnlySpan<object>)"
+              IL_000f:  ret
+            }
+            """);
+    }
+
+    [Fact]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit_MultipleSpans_02()
+    {
+        static string getSpanSource(string output) => $$"""
+            namespace System
+            {
+                public readonly ref struct ReadOnlySpan<T>
+                {
+                    public static ReadOnlySpan<T> CastUp<TDerived>(ReadOnlySpan<TDerived> other) where TDerived : class, T
+                    {
+                        Console.Write("{{output}}");
+                        return default;
+                    }
+                }
+            }
+            """;
+
+        var spanComp = CreateCompilation(getSpanSource("External"), assemblyName: "Span1")
+            .VerifyDiagnostics()
+            .EmitToImageReference(aliases: ["lib"]);
+
+        var source = """
+            extern alias lib;
+            lib::System.ReadOnlySpan<object> s = source();
+            static lib::System.ReadOnlySpan<string> source() => default;
+            """;
+
+        var comp = CreateCompilation([source, getSpanSource("Internal")], [spanComp], assemblyName: "Consumer");
+        var verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify, expectedOutput: "External");
+        verifier.VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+            {
+              // Code size       12 (0xc)
+              .maxstack  1
+              IL_0000:  call       "System.ReadOnlySpan<string> Program.<<Main>$>g__source|0_0()"
+              IL_0005:  call       "System.ReadOnlySpan<object> System.ReadOnlySpan<object>.CastUp<string>(System.ReadOnlySpan<string>)"
+              IL_000a:  pop
+              IL_000b:  ret
+            }
+            """);
+
+        source = """
+            extern alias lib;
+            lib::System.ReadOnlySpan<object> s = source();
+            static System.ReadOnlySpan<string> source() => default;
+            """;
+        CreateCompilation([source, getSpanSource("Internal")], [spanComp], assemblyName: "Consumer").VerifyDiagnostics(
+            // (2,38): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.CastUp'
+            // lib::System.ReadOnlySpan<object> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "CastUp").WithLocation(2, 38));
+
+        source = """
+            extern alias lib;
+            System.ReadOnlySpan<object> s = source();
+            static lib::System.ReadOnlySpan<string> source() => default;
+            """;
+        CreateCompilation([source, getSpanSource("Internal")], [spanComp], assemblyName: "Consumer").VerifyDiagnostics(
+            // (2,33): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.CastUp'
+            // System.ReadOnlySpan<object> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "CastUp").WithLocation(2, 33));
+    }
+
+    [Fact]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit_MultipleSpans_03()
+    {
+        var span1 = CreateCompilation("""
+            namespace System;
+            public readonly ref struct ReadOnlySpan<T>;
+            """, assemblyName: "Span1")
+            .VerifyDiagnostics()
+            .EmitToImageReference(aliases: ["span1"]);
+        var span2 = CreateCompilation($$"""
+            extern alias span1;
+            namespace System;
+            public readonly ref struct ReadOnlySpan<T>
+            {
+                public static span1::System.ReadOnlySpan<T> CastUp<TDerived>(ReadOnlySpan<TDerived> other) where TDerived : class, T
+                {
+                    Console.Write("Span2");
+                    return default;
+                }
+            }
+            """, [span1], assemblyName: "Span2")
+            .VerifyDiagnostics()
+            .EmitToImageReference(aliases: ["span2"]);
+
+        var source = """
+            extern alias span1;
+            extern alias span2;
+            span1::System.ReadOnlySpan<object> s = source();
+            static span2::System.ReadOnlySpan<string> source() => default;
+            """;
+        CreateCompilation(source, [span1, span2], assemblyName: "Consumer").VerifyDiagnostics(
+            // (3,40): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.CastUp'
+            // span1::System.ReadOnlySpan<object> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "CastUp").WithLocation(3, 40));
+
+        source = """
+            extern alias span2;
+            span2::System.ReadOnlySpan<object> s = source();
+            static span2::System.ReadOnlySpan<string> source() => default;
+            """;
+        CreateCompilation(source, [span2], assemblyName: "Consumer").VerifyDiagnostics(
+            // (2,40): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.CastUp'
+            // span2::System.ReadOnlySpan<object> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "CastUp").WithLocation(2, 40));
+
+        source = """
+            extern alias span1;
+            extern alias span2;
+            span2::System.ReadOnlySpan<object> s = source();
+            static span1::System.ReadOnlySpan<string> source() => default;
+            """;
+        CreateCompilation(source, [span1, span2], assemblyName: "Consumer").VerifyDiagnostics(
+            // (3,40): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.CastUp'
+            // span2::System.ReadOnlySpan<object> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "CastUp").WithLocation(3, 40));
+    }
+
+    [Fact]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit_MultipleSpans_04()
+    {
+        var span1 = CreateCompilation("""
+            namespace System;
+            public readonly ref struct ReadOnlySpan<T>;
+            """, assemblyName: "Span1")
+            .VerifyDiagnostics()
+            .EmitToImageReference(aliases: ["span1"]);
+        var span2 = CreateCompilation($$"""
+            extern alias span1;
+            namespace System;
+            public readonly ref struct ReadOnlySpan<T>
+            {
+                public static ReadOnlySpan<T> CastUp<TDerived>(span1::System.ReadOnlySpan<TDerived> other) where TDerived : class, T
+                {
+                    Console.Write("Span2");
+                    return default;
+                }
+            }
+            """, [span1], assemblyName: "Span2")
+            .VerifyDiagnostics()
+            .EmitToImageReference(aliases: ["span2"]);
+
+        var source = """
+            extern alias span1;
+            extern alias span2;
+            span1::System.ReadOnlySpan<object> s = source();
+            static span2::System.ReadOnlySpan<string> source() => default;
+            """;
+        CreateCompilation(source, [span1, span2], assemblyName: "Consumer").VerifyDiagnostics(
+            // (3,40): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.CastUp'
+            // span1::System.ReadOnlySpan<object> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "CastUp").WithLocation(3, 40));
+
+        source = """
+            extern alias span2;
+            span2::System.ReadOnlySpan<object> s = source();
+            static span2::System.ReadOnlySpan<string> source() => default;
+            """;
+        CreateCompilation(source, [span2], assemblyName: "Consumer").VerifyDiagnostics(
+            // (2,40): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.CastUp'
+            // span2::System.ReadOnlySpan<object> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "CastUp").WithLocation(2, 40));
+
+        source = """
+            extern alias span1;
+            extern alias span2;
+            span2::System.ReadOnlySpan<object> s = source();
+            static span1::System.ReadOnlySpan<string> source() => default;
+            """;
+        var comp = CreateCompilation(source, [span1, span2], assemblyName: "Consumer");
+        var verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify, expectedOutput: "Span2");
+        verifier.VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+            {
+              // Code size       12 (0xc)
+              .maxstack  1
+              IL_0000:  call       "System.ReadOnlySpan<string> Program.<<Main>$>g__source|0_0()"
+              IL_0005:  call       "System.ReadOnlySpan<object> System.ReadOnlySpan<object>.CastUp<string>(System.ReadOnlySpan<string>)"
+              IL_000a:  pop
+              IL_000b:  ret
+            }
+            """);
     }
 
     [Theory, CombinatorialData]

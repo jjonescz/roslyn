@@ -660,7 +660,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                             if (Binder.NeedsSpanCastUp(sourceType, destinationType))
                             {
-                                if (Binder.TryFindCastUpMethod(destinationType.OriginalDefinition) is not { } castUpMethodDefinition)
+                                if (Binder.TryFindCastUpMethod(implicitOperator.ReturnType.OriginalDefinition, destinationType.OriginalDefinition) is not { } castUpMethodDefinition)
                                 {
                                     throw ExceptionUtilities.Unreachable();
                                 }
@@ -681,7 +681,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             Debug.Assert(conversion.Kind is ConversionKind.ImplicitSpan);
                             Debug.Assert(Binder.NeedsSpanCastUp(sourceType, destinationType));
 
-                            if (Binder.TryFindCastUpMethod(destinationType.OriginalDefinition) is not { } methodDefinition)
+                            if (Binder.TryFindCastUpMethod(sourceType.OriginalDefinition, destinationType.OriginalDefinition) is not { } methodDefinition)
                             {
                                 throw ExceptionUtilities.Unreachable();
                             }
