@@ -35,7 +35,7 @@ namespace System
 
         public Span(T[] arr, int start, int length)
         {
-            if (start + length > arr.Length)
+            if (start + length > arr?.Length)
             {
                 throw new ArgumentOutOfRangeException();
             }
@@ -120,7 +120,7 @@ namespace System
 
         public ReadOnlySpan(T[] arr, int start, int length)
         {
-            if (start + length > arr.Length)
+            if (start + length > arr?.Length)
             {
                 throw new ArgumentOutOfRangeException();
             }
