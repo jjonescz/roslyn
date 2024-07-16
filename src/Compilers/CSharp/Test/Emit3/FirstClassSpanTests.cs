@@ -2182,6 +2182,139 @@ public class FirstClassSpanTests : CSharpTestBase
     }
 
     [Fact]
+    public void Conversion_Span_ReadOnlySpan_Implicit_NullableAnalysis()
+    {
+        var source = """
+            #nullable enable
+            using System;
+            class C
+            {
+                ReadOnlySpan<string> M1(Span<string> arg) => arg;
+                ReadOnlySpan<string> M2(Span<string?> arg) => arg;
+                ReadOnlySpan<string?> M3(Span<string> arg) => arg;
+                ReadOnlySpan<string?> M4(Span<string?> arg) => arg;
+                ReadOnlySpan<object> M5(Span<string?> arg) => arg;
+
+                ReadOnlySpan<string> M6(Span<string?> arg) => (ReadOnlySpan<string>)arg;
+                ReadOnlySpan<string> M7(Span<object?> arg) => (ReadOnlySpan<string>)arg;
+            }
+            """;
+
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+            // (6,51): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<string?>' doesn't match target type 'ReadOnlySpan<string>'.
+            //     ReadOnlySpan<string> M2(Span<string?> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.ReadOnlySpan<string?>", "System.ReadOnlySpan<string>").WithLocation(6, 51),
+            // (7,51): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<string>' doesn't match target type 'ReadOnlySpan<string?>'.
+            //     ReadOnlySpan<string?> M3(Span<string> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.ReadOnlySpan<string>", "System.ReadOnlySpan<string?>").WithLocation(7, 51),
+            // (9,51): error CS0029: Cannot implicitly convert type 'System.Span<string?>' to 'System.ReadOnlySpan<object>'
+            //     ReadOnlySpan<object> M5(Span<string?> arg) => arg;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("System.Span<string?>", "System.ReadOnlySpan<object>").WithLocation(9, 51),
+            // (11,51): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<string?>' doesn't match target type 'ReadOnlySpan<string>'.
+            //     ReadOnlySpan<string> M6(Span<string?> arg) => (ReadOnlySpan<string>)arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string>)arg").WithArguments("System.ReadOnlySpan<string?>", "System.ReadOnlySpan<string>").WithLocation(11, 51),
+            // (12,51): error CS0030: Cannot convert type 'System.Span<object?>' to 'System.ReadOnlySpan<string>'
+            //     ReadOnlySpan<string> M7(Span<object?> arg) => (ReadOnlySpan<string>)arg;
+            Diagnostic(ErrorCode.ERR_NoExplicitConv, "(ReadOnlySpan<string>)arg").WithArguments("System.Span<object?>", "System.ReadOnlySpan<string>").WithLocation(12, 51));
+
+        var expectedDiagnostics = new[]
+        {
+            // (6,51): warning CS8619: Nullability of reference types in value of type 'Span<string?>' doesn't match target type 'ReadOnlySpan<string>'.
+            //     ReadOnlySpan<string> M2(Span<string?> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.Span<string?>", "System.ReadOnlySpan<string>").WithLocation(6, 51),
+            // (9,51): warning CS8631: The type 'string?' cannot be used as type parameter 'TDerived' in the generic type or method 'ReadOnlySpan<object>.CastUp<TDerived>(ReadOnlySpan<TDerived>)'. Nullability of type argument 'string?' doesn't match constraint type 'object'.
+            //     ReadOnlySpan<object> M5(Span<string?> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInTypeParameterConstraint, "arg").WithArguments("System.ReadOnlySpan<object>.CastUp<TDerived>(System.ReadOnlySpan<TDerived>)", "object", "TDerived", "string?").WithLocation(9, 51),
+            // (9,51): warning CS8619: Nullability of reference types in value of type 'Span<string?>' doesn't match target type 'ReadOnlySpan<object>'.
+            //     ReadOnlySpan<object> M5(Span<string?> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.Span<string?>", "System.ReadOnlySpan<object>").WithLocation(9, 51),
+            // (11,51): warning CS8619: Nullability of reference types in value of type 'Span<string?>' doesn't match target type 'ReadOnlySpan<string>'.
+            //     ReadOnlySpan<string> M6(Span<string?> arg) => (ReadOnlySpan<string>)arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string>)arg").WithArguments("System.Span<string?>", "System.ReadOnlySpan<string>").WithLocation(11, 51),
+            // (12,51): error CS0030: Cannot convert type 'System.Span<object?>' to 'System.ReadOnlySpan<string>'
+            //     ReadOnlySpan<string> M7(Span<object?> arg) => (ReadOnlySpan<string>)arg;
+            Diagnostic(ErrorCode.ERR_NoExplicitConv, "(ReadOnlySpan<string>)arg").WithArguments("System.Span<object?>", "System.ReadOnlySpan<string>").WithLocation(12, 51)
+        };
+
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext, targetFramework: TargetFramework.Net90).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilationWithSpanAndMemoryExtensions(source, targetFramework: TargetFramework.Net90).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit_NullableAnalysis()
+    {
+        var source = """
+            #nullable enable
+            using System;
+            class C
+            {
+                ReadOnlySpan<string> M1(ReadOnlySpan<string> arg) => arg;
+                ReadOnlySpan<string> M2(ReadOnlySpan<string?> arg) => arg;
+                ReadOnlySpan<string?> M3(ReadOnlySpan<string> arg) => arg;
+                ReadOnlySpan<string?> M4(ReadOnlySpan<string?> arg) => arg;
+                ReadOnlySpan<object> M5(ReadOnlySpan<string?> arg) => arg;
+
+                ReadOnlySpan<string> M6(ReadOnlySpan<string?> arg) => (ReadOnlySpan<string>)arg;
+                ReadOnlySpan<string> M7(ReadOnlySpan<object?> arg) => (ReadOnlySpan<string>)arg;
+            }
+            """;
+
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+            // (6,59): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<string?>' doesn't match target type 'ReadOnlySpan<string>'.
+            //     ReadOnlySpan<string> M2(ReadOnlySpan<string?> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.ReadOnlySpan<string?>", "System.ReadOnlySpan<string>").WithLocation(6, 59),
+            // (7,59): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<string>' doesn't match target type 'ReadOnlySpan<string?>'.
+            //     ReadOnlySpan<string?> M3(ReadOnlySpan<string> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.ReadOnlySpan<string>", "System.ReadOnlySpan<string?>").WithLocation(7, 59),
+            // (9,59): error CS0029: Cannot implicitly convert type 'System.ReadOnlySpan<string?>' to 'System.ReadOnlySpan<object>'
+            //     ReadOnlySpan<object> M5(ReadOnlySpan<string?> arg) => arg;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("System.ReadOnlySpan<string?>", "System.ReadOnlySpan<object>").WithLocation(9, 59),
+            // (11,59): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<string?>' doesn't match target type 'ReadOnlySpan<string>'.
+            //     ReadOnlySpan<string> M6(ReadOnlySpan<string?> arg) => (ReadOnlySpan<string>)arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string>)arg").WithArguments("System.ReadOnlySpan<string?>", "System.ReadOnlySpan<string>").WithLocation(11, 59),
+            // (12,59): error CS0030: Cannot convert type 'System.ReadOnlySpan<object?>' to 'System.ReadOnlySpan<string>'
+            //     ReadOnlySpan<string> M7(ReadOnlySpan<object?> arg) => (ReadOnlySpan<string>)arg;
+            Diagnostic(ErrorCode.ERR_NoExplicitConv, "(ReadOnlySpan<string>)arg").WithArguments("System.ReadOnlySpan<object?>", "System.ReadOnlySpan<string>").WithLocation(12, 59));
+
+        var expectedDiagnostics = new[]
+        {
+            // (6,59): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<string?>' doesn't match target type 'ReadOnlySpan<string>'.
+            //     ReadOnlySpan<string> M2(ReadOnlySpan<string?> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.ReadOnlySpan<string?>", "System.ReadOnlySpan<string>").WithLocation(6, 59),
+            // (9,59): warning CS8631: The type 'string?' cannot be used as type parameter 'TDerived' in the generic type or method 'ReadOnlySpan<object>.CastUp<TDerived>(ReadOnlySpan<TDerived>)'. Nullability of type argument 'string?' doesn't match constraint type 'object'.
+            //     ReadOnlySpan<object> M5(ReadOnlySpan<string?> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInTypeParameterConstraint, "arg").WithArguments("System.ReadOnlySpan<object>.CastUp<TDerived>(System.ReadOnlySpan<TDerived>)", "object", "TDerived", "string?").WithLocation(9, 59),
+            // (9,59): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<string?>' doesn't match target type 'ReadOnlySpan<object>'.
+            //     ReadOnlySpan<object> M5(ReadOnlySpan<string?> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.ReadOnlySpan<string?>", "System.ReadOnlySpan<object>").WithLocation(9, 59),
+            // (11,59): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<string?>' doesn't match target type 'ReadOnlySpan<string>'.
+            //     ReadOnlySpan<string> M6(ReadOnlySpan<string?> arg) => (ReadOnlySpan<string>)arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<string>)arg").WithArguments("System.ReadOnlySpan<string?>", "System.ReadOnlySpan<string>").WithLocation(11, 59),
+            // (12,59): error CS0030: Cannot convert type 'System.ReadOnlySpan<object?>' to 'System.ReadOnlySpan<string>'
+            //     ReadOnlySpan<string> M7(ReadOnlySpan<object?> arg) => (ReadOnlySpan<string>)arg;
+            Diagnostic(ErrorCode.ERR_NoExplicitConv, "(ReadOnlySpan<string>)arg").WithArguments("System.ReadOnlySpan<object?>", "System.ReadOnlySpan<string>").WithLocation(12, 59)
+        };
+
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext, targetFramework: TargetFramework.Net90).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilationWithSpanAndMemoryExtensions(source, targetFramework: TargetFramework.Net90).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_string_ReadOnlySpan_Implicit_NullableAnalysis(LanguageVersion langVersion)
+    {
+        var source = """
+            #nullable enable
+            using System;
+            class C
+            {
+                ReadOnlySpan<char> M1(string arg) => arg;
+                ReadOnlySpan<char> M2(string? arg) => arg;
+            }
+            """;
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics();
+    }
+
+    [Fact]
     public void Conversion_Array_Span_Implicit_NullableAnalysis_NestedArrays()
     {
         var source = """
@@ -2346,6 +2479,80 @@ public class FirstClassSpanTests : CSharpTestBase
     }
 
     [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_Span_ReadOnlySpan_Implicit_NullableAnalysis_NestedNullability(LanguageVersion langVersion)
+    {
+        var source = """
+            #nullable enable
+            using System;
+            class C
+            {
+                ReadOnlySpan<I<string>> M1(Span<I<string>> arg) => arg;
+                ReadOnlySpan<I<string>> M2(Span<I<string?>> arg) => arg;
+                ReadOnlySpan<I<string?>> M3(Span<I<string>> arg) => arg;
+                ReadOnlySpan<I<string?>> M4(Span<I<string?>> arg) => arg;
+                ReadOnlySpan<I<object>> M5(Span<I<string?>> arg) => arg;
+
+                ReadOnlySpan<I<string>> M6(Span<I<string?>> arg) => (ReadOnlySpan<I<string>>)arg;
+                ReadOnlySpan<I<string>> M7(Span<I<object?>> arg) => (ReadOnlySpan<I<string>>)arg;
+            }
+            interface I<out T> { }
+            """;
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion), targetFramework: TargetFramework.Net90).VerifyDiagnostics(
+            // (6,57): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<I<string?>>' doesn't match target type 'ReadOnlySpan<I<string>>'.
+            //     ReadOnlySpan<I<string>> M2(Span<I<string?>> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.ReadOnlySpan<I<string?>>", "System.ReadOnlySpan<I<string>>").WithLocation(6, 57),
+            // (7,57): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<I<string>>' doesn't match target type 'ReadOnlySpan<I<string?>>'.
+            //     ReadOnlySpan<I<string?>> M3(Span<I<string>> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.ReadOnlySpan<I<string>>", "System.ReadOnlySpan<I<string?>>").WithLocation(7, 57),
+            // (9,57): error CS0029: Cannot implicitly convert type 'System.Span<I<string?>>' to 'System.ReadOnlySpan<I<object>>'
+            //     ReadOnlySpan<I<object>> M5(Span<I<string?>> arg) => arg;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("System.Span<I<string?>>", "System.ReadOnlySpan<I<object>>").WithLocation(9, 57),
+            // (11,57): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<I<string?>>' doesn't match target type 'ReadOnlySpan<I<string>>'.
+            //     ReadOnlySpan<I<string>> M6(Span<I<string?>> arg) => (ReadOnlySpan<I<string>>)arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<I<string>>)arg").WithArguments("System.ReadOnlySpan<I<string?>>", "System.ReadOnlySpan<I<string>>").WithLocation(11, 57),
+            // (12,57): error CS0030: Cannot convert type 'System.Span<I<object?>>' to 'System.ReadOnlySpan<I<string>>'
+            //     ReadOnlySpan<I<string>> M7(Span<I<object?>> arg) => (ReadOnlySpan<I<string>>)arg;
+            Diagnostic(ErrorCode.ERR_NoExplicitConv, "(ReadOnlySpan<I<string>>)arg").WithArguments("System.Span<I<object?>>", "System.ReadOnlySpan<I<string>>").WithLocation(12, 57));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit_NullableAnalysis_NestedNullability(LanguageVersion langVersion)
+    {
+        var source = """
+            #nullable enable
+            using System;
+            class C
+            {
+                ReadOnlySpan<S<string>> M1(ReadOnlySpan<S<string>> arg) => arg;
+                ReadOnlySpan<S<string>> M2(ReadOnlySpan<S<string?>> arg) => arg;
+                ReadOnlySpan<S<string?>> M3(ReadOnlySpan<S<string>> arg) => arg;
+                ReadOnlySpan<S<string?>> M4(ReadOnlySpan<S<string?>> arg) => arg;
+                ReadOnlySpan<S<object>> M5(ReadOnlySpan<S<string?>> arg) => arg;
+
+                ReadOnlySpan<S<string>> M6(ReadOnlySpan<S<string?>> arg) => (ReadOnlySpan<S<string>>)arg;
+                ReadOnlySpan<S<string>> M7(ReadOnlySpan<S<object?>> arg) => (ReadOnlySpan<S<string>>)arg;
+            }
+            struct S<T> { }
+            """;
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion), targetFramework: TargetFramework.Net90).VerifyDiagnostics(
+            // (6,65): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<S<string?>>' doesn't match target type 'ReadOnlySpan<S<string>>'.
+            //     ReadOnlySpan<S<string>> M2(ReadOnlySpan<S<string?>> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.ReadOnlySpan<S<string?>>", "System.ReadOnlySpan<S<string>>").WithLocation(6, 65),
+            // (7,65): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<S<string>>' doesn't match target type 'ReadOnlySpan<S<string?>>'.
+            //     ReadOnlySpan<S<string?>> M3(ReadOnlySpan<S<string>> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.ReadOnlySpan<S<string>>", "System.ReadOnlySpan<S<string?>>").WithLocation(7, 65),
+            // (9,65): error CS0029: Cannot implicitly convert type 'System.ReadOnlySpan<S<string?>>' to 'System.ReadOnlySpan<S<object>>'
+            //     ReadOnlySpan<S<object>> M5(ReadOnlySpan<S<string?>> arg) => arg;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("System.ReadOnlySpan<S<string?>>", "System.ReadOnlySpan<S<object>>").WithLocation(9, 65),
+            // (11,65): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<S<string?>>' doesn't match target type 'ReadOnlySpan<S<string>>'.
+            //     ReadOnlySpan<S<string>> M6(ReadOnlySpan<S<string?>> arg) => (ReadOnlySpan<S<string>>)arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(ReadOnlySpan<S<string>>)arg").WithArguments("System.ReadOnlySpan<S<string?>>", "System.ReadOnlySpan<S<string>>").WithLocation(11, 65),
+            // (12,65): error CS0030: Cannot convert type 'System.ReadOnlySpan<S<object?>>' to 'System.ReadOnlySpan<S<string>>'
+            //     ReadOnlySpan<S<string>> M7(ReadOnlySpan<S<object?>> arg) => (ReadOnlySpan<S<string>>)arg;
+            Diagnostic(ErrorCode.ERR_NoExplicitConv, "(ReadOnlySpan<S<string>>)arg").WithArguments("System.ReadOnlySpan<S<object?>>", "System.ReadOnlySpan<S<string>>").WithLocation(12, 65));
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
     public void Conversion_Array_ReadOnlySpan_Implicit_NullableAnalysis_NestedNullability_Covariant(LanguageVersion langVersion)
     {
         var source = """
@@ -2362,6 +2569,70 @@ public class FirstClassSpanTests : CSharpTestBase
             // (5,52): warning CS8619: Nullability of reference types in value of type 'I<string?>[]' doesn't match target type 'I<object>[]'.
             //     ReadOnlySpan<I<object>> M(I<string?>[] arg) => arg;
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("I<string?>[]", targetType).WithLocation(5, 52));
+    }
+
+    [Fact]
+    public void Conversion_Span_ReadOnlySpan_Implicit_NullableAnalysis_NestedNullability_Covariant()
+    {
+        var source = """
+            #nullable enable
+            using System;
+            class C
+            {
+                ReadOnlySpan<I<object>> M(Span<I<string?>> arg) => arg;
+            }
+            interface I<out T> { }
+            """;
+
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+            // (5,56): error CS0029: Cannot implicitly convert type 'System.Span<I<string?>>' to 'System.ReadOnlySpan<I<object>>'
+            //     ReadOnlySpan<I<object>> M(Span<I<string?>> arg) => arg;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("System.Span<I<string?>>", "System.ReadOnlySpan<I<object>>").WithLocation(5, 56));
+
+        var expectedDiagnostics = new[]
+        {
+            // (5,56): warning CS8631: The type 'I<string?>' cannot be used as type parameter 'TDerived' in the generic type or method 'ReadOnlySpan<I<object>>.CastUp<TDerived>(ReadOnlySpan<TDerived>)'. Nullability of type argument 'I<string?>' doesn't match constraint type 'I<object>'.
+            //     ReadOnlySpan<I<object>> M(Span<I<string?>> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInTypeParameterConstraint, "arg").WithArguments("System.ReadOnlySpan<I<object>>.CastUp<TDerived>(System.ReadOnlySpan<TDerived>)", "I<object>", "TDerived", "I<string?>").WithLocation(5, 56),
+            // (5,56): warning CS8619: Nullability of reference types in value of type 'Span<I<string?>>' doesn't match target type 'ReadOnlySpan<I<object>>'.
+            //     ReadOnlySpan<I<object>> M(Span<I<string?>> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.Span<I<string?>>", "System.ReadOnlySpan<I<object>>").WithLocation(5, 56)
+        };
+
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext, targetFramework: TargetFramework.Net90).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilationWithSpanAndMemoryExtensions(source, targetFramework: TargetFramework.Net90).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit_NullableAnalysis_NestedNullability_Covariant()
+    {
+        var source = """
+            #nullable enable
+            using System;
+            class C
+            {
+                ReadOnlySpan<I<object>> M(ReadOnlySpan<I<string?>> arg) => arg;
+            }
+            interface I<out T> { }
+            """;
+
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+            // (5,64): error CS0029: Cannot implicitly convert type 'System.ReadOnlySpan<I<string?>>' to 'System.ReadOnlySpan<I<object>>'
+            //     ReadOnlySpan<I<object>> M(ReadOnlySpan<I<string?>> arg) => arg;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("System.ReadOnlySpan<I<string?>>", "System.ReadOnlySpan<I<object>>").WithLocation(5, 64));
+
+        var expectedDiagnostics = new[]
+        {
+            // (5,64): warning CS8631: The type 'I<string?>' cannot be used as type parameter 'TDerived' in the generic type or method 'ReadOnlySpan<I<object>>.CastUp<TDerived>(ReadOnlySpan<TDerived>)'. Nullability of type argument 'I<string?>' doesn't match constraint type 'I<object>'.
+            //     ReadOnlySpan<I<object>> M(ReadOnlySpan<I<string?>> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInTypeParameterConstraint, "arg").WithArguments("System.ReadOnlySpan<I<object>>.CastUp<TDerived>(System.ReadOnlySpan<TDerived>)", "I<object>", "TDerived", "I<string?>").WithLocation(5, 64),
+            // (5,64): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<I<string?>>' doesn't match target type 'ReadOnlySpan<I<object>>'.
+            //     ReadOnlySpan<I<object>> M(ReadOnlySpan<I<string?>> arg) => arg;
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.ReadOnlySpan<I<string?>>", "System.ReadOnlySpan<I<object>>").WithLocation(5, 64)
+        };
+
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext, targetFramework: TargetFramework.Net90).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilationWithSpanAndMemoryExtensions(source, targetFramework: TargetFramework.Net90).VerifyDiagnostics(expectedDiagnostics);
     }
 
     [Theory, MemberData(nameof(LangVersions))]
@@ -2416,6 +2687,74 @@ public class FirstClassSpanTests : CSharpTestBase
             // (9,17): warning CS8620: Argument of type 'string?[]' cannot be used for parameter 'arg' of type 'ReadOnlySpan<string>' in 'void C.M3(ReadOnlySpan<string> arg)' due to differences in the nullability of reference types.
             //         a.M3(); b.M3();
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "b").WithArguments("string?[]", "System.ReadOnlySpan<string>", "arg", "void C.M3(ReadOnlySpan<string> arg)").WithLocation(9, 17));
+    }
+
+    [Fact]
+    public void Conversion_Span_ReadOnlySpan_Implicit_NullableAnalysis_ExtensionMethodReceiver()
+    {
+        var source = """
+            #nullable enable
+            using System;
+            static class C
+            {
+                static void MS(Span<string> a, Span<string?> b)
+                {
+                    a.M1(); b.M1();
+                    a.M2(); b.M2();
+                }
+                static void M1(this ReadOnlySpan<string> arg) { }
+                static void M2(this ReadOnlySpan<string?> arg) { }
+            }
+            """;
+        CreateCompilationWithSpanAndMemoryExtensions(source).VerifyDiagnostics(
+            // (7,17): warning CS8620: Argument of type 'Span<string?>' cannot be used for parameter 'arg' of type 'ReadOnlySpan<string>' in 'void C.M1(ReadOnlySpan<string> arg)' due to differences in the nullability of reference types.
+            //         a.M1(); b.M1();
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "b").WithArguments("System.Span<string?>", "System.ReadOnlySpan<string>", "arg", "void C.M1(ReadOnlySpan<string> arg)").WithLocation(7, 17));
+    }
+
+    [Fact]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit_NullableAnalysis_ExtensionMethodReceiver()
+    {
+        var source = """
+            #nullable enable
+            using System;
+            static class C
+            {
+                static void MS(ReadOnlySpan<string> a, ReadOnlySpan<string?> b)
+                {
+                    a.M1(); b.M1();
+                    a.M2(); b.M2();
+                }
+                static void M1(this ReadOnlySpan<object> arg) { }
+                static void M2(this ReadOnlySpan<object?> arg) { }
+            }
+            """;
+        CreateCompilationWithSpanAndMemoryExtensions(source, targetFramework: TargetFramework.Net90).VerifyDiagnostics(
+            // (7,17): warning CS8631: The type 'string?' cannot be used as type parameter 'TDerived' in the generic type or method 'ReadOnlySpan<object>.CastUp<TDerived>(ReadOnlySpan<TDerived>)'. Nullability of type argument 'string?' doesn't match constraint type 'object'.
+            //         a.M1(); b.M1();
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInTypeParameterConstraint, "b").WithArguments("System.ReadOnlySpan<object>.CastUp<TDerived>(System.ReadOnlySpan<TDerived>)", "object", "TDerived", "string?").WithLocation(7, 17),
+            // (7,17): warning CS8620: Argument of type 'ReadOnlySpan<string?>' cannot be used for parameter 'arg' of type 'ReadOnlySpan<object>' in 'void C.M1(ReadOnlySpan<object> arg)' due to differences in the nullability of reference types.
+            //         a.M1(); b.M1();
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "b").WithArguments("System.ReadOnlySpan<string?>", "System.ReadOnlySpan<object>", "arg", "void C.M1(ReadOnlySpan<object> arg)").WithLocation(7, 17));
+    }
+
+    [Fact]
+    public void Conversion_string_ReadOnlySpan_Implicit_NullableAnalysis_ExtensionMethodReceiver()
+    {
+        var source = """
+            #nullable enable
+            using System;
+            static class C
+            {
+                static void MS(string a, string? b)
+                {
+                    a.M();
+                    b.M();
+                }
+                static void M(this ReadOnlySpan<char> arg) { }
+            }
+            """;
+        CreateCompilationWithSpanAndMemoryExtensions(source, targetFramework: TargetFramework.Net90).VerifyDiagnostics();
     }
 
     [Theory, CombinatorialData]
