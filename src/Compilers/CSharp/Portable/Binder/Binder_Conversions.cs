@@ -626,8 +626,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var sourceElementType = ((NamedTypeSymbol)source).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0].Type;
             var destinationElementType = ((NamedTypeSymbol)destination).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0].Type;
 
-            // PROTOTYPE: Should check identity conversion rather than equality? Needs tests.
-            var sameElementTypes = sourceElementType.Equals(destinationElementType, TypeCompareKind.ConsiderEverything);
+            var sameElementTypes = sourceElementType.Equals(destinationElementType, TypeCompareKind.AllIgnoreOptions);
 
             if (source.OriginalDefinition.IsReadOnlySpan())
             {
