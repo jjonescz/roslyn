@@ -545,7 +545,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 castUpMethod?
                                     .AsMember((NamedTypeSymbol)destination)
                                     .Construct([((NamedTypeSymbol)source.Type).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0]])
-                                    .CheckConstraints(new ConstraintsHelper.CheckConstraintsArgs(Compilation, Conversions, syntax.Location, diagnostics));
+                                    .CheckConstraints(new ConstraintsHelper.CheckConstraintsArgs(Compilation, Conversions, includeNullability: false, syntax.Location, diagnostics));
                             }
                         }
                     }
