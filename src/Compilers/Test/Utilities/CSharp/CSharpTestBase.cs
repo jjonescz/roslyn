@@ -2290,7 +2290,7 @@ namespace System.Diagnostics.CodeAnalysis
                 parseOptions: parseOptions);
         }
 
-        protected static CSharpCompilation CreateCompilationWithSpanAndMemoryExtensions(CSharpTestSource text, CSharpCompilationOptions options = null, CSharpParseOptions parseOptions = null, TargetFramework targetFramework = TargetFramework.NetCoreApp, bool noStringToReadOnlySpanConversionInSource = false)
+        protected static CSharpCompilation CreateCompilationWithSpanAndMemoryExtensions(CSharpTestSource text, CSharpCompilationOptions options = null, CSharpParseOptions parseOptions = null, TargetFramework targetFramework = TargetFramework.NetCoreApp)
         {
             if (ExecutionConditionUtil.IsCoreClr)
             {
@@ -2298,8 +2298,7 @@ namespace System.Diagnostics.CodeAnalysis
             }
             else
             {
-                var spanSource = noStringToReadOnlySpanConversionInSource ? TestSources.SpanWithoutStringConversion : TestSources.Span;
-                var reference = CreateCompilation(new[] { spanSource, TestSources.MemoryExtensions }, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
+                var reference = CreateCompilation(new[] { TestSources.Span, TestSources.MemoryExtensions }, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();
 
                 return CreateCompilation(
                     text,
