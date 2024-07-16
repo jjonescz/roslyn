@@ -184,7 +184,7 @@ namespace System
 #nullable enable
         public static ReadOnlySpan<T> CastUp<TDerived>(ReadOnlySpan<TDerived> items) where TDerived : class?, T
         {
-            return new ReadOnlySpan<T>(items.arr, 0, items.Length);
+            return new ReadOnlySpan<T>(items.arr, items.start, items.Length);
         }
 #nullable restore
     }
