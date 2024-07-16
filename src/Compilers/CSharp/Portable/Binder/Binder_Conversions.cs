@@ -514,7 +514,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         spanToReadOnlySpan = TryFindImplicitOperatorFromSpan(source.Type.OriginalDefinition, destination.OriginalDefinition);
                         reportUseSiteOrMissing(
                             spanToReadOnlySpan,
-                            destination.OriginalDefinition,
+                            source.Type.OriginalDefinition,
                             WellKnownMemberNames.ImplicitConversionName,
                             syntax,
                             diagnostics);

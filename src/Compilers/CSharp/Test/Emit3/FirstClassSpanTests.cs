@@ -622,9 +622,9 @@ public class FirstClassSpanTests : CSharpTestBase
 
         var expectedDiagnostics = new[]
         {
-            // (2,23): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.op_Implicit'
+            // (2,23): error CS0656: Missing compiler required member 'Span<T>.op_Implicit'
             // ReadOnlySpan<int> s = source();
-            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "op_Implicit").WithLocation(2, 23)
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.Span<T>", "op_Implicit").WithLocation(2, 23)
         };
 
         CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -653,9 +653,9 @@ public class FirstClassSpanTests : CSharpTestBase
 
         var expectedDiagnostics = new[]
         {
-            // (2,26): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.op_Implicit'
+            // (2,26): error CS0656: Missing compiler required member 'Span<T>.op_Implicit'
             // ReadOnlySpan<object> s = source();
-            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "op_Implicit").WithLocation(2, 26)
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.Span<T>", "op_Implicit").WithLocation(2, 26)
         };
 
         CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -1356,9 +1356,9 @@ public class FirstClassSpanTests : CSharpTestBase
             static System.Span<int> source() => default;
             """;
         CreateCompilation([source, getSpanSource("Internal")], [spanComp], assemblyName: "Consumer").VerifyDiagnostics(
-            // (2,35): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.op_Implicit'
+            // (2,35): error CS0656: Missing compiler required member 'Span<T>.op_Implicit'
             // lib::System.ReadOnlySpan<int> s = source();
-            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "op_Implicit").WithLocation(2, 35));
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.Span<T>", "op_Implicit").WithLocation(2, 35));
 
         source = """
             extern alias lib;
@@ -1366,9 +1366,9 @@ public class FirstClassSpanTests : CSharpTestBase
             static lib::System.Span<int> source() => default;
             """;
         CreateCompilation([source, getSpanSource("Internal")], [spanComp], assemblyName: "Consumer").VerifyDiagnostics(
-            // (2,30): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.op_Implicit'
+            // (2,30): error CS0656: Missing compiler required member 'Span<T>.op_Implicit'
             // System.ReadOnlySpan<int> s = source();
-            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "op_Implicit").WithLocation(2, 30));
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.Span<T>", "op_Implicit").WithLocation(2, 30));
     }
 
     [Fact]
@@ -1424,9 +1424,9 @@ public class FirstClassSpanTests : CSharpTestBase
             static span2::System.Span<int> source() => default;
             """;
         CreateCompilation(source, [span2], assemblyName: "Consumer").VerifyDiagnostics(
-            // (2,37): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.op_Implicit'
+            // (2,37): error CS0656: Missing compiler required member 'Span<T>.op_Implicit'
             // span2::System.ReadOnlySpan<int> s = source();
-            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "op_Implicit").WithLocation(2, 37));
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.Span<T>", "op_Implicit").WithLocation(2, 37));
 
         source = """
             extern alias span1;
@@ -1435,9 +1435,9 @@ public class FirstClassSpanTests : CSharpTestBase
             static span1::System.Span<int> source() => default;
             """;
         CreateCompilation(source, [span1, span2], assemblyName: "Consumer").VerifyDiagnostics(
-            // (3,37): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.op_Implicit'
+            // (3,37): error CS0656: Missing compiler required member 'Span<T>.op_Implicit'
             // span2::System.ReadOnlySpan<int> s = source();
-            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "op_Implicit").WithLocation(3, 37));
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.Span<T>", "op_Implicit").WithLocation(3, 37));
     }
 
     [Fact]
