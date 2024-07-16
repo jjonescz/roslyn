@@ -507,13 +507,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
 
                     // ReadOnlySpan<T> Span<T>.op_Implicit(Span<T>)
-                    MethodSymbol? spanToReadOnlySpan = null;
                     if (source.Type.OriginalDefinition.IsSpan())
                     {
                         Debug.Assert(destination.OriginalDefinition.IsReadOnlySpan());
-                        spanToReadOnlySpan = TryFindImplicitOperatorFromSpan(source.Type.OriginalDefinition, destination.OriginalDefinition);
                         reportUseSiteOrMissing(
-                            spanToReadOnlySpan,
+                            TryFindImplicitOperatorFromSpan(source.Type.OriginalDefinition, destination.OriginalDefinition),
                             source.Type.OriginalDefinition,
                             WellKnownMemberNames.ImplicitConversionName,
                             syntax,
@@ -527,26 +525,23 @@ namespace Microsoft.CodeAnalysis.CSharp
                         if (NeedsSpanCastUp(source.Type, destination))
                         {
                             // If converting Span<TDerived> -> ROS<TDerived> -> ROS<T>,
-                            // the source of the CastUp is the return type of the op_Implicit (i.e., the ROS<TDerived>).
-                            TypeSymbol? sourceForCastUp = source.Type.OriginalDefinition.IsSpan()
-                                ? spanToReadOnlySpan?.ReturnType
-                                : source.Type;
+                            // the source of the CastUp is the return type of the op_Implicit (i.e., the ROS<TDerived>)
+                            // which has the same original definition as the destination ROS<T>.
+                            TypeSymbol sourceForCastUp = source.Type.OriginalDefinition.IsSpan()
+                                ? destination.OriginalDefinition
+                                : source.Type.OriginalDefinition;
 
-                            // If null, we have already reported that the op_Implicit is missing.
-                            if (sourceForCastUp is not null)
-                            {
-                                MethodSymbol? castUpMethod = TryFindCastUpMethod(sourceForCastUp.OriginalDefinition, destination.OriginalDefinition);
-                                reportUseSiteOrMissing(
-                                    castUpMethod,
-                                    destination.OriginalDefinition,
-                                    WellKnownMemberNames.CastUpMethodName,
-                                    syntax,
-                                    diagnostics);
-                                castUpMethod?
-                                    .AsMember((NamedTypeSymbol)destination)
-                                    .Construct([((NamedTypeSymbol)source.Type).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0]])
-                                    .CheckConstraints(new ConstraintsHelper.CheckConstraintsArgs(Compilation, Conversions, includeNullability: false, syntax.Location, diagnostics));
-                            }
+                            MethodSymbol? castUpMethod = TryFindCastUpMethod(sourceForCastUp.OriginalDefinition, destination.OriginalDefinition);
+                            reportUseSiteOrMissing(
+                                castUpMethod,
+                                destination.OriginalDefinition,
+                                WellKnownMemberNames.CastUpMethodName,
+                                syntax,
+                                diagnostics);
+                            castUpMethod?
+                                .AsMember((NamedTypeSymbol)destination)
+                                .Construct([((NamedTypeSymbol)source.Type).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0]])
+                                .CheckConstraints(new ConstraintsHelper.CheckConstraintsArgs(Compilation, Conversions, includeNullability: false, syntax.Location, diagnostics));
                         }
                     }
 

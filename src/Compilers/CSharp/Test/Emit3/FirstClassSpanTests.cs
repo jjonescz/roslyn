@@ -632,7 +632,7 @@ public class FirstClassSpanTests : CSharpTestBase
     }
 
     [Fact]
-    public void Conversion_Span_ReadOnlySpan_CastUp_Implicit_MissingHelper()
+    public void Conversion_Span_ReadOnlySpan_CastUp_Implicit_MissingHelper_01()
     {
         var source = """
             using System;
@@ -643,6 +643,77 @@ public class FirstClassSpanTests : CSharpTestBase
             {
                 public readonly ref struct Span<T> { }
                 public readonly ref struct ReadOnlySpan<T> { }
+            }
+            """;
+
+        CreateCompilation(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+            // (2,26): error CS0029: Cannot implicitly convert type 'System.Span<string>' to 'System.ReadOnlySpan<object>'
+            // ReadOnlySpan<object> s = source();
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "source()").WithArguments("System.Span<string>", "System.ReadOnlySpan<object>").WithLocation(2, 26));
+
+        var expectedDiagnostics = new[]
+        {
+            // (2,26): error CS0656: Missing compiler required member 'Span<T>.op_Implicit'
+            // ReadOnlySpan<object> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.Span<T>", "op_Implicit").WithLocation(2, 26),
+            // (2,26): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.CastUp'
+            // ReadOnlySpan<object> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "CastUp").WithLocation(2, 26)
+        };
+
+        CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact]
+    public void Conversion_Span_ReadOnlySpan_CastUp_Implicit_MissingHelper_02()
+    {
+        var source = """
+            using System;
+            ReadOnlySpan<object> s = source();
+            static Span<string> source() => throw null;
+
+            namespace System
+            {
+                public readonly ref struct Span<T>
+                {
+                    public static implicit operator ReadOnlySpan<T>(Span<T> s) => throw null;
+                }
+                public readonly ref struct ReadOnlySpan<T> { }
+            }
+            """;
+
+        CreateCompilation(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+            // (2,26): error CS0029: Cannot implicitly convert type 'System.Span<string>' to 'System.ReadOnlySpan<object>'
+            // ReadOnlySpan<object> s = source();
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "source()").WithArguments("System.Span<string>", "System.ReadOnlySpan<object>").WithLocation(2, 26));
+
+        var expectedDiagnostics = new[]
+        {
+            // (2,26): error CS0656: Missing compiler required member 'ReadOnlySpan<T>.CastUp'
+            // ReadOnlySpan<object> s = source();
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "source()").WithArguments("System.ReadOnlySpan<T>", "CastUp").WithLocation(2, 26)
+        };
+
+        CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact]
+    public void Conversion_Span_ReadOnlySpan_CastUp_Implicit_MissingHelper_03()
+    {
+        var source = """
+            using System;
+            ReadOnlySpan<object> s = source();
+            static Span<string> source() => throw null;
+
+            namespace System
+            {
+                public readonly ref struct Span<T> { }
+                public readonly ref struct ReadOnlySpan<T>
+                {
+                    public static ReadOnlySpan<T> CastUp<TDerived>(ReadOnlySpan<TDerived> s) where TDerived : class, T => throw null;
+                }
             }
             """;
 
