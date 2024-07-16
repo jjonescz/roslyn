@@ -1441,6 +1441,64 @@ public class FirstClassSpanTests : CSharpTestBase
     }
 
     [Fact]
+    public void Conversion_Span_ReadOnlySpan_CastUp_Implicit_MultipleSpans()
+    {
+        var span1 = CreateCompilation("""
+            namespace System;
+            public readonly ref struct Span<T>;
+            public readonly ref struct ReadOnlySpan<T>
+            {
+                public static ReadOnlySpan<T> CastUp<TDerived>(ReadOnlySpan<TDerived> span) where TDerived : class, T
+                {
+                    Console.WriteLine("CastUp");
+                    return default;
+                }
+            }
+            """, assemblyName: "Span1")
+            .VerifyDiagnostics()
+            .EmitToImageReference(aliases: ["span1"]);
+        var span2 = CreateCompilation("""
+            extern alias span1;
+            namespace System;
+            public readonly ref struct Span<T>
+            {
+                public static implicit operator span1::System.ReadOnlySpan<T>(Span<T> span)
+                {
+                    Console.WriteLine("Span2 to ReadOnlySpan1");
+                    return default;
+                }
+            }
+            """, [span1], assemblyName: "Span2")
+            .VerifyDiagnostics()
+            .EmitToImageReference(aliases: ["span2"]);
+
+        var source = """
+            extern alias span1;
+            extern alias span2;
+            span1::System.ReadOnlySpan<object> s = source();
+            static span2::System.Span<string> source() => default;
+            """;
+
+        var comp = CreateCompilation(source, [span1, span2], assemblyName: "Consumer");
+        var verifier = CompileAndVerify(comp, verify: Verification.FailsILVerify, expectedOutput: """
+            Span2 to ReadOnlySpan1
+            CastUp
+            """);
+        verifier.VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+            {
+              // Code size       17 (0x11)
+              .maxstack  1
+              IL_0000:  call       "System.Span<string> Program.<<Main>$>g__source|0_0()"
+              IL_0005:  call       "System.ReadOnlySpan<string> System.Span<string>.op_Implicit(System.Span<string>)"
+              IL_000a:  call       "System.ReadOnlySpan<object> System.ReadOnlySpan<object>.CastUp<string>(System.ReadOnlySpan<string>)"
+              IL_000f:  pop
+              IL_0010:  ret
+            }
+            """);
+    }
+
+    [Fact]
     public void Conversion_ReadOnlySpan_ReadOnlySpan_Implicit_MultipleSpans_01()
     {
         static string getSpanSource(string output) => $$"""
