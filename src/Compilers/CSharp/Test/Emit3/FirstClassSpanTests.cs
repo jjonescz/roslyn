@@ -4714,7 +4714,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
         var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion));
-        CompileAndVerify(comp, expectedOutput: "1null 1null").VerifyDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "1null 1null 1null").VerifyDiagnostics();
     }
 
     [Fact]
