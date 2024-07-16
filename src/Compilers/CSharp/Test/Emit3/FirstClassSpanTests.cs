@@ -398,12 +398,12 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext);
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext, targetFramework: TargetFramework.Net90);
         var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput, verify: Verification.FailsILVerify);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
 
-        comp = CreateCompilationWithSpanAndMemoryExtensions(source);
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source, targetFramework: TargetFramework.Net90);
         verifier = CompileAndVerify(comp, expectedOutput: expectedOutput, verify: Verification.FailsILVerify);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
@@ -449,12 +449,12 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext);
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext, targetFramework: TargetFramework.Net90);
         var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput, verify: Verification.FailsILVerify);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
 
-        comp = CreateCompilationWithSpanAndMemoryExtensions(source);
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source, targetFramework: TargetFramework.Net90);
         verifier = CompileAndVerify(comp, expectedOutput: expectedOutput, verify: Verification.FailsILVerify);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", expectedIL);
@@ -5111,10 +5111,10 @@ public class FirstClassSpanTests : CSharpTestBase
 
         var expectedOutput = "22";
 
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext, targetFramework: TargetFramework.Net90);
         CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
 
-        comp = CreateCompilationWithSpanAndMemoryExtensions(source);
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source, targetFramework: TargetFramework.Net90);
         CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 
@@ -5222,10 +5222,10 @@ public class FirstClassSpanTests : CSharpTestBase
 
         var expectedOutput = "22";
 
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext, targetFramework: TargetFramework.Net90);
         CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
 
-        comp = CreateCompilationWithSpanAndMemoryExtensions(source);
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source, targetFramework: TargetFramework.Net90);
         CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 
