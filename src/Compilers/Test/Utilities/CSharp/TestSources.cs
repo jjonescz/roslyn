@@ -40,6 +40,11 @@ namespace System
 
         public Span(T[] arr, int start, int length)
         {
+            if (start + length > arr.Length)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+
             this.arr = arr;
             this.start = start;
             this.Length = length;
@@ -120,6 +125,11 @@ namespace System
 
         public ReadOnlySpan(T[] arr, int start, int length)
         {
+            if (start + length > arr.Length)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+
             this.arr = arr;
             this.start = start;
             this.Length = length;
