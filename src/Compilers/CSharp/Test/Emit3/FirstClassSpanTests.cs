@@ -20,7 +20,7 @@ public class FirstClassSpanTests : CSharpTestBase
     {
         return new TheoryData<LanguageVersion>()
         {
-            LanguageVersion.CSharp12,
+            LanguageVersion.CSharp13,
             LanguageVersionFacts.CSharpNext,
             LanguageVersion.Preview,
         };
@@ -55,13 +55,10 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (7,65): error CS0121: The call is ambiguous between the following methods or properties: 'StringExtensions.Join(string, params string[])' and 'StringExtensions.Join(string, params ReadOnlySpan<string>)'
             //     public static string M(StringValues sv) => StringExtensions.Join(",", sv);
-            Diagnostic(ErrorCode.ERR_AmbigCall, "Join").WithArguments("StringExtensions.Join(string, params string[])", "StringExtensions.Join(string, params System.ReadOnlySpan<string>)").WithLocation(7, 65),
-            // (13,49): error CS8652: The feature 'params collections' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     public static string Join(string separator, params ReadOnlySpan<string> values) => "span";
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "params ReadOnlySpan<string> values").WithArguments("params collections").WithLocation(13, 49));
+            Diagnostic(ErrorCode.ERR_AmbigCall, "Join").WithArguments("StringExtensions.Join(string, params string[])", "StringExtensions.Join(string, params System.ReadOnlySpan<string>)").WithLocation(7, 65));
 
         var expectedOutput = "array";
 
@@ -109,7 +106,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         CompileAndVerify(comp, expectedOutput: "Base").VerifyDiagnostics();
 
         var expectedOutput = "Derived";
@@ -155,7 +152,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12, options: TestOptions.ReleaseExe);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13, options: TestOptions.ReleaseExe);
         CompileAndVerify(comp, expectedOutput: "N2").VerifyDiagnostics();
 
         var expectedOutput = "N1";
@@ -191,7 +188,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         CompileAndVerify(comp, expectedOutput: "2").VerifyDiagnostics();
 
         var expectedOutput = "1";
@@ -257,7 +254,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         CompileAndVerify(comp, expectedOutput: "2").VerifyDiagnostics();
 
         // PROTOTYPE: Can we avoid this break?
@@ -367,7 +364,7 @@ public class FirstClassSpanTests : CSharpTestBase
             static void report(ReadOnlySpan<object> s) { foreach (var x in s) { Console.Write(x); } }
             """;
 
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         if (!cast)
         {
             comp.VerifyDiagnostics(
@@ -449,7 +446,7 @@ public class FirstClassSpanTests : CSharpTestBase
             static void report(ReadOnlySpan<object> s) { foreach (var x in s) { Console.Write(x); } }
             """;
 
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         if (!cast)
         {
             comp.VerifyDiagnostics(
@@ -531,7 +528,7 @@ public class FirstClassSpanTests : CSharpTestBase
 
         var expectedOutput = "a b c";
 
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput);
         verifier.VerifyDiagnostics();
         var owner = ExecutionConditionUtil.IsCoreClr ? "string" : "System.ReadOnlySpan<char>";
@@ -584,7 +581,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilation(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilation(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (2,15): error CS0029: Cannot implicitly convert type 'int[]' to 'System.Span<int>'
             // Span<int> s = arr();
             Diagnostic(ErrorCode.ERR_NoImplicitConv, "arr()").WithArguments("int[]", "System.Span<int>").WithLocation(2, 15));
@@ -615,7 +612,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilation(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilation(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (2,23): error CS0029: Cannot implicitly convert type 'System.Span<int>' to 'System.ReadOnlySpan<int>'
             // ReadOnlySpan<int> s = source();
             Diagnostic(ErrorCode.ERR_NoImplicitConv, "source()").WithArguments("System.Span<int>", "System.ReadOnlySpan<int>").WithLocation(2, 23));
@@ -646,7 +643,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilation(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilation(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (2,26): error CS0029: Cannot implicitly convert type 'System.Span<string>' to 'System.ReadOnlySpan<object>'
             // ReadOnlySpan<object> s = source();
             Diagnostic(ErrorCode.ERR_NoImplicitConv, "source()").WithArguments("System.Span<string>", "System.ReadOnlySpan<object>").WithLocation(2, 26));
@@ -683,7 +680,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilation(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilation(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (2,26): error CS0029: Cannot implicitly convert type 'System.Span<string>' to 'System.ReadOnlySpan<object>'
             // ReadOnlySpan<object> s = source();
             Diagnostic(ErrorCode.ERR_NoImplicitConv, "source()").WithArguments("System.Span<string>", "System.ReadOnlySpan<object>").WithLocation(2, 26));
@@ -717,7 +714,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilation(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilation(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (2,26): error CS0029: Cannot implicitly convert type 'System.Span<string>' to 'System.ReadOnlySpan<object>'
             // ReadOnlySpan<object> s = source();
             Diagnostic(ErrorCode.ERR_NoImplicitConv, "source()").WithArguments("System.Span<string>", "System.ReadOnlySpan<object>").WithLocation(2, 26));
@@ -747,7 +744,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilation(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilation(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (2,26): error CS0029: Cannot implicitly convert type 'System.ReadOnlySpan<string>' to 'System.ReadOnlySpan<object>'
             // ReadOnlySpan<object> s = source();
             Diagnostic(ErrorCode.ERR_NoImplicitConv, "source()").WithArguments("System.ReadOnlySpan<string>", "System.ReadOnlySpan<object>").WithLocation(2, 26));
@@ -777,7 +774,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilation(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilation(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (2,24): error CS0029: Cannot implicitly convert type 'string' to 'System.ReadOnlySpan<char>'
             // ReadOnlySpan<char> s = source();
             Diagnostic(ErrorCode.ERR_NoImplicitConv, "source()").WithArguments("string", "System.ReadOnlySpan<char>").WithLocation(2, 24));
@@ -2186,7 +2183,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             struct S<T>;
             """;
-        var targetType = langVersion > LanguageVersion.CSharp12 ? "System.Span<S<string>>" : "System.ReadOnlySpan<S<string>>";
+        var targetType = langVersion > LanguageVersion.CSharp13 ? "System.Span<S<string>>" : "System.ReadOnlySpan<S<string>>";
         CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
             // (5,56): warning CS8619: Nullability of reference types in value of type 'Span<S<string>>' doesn't match target type 'ReadOnlySpan<S<string?>>'.
             //     ReadOnlySpan<S<string?>> M(Span<S<string>> arg) => arg;
@@ -2382,7 +2379,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (6,39): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'string[]'.
             //     Span<string> M2(string?[] arg) => arg;
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[]", "string[]").WithLocation(6, 39),
@@ -2441,7 +2438,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (6,47): warning CS8619: Nullability of reference types in value of type 'string?[]' doesn't match target type 'string[]'.
             //     ReadOnlySpan<string> M2(string?[] arg) => arg;
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[]", "string[]").WithLocation(6, 47),
@@ -2494,7 +2491,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (6,51): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<string?>' doesn't match target type 'ReadOnlySpan<string>'.
             //     ReadOnlySpan<string> M2(Span<string?> arg) => arg;
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.ReadOnlySpan<string?>", "System.ReadOnlySpan<string>").WithLocation(6, 51),
@@ -2550,7 +2547,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (6,59): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<string?>' doesn't match target type 'ReadOnlySpan<string>'.
             //     ReadOnlySpan<string> M2(ReadOnlySpan<string?> arg) => arg;
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.ReadOnlySpan<string?>", "System.ReadOnlySpan<string>").WithLocation(6, 59),
@@ -2619,7 +2616,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (6,43): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'string[][]'.
             //     Span<string[]> M2(string?[][] arg) => arg;
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[][]", "string[][]").WithLocation(6, 43),
@@ -2663,7 +2660,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (6,51): warning CS8619: Nullability of reference types in value of type 'string?[][]' doesn't match target type 'string[][]'.
             //     ReadOnlySpan<string[]> M2(string?[][] arg) => arg;
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("string?[][]", "string[][]").WithLocation(6, 51),
@@ -2723,7 +2720,7 @@ public class FirstClassSpanTests : CSharpTestBase
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(Span<S<string>>)arg").WithArguments("S<string?>[]", targetType("string")).WithLocation(10, 45));
 
         string targetType(string inner)
-            => langVersion > LanguageVersion.CSharp12 ? $"System.Span<S<{inner}>>" : $"S<{inner}>[]";
+            => langVersion > LanguageVersion.CSharp13 ? $"System.Span<S<{inner}>>" : $"S<{inner}>[]";
     }
 
     [Theory, MemberData(nameof(LangVersions))]
@@ -2763,7 +2760,7 @@ public class FirstClassSpanTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_NoExplicitConv, "(ReadOnlySpan<S<string>>)arg").WithArguments("S<object?>[]", "System.ReadOnlySpan<S<string>>").WithLocation(12, 53));
 
         string targetType(string inner)
-            => langVersion > LanguageVersion.CSharp12 ? $"System.ReadOnlySpan<S<{inner}>>" : $"S<{inner}>[]";
+            => langVersion > LanguageVersion.CSharp13 ? $"System.ReadOnlySpan<S<{inner}>>" : $"S<{inner}>[]";
     }
 
     [Fact]
@@ -2785,7 +2782,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             interface I<out T> { }
             """;
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (6,57): warning CS8619: Nullability of reference types in value of type 'ReadOnlySpan<I<string?>>' doesn't match target type 'ReadOnlySpan<I<string>>'.
             //     ReadOnlySpan<I<string>> M2(Span<I<string?>> arg) => arg;
             Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "arg").WithArguments("System.ReadOnlySpan<I<string?>>", "System.ReadOnlySpan<I<string>>").WithLocation(6, 57),
@@ -2871,7 +2868,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             interface I<out T> { }
             """;
-        var targetType = langVersion > LanguageVersion.CSharp12 ? "System.ReadOnlySpan<I<object>>" : "I<object>[]";
+        var targetType = langVersion > LanguageVersion.CSharp13 ? "System.ReadOnlySpan<I<object>>" : "I<object>[]";
         CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
             // (5,52): warning CS8619: Nullability of reference types in value of type 'I<string?>[]' doesn't match target type 'I<object>[]'.
             //     ReadOnlySpan<I<object>> M(I<string?>[] arg) => arg;
@@ -2891,7 +2888,7 @@ public class FirstClassSpanTests : CSharpTestBase
             interface I<out T> { }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (5,56): error CS0029: Cannot implicitly convert type 'System.Span<I<string?>>' to 'System.ReadOnlySpan<I<object>>'
             //     ReadOnlySpan<I<object>> M(Span<I<string?>> arg) => arg;
             Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("System.Span<I<string?>>", "System.ReadOnlySpan<I<object>>").WithLocation(5, 56));
@@ -2920,7 +2917,7 @@ public class FirstClassSpanTests : CSharpTestBase
             interface I<out T> { }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (5,64): error CS0029: Cannot implicitly convert type 'System.ReadOnlySpan<I<string?>>' to 'System.ReadOnlySpan<I<object>>'
             //     ReadOnlySpan<I<object>> M(ReadOnlySpan<I<string?>> arg) => arg;
             Diagnostic(ErrorCode.ERR_NoImplicitConv, "arg").WithArguments("System.ReadOnlySpan<I<string?>>", "System.ReadOnlySpan<I<object>>").WithLocation(5, 64));
@@ -3296,7 +3293,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 }
             }
             """;
-        var verifier = CompileAndVerify(source, parseOptions: TestOptions.Regular12);
+        var verifier = CompileAndVerify(source, parseOptions: TestOptions.Regular13);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("C.M", """
             {
@@ -3511,7 +3508,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (4,5): error CS1503: Argument 1: cannot convert from 'method group' to 'System.Func<int, int>'
             // C.R(a.M);
             Diagnostic(ErrorCode.ERR_BadArgType, "a.M").WithArguments("1", "method group", "System.Func<int, int>").WithLocation(4, 5),
@@ -3547,7 +3544,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (4,10): error CS8917: The delegate type could not be inferred.
             // var d1 = a.M;
             Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "a.M").WithLocation(4, 10),
@@ -3601,7 +3598,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (4,5): error CS1061: 'int[]' does not contain a definition for 'M' and no accessible extension method 'M' accepting a first argument of type 'int[]' could be found (are you missing a using directive or an assembly reference?)
             // C.R(a.M);
             Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "a.M").WithArguments("int[]", "M").WithLocation(4, 5),
@@ -3653,7 +3650,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (4,10): error CS8917: The delegate type could not be inferred.
             // var d1 = a.M;
             Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "a.M").WithLocation(4, 10),
@@ -3740,7 +3737,7 @@ public class FirstClassSpanTests : CSharpTestBase
 
         var expectedOutput = "1 a";
 
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", $$"""
             {
@@ -4108,7 +4105,7 @@ public class FirstClassSpanTests : CSharpTestBase
 
             interface I<T> { }
             """;
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (6,12): error CS0029: Cannot implicitly convert type 'I<string>[]' to 'System.Span<I<object>>'
             //         => x;
             Diagnostic(ErrorCode.ERR_NoImplicitConv, "x").WithArguments("I<string>[]", $"System.{type}<I<object>>").WithLocation(6, 12));
@@ -4139,7 +4136,7 @@ public class FirstClassSpanTests : CSharpTestBase
 
             interface I<T> { }
             """;
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (6,12): error CS0030: Cannot convert type 'I<string>[]' to 'System.Span<I<object>>'
             //         => (Span<I<object>>)x;
             Diagnostic(ErrorCode.ERR_NoExplicitConv, $"({type}<I<object>>)x").WithArguments("I<string>[]", $"System.{type}<I<object>>").WithLocation(6, 12));
@@ -4364,7 +4361,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 Span<U> F4(T[] x) => (Span<U>)x;
             }
             """;
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics();
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics();
 
         // Note: although a breaking change, the previous would fail with a runtime exception
         // (Span's constructor checks that the element types are identical).
@@ -4406,7 +4403,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (3,5): error CS1503: Argument 1: cannot convert from 'C' to 'System.Span<int>'
             // D.M(new C());
             Diagnostic(ErrorCode.ERR_BadArgType, "new C()").WithArguments("1", "C", $"System.{destination}<int>").WithLocation(3, 5));
@@ -4447,7 +4444,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (3,5): error CS0030: Cannot convert type 'C' to 'System.Span<int>'
             // D.M((Span<int>)new C());
             Diagnostic(ErrorCode.ERR_NoExplicitConv, $"({destination}<int>)new C()").WithArguments("C", $"System.{destination}<int>").WithLocation(3, 5));
@@ -4544,8 +4541,8 @@ public class FirstClassSpanTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_BadArgType, "new C()").WithArguments("1", "C", "System.Span<int>").WithLocation(3, 5)
         };
 
-        verifyWithMissing(missingRosHelper, TestOptions.Regular12, expectedDiagnostics);
-        verifyWithMissing(missingSpanHelper, TestOptions.Regular12, expectedDiagnostics);
+        verifyWithMissing(missingRosHelper, TestOptions.Regular13, expectedDiagnostics);
+        verifyWithMissing(missingSpanHelper, TestOptions.Regular13, expectedDiagnostics);
 
         expectedDiagnostics = [
             // (3,5): error CS0656: Missing compiler required member 'System.Span<T>.op_Implicit'
@@ -4617,8 +4614,8 @@ public class FirstClassSpanTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_BadArgType, "new C()").WithArguments("1", "C", "System.ReadOnlySpan<int>").WithLocation(3, 5)
         };
 
-        verifyWithMissing(missingRosHelper, TestOptions.Regular12, expectedDiagnostics);
-        verifyWithMissing(missingSpanHelper, TestOptions.Regular12, expectedDiagnostics);
+        verifyWithMissing(missingRosHelper, TestOptions.Regular13, expectedDiagnostics);
+        verifyWithMissing(missingSpanHelper, TestOptions.Regular13, expectedDiagnostics);
 
         expectedDiagnostics = [
             // (3,5): error CS0656: Missing compiler required member 'System.ReadOnlySpan<T>.op_Implicit'
@@ -4652,7 +4649,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void E(this Span<int> arg) => Console.Write(arg[1]);
             }
             """;
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (7,40): error CS1929: 'int[]' does not contain a definition for 'E' and the best extension method overload 'C.E(Span<int>)' requires a receiver of type 'System.Span<int>'
             //     public static void M(int[] arg) => arg.E();
             Diagnostic(ErrorCode.ERR_BadInstanceArgType, "arg").WithArguments("int[]", "E", "C.E(System.Span<int>)", "System.Span<int>").WithLocation(7, 40));
@@ -4714,7 +4711,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void E(this {{modifier}} Span<int> arg) => Console.Write(arg[1]);
             }
             """;
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (7,40): error CS1929: 'int[]' does not contain a definition for 'E' and the best extension method overload 'C.E(ref Span<int>)' requires a receiver of type 'ref System.Span<int>'
             //     public static void M(int[] arg) => arg.E();
             Diagnostic(ErrorCode.ERR_BadInstanceArgType, "arg").WithArguments("int[]", "E", $"C.E({modifier} System.Span<int>)", $"{modifier} System.Span<int>").WithLocation(7, 40));
@@ -5041,7 +5038,7 @@ public class FirstClassSpanTests : CSharpTestBase
     }
 
     [Fact]
-    public void Conversion_Array_Span_ExtensionMethodReceiver_Implicit_Reduced_01_CSharp12()
+    public void Conversion_Array_Span_ExtensionMethodReceiver_Implicit_Reduced_01_CSharp13()
     {
         var source = """
             using System;
@@ -5051,7 +5048,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void E(this Span<int> arg) { }
             }
             """;
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (4,40): error CS1929: 'int[]' does not contain a definition for 'E' and the best extension method overload 'C.E(Span<int>)' requires a receiver of type 'System.Span<int>'
             //     public static void M(int[] arg) => arg.E();
             Diagnostic(ErrorCode.ERR_BadInstanceArgType, "arg").WithArguments("int[]", "E", "C.E(System.Span<int>)", "System.Span<int>").WithLocation(4, 40));
@@ -5188,7 +5185,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 }
             }
             """;
-        var verifier = CompileAndVerify(source, parseOptions: TestOptions.Regular12);
+        var verifier = CompileAndVerify(source, parseOptions: TestOptions.Regular13);
         verifier.VerifyDiagnostics();
         verifier.VerifyIL("C.M", """
             {
@@ -5284,7 +5281,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void E(this ReadOnlySpan<object> arg) => Console.Write(arg[1]);
             }
             """;
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (7,43): error CS1929: 'string[]' does not contain a definition for 'E' and the best extension method overload 'C.E(ReadOnlySpan<object>)' requires a receiver of type 'System.ReadOnlySpan<object>'
             //     public static void M(string[] arg) => arg.E();
             Diagnostic(ErrorCode.ERR_BadInstanceArgType, "arg").WithArguments("string[]", "E", "C.E(System.ReadOnlySpan<object>)", "System.ReadOnlySpan<object>").WithLocation(7, 43));
@@ -5331,7 +5328,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (5,3): error CS0121: The call is ambiguous between the following methods or properties: 'C.M(Span<int>)' and 'C.M(IEnumerable<int>)'
             // C.M(a);
             Diagnostic(ErrorCode.ERR_AmbigCall, "M").WithArguments("C.M(System.Span<int>)", "C.M(System.Collections.Generic.IEnumerable<int>)").WithLocation(5, 3));
@@ -5381,7 +5378,7 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
 
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (5,13): error CS0121: The call is ambiguous between the following methods or properties: 'C.C(Span<int>)' and 'C.C(IEnumerable<int>)'
             // var c = new C(a);
             Diagnostic(ErrorCode.ERR_AmbigCall, "C").WithArguments("C.C(System.Span<int>)", "C.C(System.Collections.Generic.IEnumerable<int>)").WithLocation(5, 13));
@@ -5460,7 +5457,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M(ReadOnlySpan<object> x) => Console.Write(" r" + x[0]);
             }
             """;
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         CompileAndVerify(comp, expectedOutput: "aa rSystem.String[] ra ra ra").VerifyDiagnostics();
 
         var expectedOutput = "ra rSystem.String[] ra ra ra";
@@ -5552,7 +5549,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M(ReadOnlySpan<object> x) => Console.Write(" r" + x[0]);
             }
             """;
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         CompileAndVerify(comp, expectedOutput: "aa").VerifyDiagnostics();
 
         var expectedOutput = "ra";
@@ -5753,7 +5750,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M(this ReadOnlySpan<string> x) => Console.Write(" s" + x[0]);
             }
             """;
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         CompileAndVerify(comp, expectedOutput: "oa").VerifyDiagnostics();
 
         var expectedOutput = "sa";
@@ -5780,7 +5777,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M(this ReadOnlySpan<object> x) => Console.Write(" r" + x[0]);
             }
             """;
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         CompileAndVerify(comp, expectedOutput: "aa").VerifyDiagnostics();
 
         var expectedOutput = "ra";
@@ -5864,7 +5861,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M(this Span<string> x) => Console.Write(" s" + x[0]);
             }
             """;
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         CompileAndVerify(comp, expectedOutput: "aa").VerifyDiagnostics();
 
         var expectedOutput = "sa";
@@ -5914,7 +5911,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M(this Span<string> x) => Console.Write(" s" + x[0]);
             }
             """;
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         CompileAndVerify(comp, expectedOutput: "aa").VerifyDiagnostics();
 
         var expectedOutput = "sa";
@@ -5964,7 +5961,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M(ReadOnlySpan<object> arg) => Console.Write(2);
             }
             """;
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         CompileAndVerify(comp, expectedOutput: ExecutionConditionUtil.IsCoreClr ? "1123" : "1121").VerifyDiagnostics();
 
         var expectedOutput = "1122";
@@ -5991,7 +5988,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M(ReadOnlySpan<object> arg) => Console.Write(2);
             }
             """;
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (3,5): error CS1503: Argument 1: cannot convert from 'System.Span<string>' to 'System.Span<object>'
             // C.M(default(Span<string>));
             Diagnostic(ErrorCode.ERR_BadArgType, "default(Span<string>)").WithArguments("1", "System.Span<string>", "System.Span<object>").WithLocation(3, 5),
@@ -6022,7 +6019,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void E(this ReadOnlySpan<int> arg) => Console.Write(2);
             }
             """;
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (3,2): error CS1929: 'int[]' does not contain a definition for 'E' and the best extension method overload 'C.E(Span<int>)' requires a receiver of type 'System.Span<int>'
             // (new int[0]).E();
             Diagnostic(ErrorCode.ERR_BadInstanceArgType, "new int[0]").WithArguments("int[]", "E", "C.E(System.Span<int>)", "System.Span<int>").WithLocation(3, 2));
@@ -6070,7 +6067,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void E(this ReadOnlySpan<object> arg) => Console.Write(2);
             }
             """;
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (3,2): error CS1929: 'string[]' does not contain a definition for 'E' and the best extension method overload 'C.E(Span<object>)' requires a receiver of type 'System.Span<object>'
             // (new string[0]).E();
             Diagnostic(ErrorCode.ERR_BadInstanceArgType, "new string[0]").WithArguments("string[]", "E", "C.E(System.Span<object>)", "System.Span<object>").WithLocation(3, 2),
@@ -6102,7 +6099,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void E(this ReadOnlySpan<object> arg) => Console.Write(2);
             }
             """;
-        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12).VerifyDiagnostics(
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
             // (3,1): error CS1929: 'Span<string>' does not contain a definition for 'E' and the best extension method overload 'C.E(Span<object>)' requires a receiver of type 'System.Span<object>'
             // default(Span<string>).E();
             Diagnostic(ErrorCode.ERR_BadInstanceArgType, "default(Span<string>)").WithArguments("System.Span<string>", "E", "C.E(System.Span<object>)", "System.Span<object>").WithLocation(3, 1),
@@ -6148,7 +6145,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M(IEnumerable<object> x) => Console.Write(" e" + x.First());
             }
             """;
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         CompileAndVerify(comp, expectedOutput: "aa rSystem.String[] ra ra ra ab rSystem.Object[] rb rb").VerifyDiagnostics();
 
         var expectedOutput = "ra rSystem.String[] ra ra ra ab rSystem.Object[] rb rb";
@@ -6215,7 +6212,7 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void M(this IEnumerable<object> x) => Console.Write(" e" + x.First());
             }
             """;
-        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular12);
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
         CompileAndVerify(comp, expectedOutput: "aa ab").VerifyDiagnostics();
 
         var expectedOutput = "ra ab";
