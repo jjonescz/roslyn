@@ -6140,6 +6140,46 @@ public class FirstClassSpanTests : CSharpTestBase
         verifier.VerifyIL("C.M", expectedIl);
     }
 
+    [Theory, CombinatorialData]
+    public void Conversion_Span_ReadOnlySpan_RefSafety(bool cast)
+    {
+        var source = $$"""
+            using System;
+            class C
+            {
+                ReadOnlySpan<string> M()
+                {
+                    Span<string> x = {{(cast ? "(Span<string>)" : "")}}["a"];
+                    return x;
+                }
+            }
+            """;
+        CreateCompilationWithSpanAndMemoryExtensions(source, targetFramework: TargetFramework.Net90).VerifyDiagnostics(
+            // (7,16): error CS8352: Cannot use variable 'x' in this context because it may expose referenced variables outside of their declaration scope
+            //         return x;
+            Diagnostic(ErrorCode.ERR_EscapeVariable, "x").WithArguments("x").WithLocation(7, 16));
+    }
+
+    [Theory, CombinatorialData]
+    public void Conversion_ReadOnlySpan_ReadOnlySpan_RefSafety(bool cast)
+    {
+        var source = $$"""
+            using System;
+            class C
+            {
+                ReadOnlySpan<object> M()
+                {
+                    ReadOnlySpan<string> x = {{(cast ? "(ReadOnlySpan<string>)" : "")}}["a"];
+                    return x;
+                }
+            }
+            """;
+        CreateCompilationWithSpanAndMemoryExtensions(source, targetFramework: TargetFramework.Net90).VerifyDiagnostics(
+            // (7,16): error CS8352: Cannot use variable 'x' in this context because it may expose referenced variables outside of their declaration scope
+            //         return x;
+            Diagnostic(ErrorCode.ERR_EscapeVariable, "x").WithArguments("x").WithLocation(7, 16));
+    }
+
     [Fact]
     public void OverloadResolution_SpanVsIEnumerable()
     {
