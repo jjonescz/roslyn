@@ -1634,6 +1634,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return;
             }
 
+            // SPEC: * Otherwise, if V is a Span<V1> and U is an array type U1[] or a Span<U1>
+            if (ExactSpanInference(source, target, ref useSiteInfo))
+            {
+                return;
+            }
+
             // SPEC: * Otherwise, if V is a constructed type C<V1...Vk> and U is a constructed
             // SPEC:   type C<U1...Uk> then an exact inference is made
             // SPEC:    from each Ui to the corresponding Vi.
@@ -1687,6 +1693,28 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             ExactInference(arraySource.ElementTypeWithAnnotations, arrayTarget.ElementTypeWithAnnotations, ref useSiteInfo);
+            return true;
+        }
+
+        private bool ExactSpanInference(TypeWithAnnotations source, TypeWithAnnotations target, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
+        {
+            Debug.Assert(source.HasType);
+            Debug.Assert(target.HasType);
+
+            // SPEC: * Otherwise, if V is a Span<V1> and U is an array type U1[] or a Span<U1>
+            if ((!source.Type.IsSZArray() && !source.Type.OriginalDefinition.IsSpan()) ||
+                !target.Type.OriginalDefinition.IsSpan())
+            {
+                return false;
+            }
+
+            var sourceElementType = source.Type is ArrayTypeSymbol arraySource
+                ? arraySource.ElementTypeWithAnnotations
+                : ((NamedTypeSymbol)source.Type).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0];
+
+            var targetElementType = ((NamedTypeSymbol)target.Type).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0];
+
+            ExactInference(sourceElementType, targetElementType, ref useSiteInfo);
             return true;
         }
 
@@ -1922,6 +1950,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return;
             }
 
+            // SPEC: * Otherwise, if V is a Span<V1> and U is an array type U1[] or a Span<U1>
+            if (LowerBoundSpanInference(source.Type, target.Type, ref useSiteInfo))
+            {
+                return;
+            }
+
             // UNDONE: At this point we could also do an inference from non-nullable U
             // UNDONE: to nullable V.
             // UNDONE: 
@@ -2052,6 +2086,28 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ExactInference(elementSource, elementTarget, ref useSiteInfo);
             }
 
+            return true;
+        }
+
+        private bool LowerBoundSpanInference(TypeSymbol source, TypeSymbol target, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
+        {
+            Debug.Assert(source is not null);
+            Debug.Assert(target is not null);
+
+            // SPEC: * Otherwise, if V is a Span<V1> and U is an array type U1[] or a Span<U1>
+            if ((!source.IsSZArray() && !source.OriginalDefinition.IsSpan()) ||
+                !target.OriginalDefinition.IsSpan())
+            {
+                return false;
+            }
+
+            var sourceElementType = source is ArrayTypeSymbol arraySource
+                ? arraySource.ElementTypeWithAnnotations
+                : ((NamedTypeSymbol)source).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0];
+
+            var targetElementType = ((NamedTypeSymbol)target).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0];
+
+            ExactInference(sourceElementType, targetElementType, ref useSiteInfo);
             return true;
         }
 

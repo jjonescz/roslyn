@@ -5887,11 +5887,27 @@ public class FirstClassSpanTests : CSharpTestBase
                 public static void E<T>(this Span<T> arg) { }
             }
             """;
-        // PROTOTYPE: Needs type inference to work.
-        CreateCompilationWithSpanAndMemoryExtensions(source).VerifyDiagnostics(
-            // (4,44): error CS1061: 'int[]' does not contain a definition for 'E' and no accessible extension method 'E' accepting a first argument of type 'int[]' could be found (are you missing a using directive or an assembly reference?)
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
+            // (4,40): error CS1929: 'int[]' does not contain a definition for 'E' and the best extension method overload 'C.E<int>(Span<int>)' requires a receiver of type 'System.Span<int>'
             //     public static void M(int[] arg) => arg.E();
-            Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "E").WithArguments("int[]", "E").WithLocation(4, 44));
+            Diagnostic(ErrorCode.ERR_BadInstanceArgType, "arg").WithArguments("int[]", "E", "C.E<int>(System.Span<int>)", "System.Span<int>").WithLocation(4, 40));
+
+        var expectedIl = """
+            {
+              // Code size       12 (0xc)
+              .maxstack  1
+              IL_0000:  ldarg.0
+              IL_0001:  call       "System.Span<int> System.Span<int>.op_Implicit(int[])"
+              IL_0006:  call       "void C.E<int>(System.Span<int>)"
+              IL_000b:  ret
+            }
+            """;
+
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext);
+        CompileAndVerify(comp).VerifyDiagnostics().VerifyIL("C.M", expectedIl);
+
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source);
+        CompileAndVerify(comp).VerifyDiagnostics().VerifyIL("C.M", expectedIl);
     }
 
     [Fact]
