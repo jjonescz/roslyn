@@ -1643,7 +1643,7 @@ class C
 2");
         }
 
-        [Fact]
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/73215")]
         public void RefAssignArrayAccess()
         {
             var text = @"
@@ -1668,6 +1668,19 @@ class Program
   IL_0008:  ldelema    ""int""
   IL_000d:  stloc.0
   IL_000e:  ret
+}");
+
+            CompileAndVerify(text, options: TestOptions.ReleaseDll).VerifyIL("Program.M()", @"
+{
+  // Code size       14 (0xe)
+  .maxstack  2
+  .locals init (int& V_0) //rl
+  IL_0000:  ldc.i4.1
+  IL_0001:  newarr     ""int""
+  IL_0006:  ldc.i4.0
+  IL_0007:  ldelema    ""int""
+  IL_000c:  stloc.0
+  IL_000d:  ret
 }");
         }
 
