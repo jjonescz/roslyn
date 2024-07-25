@@ -1672,15 +1672,14 @@ class Program
 
             CompileAndVerify(text, options: TestOptions.ReleaseDll).VerifyIL("Program.M()", @"
 {
-  // Code size       14 (0xe)
+  // Code size       10 (0xa)
   .maxstack  2
-  .locals init (int& V_0) //rl
   IL_0000:  ldc.i4.1
   IL_0001:  newarr     ""int""
   IL_0006:  ldc.i4.0
-  IL_0007:  ldelema    ""int""
-  IL_000c:  stloc.0
-  IL_000d:  ret
+  IL_0007:  ldelem.i4
+  IL_0008:  pop
+  IL_0009:  ret
 }");
         }
 
@@ -1712,14 +1711,13 @@ class Program
 
             CompileAndVerify(text, options: TestOptions.ReleaseDll).VerifyIL("Program.M", @"
 {
-  // Code size        9 (0x9)
+  // Code size        5 (0x5)
   .maxstack  2
-  .locals init (object& V_0) //rl
   IL_0000:  ldarg.0
   IL_0001:  ldc.i4.0
-  IL_0002:  ldelema    ""object""
-  IL_0007:  stloc.0
-  IL_0008:  ret
+  IL_0002:  ldelem.ref
+  IL_0003:  pop
+  IL_0004:  ret
 }");
         }
 

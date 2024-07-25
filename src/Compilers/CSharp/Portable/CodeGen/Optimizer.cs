@@ -989,15 +989,6 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                     ShouldNotSchedule(localSymbol);
                 }
 
-                // 'ref T local = ref array[x]' - we need to keep the assignment
-                // otherwise only non-ref array access would be emitted
-                // which has different runtime semantics (missing element type mismatch check).
-                if (rhsContext == ExprContext.Address &&
-                    right.Kind == BoundKind.ArrayAccess)
-                {
-                    ShouldNotSchedule(localSymbol);
-                }
-
                 // Special Case: If the RHS is a pointer conversion, then the assignment functions as
                 // a conversion (because the RHS will actually be typed as a native u/int in IL), so
                 // we should not optimize away the local (i.e. schedule it on the stack).
