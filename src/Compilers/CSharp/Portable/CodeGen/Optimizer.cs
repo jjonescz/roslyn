@@ -2186,6 +2186,11 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
             if (isLast)
             {
+                if (node.IsRef && right is BoundArrayAccess arrayAccess)
+                {
+                    return arrayAccess.Update(isRef: true);
+                }
+
                 // assigned local is not used later => just emit the Right
                 return right;
             }
