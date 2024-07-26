@@ -1711,13 +1711,13 @@ class Program
 
             CompileAndVerify(text, options: TestOptions.ReleaseDll).VerifyIL("Program.M", @"
 {
-  // Code size        9 (0x9)
+  // Code size        5 (0x5)
   .maxstack  2
   IL_0000:  ldarg.0
   IL_0001:  ldc.i4.0
-  IL_0002:  ldelema    ""int""
-  IL_0007:  pop
-  IL_0008:  ret
+  IL_0002:  ldelem.i4
+  IL_0003:  pop
+  IL_0004:  ret
 }");
         }
 
@@ -1788,13 +1788,13 @@ class Program
 
             CompileAndVerify(text, options: TestOptions.ReleaseDll).VerifyIL("Program.M", @"
 {
-  // Code size        9 (0x9)
+  // Code size        5 (0x5)
   .maxstack  2
   IL_0000:  ldarg.0
   IL_0001:  ldc.i4.0
-  IL_0002:  ldelema    ""object""
-  IL_0007:  pop
-  IL_0008:  ret
+  IL_0002:  ldelem.ref
+  IL_0003:  pop
+  IL_0004:  ret
 }");
         }
 
@@ -1867,13 +1867,14 @@ class Program
 
             CompileAndVerify(text, options: TestOptions.ReleaseDll).VerifyIL("Program.M<T>", @"
 {
-  // Code size        9 (0x9)
+  // Code size       11 (0xb)
   .maxstack  2
   IL_0000:  ldarg.0
   IL_0001:  ldc.i4.0
-  IL_0002:  ldelema    ""T""
-  IL_0007:  pop
-  IL_0008:  ret
+  IL_0002:  readonly.
+  IL_0004:  ldelema    ""T""
+  IL_0009:  pop
+  IL_000a:  ret
 }");
         }
 
@@ -1905,13 +1906,14 @@ class Program
 
             CompileAndVerify(text, options: TestOptions.ReleaseDll).VerifyIL("Program.M<T>", @"
 {
-  // Code size        9 (0x9)
+  // Code size       11 (0xb)
   .maxstack  2
   IL_0000:  ldarg.0
   IL_0001:  ldc.i4.0
-  IL_0002:  ldelema    ""T""
-  IL_0007:  pop
-  IL_0008:  ret
+  IL_0002:  readonly.
+  IL_0004:  ldelema    ""T""
+  IL_0009:  pop
+  IL_000a:  ret
 }");
         }
 

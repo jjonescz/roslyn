@@ -2186,7 +2186,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
             if (isLast)
             {
-                if (node.IsRef && right is BoundArrayAccess arrayAccess)
+                if (node.IsRef && left.LocalSymbol.RefKind == RefKind.Ref && right is BoundArrayAccess arrayAccess)
                 {
                     return arrayAccess.Update(isRef: true);
                 }
