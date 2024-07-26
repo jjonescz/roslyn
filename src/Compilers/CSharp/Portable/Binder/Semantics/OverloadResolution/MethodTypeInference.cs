@@ -1697,12 +1697,21 @@ namespace Microsoft.CodeAnalysis.CSharp
             return true;
         }
 
+        private readonly bool IsFeatureFirstClassSpanEnabled
+        {
+            get
+            {
+                // Note: when Compilation is null, we assume latest LangVersion.
+                return _compilation?.IsFeatureEnabled(MessageID.IDS_FeatureFirstClassSpan) != false;
+            }
+        }
+
         private bool ExactSpanInference(TypeSymbol source, TypeSymbol target, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
             Debug.Assert(source is not null);
             Debug.Assert(target is not null);
 
-            if (!(
+            if (!IsFeatureFirstClassSpanEnabled || !(
                 // SPEC: * V is a Span<V1> and U is an array type U1[] or a Span<U1>
                 (target.OriginalDefinition.IsSpan() &&
                 (source.IsSZArray() || source.OriginalDefinition.IsSpan())) ||
@@ -2109,7 +2118,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(source is not null);
             Debug.Assert(target is not null);
 
-            if (!(
+            if (!IsFeatureFirstClassSpanEnabled || !(
                 // SPEC: * V is a Span<V1> and U is an array type U1[] or a Span<U1>
                 (target.OriginalDefinition.IsSpan() &&
                 (source.IsSZArray() || source.OriginalDefinition.IsSpan())) ||
@@ -2550,7 +2559,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(source is not null);
             Debug.Assert(target is not null);
 
-            if (!(
+            if (!IsFeatureFirstClassSpanEnabled || !(
                 // SPEC: * U is a Span<U1> and V is an array type V1[] or a Span<V1>
                 (source.OriginalDefinition.IsSpan() &&
                 (target.IsSZArray() || target.OriginalDefinition.IsSpan())) ||
