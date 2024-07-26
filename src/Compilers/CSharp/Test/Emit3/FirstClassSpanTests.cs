@@ -4209,18 +4209,14 @@ public class FirstClassSpanTests : CSharpTestBase
             // C.R(x => a.M<int>(x));
             Diagnostic(ErrorCode.ERR_BadInstanceArgType, "a").WithArguments("int[]", "M", "C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(7, 10));
 
-        // PROTOTYPE: Some of these need type inference to work.
         var expectedDiagnostics = new[]
         {
-            // (4,5): error CS1061: 'int[]' does not contain a definition for 'M' and no accessible extension method 'M' accepting a first argument of type 'int[]' could be found (are you missing a using directive or an assembly reference?)
+            // (4,5): error CS1113: Extension method 'C.M<int>(Span<int>, int)' defined on value type 'Span<int>' cannot be used to create delegates
             // C.R(a.M);
-            Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "a.M").WithArguments("int[]", "M").WithLocation(4, 5),
+            Diagnostic(ErrorCode.ERR_ValueTypeExtDelegate, "a.M").WithArguments("C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(4, 5),
             // (5,5): error CS1113: Extension method 'C.M<int>(Span<int>, int)' defined on value type 'Span<int>' cannot be used to create delegates
             // C.R(a.M<int>);
-            Diagnostic(ErrorCode.ERR_ValueTypeExtDelegate, "a.M<int>").WithArguments("C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(5, 5),
-            // (6,12): error CS1061: 'int[]' does not contain a definition for 'M' and no accessible extension method 'M' accepting a first argument of type 'int[]' could be found (are you missing a using directive or an assembly reference?)
-            // C.R(x => a.M(x));
-            Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "M").WithArguments("int[]", "M").WithLocation(6, 12)
+            Diagnostic(ErrorCode.ERR_ValueTypeExtDelegate, "a.M<int>").WithArguments("C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(5, 5)
         };
 
         CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -4240,6 +4236,8 @@ public class FirstClassSpanTests : CSharpTestBase
             var d4 = a.M<int>;
             var d5 = x => a.M<int>(x);
             var d6 = (int x) => a.M<int>(x);
+            Func<int, int> d7 = a.M;
+            Func<int, int> d8 = x => a.M(x);
 
             static class C
             {
@@ -4265,26 +4263,31 @@ public class FirstClassSpanTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "x => a.M<int>(x)").WithLocation(8, 10),
             // (9,21): error CS1929: 'int[]' does not contain a definition for 'M' and the best extension method overload 'C.M<int>(Span<int>, int)' requires a receiver of type 'System.Span<int>'
             // var d6 = (int x) => a.M<int>(x);
-            Diagnostic(ErrorCode.ERR_BadInstanceArgType, "a").WithArguments("int[]", "M", "C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(9, 21));
+            Diagnostic(ErrorCode.ERR_BadInstanceArgType, "a").WithArguments("int[]", "M", "C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(9, 21),
+            // (10,21): error CS1061: 'int[]' does not contain a definition for 'M' and no accessible extension method 'M' accepting a first argument of type 'int[]' could be found (are you missing a using directive or an assembly reference?)
+            // Func<int, int> d7 = a.M;
+            Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "a.M").WithArguments("int[]", "M").WithLocation(10, 21),
+            // (11,28): error CS1061: 'int[]' does not contain a definition for 'M' and no accessible extension method 'M' accepting a first argument of type 'int[]' could be found (are you missing a using directive or an assembly reference?)
+            // Func<int, int> d8 = x => a.M(x);
+            Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "M").WithArguments("int[]", "M").WithLocation(11, 28));
 
-        // PROTOTYPE: Some of these need type inference to work.
         var expectedDiagnostics = new[]
         {
-            // (4,10): error CS8917: The delegate type could not be inferred.
+            // (4,10): error CS1113: Extension method 'C.M<int>(Span<int>, int)' defined on value type 'Span<int>' cannot be used to create delegates
             // var d1 = a.M;
-            Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "a.M").WithLocation(4, 10),
+            Diagnostic(ErrorCode.ERR_ValueTypeExtDelegate, "a.M").WithArguments("C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(4, 10),
             // (5,10): error CS8917: The delegate type could not be inferred.
             // var d2 = x => a.M(x);
             Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "x => a.M(x)").WithLocation(5, 10),
-            // (6,23): error CS1061: 'int[]' does not contain a definition for 'M' and no accessible extension method 'M' accepting a first argument of type 'int[]' could be found (are you missing a using directive or an assembly reference?)
-            // var d3 = (int x) => a.M(x);
-            Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "M").WithArguments("int[]", "M").WithLocation(6, 23),
             // (7,10): error CS1113: Extension method 'C.M<int>(Span<int>, int)' defined on value type 'Span<int>' cannot be used to create delegates
             // var d4 = a.M<int>;
             Diagnostic(ErrorCode.ERR_ValueTypeExtDelegate, "a.M<int>").WithArguments("C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(7, 10),
             // (8,10): error CS8917: The delegate type could not be inferred.
             // var d5 = x => a.M<int>(x);
-            Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "x => a.M<int>(x)").WithLocation(8, 10)
+            Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "x => a.M<int>(x)").WithLocation(8, 10),
+            // (10,21): error CS1113: Extension method 'C.M<int>(Span<int>, int)' defined on value type 'Span<int>' cannot be used to create delegates
+            // Func<int, int> d7 = a.M;
+            Diagnostic(ErrorCode.ERR_ValueTypeExtDelegate, "a.M").WithArguments("C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(10, 21)
         };
 
         CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -5839,9 +5842,9 @@ public class FirstClassSpanTests : CSharpTestBase
             }
             """;
         CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
-            // (4,40): error CS1929: 'int[]' does not contain a definition for 'E' and the best extension method overload 'C.E<int>(Span<int>)' requires a receiver of type 'System.Span<int>'
+            // (4,44): error CS1061: 'int[]' does not contain a definition for 'E' and no accessible extension method 'E' accepting a first argument of type 'int[]' could be found (are you missing a using directive or an assembly reference?)
             //     public static void M(int[] arg) => arg.E();
-            Diagnostic(ErrorCode.ERR_BadInstanceArgType, "arg").WithArguments("int[]", "E", "C.E<int>(System.Span<int>)", "System.Span<int>").WithLocation(4, 40));
+            Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "E").WithArguments("int[]", "E").WithLocation(4, 44));
 
         var expectedIl = """
             {
@@ -5906,9 +5909,8 @@ public class FirstClassSpanTests : CSharpTestBase
         Assert.Equal("System.Int32[]", arrayType.ToTestDisplayString());
 
         // Reduce the extension method with array receiver.
-        // PROTOTYPE: This needs type inference to work.
         reduced = unreducedSymbol.ReduceExtensionMethod(arrayType);
-        Assert.Null(reduced);
+        Assert.Equal("void System.Span<System.Int32>.E<System.Int32>()", reduced.ToTestDisplayString());
     }
 
     [Fact]
@@ -5957,9 +5959,8 @@ public class FirstClassSpanTests : CSharpTestBase
         Assert.Equal("System.Int32[]", arrayType.ToTestDisplayString());
 
         // Reduce the extension method with array receiver.
-        // PROTOTYPE: This needs type inference to work.
         reduced = unreducedSymbol.ReduceExtensionMethod(arrayType);
-        Assert.Null(reduced);
+        Assert.Equal("void System.Span<System.Int32>.E<System.Int32>(System.Int32 x)", reduced.ToTestDisplayString());
     }
 
     [Fact]
@@ -6008,9 +6009,8 @@ public class FirstClassSpanTests : CSharpTestBase
         Assert.Equal("System.Int32[]", arrayType.ToTestDisplayString());
 
         // Reduce the extension method with array receiver.
-        // PROTOTYPE: This needs type inference to work.
         reduced = unreducedSymbol.ReduceExtensionMethod(arrayType);
-        Assert.Null(reduced);
+        Assert.Equal("void System.Span<System.Int32>.E<System.Int32>(System.Int32 x)", reduced.ToTestDisplayString());
     }
 
     [Fact]
