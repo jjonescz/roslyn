@@ -2480,13 +2480,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return;
             }
 
-            // SPEC: * U is a Span<U1> and V is an array type V1[] or a Span<V1>
-            // SPEC: * U is a ReadOnlySpan<U1> and V is an array type V1[] or a Span<V1> or ReadOnlySpan<V1>
-            if (UpperBoundSpanInference(source.Type, target.Type, ref useSiteInfo))
-            {
-                return;
-            }
-
             Debug.Assert(source.Type.IsReferenceType || source.Type.IsFunctionPointer());
 
             // NOTE: spec would ask us to do the following checks, but since the value types
@@ -2561,44 +2554,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             return true;
-        }
-
-        private bool UpperBoundSpanInference(TypeSymbol source, TypeSymbol target, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
-        {
-            Debug.Assert(source is not null);
-            Debug.Assert(target is not null);
-
-            if (IsFeatureFirstClassSpanEnabled && (
-                // SPEC: * U is a Span<U1> and V is an array type V1[] or a Span<V1>
-                (
-                    source.IsSpan() &&
-                    (target.IsSZArray() || target.IsSpan())
-                ) ||
-                // SPEC: * U is a ReadOnlySpan<U1> and V is an array type V1[] or a Span<V1> or ReadOnlySpan<V1>
-                (
-                    source.IsReadOnlySpan() &&
-                    (target.IsSZArray() || target.IsSpan() || target.IsReadOnlySpan())
-                )
-            ))
-            {
-                var sourceElementType = GetSpanElementType(source);
-                var targetElementType = GetSpanOrSZArrayElementType(target);
-
-                // SPEC: * If U1 is not known to be a reference type then an exact inference is made
-                // SPEC: * If U is a Span<U1>, then an exact inference is made
-                if (!sourceElementType.Type.IsReferenceType || source.IsSpan())
-                {
-                    ExactInference(sourceElementType, targetElementType, ref useSiteInfo);
-                }
-                else
-                {
-                    UpperBoundInference(sourceElementType, targetElementType, ref useSiteInfo);
-                }
-
-                return true;
-            }
-
-            return false;
         }
 
         private bool UpperBoundNullableInference(TypeWithAnnotations source, TypeWithAnnotations target, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
