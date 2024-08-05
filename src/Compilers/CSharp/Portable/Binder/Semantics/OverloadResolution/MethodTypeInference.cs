@@ -1713,11 +1713,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (!IsFeatureFirstClassSpanEnabled || !(
                 // SPEC: * V is a Span<V1> and U is an array type U1[] or a Span<U1>
-                (target.OriginalDefinition.IsSpan() &&
-                (source.IsSZArray() || source.OriginalDefinition.IsSpan())) ||
+                (target.IsSpan() &&
+                (source.IsSZArray() || source.IsSpan())) ||
                 // SPEC: * V is a ReadOnlySpan<V1> and U is an array type U1[] or a Span<U1> or ReadOnlySpan<U1>
-                (target.OriginalDefinition.IsReadOnlySpan() &&
-                (source.IsSZArray() || source.OriginalDefinition.IsSpan() || source.OriginalDefinition.IsReadOnlySpan()))))
+                (target.IsReadOnlySpan() &&
+                (source.IsSZArray() || source.IsSpan() || source.IsReadOnlySpan()))))
             {
                 return false;
             }
@@ -2120,11 +2120,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (!IsFeatureFirstClassSpanEnabled || !(
                 // SPEC: * V is a Span<V1> and U is an array type U1[] or a Span<U1>
-                (target.OriginalDefinition.IsSpan() &&
-                (source.IsSZArray() || source.OriginalDefinition.IsSpan())) ||
+                (target.IsSpan() &&
+                (source.IsSZArray() || source.IsSpan())) ||
                 // SPEC: * V is a ReadOnlySpan<V1> and U is an array type U1[] or a Span<U1> or ReadOnlySpan<U1>
-                (target.OriginalDefinition.IsReadOnlySpan() &&
-                (source.IsSZArray() || source.OriginalDefinition.IsSpan() || source.OriginalDefinition.IsReadOnlySpan()))))
+                (target.IsReadOnlySpan() &&
+                (source.IsSZArray() || source.IsSpan() || source.IsReadOnlySpan()))))
             {
                 return false;
             }
@@ -2134,7 +2134,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // SPEC: * If U1 is not known to be a reference type then an exact inference is made
             // SPEC: * If V is a Span<V1>, then an exact inference is made
-            if (!sourceElementType.Type.IsReferenceType || target.OriginalDefinition.IsSpan())
+            if (!sourceElementType.Type.IsReferenceType || target.IsSpan())
             {
                 ExactInference(sourceElementType, targetElementType, ref useSiteInfo);
             }
@@ -2561,11 +2561,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (!IsFeatureFirstClassSpanEnabled || !(
                 // SPEC: * U is a Span<U1> and V is an array type V1[] or a Span<V1>
-                (source.OriginalDefinition.IsSpan() &&
-                (target.IsSZArray() || target.OriginalDefinition.IsSpan())) ||
+                (source.IsSpan() &&
+                (target.IsSZArray() || target.IsSpan())) ||
                 // SPEC: * U is a ReadOnlySpan<U1> and V is an array type V1[] or a Span<V1> or ReadOnlySpan<V1>
-                (source.OriginalDefinition.IsReadOnlySpan() &&
-                (target.IsSZArray() || target.OriginalDefinition.IsSpan() || target.OriginalDefinition.IsReadOnlySpan()))))
+                (source.IsReadOnlySpan() &&
+                (target.IsSZArray() || target.IsSpan() || target.IsReadOnlySpan()))))
             {
                 return false;
             }
@@ -2575,7 +2575,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // SPEC: * If U1 is not known to be a reference type then an exact inference is made
             // SPEC: * If U is a Span<U1>, then an exact inference is made
-            if (!sourceElementType.Type.IsReferenceType || source.OriginalDefinition.IsSpan())
+            if (!sourceElementType.Type.IsReferenceType || source.IsSpan())
             {
                 ExactInference(sourceElementType, targetElementType, ref useSiteInfo);
             }
