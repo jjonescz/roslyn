@@ -279,6 +279,125 @@ public class FirstClassSpanTests : CSharpTestBase
         CompileAndVerify(comp, expectedOutput: "3").VerifyDiagnostics();
     }
 
+    [Fact]
+    public void BreakingChange_TypeInference_SpanVsIEnumerable_01()
+    {
+        var source = """
+            using System;
+            using System.Collections.Generic;
+
+            class C
+            {
+                void M(int[] a)
+                {
+                    foreach (var x in a.R()) { }
+                }
+            }
+
+            static class E
+            {
+                public static void R<T>(this Span<T> s) => throw null;
+                public static IEnumerable<T> R<T>(this IEnumerable<T> e) => throw null;
+            }
+            """;
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics();
+
+        var expectedDiagnostics = new[]
+        {
+            // (8,27): error CS1579: foreach statement cannot operate on variables of type 'void' because 'void' does not contain a public instance or extension definition for 'GetEnumerator'
+            //         foreach (var x in a.R()) { }
+            Diagnostic(ErrorCode.ERR_ForEachMissingMember, "a.R()").WithArguments("void", "GetEnumerator").WithLocation(8, 27)
+        };
+
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilationWithSpanAndMemoryExtensions(source).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Theory, MemberData(nameof(LangVersions))]
+    public void BreakingChange_TypeInference_SpanVsIEnumerable_01_Workaround(LanguageVersion langVersion)
+    {
+        var source = """
+            using System;
+            using System.Collections.Generic;
+
+            class C
+            {
+                void M(int[] a)
+                {
+                    foreach (var x in a.R()) { }
+                }
+            }
+
+            static class E
+            {
+                public static void R<T>(this Span<T> s) => throw null;
+                public static IEnumerable<T> R<T>(this IEnumerable<T> e) => throw null;
+                public static IEnumerable<T> R<T>(this T[] a) => throw null;
+            }
+            """;
+        CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void BreakingChange_TypeInference_SpanVsIEnumerable_02()
+    {
+        var source = """
+            using System;
+            using System.Collections.Generic;
+
+            string[] s = new[] { "a" };
+            object[] o = s;
+
+            try { C.R(o); } catch { Console.Write(3); }
+
+            static class C
+            {
+                public static void R<T>(IEnumerable<T> e) => Console.Write(1);
+                public static void R<T>(Span<T> s) => Console.Write(2);
+            }
+            """;
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
+        CompileAndVerify(comp, expectedOutput: "1").VerifyDiagnostics();
+
+        var expectedOutput = "3";
+
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void BreakingChange_Conversion_SpanVsIEnumerable()
+    {
+        var source = """
+            using System;
+            using System.Collections.Generic;
+
+            string[] s = new[] { "a" };
+            object[] o = s;
+
+            try { o.R<object>(); } catch { Console.Write(3); }
+
+            static class E
+            {
+                public static void R<T>(this IEnumerable<T> e) => Console.Write(1);
+                public static void R<T>(this Span<T> s) => Console.Write(2);
+            }
+            """;
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
+        CompileAndVerify(comp, expectedOutput: "1").VerifyDiagnostics();
+
+        var expectedOutput = "3";
+
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+    }
+
     [Theory, CombinatorialData]
     public void Conversion_Array_Span_Implicit(
         [CombinatorialLangVersions] LanguageVersion langVersion,
