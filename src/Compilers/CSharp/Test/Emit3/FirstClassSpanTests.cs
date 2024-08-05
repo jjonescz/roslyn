@@ -4307,12 +4307,12 @@ public class FirstClassSpanTests : CSharpTestBase
 
         var expectedDiagnostics = new[]
         {
-            // (4,5): error CS1113: Extension method 'C.M<int>(Span<int>, int)' defined on value type 'Span<int>' cannot be used to create delegates
+            // (4,5): error CS1503: Argument 1: cannot convert from 'method group' to 'System.Func<int, int>'
             // C.R(a.M);
-            Diagnostic(ErrorCode.ERR_ValueTypeExtDelegate, "a.M").WithArguments("C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(4, 5),
-            // (5,5): error CS1113: Extension method 'C.M<int>(Span<int>, int)' defined on value type 'Span<int>' cannot be used to create delegates
+            Diagnostic(ErrorCode.ERR_BadArgType, "a.M").WithArguments("1", "method group", "System.Func<int, int>").WithLocation(4, 5),
+            // (5,5): error CS1503: Argument 1: cannot convert from 'method group' to 'System.Func<int, int>'
             // C.R(a.M<int>);
-            Diagnostic(ErrorCode.ERR_ValueTypeExtDelegate, "a.M<int>").WithArguments("C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(5, 5)
+            Diagnostic(ErrorCode.ERR_BadArgType, "a.M<int>").WithArguments("1", "method group", "System.Func<int, int>").WithLocation(5, 5)
         };
 
         CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
@@ -4369,21 +4369,21 @@ public class FirstClassSpanTests : CSharpTestBase
 
         var expectedDiagnostics = new[]
         {
-            // (4,10): error CS1113: Extension method 'C.M<int>(Span<int>, int)' defined on value type 'Span<int>' cannot be used to create delegates
+            // (4,12): error CS0123: No overload for 'M' matches delegate 'Func<int, int>'
             // var d1 = a.M;
-            Diagnostic(ErrorCode.ERR_ValueTypeExtDelegate, "a.M").WithArguments("C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(4, 10),
+            Diagnostic(ErrorCode.ERR_MethDelegateMismatch, "M").WithArguments("M", "System.Func<int, int>").WithLocation(4, 12),
             // (5,10): error CS8917: The delegate type could not be inferred.
             // var d2 = x => a.M(x);
             Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "x => a.M(x)").WithLocation(5, 10),
-            // (7,10): error CS1113: Extension method 'C.M<int>(Span<int>, int)' defined on value type 'Span<int>' cannot be used to create delegates
+            // (7,12): error CS0123: No overload for 'M' matches delegate 'Func<int, int>'
             // var d4 = a.M<int>;
             Diagnostic(ErrorCode.ERR_MethDelegateMismatch, "M<int>").WithArguments("M", "System.Func<int, int>").WithLocation(7, 12),
             // (8,10): error CS8917: The delegate type could not be inferred.
             // var d5 = x => a.M<int>(x);
             Diagnostic(ErrorCode.ERR_CannotInferDelegateType, "x => a.M<int>(x)").WithLocation(8, 10),
-            // (10,21): error CS1113: Extension method 'C.M<int>(Span<int>, int)' defined on value type 'Span<int>' cannot be used to create delegates
+            // (10,23): error CS0123: No overload for 'M' matches delegate 'Func<int, int>'
             // Func<int, int> d7 = a.M;
-            Diagnostic(ErrorCode.ERR_ValueTypeExtDelegate, "a.M").WithArguments("C.M<int>(System.Span<int>, int)", "System.Span<int>").WithLocation(10, 21)
+            Diagnostic(ErrorCode.ERR_MethDelegateMismatch, "M").WithArguments("M", "System.Func<int, int>").WithLocation(10, 23)
         };
 
         CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics(expectedDiagnostics);
