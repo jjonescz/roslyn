@@ -1711,22 +1711,26 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(source is not null);
             Debug.Assert(target is not null);
 
-            if (!IsFeatureFirstClassSpanEnabled || !(
+            if (IsFeatureFirstClassSpanEnabled && (
                 // SPEC: * V is a Span<V1> and U is an array type U1[] or a Span<U1>
-                (target.IsSpan() &&
-                (source.IsSZArray() || source.IsSpan())) ||
+                (
+                    target.IsSpan() &&
+                    (source.IsSZArray() || source.IsSpan())
+                ) ||
                 // SPEC: * V is a ReadOnlySpan<V1> and U is an array type U1[] or a Span<U1> or ReadOnlySpan<U1>
-                (target.IsReadOnlySpan() &&
-                (source.IsSZArray() || source.IsSpan() || source.IsReadOnlySpan()))))
+                (
+                    target.IsReadOnlySpan() &&
+                    (source.IsSZArray() || source.IsSpan() || source.IsReadOnlySpan())
+                )
+            ))
             {
-                return false;
+                var sourceElementType = GetSpanOrSZArrayElementType(source);
+                var targetElementType = GetSpanElementType(target);
+                ExactInference(sourceElementType, targetElementType, ref useSiteInfo);
+                return true;
             }
 
-            var sourceElementType = GetSpanOrSZArrayElementType(source);
-            var targetElementType = GetSpanElementType(target);
-            ExactInference(sourceElementType, targetElementType, ref useSiteInfo);
-
-            return true;
+            return false;
         }
 
         private static TypeWithAnnotations GetSpanElementType(TypeSymbol type)
@@ -2118,32 +2122,37 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(source is not null);
             Debug.Assert(target is not null);
 
-            if (!IsFeatureFirstClassSpanEnabled || !(
+            if (IsFeatureFirstClassSpanEnabled && (
                 // SPEC: * V is a Span<V1> and U is an array type U1[] or a Span<U1>
-                (target.IsSpan() &&
-                (source.IsSZArray() || source.IsSpan())) ||
+                (
+                    target.IsSpan() &&
+                    (source.IsSZArray() || source.IsSpan())
+                ) ||
                 // SPEC: * V is a ReadOnlySpan<V1> and U is an array type U1[] or a Span<U1> or ReadOnlySpan<U1>
-                (target.IsReadOnlySpan() &&
-                (source.IsSZArray() || source.IsSpan() || source.IsReadOnlySpan()))))
+                (
+                    target.IsReadOnlySpan() &&
+                    (source.IsSZArray() || source.IsSpan() || source.IsReadOnlySpan())
+                )
+            ))
             {
-                return false;
+                var sourceElementType = GetSpanOrSZArrayElementType(source);
+                var targetElementType = GetSpanElementType(target);
+
+                // SPEC: * If U1 is not known to be a reference type then an exact inference is made
+                // SPEC: * If V is a Span<V1>, then an exact inference is made
+                if (!sourceElementType.Type.IsReferenceType || target.IsSpan())
+                {
+                    ExactInference(sourceElementType, targetElementType, ref useSiteInfo);
+                }
+                else
+                {
+                    LowerBoundInference(sourceElementType, targetElementType, ref useSiteInfo);
+                }
+
+                return true;
             }
 
-            var sourceElementType = GetSpanOrSZArrayElementType(source);
-            var targetElementType = GetSpanElementType(target);
-
-            // SPEC: * If U1 is not known to be a reference type then an exact inference is made
-            // SPEC: * If V is a Span<V1>, then an exact inference is made
-            if (!sourceElementType.Type.IsReferenceType || target.IsSpan())
-            {
-                ExactInference(sourceElementType, targetElementType, ref useSiteInfo);
-            }
-            else
-            {
-                LowerBoundInference(sourceElementType, targetElementType, ref useSiteInfo);
-            }
-
-            return true;
+            return false;
         }
 
         private bool LowerBoundNullableInference(TypeWithAnnotations source, TypeWithAnnotations target, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
@@ -2559,32 +2568,37 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(source is not null);
             Debug.Assert(target is not null);
 
-            if (!IsFeatureFirstClassSpanEnabled || !(
+            if (IsFeatureFirstClassSpanEnabled && (
                 // SPEC: * U is a Span<U1> and V is an array type V1[] or a Span<V1>
-                (source.IsSpan() &&
-                (target.IsSZArray() || target.IsSpan())) ||
+                (
+                    source.IsSpan() &&
+                    (target.IsSZArray() || target.IsSpan())
+                ) ||
                 // SPEC: * U is a ReadOnlySpan<U1> and V is an array type V1[] or a Span<V1> or ReadOnlySpan<V1>
-                (source.IsReadOnlySpan() &&
-                (target.IsSZArray() || target.IsSpan() || target.IsReadOnlySpan()))))
+                (
+                    source.IsReadOnlySpan() &&
+                    (target.IsSZArray() || target.IsSpan() || target.IsReadOnlySpan())
+                )
+            ))
             {
-                return false;
+                var sourceElementType = GetSpanElementType(source);
+                var targetElementType = GetSpanOrSZArrayElementType(target);
+
+                // SPEC: * If U1 is not known to be a reference type then an exact inference is made
+                // SPEC: * If U is a Span<U1>, then an exact inference is made
+                if (!sourceElementType.Type.IsReferenceType || source.IsSpan())
+                {
+                    ExactInference(sourceElementType, targetElementType, ref useSiteInfo);
+                }
+                else
+                {
+                    UpperBoundInference(sourceElementType, targetElementType, ref useSiteInfo);
+                }
+
+                return true;
             }
 
-            var sourceElementType = GetSpanElementType(source);
-            var targetElementType = GetSpanOrSZArrayElementType(target);
-
-            // SPEC: * If U1 is not known to be a reference type then an exact inference is made
-            // SPEC: * If U is a Span<U1>, then an exact inference is made
-            if (!sourceElementType.Type.IsReferenceType || source.IsSpan())
-            {
-                ExactInference(sourceElementType, targetElementType, ref useSiteInfo);
-            }
-            else
-            {
-                UpperBoundInference(sourceElementType, targetElementType, ref useSiteInfo);
-            }
-
-            return true;
+            return false;
         }
 
         private bool UpperBoundNullableInference(TypeWithAnnotations source, TypeWithAnnotations target, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
