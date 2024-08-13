@@ -67,7 +67,7 @@ internal class DidChangeHandler() : ILspServiceDocumentRequestHandler<DidChangeT
         {
             // The changes were in reverse document order, so we can merge them into a single operation on the source text.
             // Note that the WithChanges implementation works more efficiently with it's input in forward document order.
-            var newChanges = contentChanges.Reverse().SelectAsArray(change => ProtocolConversions.ContentChangeEventToTextChange(change, text));
+            var newChanges = Enumerable.Reverse(contentChanges).SelectAsArray(change => ProtocolConversions.ContentChangeEventToTextChange(change, text));
             text = text.WithChanges(newChanges);
         }
         else
