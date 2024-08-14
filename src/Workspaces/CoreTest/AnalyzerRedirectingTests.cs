@@ -26,11 +26,11 @@ public class AnalyzerRedirectingTests
         // Create the mapping file.
         var mappingPath = Path.Combine(insertedAnalyzersDir, "mapping.txt");
         Directory.CreateDirectory(Path.GetDirectoryName(mappingPath)!);
-        File.WriteAllText(mappingPath, @"
-packs/Microsoft.NETCore.App.Ref/*/analyzers/dotnet/cs
-sdk/*/Sdks/Microsoft.NET.Sdk/analyzers
-sdk/*/Sdks/Microsoft.NET.Sdk.Web/analyzers/cs
-");
+        File.WriteAllText(mappingPath, """
+            packs/Microsoft.NETCore.App.Ref/*/analyzers/dotnet/cs
+            sdk/*/Sdks/Microsoft.NET.Sdk/analyzers
+            sdk/*/Sdks/Microsoft.NET.Sdk.Web/analyzers/cs
+            """);
 
         var provider = workspace.Services.GetRequiredService<IAnalyzerAssemblyLoaderProvider>();
         var loader = provider.GetShadowCopyLoader();
@@ -40,14 +40,14 @@ sdk/*/Sdks/Microsoft.NET.Sdk.Web/analyzers/cs
         Directory.CreateDirectory(Path.GetDirectoryName(analyzerSdkDllPath)!);
         File.Copy(fixture.Delta1, analyzerSdkDllPath);
 
-        // Add version 2 of the mock analyzer DLL into VS-like directory.
+        // Add version 2 of the mock analyzer DLL into a VS-like directory.
         var analyzerVsDllPath = Path.Combine(insertedAnalyzersDir, "sdk/9/Sdks/Microsoft.NET.Sdk/analyzers/Delta.dll");
         Directory.CreateDirectory(Path.GetDirectoryName(analyzerVsDllPath)!);
         File.Copy(fixture.Delta2, analyzerVsDllPath);
 
         // Load the SDK analyzer.
         loader.AddDependencyLocation(analyzerSdkDllPath);
-        var @assembly = loader.LoadFromPath(analyzerSdkDllPath);
+        var assembly = loader.LoadFromPath(analyzerSdkDllPath);
 
         // It should be redirected to the inserted analyzer.
         AssertEx.Equal("Delta, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null", assembly.GetName().ToString());
