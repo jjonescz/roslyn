@@ -3,21 +3,21 @@
 // See the LICENSE file in the project root for more information.
 
 using System.IO;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Host;
 using Microsoft.CodeAnalysis.Test.Utilities;
+using Microsoft.VisualStudio.LanguageServices.Implementation.Diagnostics;
+using Microsoft.VisualStudio.LanguageServices.UnitTests.ProjectSystemShim.Framework;
 using Roslyn.Test.Utilities;
-using Xunit;
 
-namespace Microsoft.CodeAnalysis.UnitTests;
+namespace Microsoft.VisualStudio.LanguageServices.UnitTests.Diagnostics;
 
 [UseExportProvider]
 public class AnalyzerRedirectingTests
 {
-    [Fact]
+    [WpfFact]
     public void AnalyzerRedirecting()
     {
-        using var workspace = new TestWorkspace();
+        using var environment = new TestEnvironment(typeof(RedirectingAnalyzerAssemblyResolver));
         using var fixture = new AssemblyLoadTestFixture();
 
         var insertedAnalyzersDir = Path.Combine(fixture.TempDirectory, "DotNetAnalyzers");
@@ -32,7 +32,7 @@ public class AnalyzerRedirectingTests
             sdk/*/Sdks/Microsoft.NET.Sdk.Web/analyzers/cs
             """);
 
-        var provider = workspace.Services.GetRequiredService<IAnalyzerAssemblyLoaderProvider>();
+        var provider = environment.Workspace.Services.GetRequiredService<IAnalyzerAssemblyLoaderProvider>();
         var loader = provider.GetShadowCopyLoader();
 
         // Add version 1 of the mock analyzer DLL into an SDK-like directory.

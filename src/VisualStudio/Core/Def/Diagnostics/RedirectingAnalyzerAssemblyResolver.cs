@@ -7,11 +7,12 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.IO;
 using System.Reflection;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.PooledObjects;
 using Roslyn.Utilities;
 
-namespace Microsoft.CodeAnalysis.Diagnostics;
+namespace Microsoft.VisualStudio.LanguageServices.Implementation.Diagnostics;
 
 [Export(typeof(IAnalyzerAssemblyResolver)), Shared]
 internal sealed class RedirectingAnalyzerAssemblyResolver : IAnalyzerAssemblyResolver
