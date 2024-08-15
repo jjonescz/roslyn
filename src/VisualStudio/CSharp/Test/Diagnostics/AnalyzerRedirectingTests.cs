@@ -2,8 +2,14 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
+using System.Composition;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Host;
+using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Test.Utilities;
 using Microsoft.VisualStudio.LanguageServices.Implementation.Diagnostics;
 using Microsoft.VisualStudio.LanguageServices.UnitTests.ProjectSystemShim.Framework;
@@ -15,13 +21,15 @@ namespace Microsoft.VisualStudio.LanguageServices.UnitTests.Diagnostics;
 public class AnalyzerRedirectingTests
 {
     [WpfFact]
-    public void AnalyzerRedirecting()
+    public async Task AnalyzerRedirecting()
     {
-        using var environment = new TestEnvironment(typeof(RedirectingAnalyzerAssemblyResolver));
+        using var environment = new TestEnvironment(
+            typeof(RedirectingAnalyzerAssemblyResolver),
+            typeof(MockInsertedAnalyzerProviderFactory));
+
         using var fixture = new AssemblyLoadTestFixture();
 
         var insertedAnalyzersDir = Path.Combine(fixture.TempDirectory, "DotNetAnalyzers");
-        RedirectingAnalyzerAssemblyResolver.InsertedAnalyzersDirectory = insertedAnalyzersDir;
 
         // Create the mapping file.
         var mappingPath = Path.Combine(insertedAnalyzersDir, "mapping.txt");
@@ -31,6 +39,12 @@ public class AnalyzerRedirectingTests
             sdk/*/Sdks/Microsoft.NET.Sdk/analyzers
             sdk/*/Sdks/Microsoft.NET.Sdk.Web/analyzers/cs
             """);
+
+        var providerFactory = (MockInsertedAnalyzerProviderFactory)environment.ExportProvider.GetExportedValue<IInsertedAnalyzerProviderFactory>();
+        providerFactory.Extensions = [([mappingPath], "VS.Redist.Common.Net.Core.SDK.RuntimeAnalyzers")];
+
+        var project = await environment.ProjectFactory.CreateAndAddToWorkspaceAsync(
+            "Project", LanguageNames.CSharp, CancellationToken.None);
 
         var provider = environment.Workspace.Services.GetRequiredService<IAnalyzerAssemblyLoaderProvider>();
         var loader = provider.GetShadowCopyLoader();
@@ -51,5 +65,22 @@ public class AnalyzerRedirectingTests
 
         // It should be redirected to the inserted analyzer.
         AssertEx.Equal("Delta, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null", assembly.GetName().ToString());
+    }
+}
+
+[Export(typeof(IInsertedAnalyzerProviderFactory)), Shared, PartNotDiscoverable]
+[method: ImportingConstructor]
+[method: Obsolete(MefConstruction.ImportingConstructorMessage, error: true)]
+internal sealed class MockInsertedAnalyzerProviderFactory() : IInsertedAnalyzerProviderFactory
+{
+    public (string[] Paths, string Id)[] Extensions { get; set; } = [];
+
+    public Task<InsertedAnalyzerProvider> GetOrCreateProviderAsync(CancellationToken cancellationToken)
+    {
+        return Task.FromResult(new InsertedAnalyzerProvider(
+            new MockExtensionManager(
+                Extensions,
+                contentType: InsertedAnalyzerProvider.InsertedAnalyzerMappingContentTypeName),
+            typeof(MockExtensionManager.MockContent)));
     }
 }

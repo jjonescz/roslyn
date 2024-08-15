@@ -10,6 +10,7 @@ using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.PooledObjects;
+using Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem;
 using Roslyn.Utilities;
 
 namespace Microsoft.VisualStudio.LanguageServices.Implementation.Diagnostics;
@@ -17,17 +18,16 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Diagnostics;
 [Export(typeof(IAnalyzerAssemblyResolver)), Shared]
 internal sealed class RedirectingAnalyzerAssemblyResolver : IAnalyzerAssemblyResolver
 {
+    private readonly VisualStudioWorkspaceImpl _workspace;
     private readonly Lazy<ImmutableArray<Matcher>> _matchers;
 
     [ImportingConstructor]
     [Obsolete(MefConstruction.ImportingConstructorMessage, error: true)]
-    public RedirectingAnalyzerAssemblyResolver()
+    public RedirectingAnalyzerAssemblyResolver(VisualStudioWorkspaceImpl workspace)
     {
+        _workspace = workspace;
         _matchers = new(CreateMatchers);
     }
-
-    // TODO: This should somehow point to the location in VS where the analyzers will be inserted.
-    public static string InsertedAnalyzersDirectory { get; set; } = "";
 
     public Assembly? ResolveAssembly(AssemblyName assemblyName, string assemblyOriginalDirectory)
     {
@@ -35,7 +35,7 @@ internal sealed class RedirectingAnalyzerAssemblyResolver : IAnalyzerAssemblyRes
         {
             if (matcher.TryRedirect(assemblyOriginalDirectory) is { } redirectedDirectory)
             {
-                var redirectedPath = Path.Combine(InsertedAnalyzersDirectory, redirectedDirectory, assemblyName.Name + ".dll");
+                var redirectedPath = Path.Combine(matcher.TargetDirectory, redirectedDirectory, assemblyName.Name + ".dll");
                 return Assembly.LoadFile(redirectedPath);
             }
         }
@@ -45,35 +45,55 @@ internal sealed class RedirectingAnalyzerAssemblyResolver : IAnalyzerAssemblyRes
 
     private ImmutableArray<Matcher> CreateMatchers()
     {
-        var mappingFilePath = Path.Combine(InsertedAnalyzersDirectory, "mapping.txt");
+        var mappingFilePaths = _workspace.LazyInsertedAnalyzerProvider?.GetInsertedAnalyzerMappingFilePaths() ?? [];
 
-        if (!File.Exists(mappingFilePath))
+        if (mappingFilePaths.IsDefaultOrEmpty)
         {
             return [];
         }
 
-        var mappings = File.ReadAllLines(mappingFilePath);
-        var builder = ArrayBuilder<Matcher>.GetInstance(mappings.Length);
+        var builder = ArrayBuilder<Matcher>.GetInstance();
 
-        foreach (var mapping in mappings)
+        foreach (var mappingFilePath in mappingFilePaths)
         {
-            if (string.IsNullOrWhiteSpace(mapping) ||
-                mapping.StartsWith("#", StringComparison.Ordinal))
+            if (!File.Exists(mappingFilePath))
             {
                 continue;
             }
 
-            var normalized = PathUtilities.NormalizeWithForwardSlash(mapping);
+            var analyzerDir = Path.GetDirectoryName(mappingFilePath);
 
-            if (normalized.IndexOf("/*/", StringComparison.Ordinal) is var starIndex and >= 0)
+            var mappings = File.ReadAllLines(mappingFilePath);
+
+            foreach (var mapping in mappings)
             {
-                var prefix = normalized[..starIndex];
-                var suffix = normalized[(starIndex + 3)..];
-                builder.Add(new Matcher { Prefix = prefix, Suffix = suffix });
-                continue;
-            }
+                if (string.IsNullOrWhiteSpace(mapping) ||
+                    mapping.StartsWith("#", StringComparison.Ordinal))
+                {
+                    continue;
+                }
 
-            builder.Add(new Matcher { Prefix = normalized });
+                var normalized = PathUtilities.NormalizeWithForwardSlash(mapping);
+
+                if (normalized.IndexOf("/*/", StringComparison.Ordinal) is var starIndex and >= 0)
+                {
+                    var prefix = normalized[..starIndex];
+                    var suffix = normalized[(starIndex + 3)..];
+                    builder.Add(new Matcher
+                    {
+                        TargetDirectory = analyzerDir,
+                        Prefix = prefix,
+                        Suffix = suffix,
+                    });
+                    continue;
+                }
+
+                builder.Add(new Matcher
+                {
+                    TargetDirectory = analyzerDir,
+                    Prefix = normalized,
+                });
+            }
         }
 
         return builder.ToImmutableAndFree();
@@ -81,6 +101,7 @@ internal sealed class RedirectingAnalyzerAssemblyResolver : IAnalyzerAssemblyRes
 
     private readonly record struct Matcher
     {
+        public required string TargetDirectory { get; init; }
         public required string Prefix { get; init; }
         public string? Suffix { get; init; }
 
