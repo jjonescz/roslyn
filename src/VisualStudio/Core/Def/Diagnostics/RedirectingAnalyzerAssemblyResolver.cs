@@ -109,32 +109,42 @@ internal sealed class RedirectingAnalyzerAssemblyResolver : IAnalyzerAssemblyRes
         {
             directory = PathUtilities.NormalizeWithForwardSlash(directory);
 
-            // TODO: Go over all matching prefixes.
-            if (directory.IndexOf(Prefix, StringComparison.OrdinalIgnoreCase) is var prefixStart and > 0 &&
-                directory[prefixStart - 1] == '/')
+            for (var startIndex = 0; startIndex < directory.Length;)
             {
-                if (Suffix is null)
-                {
-                    if (directory.Length == prefixStart + Prefix.Length || directory[prefixStart + Prefix.Length + 1] == '/')
-                    {
-                        return Prefix;
-                    }
-                }
-                else
-                {
-                    if (directory.AsSpan(prefixStart + Prefix.Length) is ['/', ..] &&
-                        directory.IndexOf('/', prefixStart + Prefix.Length + 1) is var suffixStart and >= 0 &&
-                        directory.AsSpan(suffixStart + 1).StartsWith(Suffix.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                    {
-                        var versionStart = prefixStart + Prefix.Length + 1;
-                        var version = directory.AsSpan(versionStart, suffixStart - versionStart);
+                var prefixStart = directory.IndexOf(Prefix, startIndex, StringComparison.OrdinalIgnoreCase);
 
-                        if (version.IndexOf('.') is var dotIndex and >= 0)
+                if (prefixStart <= 0)
+                {
+                    break;
+                }
+
+                if (directory[prefixStart - 1] == '/')
+                {
+                    if (Suffix is null)
+                    {
+                        if (directory.Length == prefixStart + Prefix.Length || directory[prefixStart + Prefix.Length + 1] == '/')
                         {
-                            return Prefix + '/' + version[..dotIndex].ToString() + '/' + Suffix;
+                            return Prefix;
+                        }
+                    }
+                    else
+                    {
+                        if (directory.AsSpan(prefixStart + Prefix.Length) is ['/', ..] &&
+                            directory.IndexOf('/', prefixStart + Prefix.Length + 1) is var suffixStart and >= 0 &&
+                            directory.AsSpan(suffixStart + 1).StartsWith(Suffix.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            var versionStart = prefixStart + Prefix.Length + 1;
+                            var version = directory.AsSpan(versionStart, suffixStart - versionStart);
+
+                            if (version.IndexOf('.') is var dotIndex and >= 0)
+                            {
+                                return Prefix + '/' + version[..dotIndex].ToString() + '/' + Suffix;
+                            }
                         }
                     }
                 }
+
+                startIndex = prefixStart + 1;
             }
 
             return null;
