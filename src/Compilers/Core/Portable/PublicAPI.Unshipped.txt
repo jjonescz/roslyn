@@ -7,6 +7,7 @@ Microsoft.CodeAnalysis.GeneratorFilterContext.CancellationToken.get -> System.Th
 Microsoft.CodeAnalysis.GeneratorFilterContext.Generator.get -> Microsoft.CodeAnalysis.ISourceGenerator!
 Microsoft.CodeAnalysis.GeneratorFilterContext.GeneratorFilterContext() -> void
 Microsoft.CodeAnalysis.IAnalyzerAssemblyResolver
+Microsoft.CodeAnalysis.IAnalyzerAssemblyResolver.RedirectPath(string! fullPath) -> string?
 Microsoft.CodeAnalysis.IAnalyzerAssemblyResolver.ResolveAssembly(System.Reflection.AssemblyName! assemblyName, string! assemblyOriginalDirectory) -> System.Reflection.Assembly?
 Microsoft.CodeAnalysis.IPropertySymbol.PartialDefinitionPart.get -> Microsoft.CodeAnalysis.IPropertySymbol?
 Microsoft.CodeAnalysis.IPropertySymbol.PartialImplementationPart.get -> Microsoft.CodeAnalysis.IPropertySymbol?
