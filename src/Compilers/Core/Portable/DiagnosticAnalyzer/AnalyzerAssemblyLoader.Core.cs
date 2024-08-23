@@ -211,7 +211,7 @@ namespace Microsoft.CodeAnalysis
         {
             private readonly AssemblyLoadContext _compilerAlc = compilerContext;
 
-            public string? RedirectPath(string fullPath) => null;
+            public string? RedirectPath(string fullPath, out bool loadDirectly) { loadDirectly = false; return null; }
             public Assembly? ResolveAssembly(AssemblyName assemblyName, string assemblyOriginalDirectory) => _compilerAlc.LoadFromAssemblyName(assemblyName);
         }
     }

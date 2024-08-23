@@ -121,6 +121,7 @@ internal partial class SerializerService
             case AnalyzerFileReference file:
                 writer.WriteString(nameof(AnalyzerFileReference));
                 writer.WriteString(file.FullPath);
+                writer.WriteBoolean(file.LoadDirectly);
 
                 // Note: it is intentional that we are not writing the MVID of the analyzer file reference over (even
                 // though we mixed it into the checksum).  We don't actually need the data on the other side as it will
@@ -162,7 +163,11 @@ internal partial class SerializerService
         {
             case nameof(AnalyzerFileReference):
                 var fullPath = reader.ReadRequiredString();
-                return new AnalyzerFileReference(fullPath, _analyzerLoaderProvider.GetShadowCopyLoader());
+                var loadDirectly = reader.ReadBoolean();
+                return new AnalyzerFileReference(fullPath, _analyzerLoaderProvider.GetShadowCopyLoader())
+                {
+                    LoadDirectly = loadDirectly,
+                };
 
             case nameof(AnalyzerImageReference):
                 var guid = reader.ReadGuid();

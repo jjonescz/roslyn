@@ -912,7 +912,7 @@ internal sealed partial class ProjectSystemProject
     {
         CompilerPathUtilities.RequireAbsolutePath(fullPath, nameof(fullPath));
 
-        var mappedPaths = GetMappedAnalyzerPaths(fullPath);
+        var mappedPaths = GetMappedAnalyzerPaths(fullPath, out var loadDirectly);
 
         using (_gate.DisposableWait())
         {
@@ -938,7 +938,10 @@ internal sealed partial class ProjectSystemProject
                 else
                 {
                     // Nope, we actually need to make a new one.
-                    var analyzerReference = new AnalyzerFileReference(mappedFullPath, _analyzerAssemblyLoader);
+                    var analyzerReference = new AnalyzerFileReference(mappedFullPath, _analyzerAssemblyLoader)
+                    {
+                        LoadDirectly = loadDirectly,
+                    };
 
                     _analyzerPathsToAnalyzers.Add(mappedFullPath, analyzerReference);
 
@@ -962,7 +965,7 @@ internal sealed partial class ProjectSystemProject
             throw new ArgumentException("message", nameof(fullPath));
         }
 
-        var mappedPaths = GetMappedAnalyzerPaths(fullPath);
+        var mappedPaths = GetMappedAnalyzerPaths(fullPath, out _);
 
         using (_gate.DisposableWait())
         {
@@ -1007,16 +1010,18 @@ internal sealed partial class ProjectSystemProject
     private static readonly ImmutableArray<string> s_razorSourceGeneratorAssemblyRootedFileNames = s_razorSourceGeneratorAssemblyNames.SelectAsArray(
         assemblyName => PathUtilities.DirectorySeparatorStr + assemblyName + ".dll");
 
-    private OneOrMany<string> GetMappedAnalyzerPaths(string fullPath)
+    private OneOrMany<string> GetMappedAnalyzerPaths(string fullPath, out bool loadDirectly)
     {
+        loadDirectly = false;
         fullPath = Path.GetFullPath(fullPath);
 
         foreach (var analyzerAssemblyResolver in _hostInfo.AnalyzerAssemblyResolvers)
         {
             try
             {
-                if (analyzerAssemblyResolver.RedirectPath(fullPath) is { } redirected)
+                if (analyzerAssemblyResolver.RedirectPath(fullPath, out var localLoadDirectly) is { } redirected)
                 {
+                    loadDirectly = localLoadDirectly;
                     return OneOrMany.Create(redirected);
                 }
             }

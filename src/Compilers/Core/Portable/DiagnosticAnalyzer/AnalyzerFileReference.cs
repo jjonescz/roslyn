@@ -35,6 +35,8 @@ namespace Microsoft.CodeAnalysis.Diagnostics
 
         public override string FullPath { get; }
 
+        public bool LoadDirectly { get; init; }
+
         private readonly IAnalyzerAssemblyLoader _assemblyLoader;
         private readonly Extensions<DiagnosticAnalyzer> _diagnosticAnalyzers;
         private readonly Extensions<ISourceGenerator> _generators;
@@ -672,7 +674,10 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         {
             if (_lazyAssembly == null)
             {
-                _lazyAssembly = _assemblyLoader.LoadFromPath(FullPath);
+                _lazyAssembly = LoadDirectly && _assemblyLoader.GetType().GetMethod("LoadFromPathDirectly",
+                        BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance) is { } loadFromPathDirectly
+                    ? loadFromPathDirectly.Invoke<Assembly>(_assemblyLoader, [FullPath])!
+                    : _assemblyLoader.LoadFromPath(FullPath);
             }
 
             return _lazyAssembly;
