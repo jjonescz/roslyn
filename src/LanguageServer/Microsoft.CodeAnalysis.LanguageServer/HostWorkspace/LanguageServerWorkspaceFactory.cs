@@ -40,8 +40,7 @@ internal sealed class LanguageServerWorkspaceFactory
         var razorSourceGenerator = serverConfigurationFactory?.ServerConfiguration?.RazorSourceGenerator;
         ProjectSystemHostInfo = new ProjectSystemHostInfo(
             DynamicFileInfoProviders: dynamicFileInfoProviders.ToImmutableArray(),
-            new HostDiagnosticAnalyzerProvider(razorSourceGenerator),
-            AnalyzerAssemblyResolvers: []);
+            new HostDiagnosticAnalyzerProvider(razorSourceGenerator));
 
         TargetFrameworkManager = projectTargetFrameworkManager;
     }

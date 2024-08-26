@@ -11,5 +11,4 @@ namespace Microsoft.CodeAnalysis.Workspaces.ProjectSystem;
 
 internal record ProjectSystemHostInfo(
     ImmutableArray<Lazy<IDynamicFileInfoProvider, FileExtensionsMetadata>> DynamicFileInfoProviders,
-    IHostDiagnosticAnalyzerProvider HostDiagnosticAnalyzerProvider,
-    ImmutableArray<IAnalyzerAssemblyResolver> AnalyzerAssemblyResolvers);
+    IHostDiagnosticAnalyzerProvider HostDiagnosticAnalyzerProvider);

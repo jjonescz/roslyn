@@ -33,7 +33,6 @@ internal sealed class VisualStudioProjectFactory : IVsTypeScriptVisualStudioProj
     private readonly VisualStudioWorkspaceImpl _visualStudioWorkspaceImpl;
     private readonly ImmutableArray<Lazy<IDynamicFileInfoProvider, FileExtensionsMetadata>> _dynamicFileInfoProviders;
     private readonly IVisualStudioDiagnosticAnalyzerProviderFactory _vsixAnalyzerProviderFactory;
-    private readonly ImmutableArray<IAnalyzerAssemblyResolver> _analyzerAssemblyResolvers;
     private readonly IVsService<SVsSolution, IVsSolution2> _solution2;
 
     [ImportingConstructor]
@@ -43,14 +42,12 @@ internal sealed class VisualStudioProjectFactory : IVsTypeScriptVisualStudioProj
         VisualStudioWorkspaceImpl visualStudioWorkspaceImpl,
         [ImportMany] IEnumerable<Lazy<IDynamicFileInfoProvider, FileExtensionsMetadata>> fileInfoProviders,
         IVisualStudioDiagnosticAnalyzerProviderFactory vsixAnalyzerProviderFactory,
-        [ImportMany] IEnumerable<IAnalyzerAssemblyResolver> analyzerAssemblyResolvers,
         IVsService<SVsSolution, IVsSolution2> solution2)
     {
         _threadingContext = threadingContext;
         _visualStudioWorkspaceImpl = visualStudioWorkspaceImpl;
         _dynamicFileInfoProviders = fileInfoProviders.AsImmutableOrEmpty();
         _vsixAnalyzerProviderFactory = vsixAnalyzerProviderFactory;
-        _analyzerAssemblyResolvers = analyzerAssemblyResolvers.AsImmutableOrEmpty();
         _solution2 = solution2;
     }
 
@@ -96,7 +93,7 @@ internal sealed class VisualStudioProjectFactory : IVsTypeScriptVisualStudioProj
         _visualStudioWorkspaceImpl.ProjectSystemProjectFactory.SolutionPath = solutionFilePath;
         _visualStudioWorkspaceImpl.ProjectSystemProjectFactory.SolutionTelemetryId = GetSolutionSessionId();
 
-        var hostInfo = new ProjectSystemHostInfo(_dynamicFileInfoProviders, vsixAnalyzerProvider, _analyzerAssemblyResolvers);
+        var hostInfo = new ProjectSystemHostInfo(_dynamicFileInfoProviders, vsixAnalyzerProvider);
         var project = await _visualStudioWorkspaceImpl.ProjectSystemProjectFactory.CreateAndAddToWorkspaceAsync(projectSystemName, language, creationInfo, hostInfo);
 
         _visualStudioWorkspaceImpl.AddProjectToInternalMaps(project, creationInfo.Hierarchy, creationInfo.ProjectGuid, projectSystemName);
