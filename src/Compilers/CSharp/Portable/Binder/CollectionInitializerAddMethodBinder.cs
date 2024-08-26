@@ -12,9 +12,9 @@ namespace Microsoft.CodeAnalysis.CSharp;
 /// </summary>
 internal sealed class CollectionInitializerAddMethodBinder : Binder
 {
-    private readonly NamedTypeSymbol _collectionType;
+    private readonly TypeSymbol _collectionType;
 
-    internal CollectionInitializerAddMethodBinder(NamedTypeSymbol collectionType, Binder next)
+    internal CollectionInitializerAddMethodBinder(TypeSymbol collectionType, Binder next)
         : base(next, next.Flags | BinderFlags.CollectionInitializerAddMethod)
     {
         Debug.Assert(collectionType is not null);
@@ -22,5 +22,5 @@ internal sealed class CollectionInitializerAddMethodBinder : Binder
         _collectionType = collectionType;
     }
 
-    internal override NamedTypeSymbol CollectionInitializerTypeInProgress => _collectionType;
+    internal override TypeSymbol CollectionInitializerTypeInProgress => _collectionType;
 }

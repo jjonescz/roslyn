@@ -648,15 +648,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert((collectionCreation is BoundNewT && !isExpanded && constructor is null) ||
                              (collectionCreation is BoundObjectCreationExpression creation && creation.Expanded == isExpanded && creation.Constructor == constructor));
 
-                var namedTargetType = (NamedTypeSymbol)targetType;
-
-                if (!elements.IsDefaultOrEmpty && HasCollectionInitializerTypeInProgress(namedTargetType))
+                if (!elements.IsDefaultOrEmpty && HasCollectionInitializerTypeInProgress(targetType))
                 {
                     diagnostics.Add(ErrorCode.ERR_CollectionInitializerInfiniteChainOfAddCalls, syntax, targetType);
                     return BindCollectionExpressionForErrorRecovery(node, targetType, inConversion: true, diagnostics);
                 }
 
-                var collectionInitializerAddMethodBinder = new CollectionInitializerAddMethodBinder(namedTargetType, this);
+                var collectionInitializerAddMethodBinder = new CollectionInitializerAddMethodBinder(targetType, this);
                 foreach (var element in elements)
                 {
                     BoundNode convertedElement = element is BoundCollectionExpressionSpreadElement spreadElement ?
@@ -759,7 +757,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
-        private bool HasCollectionInitializerTypeInProgress(NamedTypeSymbol targetType)
+        private bool HasCollectionInitializerTypeInProgress(TypeSymbol targetType)
         {
             Binder? current = this;
             while (current?.Flags.Includes(BinderFlags.CollectionInitializerAddMethod) == true)
