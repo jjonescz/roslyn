@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 
 namespace Microsoft.CodeAnalysis.CSharp;
@@ -12,15 +11,13 @@ namespace Microsoft.CodeAnalysis.CSharp;
 /// </summary>
 internal sealed class CollectionInitializerAddMethodBinder : Binder
 {
-    private readonly TypeSymbol _collectionType;
+    public SyntaxNode Syntax { get; }
+    public TypeSymbol CollectionType { get; }
 
-    internal CollectionInitializerAddMethodBinder(TypeSymbol collectionType, Binder next)
+    internal CollectionInitializerAddMethodBinder(SyntaxNode syntax, TypeSymbol collectionType, Binder next)
         : base(next, next.Flags | BinderFlags.CollectionInitializerAddMethod)
     {
-        Debug.Assert(collectionType is not null);
-
-        _collectionType = collectionType;
+        Syntax = syntax;
+        CollectionType = collectionType;
     }
-
-    internal override TypeSymbol CollectionInitializerTypeInProgress => _collectionType;
 }

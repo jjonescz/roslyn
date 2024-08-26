@@ -648,13 +648,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert((collectionCreation is BoundNewT && !isExpanded && constructor is null) ||
                              (collectionCreation is BoundObjectCreationExpression creation && creation.Expanded == isExpanded && creation.Constructor == constructor));
 
-                if (!elements.IsDefaultOrEmpty && HasCollectionInitializerTypeInProgress(targetType))
+                if (!elements.IsDefaultOrEmpty && HasCollectionInitializerTypeInProgress(syntax, targetType))
                 {
                     diagnostics.Add(ErrorCode.ERR_CollectionInitializerInfiniteChainOfAddCalls, syntax, targetType);
                     return BindCollectionExpressionForErrorRecovery(node, targetType, inConversion: true, diagnostics);
                 }
 
-                var collectionInitializerAddMethodBinder = new CollectionInitializerAddMethodBinder(targetType, this);
+                var collectionInitializerAddMethodBinder = new CollectionInitializerAddMethodBinder(syntax, targetType, this);
                 foreach (var element in elements)
                 {
                     BoundNode convertedElement = element is BoundCollectionExpressionSpreadElement spreadElement ?
@@ -757,12 +757,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
-        private bool HasCollectionInitializerTypeInProgress(TypeSymbol targetType)
+        private bool HasCollectionInitializerTypeInProgress(SyntaxNode syntax, TypeSymbol targetType)
         {
             Binder? current = this;
             while (current?.Flags.Includes(BinderFlags.CollectionInitializerAddMethod) == true)
             {
-                if (current.CollectionInitializerTypeInProgress?.OriginalDefinition.Equals(targetType.OriginalDefinition, TypeCompareKind.AllIgnoreOptions) == true)
+                if (current is CollectionInitializerAddMethodBinder binder &&
+                    binder.Syntax.FullSpan.Equals(syntax.FullSpan) &&
+                    binder.CollectionType.OriginalDefinition.Equals(targetType.OriginalDefinition, TypeCompareKind.AllIgnoreOptions))
                 {
                     return true;
                 }

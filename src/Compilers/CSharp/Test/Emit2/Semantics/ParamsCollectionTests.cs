@@ -14377,9 +14377,9 @@ namespace System.Runtime.CompilerServices
                 }
                 """;
             CreateCompilation(source).VerifyEmitDiagnostics(
-                // (22,27): error CS9222: Collection initializer results in an infinite chain of instantiations of collection 'MyCollection1'.
+                // (22,27): error CS9222: Collection initializer results in an infinite chain of instantiations of collection 'MyCollection2'.
                 //     MyCollection1 M() => [1];
-                Diagnostic(ErrorCode.ERR_CollectionInitializerInfiniteChainOfAddCalls, "1").WithArguments("MyCollection1").WithLocation(22, 27));
+                Diagnostic(ErrorCode.ERR_CollectionInitializerInfiniteChainOfAddCalls, "1").WithArguments("MyCollection2").WithLocation(22, 27));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74734")]
