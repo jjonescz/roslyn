@@ -1,5 +1,3 @@
-Microsoft.CodeAnalysis.Diagnostics.AnalyzerFileReference.LoadDirectly.get -> bool
-Microsoft.CodeAnalysis.Diagnostics.AnalyzerFileReference.LoadDirectly.init -> void
 Microsoft.CodeAnalysis.GeneratorDriver.RunGenerators(Microsoft.CodeAnalysis.Compilation! compilation) -> Microsoft.CodeAnalysis.GeneratorDriver!
 Microsoft.CodeAnalysis.GeneratorDriver.RunGenerators(Microsoft.CodeAnalysis.Compilation! compilation, System.Func<Microsoft.CodeAnalysis.GeneratorFilterContext, bool>? generatorFilter, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Microsoft.CodeAnalysis.GeneratorDriver!
 Microsoft.CodeAnalysis.GeneratorDriver.RunGenerators(Microsoft.CodeAnalysis.Compilation! compilation, System.Threading.CancellationToken cancellationToken) -> Microsoft.CodeAnalysis.GeneratorDriver!
@@ -9,7 +7,7 @@ Microsoft.CodeAnalysis.GeneratorFilterContext.CancellationToken.get -> System.Th
 Microsoft.CodeAnalysis.GeneratorFilterContext.Generator.get -> Microsoft.CodeAnalysis.ISourceGenerator!
 Microsoft.CodeAnalysis.GeneratorFilterContext.GeneratorFilterContext() -> void
 Microsoft.CodeAnalysis.IAnalyzerAssemblyResolver
-Microsoft.CodeAnalysis.IAnalyzerAssemblyResolver.RedirectPath(string! fullPath, out bool loadDirectly) -> string?
+Microsoft.CodeAnalysis.IAnalyzerAssemblyResolver.RedirectPath(string! fullPath) -> string?
 Microsoft.CodeAnalysis.IAnalyzerAssemblyResolver.ResolveAssembly(System.Reflection.AssemblyName! assemblyName, string! assemblyOriginalDirectory) -> System.Reflection.Assembly?
 Microsoft.CodeAnalysis.IPropertySymbol.PartialDefinitionPart.get -> Microsoft.CodeAnalysis.IPropertySymbol?
 Microsoft.CodeAnalysis.IPropertySymbol.PartialImplementationPart.get -> Microsoft.CodeAnalysis.IPropertySymbol?

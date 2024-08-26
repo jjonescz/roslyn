@@ -42,7 +42,7 @@ namespace Microsoft.CodeAnalysis.ExternalAccess.Razor
             }
         }
 
-        public string? RedirectPath(string fullPath, out bool loadDirectly) { loadDirectly = false; return null; }
+        public string? RedirectPath(string fullPath) => null;
 
         public Assembly? ResolveAssembly(AssemblyName assemblyName, string assemblyOriginalDirectory)
         {

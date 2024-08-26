@@ -1602,7 +1602,7 @@ Delta.2: Test D2
 
             public List<AssemblyName> CalledFor { get; } = [];
 
-            public string? RedirectPath(string fullPath, out bool loadDirectly) => throw ExceptionUtilities.Unreachable();
+            public string? RedirectPath(string fullPath) => throw ExceptionUtilities.Unreachable();
 
             public Assembly? ResolveAssembly(AssemblyName assemblyName, string assemblyOriginalDirectory)
             {

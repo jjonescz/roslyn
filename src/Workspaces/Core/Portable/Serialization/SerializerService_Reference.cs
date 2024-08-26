@@ -65,7 +65,7 @@ internal partial class SerializerService
             switch (reference)
             {
                 case AnalyzerFileReference file:
-                    writer.WriteString(file.FullPath);
+                    writer.WriteString(GetAnalyzerFileReferenceFullPath(file));
                     writer.WriteGuid(TryGetAnalyzerFileReferenceMvid(file));
                     break;
 
@@ -120,8 +120,7 @@ internal partial class SerializerService
         {
             case AnalyzerFileReference file:
                 writer.WriteString(nameof(AnalyzerFileReference));
-                writer.WriteString(file.FullPath);
-                writer.WriteBoolean(file.LoadDirectly);
+                writer.WriteString(GetAnalyzerFileReferenceFullPath(file));
 
                 // Note: it is intentional that we are not writing the MVID of the analyzer file reference over (even
                 // though we mixed it into the checksum).  We don't actually need the data on the other side as it will
@@ -155,6 +154,12 @@ internal partial class SerializerService
         }
     }
 
+    private static string GetAnalyzerFileReferenceFullPath(AnalyzerFileReference file)
+    {
+        var location = file.GetAssembly().Location;
+        return string.IsNullOrEmpty(location) ? file.FullPath : location;
+    }
+
     public virtual AnalyzerReference ReadAnalyzerReferenceFrom(ObjectReader reader, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -163,11 +168,7 @@ internal partial class SerializerService
         {
             case nameof(AnalyzerFileReference):
                 var fullPath = reader.ReadRequiredString();
-                var loadDirectly = reader.ReadBoolean();
-                return new AnalyzerFileReference(fullPath, _analyzerLoaderProvider.GetShadowCopyLoader())
-                {
-                    LoadDirectly = loadDirectly,
-                };
+                return new AnalyzerFileReference(fullPath, _analyzerLoaderProvider.GetDirectLoader());
 
             case nameof(AnalyzerImageReference):
                 var guid = reader.ReadGuid();
