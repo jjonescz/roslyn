@@ -14442,6 +14442,17 @@ namespace System.Runtime.CompilerServices
             CreateCompilation(source).VerifyEmitDiagnostics();
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74734")]
+        public void Cycle_20()
+        {
+            var source = """
+                using System.Collections.Generic;
+                List<List<int>> l;
+                l = [[], [2, 3]];
+                """;
+            CreateCompilation(source).VerifyEmitDiagnostics();
+        }
+
         [Fact]
         public void InvalidParamsTypeInPartialMethod()
         {
