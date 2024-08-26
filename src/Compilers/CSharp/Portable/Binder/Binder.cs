@@ -486,6 +486,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal virtual NamedTypeSymbol? ParamsCollectionTypeInProgress => null;
 
+        internal virtual NamedTypeSymbol? CollectionInitializerTypeInProgress => null;
+
         internal virtual BoundExpression? ConditionalReceiverExpression
         {
             get

@@ -648,7 +648,15 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert((collectionCreation is BoundNewT && !isExpanded && constructor is null) ||
                              (collectionCreation is BoundObjectCreationExpression creation && creation.Expanded == isExpanded && creation.Constructor == constructor));
 
-                var collectionInitializerAddMethodBinder = this.WithAdditionalFlags(BinderFlags.CollectionInitializerAddMethod);
+                var namedTargetType = (NamedTypeSymbol)targetType;
+
+                if (!elements.IsDefaultOrEmpty && HasCollectionInitializerTypeInProgress(namedTargetType))
+                {
+                    diagnostics.Add(ErrorCode.ERR_CollectionInitializerInfiniteChainOfAddCalls, syntax, targetType);
+                    return BindCollectionExpressionForErrorRecovery(node, targetType, inConversion: true, diagnostics);
+                }
+
+                var collectionInitializerAddMethodBinder = new CollectionInitializerAddMethodBinder(namedTargetType, this);
                 foreach (var element in elements)
                 {
                     BoundNode convertedElement = element is BoundCollectionExpressionSpreadElement spreadElement ?
@@ -749,6 +757,22 @@ namespace Microsoft.CodeAnalysis.CSharp
                     iteratorBody: new BoundExpressionStatement(syntax, convertElement) { WasCompilerGenerated = true },
                     lengthOrCount: element.LengthOrCount);
             }
+        }
+
+        private bool HasCollectionInitializerTypeInProgress(NamedTypeSymbol targetType)
+        {
+            Binder? current = this;
+            while (current?.Flags.Includes(BinderFlags.CollectionInitializerAddMethod) == true)
+            {
+                if (current.CollectionInitializerTypeInProgress?.OriginalDefinition.Equals(targetType.OriginalDefinition, TypeCompareKind.AllIgnoreOptions) == true)
+                {
+                    return true;
+                }
+
+                current = current.Next;
+            }
+
+            return false;
         }
 
         internal MethodSymbol? GetAndValidateCollectionBuilderMethod(

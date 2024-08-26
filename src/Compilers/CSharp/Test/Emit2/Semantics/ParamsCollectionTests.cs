@@ -14319,6 +14319,129 @@ namespace System.Runtime.CompilerServices
                 );
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74734")]
+        public void Cycle_16()
+        {
+            var source = """
+                using System.Collections;
+                using System.Collections.Generic;
+
+                public class Base : IEnumerable<object>
+                {
+                    public IEnumerator<object> GetEnumerator() => throw null;
+                    IEnumerator IEnumerable.GetEnumerator() => throw null;
+                }
+
+                public class MyCollection1 : Base
+                {
+                    public void Add(params MyCollection1 c) {}
+                }
+
+                public class C
+                {
+                    MyCollection1 M() => [1];
+                }
+                """;
+            CreateCompilation(source).VerifyEmitDiagnostics(
+                // (17,27): error CS9222: Collection initializer results in an infinite chain of instantiations of collection 'MyCollection1'.
+                //     MyCollection1 M() => [1];
+                Diagnostic(ErrorCode.ERR_CollectionInitializerInfiniteChainOfAddCalls, "1").WithArguments("MyCollection1").WithLocation(17, 27));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74734")]
+        public void Cycle_17()
+        {
+            var source = """
+                using System.Collections;
+                using System.Collections.Generic;
+
+                public class Base : IEnumerable<object>
+                {
+                    public IEnumerator<object> GetEnumerator() => throw null;
+                    IEnumerator IEnumerable.GetEnumerator() => throw null;
+                }
+
+                public class MyCollection1 : Base
+                {
+                    public void Add(params MyCollection2 c) {}
+                }
+
+                public class MyCollection2 : Base
+                {
+                    public void Add(params MyCollection1 c) { }
+                }
+
+                public class C
+                {
+                    MyCollection1 M() => [1];
+                }
+                """;
+            CreateCompilation(source).VerifyEmitDiagnostics(
+                // (22,27): error CS9222: Collection initializer results in an infinite chain of instantiations of collection 'MyCollection1'.
+                //     MyCollection1 M() => [1];
+                Diagnostic(ErrorCode.ERR_CollectionInitializerInfiniteChainOfAddCalls, "1").WithArguments("MyCollection1").WithLocation(22, 27));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74734")]
+        public void Cycle_18()
+        {
+            var source = """
+                using System.Collections;
+                using System.Collections.Generic;
+
+                public class Base : IEnumerable<object>
+                {
+                    public IEnumerator<object> GetEnumerator() => throw null;
+                    IEnumerator IEnumerable.GetEnumerator() => throw null;
+                }
+
+                public class MyCollection1 : Base
+                {
+                    public void Add(params MyCollection1 c) {}
+                }
+
+                public class C
+                {
+                    MyCollection1 M() => new() { 1 };
+                }
+                """;
+            CreateCompilation(source).VerifyEmitDiagnostics(
+                // (17,34): error CS9222: Collection initializer results in an infinite chain of instantiations of collection 'MyCollection1'.
+                //     MyCollection1 M() => new() { 1 };
+                Diagnostic(ErrorCode.ERR_CollectionInitializerInfiniteChainOfAddCalls, "1").WithArguments("MyCollection1").WithLocation(17, 34));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74734")]
+        public void Cycle_19()
+        {
+            var source = """
+                using System.Collections;
+                using System.Collections.Generic;
+
+                public class Base : IEnumerable<object>
+                {
+                    public IEnumerator<object> GetEnumerator() => throw null;
+                    IEnumerator IEnumerable.GetEnumerator() => throw null;
+                }
+
+                public class MyCollection1 : Base
+                {
+                    public void Add(params MyCollection2 c) {}
+                }
+
+                public class MyCollection2 : Base
+                {
+                    public void Add(params int[] c) { }
+                }
+
+                public class C
+                {
+                    MyCollection1 M() => new() { 1 };
+                }
+                """;
+            CreateCompilation(source).VerifyEmitDiagnostics();
+        }
+
         [Fact]
         public void InvalidParamsTypeInPartialMethod()
         {
