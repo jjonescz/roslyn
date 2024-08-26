@@ -15,8 +15,6 @@ namespace Microsoft.CodeAnalysis
 {
     internal interface IAnalyzerAssemblyLoaderInternal : IAnalyzerAssemblyLoader
     {
-        Assembly LoadFromPathDirectly(string fullPath);
-
         /// <summary>
         /// Is this an <see cref="Assembly"/> that the loader considers to be part of the hosting 
         /// process. Either part of the compiler itself or the process hosting the compiler.
@@ -137,33 +135,6 @@ namespace Microsoft.CodeAnalysis
             if (assemblyName is null)
             {
                 throw new ArgumentException($"Not a valid assembly: {originalAnalyzerPath}");
-            }
-
-            try
-            {
-                return Load(assemblyName, originalAnalyzerPath);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Unable to load {assemblyName.Name}", ex);
-            }
-        }
-
-        public Assembly LoadFromPathDirectly(string originalAnalyzerPath)
-        {
-            AssemblyName? assemblyName;
-            try
-            {
-                assemblyName = AssemblyName.GetAssemblyName(originalAnalyzerPath);
-            }
-            catch
-            {
-                throw new ArgumentException($"Not a valid assembly: {originalAnalyzerPath}");
-            }
-
-            lock (_guard)
-            {
-                _analyzerAssemblyInfoMap[originalAnalyzerPath] = (assemblyName, originalAnalyzerPath);
             }
 
             try
