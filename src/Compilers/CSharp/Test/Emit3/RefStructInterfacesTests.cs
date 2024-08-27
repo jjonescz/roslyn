@@ -22800,7 +22800,8 @@ namespace System
             var verifier = CompileAndVerify(source,
                 targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
                 symbolValidator: validate,
-                expectedOutput: "<>f__AnonymousDelegate0`1[System.Int32]");
+                verify: Verification.FailsPEVerify,
+                expectedOutput: ExecutionConditionUtil.IsMonoOrCoreClr ? "<>f__AnonymousDelegate0`1[System.Int32]" : null);
             verifier.VerifyDiagnostics();
 
             static void validate(ModuleSymbol module)
@@ -22823,7 +22824,8 @@ namespace System
             var verifier = CompileAndVerify(source,
                 targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
                 symbolValidator: validate,
-                expectedOutput: "<>f__AnonymousDelegate0`2[System.String,System.Int32]");
+                verify: Verification.FailsPEVerify,
+                expectedOutput: ExecutionConditionUtil.IsMonoOrCoreClr ? "<>f__AnonymousDelegate0`2[System.String,System.Int32]" : null);
             verifier.VerifyDiagnostics();
 
             static void validate(ModuleSymbol module)
@@ -22850,7 +22852,8 @@ namespace System
                 options: TestOptions.UnsafeReleaseExe,
                 targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
                 symbolValidator: validate,
-                expectedOutput: "<>f__AnonymousDelegate0");
+                verify: Verification.FailsPEVerify,
+                expectedOutput: ExecutionConditionUtil.IsMonoOrCoreClr ? "<>f__AnonymousDelegate0" : null);
             verifier.VerifyDiagnostics();
 
             static void validate(ModuleSymbol module)
@@ -22879,7 +22882,8 @@ namespace System
                 options: TestOptions.UnsafeReleaseExe,
                 targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
                 symbolValidator: validate,
-                expectedOutput: "<>f__AnonymousDelegate0`1[System.String]");
+                verify: Verification.FailsPEVerify,
+                expectedOutput: ExecutionConditionUtil.IsMonoOrCoreClr ? "<>f__AnonymousDelegate0`1[System.String]" : null);
             verifier.VerifyDiagnostics();
 
             static void validate(ModuleSymbol module)
@@ -22909,7 +22913,8 @@ namespace System
                 options: TestOptions.UnsafeReleaseExe,
                 targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
                 symbolValidator: validate,
-                expectedOutput: "<>f__AnonymousDelegate0`1[System.String]");
+                verify: Verification.FailsPEVerify,
+                expectedOutput: ExecutionConditionUtil.IsMonoOrCoreClr ? "<>f__AnonymousDelegate0`1[System.String]" : null);
             verifier.VerifyDiagnostics();
 
             static void validate(ModuleSymbol module)
@@ -22939,7 +22944,8 @@ namespace System
                 options: TestOptions.UnsafeReleaseExe,
                 targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
                 symbolValidator: validate,
-                expectedOutput: "<>f__AnonymousDelegate0`1[System.String]");
+                verify: Verification.FailsPEVerify,
+                expectedOutput: ExecutionConditionUtil.IsMonoOrCoreClr ? "<>f__AnonymousDelegate0`1[System.String]" : null);
             verifier.VerifyDiagnostics();
 
             static void validate(ModuleSymbol module)
@@ -22969,7 +22975,8 @@ namespace System
                 options: TestOptions.UnsafeReleaseExe,
                 targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
                 symbolValidator: validate,
-                expectedOutput: "<>f__AnonymousDelegate0`1[System.String]");
+                verify: Verification.FailsPEVerify,
+                expectedOutput: ExecutionConditionUtil.IsMonoOrCoreClr ? "<>f__AnonymousDelegate0`1[System.String]" : null);
             verifier.VerifyDiagnostics();
 
             static void validate(ModuleSymbol module)
@@ -23000,7 +23007,8 @@ namespace System
                 options: TestOptions.UnsafeReleaseExe,
                 targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
                 symbolValidator: validate,
-                expectedOutput: "<>f__AnonymousDelegate0`1[System.String]");
+                verify: Verification.FailsPEVerify,
+                expectedOutput: ExecutionConditionUtil.IsMonoOrCoreClr ? "<>f__AnonymousDelegate0`1[System.String]" : null);
             verifier.VerifyDiagnostics();
 
             static void validate(ModuleSymbol module)
@@ -23030,7 +23038,8 @@ namespace System
                 options: TestOptions.UnsafeReleaseExe,
                 targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
                 symbolValidator: validate,
-                expectedOutput: "<>f__AnonymousDelegate0`1[System.Int16]");
+                verify: Verification.FailsPEVerify,
+                expectedOutput: ExecutionConditionUtil.IsMonoOrCoreClr ? "<>f__AnonymousDelegate0`1[System.Int16]" : null);
             verifier.VerifyDiagnostics();
 
             static void validate(ModuleSymbol module)
@@ -23060,7 +23069,8 @@ namespace System
                 options: TestOptions.UnsafeReleaseExe,
                 targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
                 symbolValidator: validate,
-                expectedOutput: "<>f__AnonymousDelegate0`1[System.Int16]");
+                verify: Verification.FailsPEVerify,
+                expectedOutput: ExecutionConditionUtil.IsMonoOrCoreClr ? "<>f__AnonymousDelegate0`1[System.Int16]" : null);
             verifier.VerifyDiagnostics();
 
             static void validate(ModuleSymbol module)
@@ -23083,7 +23093,8 @@ namespace System
             var verifier = CompileAndVerify(source,
                 targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
                 symbolValidator: validate,
-                expectedOutput: "<>f__AnonymousDelegate0");
+                verify: Verification.FailsPEVerify,
+                expectedOutput: ExecutionConditionUtil.IsMonoOrCoreClr ? "<>f__AnonymousDelegate0" : null);
             verifier.VerifyDiagnostics();
 
             static void validate(ModuleSymbol module)
@@ -23112,7 +23123,8 @@ namespace System
                 options: TestOptions.UnsafeReleaseExe,
                 targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
                 symbolValidator: validate,
-                expectedOutput: "<>f__AnonymousDelegate0`1[System.Int16]");
+                verify: Verification.FailsPEVerify,
+                expectedOutput: ExecutionConditionUtil.IsMonoOrCoreClr ? "<>f__AnonymousDelegate0`1[System.Int16]" : null);
             verifier.VerifyDiagnostics();
 
             static void validate(ModuleSymbol module)
@@ -23142,7 +23154,8 @@ namespace System
                 options: TestOptions.UnsafeReleaseExe,
                 targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
                 symbolValidator: validate,
-                expectedOutput: "<>f__AnonymousDelegate0`1[System.Int16]");
+                verify: Verification.FailsPEVerify,
+                expectedOutput: ExecutionConditionUtil.IsMonoOrCoreClr ? "<>f__AnonymousDelegate0`1[System.Int16]" : null);
             verifier.VerifyDiagnostics();
 
             static void validate(ModuleSymbol module)
@@ -23165,7 +23178,8 @@ namespace System
             var verifier = CompileAndVerify(source,
                 targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
                 symbolValidator: validate,
-                expectedOutput: "<>A{00000001}`2[System.Int16,System.Int32[]]");
+                verify: Verification.FailsPEVerify,
+                expectedOutput: ExecutionConditionUtil.IsMonoOrCoreClr ? "<>A{00000001}`2[System.Int16,System.Int32[]]" : null);
             verifier.VerifyDiagnostics();
 
             static void validate(ModuleSymbol module)
