@@ -95,7 +95,20 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 get
                 {
-                    return _container.IsDelegateType() && ContainingAssembly.RuntimeSupportsByRefLikeGenerics;
+                    return _container.IsDelegateType() && ContainingAssembly.RuntimeSupportsByRefLikeGenerics &&
+                        !hasParamsArray(_container, this);
+
+                    // `params T[]` cannot be combined with `where T : allows ref struct` because of the array
+                    static bool hasParamsArray(AnonymousTypeOrDelegateTemplateSymbol container, TypeParameterSymbol type)
+                    {
+                        return container is AnonymousDelegateTemplateSymbol template &&
+                            template.DelegateInvokeMethod.Parameters is [..,
+                            {
+                                IsParams: true,
+                                Type: ArrayTypeSymbol { IsSZArray: true, ElementType: { } elementType }
+                            }] &&
+                            type.Equals(elementType, TypeCompareKind.AllIgnoreOptions);
+                    }
                 }
             }
 
