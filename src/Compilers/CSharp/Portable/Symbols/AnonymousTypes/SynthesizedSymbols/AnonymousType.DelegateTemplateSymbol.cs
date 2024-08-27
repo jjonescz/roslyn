@@ -176,7 +176,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     var typeParameters = ArrayBuilder<TypeParameterSymbol>.GetInstance(typeParameterCount);
                     for (int i = 0; i < typeParameterCount; i++)
                     {
-                        typeParameters.Add(new AnonymousTypeParameterSymbol(this, i, "T" + (i + 1), allowsRefLikeType: false));
+                        typeParameters.Add(new AnonymousTypeParameterSymbol(this, i, "T" + (i + 1),
+                            allowsRefLikeType: typeParametersToSubstitute[i].AllowsRefLikeType));
                     }
                     TypeParameters = typeParameters.ToImmutableAndFree();
                     typeMap = new TypeMap(typeParametersToSubstitute, TypeParameters, allowAlpha: true);
