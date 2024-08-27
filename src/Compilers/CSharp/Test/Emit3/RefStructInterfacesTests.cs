@@ -22895,6 +22895,36 @@ namespace System
         {
             var source = """
                 M<string>();
+                unsafe static void M<T>() where T : allows ref struct
+                {
+                    var d = C<T>.M;
+                    System.Console.WriteLine(d.GetType());
+                }
+                unsafe static class C<T> where T : allows ref struct
+                {
+                    public static void M(int* p, T x, params int[] arr) { }
+                }
+                """;
+            var verifier = CompileAndVerify(source,
+                options: TestOptions.UnsafeReleaseExe,
+                targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
+                symbolValidator: validate,
+                expectedOutput: "<>f__AnonymousDelegate0`1[System.String]");
+            verifier.VerifyDiagnostics();
+
+            static void validate(ModuleSymbol module)
+            {
+                var m = module.GlobalNamespace.GetMember<MethodSymbol>("<>f__AnonymousDelegate0.Invoke");
+                AssertEx.Equal("void <>f__AnonymousDelegate0<T1>.Invoke(System.Int32* arg1, T1 arg2, params System.Int32[] arg3)", m.ToTestDisplayString());
+                Assert.False(m.ContainingType.TypeParameters.Single().AllowsRefLikeType);
+            }
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74823")]
+        public void AnonymousDelegateType_14_ParamsArray()
+        {
+            var source = """
+                M<string>();
                 unsafe static void M<T>()
                 {
                     var d = C<T>.M;
@@ -22921,7 +22951,7 @@ namespace System
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74823")]
-        public void AnonymousDelegateType_14_ParamsArray()
+        public void AnonymousDelegateType_15_ParamsArray()
         {
             var source = """
                 M<string>();
@@ -22951,7 +22981,7 @@ namespace System
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74823")]
-        public void AnonymousDelegateType_15_ParamsArray()
+        public void AnonymousDelegateType_16_ParamsArray()
         {
             var source = """
                 #nullable enable
@@ -22982,7 +23012,7 @@ namespace System
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74823")]
-        public void AnonymousDelegateType_16_ParamsArray()
+        public void AnonymousDelegateType_17_ParamsArray()
         {
             var source = """
                 M<short>();
@@ -23012,7 +23042,7 @@ namespace System
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74823")]
-        public void AnonymousDelegateType_17_ParamsArray()
+        public void AnonymousDelegateType_18_ParamsArray()
         {
             var source = """
                 M<short>();
@@ -23042,7 +23072,7 @@ namespace System
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74823")]
-        public void AnonymousDelegateType_18_ParamsCollection()
+        public void AnonymousDelegateType_19_ParamsCollection()
         {
             var source = """
                 var d = M;
@@ -23064,7 +23094,7 @@ namespace System
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74823")]
-        public void AnonymousDelegateType_19()
+        public void AnonymousDelegateType_20()
         {
             var source = """
                 M<short>();
@@ -23090,6 +23120,59 @@ namespace System
                 var m = module.GlobalNamespace.GetMember<MethodSymbol>("<>f__AnonymousDelegate0.Invoke");
                 AssertEx.Equal("void <>f__AnonymousDelegate0<T1>.Invoke(System.Int32* arg1, T1[] arg2)", m.ToTestDisplayString());
                 Assert.False(m.ContainingType.TypeParameters.Single().AllowsRefLikeType);
+            }
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74823")]
+        public void AnonymousDelegateType_21()
+        {
+            var source = """
+                M<short>();
+                unsafe static void M<T>() where T : allows ref struct
+                {
+                    var d = C<T>.M;
+                    System.Console.WriteLine(d.GetType());
+                }
+                unsafe static class C<T> where T : allows ref struct
+                {
+                    public static void M(int* p, T t) { }
+                }
+                """;
+            var verifier = CompileAndVerify(source,
+                options: TestOptions.UnsafeReleaseExe,
+                targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
+                symbolValidator: validate,
+                expectedOutput: "<>f__AnonymousDelegate0`1[System.Int16]");
+            verifier.VerifyDiagnostics();
+
+            static void validate(ModuleSymbol module)
+            {
+                var m = module.GlobalNamespace.GetMember<MethodSymbol>("<>f__AnonymousDelegate0.Invoke");
+                AssertEx.Equal("void <>f__AnonymousDelegate0<T1>.Invoke(System.Int32* arg1, T1 arg2)", m.ToTestDisplayString());
+                Assert.False(m.ContainingType.TypeParameters.Single().AllowsRefLikeType);
+            }
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/74823")]
+        public void AnonymousDelegateType_22()
+        {
+            var source = """
+                var d = M;
+                System.Console.WriteLine(d.GetType());
+
+                void M(ref short p, int[] arr) { }
+                """;
+            var verifier = CompileAndVerify(source,
+                targetFramework: s_targetFrameworkSupportingByRefLikeGenerics,
+                symbolValidator: validate,
+                expectedOutput: "<>A{00000001}`2[System.Int16,System.Int32[]]");
+            verifier.VerifyDiagnostics();
+
+            static void validate(ModuleSymbol module)
+            {
+                var m = module.GlobalNamespace.GetMember<MethodSymbol>("<>A{00000001}.Invoke");
+                AssertEx.Equal("void <>A{00000001}<T1, T2>.Invoke(ref T1 arg1, T2 arg2)", m.ToTestDisplayString());
+                Assert.Equal([true, true], m.ContainingType.TypeParameters.Select(t => t.AllowsRefLikeType));
             }
         }
 
