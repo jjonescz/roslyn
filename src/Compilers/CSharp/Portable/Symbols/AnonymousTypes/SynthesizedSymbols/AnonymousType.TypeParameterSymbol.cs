@@ -20,8 +20,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             private readonly AnonymousTypeOrDelegateTemplateSymbol _container;
             private readonly int _ordinal;
             private readonly string _name;
+            private readonly bool _allowsRefLikeType;
 
-            public AnonymousTypeParameterSymbol(AnonymousTypeOrDelegateTemplateSymbol container, int ordinal, string name)
+            public AnonymousTypeParameterSymbol(AnonymousTypeOrDelegateTemplateSymbol container, int ordinal, string name, bool allowsRefLikeType)
             {
                 Debug.Assert((object)container != null);
                 Debug.Assert(!string.IsNullOrEmpty(name));
@@ -29,6 +30,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 _container = container;
                 _ordinal = ordinal;
                 _name = name;
+                _allowsRefLikeType = allowsRefLikeType;
             }
 
             public override TypeParameterKind TypeParameterKind
@@ -91,26 +93,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 get { return false; }
             }
 
-            public override bool AllowsRefLikeType
-            {
-                get
-                {
-                    return _container.IsDelegateType() && ContainingAssembly.RuntimeSupportsByRefLikeGenerics &&
-                        !hasParamsArray(_container, this);
-
-                    // `params T[]` cannot be combined with `where T : allows ref struct` because of the array
-                    static bool hasParamsArray(AnonymousTypeOrDelegateTemplateSymbol container, TypeParameterSymbol type)
-                    {
-                        return container is AnonymousDelegateTemplateSymbol template &&
-                            template.DelegateInvokeMethod.Parameters is [..,
-                            {
-                                IsParams: true,
-                                Type: ArrayTypeSymbol { IsSZArray: true, ElementType: { } elementType }
-                            }] &&
-                            type.Equals(elementType, TypeCompareKind.AllIgnoreOptions);
-                    }
-                }
-            }
+            public override bool AllowsRefLikeType => _allowsRefLikeType;
 
             public override bool IsValueTypeFromConstraintTypes
             {

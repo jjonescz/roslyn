@@ -22886,7 +22886,7 @@ namespace System
             {
                 var m = module.GlobalNamespace.GetMember<MethodSymbol>("<>f__AnonymousDelegate0.Invoke");
                 AssertEx.Equal("void <>f__AnonymousDelegate0<T1>.Invoke(System.Int32* arg1, T1 arg2, params System.Int32[] arg3)", m.ToTestDisplayString());
-                Assert.True(m.ContainingType.TypeParameters.Single().AllowsRefLikeType);
+                Assert.False(m.ContainingType.TypeParameters.Single().AllowsRefLikeType);
             }
         }
 
