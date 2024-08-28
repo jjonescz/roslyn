@@ -163,9 +163,10 @@ internal partial class SerializerService
         switch (reader.ReadString())
         {
             case nameof(AnalyzerFileReference):
-                // Rehydrate the analyzer file reference with the simple shared shadow copy loader.  Note: we won't
-                // actually use this instance we create.  Instead, the caller will use create an IsolatedAssemblyReferenceSet
-                // from these to ensure that all the types can be safely loaded into their own ALC.
+                // Rehydrate the analyzer file reference with the direct loader (it was already shadow copied before sent to us).
+                // Note: we won't actually use this instance we create.  Instead, the caller will use create an
+                // IsolatedAssemblyReferenceSet from these to ensure that all the types can be safely loaded into their own
+                // ALC.
                 var fullPath = reader.ReadRequiredString();
                 var originalFullPath = reader.ReadString();
                 return new AnalyzerFileReference(fullPath, _analyzerLoaderProvider.SharedDirectLoader)
