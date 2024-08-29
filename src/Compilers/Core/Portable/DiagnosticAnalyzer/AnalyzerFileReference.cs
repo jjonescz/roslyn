@@ -690,8 +690,11 @@ namespace Microsoft.CodeAnalysis.Diagnostics
 
                 if (string.IsNullOrEmpty(location))
                 {
+                    // We use reflection because AnalyzerAssemblyLoader can come from a different assembly (it's source-shared).
                     location = (string?)_assemblyLoader.GetType()
-                        .GetMethod("RedirectAssemblyPathExternally")?
+                        .GetMethod(
+                            nameof(AnalyzerAssemblyLoader.RedirectAssemblyPathExternally),
+                            BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)?
                         .Invoke(_assemblyLoader, [FullPath]);
 
                     if (string.IsNullOrEmpty(location))
