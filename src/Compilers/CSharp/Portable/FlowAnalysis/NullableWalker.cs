@@ -5791,15 +5791,18 @@ namespace Microsoft.CodeAnalysis.CSharp
                 TypeSymbol? refResultType = node.Type?.SetUnknownNullabilityForReferenceTypes();
                 if (IsNullabilityMismatch(consequenceLValue, alternativeLValue))
                 {
+                    // If there is a mismatch between the operands, use type inference to determine the target type.
                     BoundExpression consequencePlaceholder = CreatePlaceholderIfNecessary(originalConsequence, consequenceLValue);
                     BoundExpression alternativePlaceholder = CreatePlaceholderIfNecessary(originalAlternative, alternativeLValue);
                     var discardedUseSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
                     refResultType = BestTypeInferrer.InferBestTypeForConditionalOperator(consequencePlaceholder, alternativePlaceholder, _conversions, out _, ref discardedUseSiteInfo);
 
+                    // Report warning for each operand that is not convertible to the target type.
                     var refResultTypeWithAnnotations = TypeWithAnnotations.Create(refResultType, lValueAnnotation);
                     reportMismatchIfNecessary(originalConsequence, consequenceLValue, refResultTypeWithAnnotations);
                     reportMismatchIfNecessary(originalAlternative, alternativeLValue, refResultTypeWithAnnotations);
 
+                    // Set "not null" top-level nullability. Consistent with equivalent method type inference or non-ref ternary scenarios.
                     lValueAnnotation = NullableAnnotation.NotAnnotated;
                     rValueState = NullableFlowState.NotNull;
 
