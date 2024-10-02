@@ -1550,6 +1550,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     case RefKind.None:
                     case RefKind.In:
                     case RefKind.RefReadOnlyParameter:
+                    case RefKindExtensions.StrictIn:
                         break;
                     case RefKind.Ref:
                     case RefKind.Out:
