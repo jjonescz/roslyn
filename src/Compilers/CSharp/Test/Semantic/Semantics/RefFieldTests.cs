@@ -5517,6 +5517,27 @@ class Program
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75315")]
+        public void DefiniteAssignment_RefField_RefAssignedInObjectInitializer_InAtCallSite()
+        {
+            var comp = CreateCompilation("""
+                ref struct R
+                {
+                    public ref int F;
+
+                    static void M(in int x) { }
+
+                    static void Test(ref int x)
+                    {
+                        var r = new R { F = ref x };
+                        M(in r.F);
+                    }
+                }
+                """,
+                targetFramework: TargetFramework.NetCoreApp);
+            comp.VerifyDiagnostics();
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75315")]
         public void DefiniteAssignment_RefField_Assigned_InAtCallSite()
         {
             var comp = CreateCompilation("""
@@ -5529,6 +5550,30 @@ class Program
                     static void Test(R r, int x)
                     {
                         r.F = x;
+                        M(in r.F);
+                    }
+                }
+                """,
+                targetFramework: TargetFramework.NetCoreApp);
+            comp.VerifyDiagnostics(
+                // (3,20): warning CS0649: Field 'R.F' is never assigned to, and will always have its default value (null reference)
+                //     public ref int F;
+                Diagnostic(ErrorCode.WRN_UnassignedInternalField, "F").WithArguments("R.F", "(null reference)").WithLocation(3, 20));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75315")]
+        public void DefiniteAssignment_RefField_AssignedInObjectInitializer_InAtCallSite()
+        {
+            var comp = CreateCompilation("""
+                ref struct R
+                {
+                    public ref int F;
+
+                    static void M(in int x) { }
+
+                    static void Test(int x)
+                    {
+                        var r = new R { F = x };
                         M(in r.F);
                     }
                 }

@@ -1626,6 +1626,18 @@ namespace Microsoft.CodeAnalysis.CSharp
                         break;
                     }
 
+                case BoundKind.ObjectInitializerMember:
+                    {
+                        var member = (BoundObjectInitializerMember)node;
+                        if (_sourceAssembly is not null && member.MemberSymbol is FieldSymbol field)
+                        {
+                            _sourceAssembly.NoteFieldAccess(field.OriginalDefinition,
+                                read: false,
+                                write: field.RefKind == RefKind.None || isRef);
+                        }
+                        break;
+                    }
+
                 case BoundKind.ThisReference:
                 case BoundKind.FieldAccess:
                 case BoundKind.EventAccess:
@@ -2754,18 +2766,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // NOTE: do not report unused iteration variables. They are always considered used.
                 NoteWrite(iterationVariable, null, read: true, isRef: false);
             }
-        }
-
-        public override BoundNode VisitObjectInitializerMember(BoundObjectInitializerMember node)
-        {
-            var result = base.VisitObjectInitializerMember(node);
-
-            if ((object)_sourceAssembly != null && node.MemberSymbol != null && node.MemberSymbol.Kind == SymbolKind.Field)
-            {
-                _sourceAssembly.NoteFieldAccess((FieldSymbol)node.MemberSymbol.OriginalDefinition, read: false, write: true);
-            }
-
-            return result;
         }
 
         public override BoundNode VisitDynamicObjectInitializerMember(BoundDynamicObjectInitializerMember node)
