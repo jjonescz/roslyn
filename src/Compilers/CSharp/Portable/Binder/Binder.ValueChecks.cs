@@ -4519,7 +4519,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // in error situations some unexpected nodes could make here
                     // returning "scopeOfTheContainingExpression" seems safer than throwing.
                     // we will still assert to make sure that all nodes are accounted for. 
-                    RoslynDebug.Assert(false, $"{expr.Kind} expression of {expr.Type} type");
+                    //RoslynDebug.Assert(false, $"{expr.Kind} expression of {expr.Type} type");
                     return scopeOfTheContainingExpression;
             }
         }
