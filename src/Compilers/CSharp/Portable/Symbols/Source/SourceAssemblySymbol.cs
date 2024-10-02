@@ -2776,7 +2776,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         private static string DefaultValue(TypeSymbol type, bool isRef)
         {
             // TODO: localize these strings
-            if (isRef || type.IsReferenceType) return "null";
+            if (isRef) return "(null reference)";
+            if (type.IsReferenceType) return "null";
             switch (type.SpecialType)
             {
                 case SpecialType.System_Boolean:
