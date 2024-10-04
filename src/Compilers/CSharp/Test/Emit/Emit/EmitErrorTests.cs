@@ -314,6 +314,7 @@ public class A
         public void ToManyUserStrings()
         {
             var builder = new System.Text.StringBuilder();
+            var expectedOutputBuilder = new System.Text.StringBuilder();
             builder.Append(@"
 public class A
 {
@@ -332,6 +333,10 @@ public class A
         }
 }
 ");
+
+            CompileAndVerify(builder.ToString(),
+                verify: Verification.Skipped,
+                expectedOutput: "").VerifyDiagnostics().Dump();
 
             var compilation = CreateCompilation(builder.ToString());
 

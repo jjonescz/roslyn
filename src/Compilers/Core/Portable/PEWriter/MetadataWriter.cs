@@ -3147,6 +3147,8 @@ namespace Microsoft.Cci
             var str = _pseudoStringTokenToStringMap[index];
             if (str != null)
             {
+                // TODO: Need to somehow get pointer to the data, not the field.
+                var fieldHandle = ResolveEntityHandleFromPseudoToken(pseudoStringToken);
                 var handle = GetOrAddUserString(str);
                 _pseudoStringTokenToTokenMap[index] = handle;
                 _pseudoStringTokenToStringMap[index] = null; // Set to null to bypass next lookup
@@ -3306,7 +3308,6 @@ namespace Microsoft.Cci
                             writer.Offset = offset;
 
                             int pseudoToken = ReadInt32(generatedIL, offset);
-                            UserStringHandle handle;
 
                             if ((uint)pseudoToken == ModuleVersionIdStringToken)
                             {
@@ -3322,14 +3323,12 @@ namespace Microsoft.Cci
                                     mvidStringFixup = reserved.Content;
                                 }
 
-                                handle = mvidStringHandle;
+                                writer.WriteInt32(MetadataTokens.GetToken(mvidStringHandle));
                             }
                             else
                             {
-                                handle = ResolveUserStringHandleFromPseudoToken(pseudoToken);
+                                writer.WriteInt32(MetadataTokens.GetToken(ResolveUserStringHandleFromPseudoToken(pseudoToken)));
                             }
-
-                            writer.WriteInt32(MetadataTokens.GetToken(handle));
 
                             offset += 4;
                             break;

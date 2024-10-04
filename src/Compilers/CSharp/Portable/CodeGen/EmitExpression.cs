@@ -3481,6 +3481,14 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 {
                     EmitInitObj(type, used, syntaxNode);
                 }
+                else if (constantValue.IsString)
+                {
+                    _builder.EmitOpCode(ILOpCode.Ldstr);
+                    var utf8 = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+                    var data = utf8.GetBytes(constantValue.StringValue).ToImmutableArray();
+                    var field = _builder.module.GetFieldForData(data, alignment: 1, syntaxNode, _diagnostics.DiagnosticBag);
+                    _builder.EmitToken(field, syntaxNode, _diagnostics.DiagnosticBag);
+                }
                 else
                 {
                     _builder.EmitConstantValue(constantValue);
