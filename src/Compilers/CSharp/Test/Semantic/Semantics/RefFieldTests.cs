@@ -2279,7 +2279,7 @@ public class B
         {
             var source = """
                 #pragma warning disable 169
-                #pragma warning disable 649, 9265
+                #pragma warning disable 9265
                 ref struct R<T, U>
                 {
                     public required ref T F1;
@@ -5972,31 +5972,31 @@ class Program
 }";
             var comp = CreateCompilation(new[] { source, IsExternalInitTypeDefinition }, targetFramework: TargetFramework.Net70);
             comp.VerifyEmitDiagnostics(
-                // 0.cs(3,27): warning CS9265: Field 'S<T>.F' is never ref-assigned to, and will always have its default value (null reference)
+                // (3,27): warning CS9265: Field 'S<T>.F' is never ref-assigned to, and will always have its default value (null reference)
                 //     public ref readonly T F;
                 Diagnostic(ErrorCode.WRN_UnassignedInternalRefField, "F").WithArguments("S<T>.F").WithLocation(3, 27),
-                // 0.cs(7,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
+                // (7,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
                 //         F = tValue; // 1
                 Diagnostic(ErrorCode.ERR_AssignReadonlyNotField, "F").WithArguments("field", "F").WithLocation(7, 9),
-                // 0.cs(7,9): warning CS9201: Ref field 'F' should be ref-assigned before use.
+                // (7,9): warning CS9201: Ref field 'F' should be ref-assigned before use.
                 //         F = tValue; // 1
                 Diagnostic(ErrorCode.WRN_UseDefViolationRefField, "F").WithArguments("F").WithLocation(7, 9),
-                // 0.cs(8,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
+                // (8,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
                 //         F = tRef; // 2
                 Diagnostic(ErrorCode.ERR_AssignReadonlyNotField, "F").WithArguments("field", "F").WithLocation(8, 9),
-                // 0.cs(9,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
+                // (9,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
                 //         F = tOut; // 3
                 Diagnostic(ErrorCode.ERR_AssignReadonlyNotField, "F").WithArguments("field", "F").WithLocation(9, 9),
-                // 0.cs(10,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
+                // (10,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
                 //         F = tIn; // 4
                 Diagnostic(ErrorCode.ERR_AssignReadonlyNotField, "F").WithArguments("field", "F").WithLocation(10, 9),
-                // 0.cs(16,13): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
+                // (16,13): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
                 //             F = GetValue(); // 5
                 Diagnostic(ErrorCode.ERR_AssignReadonlyNotField, "F").WithArguments("field", "F").WithLocation(16, 13),
-                // 0.cs(17,13): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
+                // (17,13): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
                 //             F = GetRef(); // 6
                 Diagnostic(ErrorCode.ERR_AssignReadonlyNotField, "F").WithArguments("field", "F").WithLocation(17, 13),
-                // 0.cs(18,13): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
+                // (18,13): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
                 //             F = GetRefReadonly(); // 7
                 Diagnostic(ErrorCode.ERR_AssignReadonlyNotField, "F").WithArguments("field", "F").WithLocation(18, 13));
         }
@@ -6069,31 +6069,31 @@ class Program
 }";
             var comp = CreateCompilation(new[] { source, IsExternalInitTypeDefinition }, targetFramework: TargetFramework.Net70);
             comp.VerifyEmitDiagnostics(
-                // 0.cs(3,36): warning CS9265: Field 'S<T>.F' is never ref-assigned to, and will always have its default value (null reference)
+                // (3,36): warning CS9265: Field 'S<T>.F' is never ref-assigned to, and will always have its default value (null reference)
                 //     public readonly ref readonly T F;
                 Diagnostic(ErrorCode.WRN_UnassignedInternalRefField, "F").WithArguments("S<T>.F").WithLocation(3, 36),
-                // 0.cs(7,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
+                // (7,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
                 //         F = tValue; // 1
                 Diagnostic(ErrorCode.ERR_AssignReadonlyNotField, "F").WithArguments("field", "F").WithLocation(7, 9),
-                // 0.cs(7,9): warning CS9201: Ref field 'F' should be ref-assigned before use.
+                // (7,9): warning CS9201: Ref field 'F' should be ref-assigned before use.
                 //         F = tValue; // 1
                 Diagnostic(ErrorCode.WRN_UseDefViolationRefField, "F").WithArguments("F").WithLocation(7, 9),
-                // 0.cs(8,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
+                // (8,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
                 //         F = tRef; // 2
                 Diagnostic(ErrorCode.ERR_AssignReadonlyNotField, "F").WithArguments("field", "F").WithLocation(8, 9),
-                // 0.cs(9,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
+                // (9,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
                 //         F = tOut; // 3
                 Diagnostic(ErrorCode.ERR_AssignReadonlyNotField, "F").WithArguments("field", "F").WithLocation(9, 9),
-                // 0.cs(10,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
+                // (10,9): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
                 //         F = tIn; // 4
                 Diagnostic(ErrorCode.ERR_AssignReadonlyNotField, "F").WithArguments("field", "F").WithLocation(10, 9),
-                // 0.cs(16,13): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
+                // (16,13): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
                 //             F = GetValue(); // 5
                 Diagnostic(ErrorCode.ERR_AssignReadonlyNotField, "F").WithArguments("field", "F").WithLocation(16, 13),
-                // 0.cs(17,13): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
+                // (17,13): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
                 //             F = GetRef(); // 6
                 Diagnostic(ErrorCode.ERR_AssignReadonlyNotField, "F").WithArguments("field", "F").WithLocation(17, 13),
-                // 0.cs(18,13): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
+                // (18,13): error CS8331: Cannot assign to field 'F' or use it as the right hand side of a ref assignment because it is a readonly variable
                 //             F = GetRefReadonly(); // 7
                 Diagnostic(ErrorCode.ERR_AssignReadonlyNotField, "F").WithArguments("field", "F").WithLocation(18, 13));
         }
@@ -7511,7 +7511,7 @@ class Program
         public void AssignOutParameterFrom_RefField()
         {
             var source =
-@"#pragma warning disable 649
+@"#pragma warning disable 9265
 ref struct S<T>
 {
     public ref T Ref;
@@ -7543,19 +7543,7 @@ class Program
     static void FromInReadonlyRefReadonly<T>(in S<T> s, out T t) { t = s.ReadonlyRefReadonly; }
 }";
             var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
-            comp.VerifyEmitDiagnostics(
-                // (4,18): warning CS9265: Field 'S<T>.Ref' is never ref-assigned to, and will always have its default value (null reference)
-                //     public ref T Ref;
-                Diagnostic(ErrorCode.WRN_UnassignedInternalRefField, "Ref").WithArguments("S<T>.Ref").WithLocation(4, 18),
-                // (5,27): warning CS9265: Field 'S<T>.RefReadonly' is never ref-assigned to, and will always have its default value (null reference)
-                //     public ref readonly T RefReadonly;
-                Diagnostic(ErrorCode.WRN_UnassignedInternalRefField, "RefReadonly").WithArguments("S<T>.RefReadonly").WithLocation(5, 27),
-                // (6,27): warning CS9265: Field 'S<T>.ReadonlyRef' is never ref-assigned to, and will always have its default value (null reference)
-                //     public readonly ref T ReadonlyRef;
-                Diagnostic(ErrorCode.WRN_UnassignedInternalRefField, "ReadonlyRef").WithArguments("S<T>.ReadonlyRef").WithLocation(6, 27),
-                // (7,36): warning CS9265: Field 'S<T>.ReadonlyRefReadonly' is never ref-assigned to, and will always have its default value (null reference)
-                //     public readonly ref readonly T ReadonlyRefReadonly;
-                Diagnostic(ErrorCode.WRN_UnassignedInternalRefField, "ReadonlyRefReadonly").WithArguments("S<T>.ReadonlyRefReadonly").WithLocation(7, 36));
+            comp.VerifyEmitDiagnostics();
         }
 
         [Fact]
@@ -8310,7 +8298,7 @@ class Program
         public void RefParameter_ReadonlyRefReadonly_PEVerifyCompat()
         {
             var source =
-@"#pragma warning disable 649
+@"#pragma warning disable 9265
 ref struct S<T>
 {
     public readonly ref readonly T F;
@@ -8338,10 +8326,7 @@ class Program
     static void FromIn4B<T>(in S<T> s) { M4(s.F); }
 }";
             var comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview.WithFeature("peverify-compat"), targetFramework: TargetFramework.Net70);
-            comp.VerifyEmitDiagnostics(
-                // (4,36): warning CS9265: Field 'S<T>.F' is never ref-assigned to, and will always have its default value (null reference)
-                //     public readonly ref readonly T F;
-                Diagnostic(ErrorCode.WRN_UnassignedInternalRefField, "F").WithArguments("S<T>.F").WithLocation(4, 36));
+            comp.VerifyEmitDiagnostics();
         }
 
         [Fact]
@@ -30733,7 +30718,7 @@ Block[B2] - Exit
         public void RefField_AsRefArgument_06()
         {
             var verifier = CompileAndVerify("""
-                #pragma warning disable CS0649 // Field 'S.F1' is never assigned to, and will always have its default value 0
+                #pragma warning disable CS9265 // Field 'S.F1' is never ref-assigned to, and will always have its default value (null reference)
 
                 ref struct S
                 {
@@ -30752,10 +30737,7 @@ Block[B2] - Exit
                 verify: Verification.Skipped,
                 targetFramework: TargetFramework.NetCoreApp);
 
-            verifier.VerifyDiagnostics(
-                // (5,29): warning CS9265: Field 'S.F1' is never ref-assigned to, and will always have its default value (null reference)
-                //     public ref readonly int F1;
-                Diagnostic(ErrorCode.WRN_UnassignedInternalRefField, "F1").WithArguments("S.F1").WithLocation(5, 29));
+            verifier.VerifyDiagnostics();
 
             verifier.VerifyIL("S.Test1",
 @"
@@ -30993,7 +30975,7 @@ Block[B2] - Exit
         public void RefField_AsRefArgument_12()
         {
             var verifier = CompileAndVerify("""
-                #pragma warning disable CS0649 // Field 'S.F1' is never assigned to, and will always have its default value 0
+                #pragma warning disable CS9265 // Field 'S.F1' is never ref-assigned to, and will always have its default value (null reference)
 
                 ref struct S
                 {
@@ -31012,10 +30994,7 @@ Block[B2] - Exit
                 verify: Verification.Skipped,
                 targetFramework: TargetFramework.NetCoreApp);
 
-            verifier.VerifyDiagnostics(
-                // (5,29): warning CS9265: Field 'S.F1' is never ref-assigned to, and will always have its default value (null reference)
-                //     public readonly ref int F1;
-                Diagnostic(ErrorCode.WRN_UnassignedInternalRefField, "F1").WithArguments("S.F1").WithLocation(5, 29));
+            verifier.VerifyDiagnostics();
 
             verifier.VerifyIL("S.Test1",
 @"
