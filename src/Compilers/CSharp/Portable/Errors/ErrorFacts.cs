@@ -210,6 +210,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             // docs/compilers/CSharp/Warnversion Warning Waves.md
             switch (code)
             {
+                case ErrorCode.WRN_UnassignedInternalRefField:
+                    // Warning level 10 is exclusively for warnings introduced in the compiler
+                    // shipped with dotnet 10 (C# 14) and that can be reported for pre-existing code.
+                    return 10;
                 case ErrorCode.WRN_AddressOfInAsync:
                 case ErrorCode.WRN_ByValArraySizeConstRequired:
                     // Warning level 8 is exclusively for warnings introduced in the compiler
@@ -560,7 +564,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ErrorCode.WRN_PartialPropertySignatureDifference:
                 case ErrorCode.WRN_FieldIsAmbiguous:
                 case ErrorCode.WRN_UninitializedNonNullableBackingField:
-                case ErrorCode.WRN_UnassignedInternalRefField:
                     return 1;
                 default:
                     return 0;

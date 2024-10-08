@@ -5473,6 +5473,28 @@ class Program
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75315")]
+        public void DefiniteAssignment_WarningWave()
+        {
+            var source = """
+                ref struct R
+                {
+                    public ref int F;
+                }
+                """;
+            CreateCompilation(source, options: TestOptions.ReleaseDll.WithWarningLevel(9), targetFramework: TargetFramework.Net70).VerifyDiagnostics();
+
+            var expectedDiagnostics = new[]
+            {
+                // (3,20): warning CS9265: Field 'R.F' is never ref-assigned to, and will always have its default value (null reference)
+                //     public ref int F;
+                Diagnostic(ErrorCode.WRN_UnassignedInternalRefField, "F").WithArguments("R.F").WithLocation(3, 20)
+            };
+
+            CreateCompilation(source, options: TestOptions.ReleaseDll.WithWarningLevel(10), targetFramework: TargetFramework.Net70).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(expectedDiagnostics);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75315")]
         public void DefiniteAssignment_RefField_Unassigned_InAtCallSite()
         {
             var comp = CreateCompilation("""
