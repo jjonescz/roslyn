@@ -593,6 +593,65 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override BoundNode? VisitRecursivePattern(BoundRecursivePattern node)
         {
+            if (node.DeconstructMethod is { } deconstructMethod)
+            {
+                Debug.Assert(node.Deconstruction.Length == deconstructMethod.ParameterCount - (deconstructMethod.RequiresInstanceReceiver ? 0 : 1));
+
+                ImmutableArray<BoundExpression> arguments = node.Deconstruction.SelectAsArray(static x =>
+                {
+                    if (x.Pattern is BoundObjectPattern { VariableAccess: { } variableAccess })
+                    {
+                        return variableAccess;
+                    }
+
+                    return new BoundDiscardExpression(
+                        x.Syntax,
+                        NullableAnnotation.NotAnnotated,
+                        isInferred: false,
+                        x.Pattern.NarrowedType)
+                    {
+                        WasCompilerGenerated = true,
+                    };
+                });
+
+                var receiver = new BoundValuePlaceholder(
+                    node.Syntax,
+                    node.InputType)
+                {
+                    WasCompilerGenerated = true,
+                };
+
+                var placeholders = ArrayBuilder<(BoundValuePlaceholderBase, uint)>.GetInstance();
+                placeholders.Add((receiver, _localScopeDepth));
+
+                if (!deconstructMethod.RequiresInstanceReceiver)
+                {
+                    arguments = arguments.Insert(0, receiver);
+                    receiver = null;
+                }
+
+                using (var _ = new PlaceholderRegion(this, placeholders))
+                {
+                    CheckInvocationArgMixing(
+                        node.Syntax,
+                        MethodInfo.Create(deconstructMethod),
+                        receiver,
+                        receiverIsSubjectToCloning: ThreeState.False,
+                        deconstructMethod.Parameters,
+                        arguments,
+                        deconstructMethod.ParameterRefKinds,
+                        argsToParamsOpt: default,
+                        _localScopeDepth,
+                        _diagnostics);
+                }
+
+                using (var _ = new PatternInput(this, _localScopeDepth))
+                {
+                    SetPatternLocalScopes(node);
+                    return base.VisitRecursivePattern(node);
+                }
+            }
+
             SetPatternLocalScopes(node);
             return base.VisitRecursivePattern(node);
         }
