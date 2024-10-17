@@ -597,29 +597,14 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (node.DeconstructMethod is { } deconstructMethod)
             {
+                Debug.Assert(node.Deconstruction.Length == deconstructMethod.ParameterCount - (deconstructMethod.RequiresInstanceReceiver ? 0 : 1));
+
                 using (new PatternInput(this, _localScopeDepth))
                 {
                     base.VisitRecursivePattern(node);
                 }
 
-                Debug.Assert(node.Deconstruction.Length == deconstructMethod.ParameterCount - (deconstructMethod.RequiresInstanceReceiver ? 0 : 1));
-
-                ImmutableArray<BoundExpression> arguments = node.Deconstruction.SelectAsArray(static x =>
-                {
-                    if (x.Pattern is BoundObjectPattern { VariableAccess: { } variableAccess })
-                    {
-                        return variableAccess;
-                    }
-
-                    return new BoundDiscardExpression(
-                        x.Syntax,
-                        NullableAnnotation.NotAnnotated,
-                        isInferred: false,
-                        x.Pattern.NarrowedType)
-                    {
-                        WasCompilerGenerated = true,
-                    };
-                });
+                var placeholders = ArrayBuilder<(BoundValuePlaceholderBase, uint)>.GetInstance();
 
                 var receiver = new BoundValuePlaceholder(
                     node.Syntax,
@@ -627,9 +612,24 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     WasCompilerGenerated = true,
                 };
-
-                var placeholders = ArrayBuilder<(BoundValuePlaceholderBase, uint)>.GetInstance();
                 placeholders.Add((receiver, _localScopeDepth));
+
+                ImmutableArray<BoundExpression> arguments = node.Deconstruction.SelectAsArray(static (x, placeholders) =>
+                {
+                    if (x.Pattern is BoundObjectPattern { VariableAccess: { } variableAccess })
+                    {
+                        return variableAccess;
+                    }
+
+                    var placeholder = new BoundValuePlaceholder(
+                        x.Syntax,
+                        x.Pattern.NarrowedType)
+                    {
+                        WasCompilerGenerated = true,
+                    };
+                    placeholders.Add((placeholder, CallingMethodScope));
+                    return placeholder;
+                }, placeholders);
 
                 if (!deconstructMethod.RequiresInstanceReceiver)
                 {
