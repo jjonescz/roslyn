@@ -597,8 +597,6 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (node.DeconstructMethod is { } deconstructMethod)
             {
-                Debug.Assert(node.Deconstruction.Length == deconstructMethod.ParameterCount - (deconstructMethod.RequiresInstanceReceiver ? 0 : 1));
-
                 using (new PatternInput(this, _localScopeDepth))
                 {
                     base.VisitRecursivePattern(node);
