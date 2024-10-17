@@ -604,12 +604,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 var placeholders = ArrayBuilder<(BoundValuePlaceholderBase, uint)>.GetInstance();
 
-                var receiver = new BoundValuePlaceholder(
+                var receiver = new BoundDeconstructValuePlaceholder(
                     node.Syntax,
-                    node.InputType)
-                {
-                    WasCompilerGenerated = true,
-                };
+                    variableSymbol: null,
+                    isDiscardExpression: false,
+                    node.InputType);
                 placeholders.Add((receiver, _localScopeDepth));
 
                 ImmutableArray<BoundExpression> arguments = node.Deconstruction.SelectAsArray(static (x, placeholders) =>
@@ -619,12 +618,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                         return variableAccess;
                     }
 
-                    var placeholder = new BoundValuePlaceholder(
+                    var placeholder = new BoundDeconstructValuePlaceholder(
                         x.Syntax,
-                        x.Pattern.NarrowedType)
-                    {
-                        WasCompilerGenerated = true,
-                    };
+                        variableSymbol: null,
+                        isDiscardExpression: true,
+                        x.Pattern.NarrowedType);
                     placeholders.Add((placeholder, CallingMethodScope));
                     return placeholder;
                 }, placeholders);
