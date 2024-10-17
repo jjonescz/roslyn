@@ -593,8 +593,15 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override BoundNode? VisitRecursivePattern(BoundRecursivePattern node)
         {
+            SetPatternLocalScopes(node);
+
             if (node.DeconstructMethod is { } deconstructMethod)
             {
+                using (new PatternInput(this, _localScopeDepth))
+                {
+                    base.VisitRecursivePattern(node);
+                }
+
                 Debug.Assert(node.Deconstruction.Length == deconstructMethod.ParameterCount - (deconstructMethod.RequiresInstanceReceiver ? 0 : 1));
 
                 ImmutableArray<BoundExpression> arguments = node.Deconstruction.SelectAsArray(static x =>
@@ -645,14 +652,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                         _diagnostics);
                 }
 
-                using (new PatternInput(this, _localScopeDepth))
-                {
-                    SetPatternLocalScopes(node);
-                    return base.VisitRecursivePattern(node);
-                }
+                return null;
             }
 
-            SetPatternLocalScopes(node);
             return base.VisitRecursivePattern(node);
         }
 
