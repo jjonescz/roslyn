@@ -630,7 +630,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     receiver = null;
                 }
 
-                using (var _ = new PlaceholderRegion(this, placeholders))
+                using (new PlaceholderRegion(this, placeholders))
                 {
                     CheckInvocationArgMixing(
                         node.Syntax,
@@ -645,7 +645,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         _diagnostics);
                 }
 
-                using (var _ = new PatternInput(this, _localScopeDepth))
+                using (new PatternInput(this, _localScopeDepth))
                 {
                     SetPatternLocalScopes(node);
                     return base.VisitRecursivePattern(node);
