@@ -182,7 +182,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             internal set
             {
 #if DEBUG
-                Debug.Assert((_attributes & BoundNodeAttributes.WasCompilerGeneratedIsChecked) == 0,
+                Debug.Assert(Debugger.IsAttached || (_attributes & BoundNodeAttributes.WasCompilerGeneratedIsChecked) == 0,
                     "compiler generated flag should not be set after reading it");
 #endif
 
@@ -204,7 +204,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public void ResetCompilerGenerated(bool newCompilerGenerated)
         {
 #if DEBUG
-            Debug.Assert((_attributes & BoundNodeAttributes.WasCompilerGeneratedIsChecked) == 0,
+            Debug.Assert(Debugger.IsAttached || (_attributes & BoundNodeAttributes.WasCompilerGeneratedIsChecked) == 0,
                 "compiler generated flag should not be set after reading it");
 #endif
             if (newCompilerGenerated)
@@ -237,7 +237,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             set
             {
 #if DEBUG
-                Debug.Assert((_attributes & BoundNodeAttributes.WasTopLevelNullabilityChecked) == 0,
+                Debug.Assert(Debugger.IsAttached || (_attributes & BoundNodeAttributes.WasTopLevelNullabilityChecked) == 0,
                     "bound node nullability should not be set after reading it");
 #endif
                 _attributes &= ~(BoundNodeAttributes.TopLevelAnnotationMask | BoundNodeAttributes.TopLevelFlowStateMaybeNull);
