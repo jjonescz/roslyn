@@ -10222,6 +10222,32 @@ public struct Vec4
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75592")]
+        public void SelfAssignment_CallerContext_StructReceiver()
+        {
+            var source = """
+                using System.Diagnostics.CodeAnalysis;
+
+                S s = default;
+                s.M();
+
+                ref struct S
+                {
+                    int field;
+                    ref int refField;
+
+                    [UnscopedRef] public void M()
+                    {
+                        this.refField = ref this.field;
+                    }
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (13,9): error CS9079: Cannot ref-assign 'this.field' to 'refField' because 'this.field' can only escape the current method through a return statement.
+                //         this.refField = ref this.field;
+                Diagnostic(ErrorCode.ERR_RefAssignReturnOnly, "this.refField = ref this.field").WithArguments("refField", "this.field").WithLocation(13, 9));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75592")]
         public void SelfAssignment_CallerContext_Scoped()
         {
             var source = """
