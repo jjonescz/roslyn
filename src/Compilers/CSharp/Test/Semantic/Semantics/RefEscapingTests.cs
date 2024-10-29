@@ -10175,21 +10175,24 @@ public struct Vec4
         public void SelfAssignment_ReturnOnly()
         {
             var source = """
+                S s = default;
+                S.M(ref s);
+
                 ref struct S
                 {
                     int field;
                     ref int refField;
 
-                    static void M(ref S s)
+                    public static void M(ref S s)
                     {
                         s.refField = ref s.field;
                     }
                 }
                 """;
             CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
-                // (8,9): error CS9079: Cannot ref-assign 's.field' to 'refField' because 's.field' can only escape the current method through a return statement.
+                // (11,9): error CS9079: Cannot ref-assign 's.field' to 'refField' because 's.field' can only escape the current method through a return statement.
                 //         s.refField = ref s.field;
-                Diagnostic(ErrorCode.ERR_RefAssignReturnOnly, "s.refField = ref s.field").WithArguments("refField", "s.field").WithLocation(8, 9));
+                Diagnostic(ErrorCode.ERR_RefAssignReturnOnly, "s.refField = ref s.field").WithArguments("refField", "s.field").WithLocation(11, 9));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75592")]
