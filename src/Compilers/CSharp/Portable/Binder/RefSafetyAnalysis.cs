@@ -503,9 +503,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                     SetLocalScopes(localSymbol, _localScopeDepth, _localScopeDepth);
 
                     valEscapeScope = GetValEscape(initializer, _localScopeDepth);
+                    CheckValEscape(initializer.Syntax, initializer, escapeFrom: valEscapeScope, escapeTo: _localScopeDepth, checkingReceiver: false, _diagnostics);
                     if (localSymbol.RefKind != RefKind.None)
                     {
                         refEscapeScope = GetRefEscape(initializer, _localScopeDepth);
+                        CheckRefEscape(initializer.Syntax, initializer, escapeFrom: refEscapeScope, escapeTo: _localScopeDepth, checkingReceiver: false, _diagnostics);
                     }
 
                     SetLocalScopes(localSymbol, refEscapeScope, valEscapeScope);
