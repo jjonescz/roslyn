@@ -2109,6 +2109,14 @@ namespace Microsoft.CodeAnalysis.CSharp
                         GetRefEscape(argument, scopeOfTheContainingExpression) :
                         GetValEscape(argument, scopeOfTheContainingExpression);
 
+                    // TODO: Use Binder.CheckValueKind.
+                    if (isArgumentRefEscape &&
+                        argument.Kind != BoundKind.DiscardExpression &&
+                        !Binder.HasHome(argument, Binder.AddressKind.ReadOnly, _symbol, peVerifyCompatEnabled: false, stackLocalsOpt: null))
+                    {
+                        argEscape++;
+                    }
+
                     escapeScope = Math.Max(escapeScope, argEscape);
                     if (escapeScope >= scopeOfTheContainingExpression)
                     {
