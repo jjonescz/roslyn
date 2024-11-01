@@ -10216,6 +10216,224 @@ public struct Vec4
                 Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "1").WithLocation(18, 22));
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_Constructor_Literal()
+        {
+            var source = """
+                var r = new R(111);
+                r.F.ToString();
+
+                ref struct R(in int x)
+                {
+                    public ref readonly int F = ref x;
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (1,9): error CS8347: Cannot use a result of 'R.R(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                // var r = new R(111);
+                Diagnostic(ErrorCode.ERR_EscapeCall, "new R(111)").WithArguments("R.R(in int)", "x").WithLocation(1, 9),
+                // (1,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                // var r = new R(111);
+                Diagnostic(ErrorCode.ERR_EscapeOther, "111").WithLocation(1, 15));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_Constructor_RValue()
+        {
+            var source = """
+                var r = new R(F());
+                r.F.ToString();
+
+                static int F() => 111;
+
+                ref struct R(in int x)
+                {
+                    public ref readonly int F = ref x;
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (1,9): error CS8347: Cannot use a result of 'R.R(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                // var r = new R(F());
+                Diagnostic(ErrorCode.ERR_EscapeCall, "new R(F())").WithArguments("R.R(in int)", "x").WithLocation(1, 9),
+                // (1,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                // var r = new R(F());
+                Diagnostic(ErrorCode.ERR_EscapeOther, "F()").WithLocation(1, 15));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_Constructor_Assignment()
+        {
+            var source = """
+                R r = default;
+                r = new R(111);
+                r.F.ToString();
+
+                ref struct R(in int x)
+                {
+                    public ref readonly int F = ref x;
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (2,11): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                // r = new R(111);
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "111").WithLocation(2, 11),
+                // (2,5): error CS8347: Cannot use a result of 'R.R(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                // r = new R(111);
+                Diagnostic(ErrorCode.ERR_EscapeCall, "new R(111)").WithArguments("R.R(in int)", "x").WithLocation(2, 5));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_Initializer()
+        {
+            var source = """
+                var r = new R() { F = ref M(111) };
+                r.F.ToString();
+
+                static ref readonly int M(in int x) => ref x;
+
+                ref struct R
+                {
+                    public ref readonly int F;
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (1,17): error CS8352: Cannot use variable 'F = ref M(111)' in this context because it may expose referenced variables outside of their declaration scope
+                // var r = new R() { F = ref M(111) };
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "{ F = ref M(111) }").WithArguments("F = ref M(111)").WithLocation(1, 17),
+                // (1,19): error CS8374: Cannot ref-assign 'M(111)' to 'F' because 'M(111)' has a narrower escape scope than 'F'.
+                // var r = new R() { F = ref M(111) };
+                Diagnostic(ErrorCode.ERR_RefAssignNarrower, "F = ref M(111)").WithArguments("F", "M(111)").WithLocation(1, 19));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_RefStructParameter()
+        {
+            var source = """
+                using System.Diagnostics.CodeAnalysis;
+
+                var r = new R();
+                M1(111);
+                M2(222, r);
+                M3(333, r);
+                M4(444, ref r);
+                M5(555, ref r);
+
+                static void M1(in int x) { }
+                static void M2(in int x, R r) => r.F = ref x;
+                static void M3([UnscopedRef] in int x, R r) => r.F = ref x;
+                static void M4(in int x, ref R r) => r.F = ref x;
+                static void M5([UnscopedRef] in int x, ref R r) => r.F = ref x;
+
+                ref struct R
+                {
+                    public ref readonly int F;
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (8,4): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                // M5(555, ref r);
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "555").WithLocation(8, 4),
+                // (8,1): error CS8350: This combination of arguments to 'M5(in int, ref R)' is disallowed because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                // M5(555, ref r);
+                Diagnostic(ErrorCode.ERR_CallArgMixing, "M5(555, ref r)").WithArguments("M5(in int, ref R)", "x").WithLocation(8, 1),
+                // (11,34): error CS9079: Cannot ref-assign 'x' to 'F' because 'x' can only escape the current method through a return statement.
+                // static void M2(in int x, R r) => r.F = ref x;
+                Diagnostic(ErrorCode.ERR_RefAssignReturnOnly, "r.F = ref x").WithArguments("F", "x").WithLocation(11, 34),
+                // (13,38): error CS9079: Cannot ref-assign 'x' to 'F' because 'x' can only escape the current method through a return statement.
+                // static void M4(in int x, ref R r) => r.F = ref x;
+                Diagnostic(ErrorCode.ERR_RefAssignReturnOnly, "r.F = ref x").WithArguments("F", "x").WithLocation(13, 38));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_FactoryMethod()
+        {
+            var source = """
+                var r = M(111);
+                r.F.ToString();
+
+                static R M(in int x) => new R(x);
+
+                ref struct R(in int x)
+                {
+                    public ref readonly int F = ref x;
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (1,9): error CS8347: Cannot use a result of 'M(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                // var r = M(111);
+                Diagnostic(ErrorCode.ERR_EscapeCall, "M(111)").WithArguments("M(in int)", "x").WithLocation(1, 9),
+                // (1,11): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                // var r = M(111);
+                Diagnostic(ErrorCode.ERR_EscapeOther, "111").WithLocation(1, 11));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_FactoryMethod_OutParameter()
+        {
+            var source = """
+                R r;
+                M(111, out r);
+                r.F.ToString();
+
+                static void M(in int x, out R r) => r = new R(x);
+
+                ref struct R(in int x)
+                {
+                    public ref readonly int F = ref x;
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (2,3): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                // M(111, out r);
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "111").WithLocation(2, 3),
+                // (2,1): error CS8350: This combination of arguments to 'M(in int, out R)' is disallowed because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                // M(111, out r);
+                Diagnostic(ErrorCode.ERR_CallArgMixing, "M(111, out r)").WithArguments("M(in int, out R)", "x").WithLocation(2, 1));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_FactoryMethod_OutParameter_Inline()
+        {
+            var source = """
+                M(111, out var r);
+                r.F.ToString();
+
+                static void M(in int x, out R r) => r = new R(x);
+
+                ref struct R(in int x)
+                {
+                    public ref readonly int F = ref x;
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics();
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_InstanceMethod()
+        {
+            var source = """
+                using System.Diagnostics.CodeAnalysis;
+
+                var r = new R();
+                r.Set(111);
+                r.F.ToString();
+
+                ref struct R
+                {
+                    public ref readonly int F;
+
+                    public void Set([UnscopedRef] in int x) => F = ref x;
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (4,7): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                // r.Set(111);
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "111").WithLocation(4, 7),
+                // (4,1): error CS8350: This combination of arguments to 'R.Set(in int)' is disallowed because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                // r.Set(111);
+                Diagnostic(ErrorCode.ERR_CallArgMixing, "r.Set(111)").WithArguments("R.Set(in int)", "x").WithLocation(4, 1));
+        }
+
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/72873")]
         public void Utf8Addition()
         {
