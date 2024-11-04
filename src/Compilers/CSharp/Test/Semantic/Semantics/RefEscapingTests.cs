@@ -10391,21 +10391,20 @@ public struct Vec4
                 Diagnostic(ErrorCode.ERR_CallArgMixing, "M(111, out r)").WithArguments("M(in int, out R)", "x").WithLocation(2, 1));
         }
 
-        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
-        public void RefTemp_FactoryMethod_OutParameter_Inline()
+        [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        [InlineData(LanguageVersion.CSharp10)]
+        [InlineData(LanguageVersion.CSharp11)]
+        [InlineData(LanguageVersion.Preview)]
+        public void RefTemp_FactoryMethod_OutParameter_Inline(LanguageVersion langVersion)
         {
             var source = """
                 M(111, out var r);
-                r.F.ToString();
 
-                static void M(in int x, out R r) => r = new R(x);
+                static void M(in int x, out R r) => throw null;
 
-                ref struct R(in int x)
-                {
-                    public ref readonly int F = ref x;
-                }
+                ref struct R { }
                 """;
-            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+            CreateCompilation(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
                 // (1,12): error CS8352: Cannot use variable 'r' in this context because it may expose referenced variables outside of their declaration scope
                 // M(111, out var r);
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "var r").WithArguments("r").WithLocation(1, 12));
