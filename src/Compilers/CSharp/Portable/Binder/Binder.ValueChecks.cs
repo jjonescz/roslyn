@@ -2968,7 +2968,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 foreach (var (_, fromArg, _, isRefEscape) in escapeValues)
                 {
                     inferredDestinationValEscape = Math.Max(inferredDestinationValEscape, isRefEscape
-                        ? GetRefEscape(fromArg, scopeOfTheContainingExpression)
+                        ? narrowRValueEscape(fromArg, GetRefEscape(fromArg, scopeOfTheContainingExpression))
                         : GetValEscape(fromArg, scopeOfTheContainingExpression));
                 }
 
@@ -2977,8 +2977,17 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (ShouldInferDeclarationExpressionValEscape(argument, out var localSymbol))
                     {
                         SetLocalScopes(localSymbol, refEscapeScope: _localScopeDepth, valEscapeScope: inferredDestinationValEscape);
+                        CheckValEscape(argument.Syntax, argument, escapeFrom: inferredDestinationValEscape, escapeTo: _localScopeDepth, checkingReceiver: false, _diagnostics);
                     }
                 }
+            }
+
+            uint narrowRValueEscape(BoundExpression argument, uint escape)
+            {
+                // TODO: Use Binder.CheckValueKind.
+                return !Binder.HasHome(argument, Binder.AddressKind.ReadOnly, _symbol, peVerifyCompatEnabled: false, stackLocalsOpt: null)
+                    ? escape + 1
+                    : escape;
             }
         }
 

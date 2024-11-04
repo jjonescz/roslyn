@@ -10405,7 +10405,10 @@ public struct Vec4
                     public ref readonly int F = ref x;
                 }
                 """;
-            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics();
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (1,12): error CS8352: Cannot use variable 'r' in this context because it may expose referenced variables outside of their declaration scope
+                // M(111, out var r);
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "var r").WithArguments("r").WithLocation(1, 12));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
