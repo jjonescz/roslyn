@@ -10299,10 +10299,7 @@ public struct Vec4
             CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
                 // (1,17): error CS8352: Cannot use variable 'F = ref M(111)' in this context because it may expose referenced variables outside of their declaration scope
                 // var r = new R() { F = ref M(111) };
-                Diagnostic(ErrorCode.ERR_EscapeVariable, "{ F = ref M(111) }").WithArguments("F = ref M(111)").WithLocation(1, 17),
-                // (1,19): error CS8374: Cannot ref-assign 'M(111)' to 'F' because 'M(111)' has a narrower escape scope than 'F'.
-                // var r = new R() { F = ref M(111) };
-                Diagnostic(ErrorCode.ERR_RefAssignNarrower, "F = ref M(111)").WithArguments("F", "M(111)").WithLocation(1, 19));
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "{ F = ref M(111) }").WithArguments("F = ref M(111)").WithLocation(1, 17));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
@@ -10408,7 +10405,6 @@ public struct Vec4
         }
 
         [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
-        [InlineData(LanguageVersion.CSharp10)]
         [InlineData(LanguageVersion.CSharp11)]
         [InlineData(LanguageVersion.Preview)]
         public void RefTemp_FactoryMethod_OutParameter_Inline(LanguageVersion langVersion)
@@ -10424,6 +10420,19 @@ public struct Vec4
                 // (1,12): error CS8352: Cannot use variable 'r' in this context because it may expose referenced variables outside of their declaration scope
                 // M(111, out var r);
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "var r").WithArguments("r").WithLocation(1, 12));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_FactoryMethod_OutParameter_Inline_CSharp10()
+        {
+            var source = """
+                M(111, out var r);
+
+                static void M(in int x, out R r) => throw null;
+
+                ref struct R { }
+                """;
+            CreateCompilation(source, parseOptions: TestOptions.Regular10).VerifyDiagnostics();
         }
 
         [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
