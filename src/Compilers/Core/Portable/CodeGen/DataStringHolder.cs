@@ -28,6 +28,7 @@ internal sealed class DataStringHolder : DefaultTypeDef, Cci.INamespaceTypeDefin
     private readonly Cci.ITypeReference _systemString;
     private readonly Cci.ICustomAttribute _compilerGeneratedAttribute;
     private readonly PrivateImplementationDetails _privateImplementationDetails;
+    private readonly Cci.IMethodDefinition _bytesToStringHelper;
 
     private int _frozen;
     private ImmutableArray<SynthesizedStaticField> _orderedSynthesizedFields;
@@ -45,7 +46,8 @@ internal sealed class DataStringHolder : DefaultTypeDef, Cci.INamespaceTypeDefin
         Cci.ITypeReference systemObject,
         Cci.ITypeReference systemString,
         Cci.ICustomAttribute compilerGeneratedAttribute,
-        PrivateImplementationDetails privateImplementationDetails)
+        PrivateImplementationDetails privateImplementationDetails,
+        Cci.IMethodDefinition bytesToStringHelper)
     {
         _name = TypeNamePrefix + dataHash;
         _moduleBuilder = moduleBuilder;
@@ -53,6 +55,7 @@ internal sealed class DataStringHolder : DefaultTypeDef, Cci.INamespaceTypeDefin
         _systemString = systemString;
         _compilerGeneratedAttribute = compilerGeneratedAttribute;
         _privateImplementationDetails = privateImplementationDetails;
+        _bytesToStringHelper = bytesToStringHelper;
     }
 
     public string Name => _name;

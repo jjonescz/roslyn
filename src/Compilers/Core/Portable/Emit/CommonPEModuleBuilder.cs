@@ -1064,24 +1064,42 @@ namespace Microsoft.CodeAnalysis.Emit
 
                 TSyntaxNode tSyntaxNode = (TSyntaxNode)syntaxNode;
 
+                PrivateImplementationDetails details = @this.GetPrivateImplClass(tSyntaxNode, diagnostics);
+
                 return new DataStringHolder(
                     moduleBuilder: @this,
                     dataHash: PrivateImplementationDetails.DataToHex(data),
                     systemObject: @this.GetSpecialType(SpecialType.System_Object, tSyntaxNode, diagnostics),
                     systemString: @this.GetSpecialType(SpecialType.System_String, tSyntaxNode, diagnostics),
                     compilerGeneratedAttribute: @this.SynthesizeAttribute(WellKnownMember.System_Runtime_CompilerServices_CompilerGeneratedAttribute__ctor),
-                    privateImplementationDetails: @this.GetPrivateImplClass(tSyntaxNode, diagnostics));
+                    privateImplementationDetails: details,
+                    bytesToStringHelper: @this.GetOrCreateBytesToStringHelper(details, tSyntaxNode, diagnostics));
             },
             (this, syntaxNode, diagnostics));
 
             return holder.CreateDataField(data);
         }
 
+        private Cci.IMethodDefinition GetOrCreateBytesToStringHelper(PrivateImplementationDetails details, TSyntaxNode syntaxOpt, DiagnosticBag diagnostics)
+        {
+            if (details.GetMethod(PrivateImplementationDetails.SynthesizedBytesToStringFunctionName) is { } method)
+            {
+                return method;
+            }
+
+            method = CreateBytesToStringHelper(syntaxOpt, diagnostics);
+            Debug.Assert(((ISynthesizedGlobalMethodSymbol)method.GetInternalSymbol()).ContainingPrivateImplementationDetailsType == (object)details);
+
+            details.TryAddSynthesizedMethod(method);
+
+            return details.GetMethod(PrivateImplementationDetails.SynthesizedBytesToStringFunctionName);
+        }
+
+        protected abstract Cci.IMethodDefinition CreateBytesToStringHelper(TSyntaxNode syntaxOpt, DiagnosticBag diagnostics);
+
+        protected abstract Cci.IMethodDefinition CreateDataStringHolderStaticConstructor(TSyntaxNode syntaxOpt, DiagnosticBag diagnostics);
+
         public abstract Cci.IMethodReference GetInitArrayHelper();
-
-        public abstract Cci.IMethodReference GetEncodingUtf8();
-
-        public abstract Cci.IMethodReference GetEncodingGetString();
 
         public ArrayMethods ArrayMethods
         {

@@ -673,11 +673,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             foreach (Cci.IMethodDefinition definition in privateImplClass.GetMethods(context).Concat(privateImplClass.GetTopLevelAndNestedTypeMethods(context)))
             {
                 var method = (MethodSymbol)definition.GetInternalSymbol();
-                if (method is not null)
-                {
-                    Debug.Assert(method.SynthesizesLoweredBoundBody);
-                    method.GenerateMethodBody(compilationState, diagnostics);
-                }
+                Debug.Assert(method.SynthesizesLoweredBoundBody);
+                method.GenerateMethodBody(compilationState, diagnostics);
             }
 
             CompileSynthesizedMethods(compilationState);
