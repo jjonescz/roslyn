@@ -10391,6 +10391,22 @@ public struct Vec4
                 Diagnostic(ErrorCode.ERR_CallArgMixing, "M(111, out r)").WithArguments("M(in int, out R)", "x").WithLocation(2, 1));
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_FactoryMethod_OutParameter_Discard()
+        {
+            var source = """
+                M(111, out _);
+
+                static void M(in int x, out R r) => r = new R(x);
+
+                ref struct R(in int x)
+                {
+                    public ref readonly int F = ref x;
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics();
+        }
+
         [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
         [InlineData(LanguageVersion.CSharp10)]
         [InlineData(LanguageVersion.CSharp11)]
@@ -10408,6 +10424,22 @@ public struct Vec4
                 // (1,12): error CS8352: Cannot use variable 'r' in this context because it may expose referenced variables outside of their declaration scope
                 // M(111, out var r);
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "var r").WithArguments("r").WithLocation(1, 12));
+        }
+
+        [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        [InlineData(LanguageVersion.CSharp10)]
+        [InlineData(LanguageVersion.CSharp11)]
+        [InlineData(LanguageVersion.Preview)]
+        public void RefTemp_FactoryMethod_OutParameter_Inline_Discard(LanguageVersion langVersion)
+        {
+            var source = """
+                M(111, out var _);
+
+                static void M(in int x, out R r) => throw null;
+
+                ref struct R { }
+                """;
+            CreateCompilation(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics();
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
