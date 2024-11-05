@@ -2109,14 +2109,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                         GetRefEscape(argument, scopeOfTheContainingExpression) :
                         GetValEscape(argument, scopeOfTheContainingExpression);
 
-                    // TODO: Use Binder.CheckValueKind.
-                    if (isArgumentRefEscape &&
-                        argument.Kind != BoundKind.DiscardExpression &&
-                        !Binder.HasHome(argument, Binder.AddressKind.ReadOnly, _symbol, peVerifyCompatEnabled: false, stackLocalsOpt: null))
-                    {
-                        argEscape++;
-                    }
-
                     escapeScope = Math.Max(escapeScope, argEscape);
                     if (escapeScope >= scopeOfTheContainingExpression)
                     {
@@ -2968,7 +2960,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 foreach (var (_, fromArg, _, isRefEscape) in escapeValues)
                 {
                     inferredDestinationValEscape = Math.Max(inferredDestinationValEscape, isRefEscape
-                        ? narrowRValueEscape(fromArg, GetRefEscape(fromArg, scopeOfTheContainingExpression))
+                        ? GetRefEscape(fromArg, scopeOfTheContainingExpression)
                         : GetValEscape(fromArg, scopeOfTheContainingExpression));
                 }
 
@@ -2980,14 +2972,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                         CheckValEscape(argument.Syntax, argument, escapeFrom: inferredDestinationValEscape, escapeTo: _localScopeDepth, checkingReceiver: false, _diagnostics);
                     }
                 }
-            }
-
-            uint narrowRValueEscape(BoundExpression argument, uint escape)
-            {
-                // TODO: Use Binder.CheckValueKind.
-                return !Binder.HasHome(argument, Binder.AddressKind.ReadOnly, _symbol, peVerifyCompatEnabled: false, stackLocalsOpt: null)
-                    ? escape + 1
-                    : escape;
             }
         }
 
@@ -3349,10 +3333,23 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         /// <summary>
         /// Computes the widest scope depth to which the given expression can escape by reference.
-        /// 
-        /// NOTE: in a case if expression cannot be passed by an alias (RValue and similar), the ref-escape is scopeOfTheContainingExpression
+        ///
+        /// NOTE: in a case if expression cannot be passed by an alias (RValue and similar), the ref-escape is scopeOfTheContainingExpression + 1
         ///       There are few cases where RValues are permitted to be passed by reference which implies that a temporary local proxy is passed instead.
-        ///       We reflect such behavior by constraining the escape value to the narrowest scope possible. 
+        ///       This temporary can be reused by the emit layer, so we have to constrain it to a narrower scope. Consider:
+        ///
+        ///       ref struct R(in int x);
+        ///       R r = new R(111);
+        ///
+        ///       is equivalent to:
+        ///
+        ///       R r;
+        ///       {
+        ///           int c = 111;
+        ///           r = new R(c);
+        ///       }
+        ///
+        ///       In both cases the RValue passed to the constructor has ref-escape one narrower than the local scope.
         /// </summary>
         internal uint GetRefEscape(BoundExpression expr, uint scopeOfTheContainingExpression)
         {
@@ -3375,7 +3372,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // constants/literals cannot ref-escape current scope
             if (expr.ConstantValueOpt != null)
             {
-                return scopeOfTheContainingExpression;
+                return scopeOfTheContainingExpression + 1;
             }
 
             // cover case that cannot refer to local state
@@ -3654,7 +3651,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // At this point we should have covered all the possible cases for anything that is not a strict RValue.
-            return scopeOfTheContainingExpression;
+            return scopeOfTheContainingExpression + 1;
         }
 
         /// <summary>
