@@ -189,6 +189,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             AddOrSetLocalScopes(local, refEscapeScope, valEscapeScope);
 
             CheckValEscape(initializer.Syntax, initializer, escapeFrom: valEscapeScope, escapeTo: _localScopeDepth, checkingReceiver: false, _diagnostics);
+
+            if (local.RefKind != RefKind.None)
+            {
+                CheckRefEscape(initializer.Syntax, initializer, escapeFrom: refEscapeScope, escapeTo: _localScopeDepth, checkingReceiver: false, _diagnostics);
+            }
         }
 
         private void AddPlaceholderScope(BoundValuePlaceholderBase placeholder, uint valEscapeScope)
