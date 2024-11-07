@@ -8807,6 +8807,12 @@ public struct Vec4
                 // (41,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 5
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(41, 16),
+                // (46,15): error CS8347: Cannot use a result of 'S.explicit operator S(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                //         S s = (S)300;
+                Diagnostic(ErrorCode.ERR_EscapeCall, "(S)300").WithArguments("S.explicit operator S(in int)", "x").WithLocation(46, 15),
+                // (46,18): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         S s = (S)300;
+                Diagnostic(ErrorCode.ERR_EscapeOther, "300").WithLocation(46, 18),
                 // (47,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 6
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(47, 16));
@@ -8906,6 +8912,12 @@ public struct Vec4
                 // (41,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 5
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(41, 16),
+                // (46,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         S s = 300;
+                Diagnostic(ErrorCode.ERR_EscapeOther, "300").WithLocation(46, 15),
+                // (46,15): error CS8347: Cannot use a result of 'S.implicit operator S(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                //         S s = 300;
+                Diagnostic(ErrorCode.ERR_EscapeCall, "300").WithArguments("S.implicit operator S(in int)", "x").WithLocation(46, 15),
                 // (47,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 6
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(47, 16));
@@ -9076,12 +9088,30 @@ public struct Vec4
                 // (29,16): error CS8347: Cannot use a result of 'S.implicit operator S(in int?)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
                 //         return x; // 5
                 Diagnostic(ErrorCode.ERR_EscapeCall, "x").WithArguments("S.implicit operator S(in int?)", "x").WithLocation(29, 16),
+                // (34,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         S s = x;
+                Diagnostic(ErrorCode.ERR_EscapeOther, "x").WithLocation(34, 15),
+                // (34,15): error CS8347: Cannot use a result of 'S.implicit operator S(in int?)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                //         S s = x;
+                Diagnostic(ErrorCode.ERR_EscapeCall, "x").WithArguments("S.implicit operator S(in int?)", "x").WithLocation(34, 15),
                 // (35,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 6
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(35, 16),
+                // (40,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         S s = x;
+                Diagnostic(ErrorCode.ERR_EscapeOther, "x").WithLocation(40, 15),
+                // (40,15): error CS8347: Cannot use a result of 'S.implicit operator S(in int?)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                //         S s = x;
+                Diagnostic(ErrorCode.ERR_EscapeCall, "x").WithArguments("S.implicit operator S(in int?)", "x").WithLocation(40, 15),
                 // (41,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 7
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(41, 16),
+                // (46,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         S s = 300;
+                Diagnostic(ErrorCode.ERR_EscapeOther, "300").WithLocation(46, 15),
+                // (46,15): error CS8347: Cannot use a result of 'S.implicit operator S(in int?)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                //         S s = 300;
+                Diagnostic(ErrorCode.ERR_EscapeCall, "300").WithArguments("S.implicit operator S(in int?)", "x").WithLocation(46, 15),
                 // (47,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 8
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(47, 16));
@@ -9376,6 +9406,12 @@ public struct Vec4
                 // (41,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 5
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(41, 16),
+                // (46,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         S s = 300 + default(S);
+                Diagnostic(ErrorCode.ERR_EscapeOther, "300").WithLocation(46, 15),
+                // (46,15): error CS8347: Cannot use a result of 'S.operator +(in int, S)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                //         S s = 300 + default(S);
+                Diagnostic(ErrorCode.ERR_EscapeCall, "300 + default(S)").WithArguments("S.operator +(in int, S)", "x").WithLocation(46, 15),
                 // (47,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 6
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(47, 16));
@@ -9962,6 +9998,12 @@ public struct Vec4
                 // (41,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 5
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(41, 16),
+                // (46,15): error CS8347: Cannot use a result of 'S.operator +(in S)' in this context because it may expose variables referenced by parameter 's' outside of their declaration scope
+                //         S s = +new S();
+                Diagnostic(ErrorCode.ERR_EscapeCall, "+new S()").WithArguments("S.operator +(in S)", "s").WithLocation(46, 15),
+                // (46,16): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         S s = +new S();
+                Diagnostic(ErrorCode.ERR_EscapeOther, "new S()").WithLocation(46, 16),
                 // (47,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 6
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(47, 16));

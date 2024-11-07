@@ -528,6 +528,9 @@ class C
                 // (11,18): error CS1510: A ref or out value must be an assignable variable
                 //         rs = ref (string)o;
                 Diagnostic(ErrorCode.ERR_RefLvalueExpected, "(string)o").WithLocation(11, 18),
+                // (12,9): error CS8374: Cannot ref-assign 's' to 'ro' because 's' has a narrower escape scope than 'ro'.
+                //         ro = ref s;
+                Diagnostic(ErrorCode.ERR_RefAssignNarrower, "ro = ref s").WithArguments("ro", "s").WithLocation(12, 9),
                 // (12,18): error CS8173: The expression must be of type 'object' because it is being assigned by reference
                 //         ro = ref s;
                 Diagnostic(ErrorCode.ERR_RefAssignmentMustHaveIdentityConversion, "s").WithArguments("object").WithLocation(12, 18));
