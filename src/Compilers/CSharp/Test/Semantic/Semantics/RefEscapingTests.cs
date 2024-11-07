@@ -10238,6 +10238,27 @@ public struct Vec4
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_Constructor_Literal_String()
+        {
+            var source = """
+                var r = new R("abc");
+                r.F.ToString();
+
+                ref struct R(in string x)
+                {
+                    public ref readonly string F = ref x;
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (1,9): error CS8347: Cannot use a result of 'R.R(in string)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                // var r = new R("abc");
+                Diagnostic(ErrorCode.ERR_EscapeCall, @"new R(""abc"")").WithArguments("R.R(in string)", "x").WithLocation(1, 9),
+                // (1,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                // var r = new R("abc");
+                Diagnostic(ErrorCode.ERR_EscapeOther, @"""abc""").WithLocation(1, 15));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
         public void RefTemp_Constructor_RValue()
         {
             var source = """
