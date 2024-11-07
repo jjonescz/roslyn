@@ -10259,6 +10259,44 @@ public struct Vec4
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_Constructor_Conversion()
+        {
+            var source = """
+                string s = "abc";
+                var r = new R(s);
+                r.F.ToString();
+
+                ref struct R(in object x)
+                {
+                    public ref readonly object F = ref x;
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (2,9): error CS8347: Cannot use a result of 'R.R(in object)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                // var r = new R(s);
+                Diagnostic(ErrorCode.ERR_EscapeCall, "new R(s)").WithArguments("R.R(in object)", "x").WithLocation(2, 9),
+                // (2,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                // var r = new R(s);
+                Diagnostic(ErrorCode.ERR_EscapeOther, "s").WithLocation(2, 15));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_Constructor_Variable()
+        {
+            var source = """
+                string s = "abc";
+                var r = new R(s);
+                r.F.ToString();
+
+                ref struct R(in string x)
+                {
+                    public ref readonly string F = ref x;
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics();
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
         public void RefTemp_Constructor_RValue()
         {
             var source = """
