@@ -10283,6 +10283,26 @@ public struct Vec4
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_Constructor_PatternMatch()
+        {
+            var source = """
+                if (new R(111) is { } r)
+                {
+                    r.F.ToString();
+                }
+
+                ref struct R(in int x)
+                {
+                    public ref readonly int F = ref x;
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (1,19): error CS8352: Cannot use variable '{ } r' in this context because it may expose referenced variables outside of their declaration scope
+                // if (new R(111) is { } r)
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "{ } r").WithArguments("{ } r").WithLocation(1, 19));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
         public void RefTemp_Initializer()
         {
             var source = """
