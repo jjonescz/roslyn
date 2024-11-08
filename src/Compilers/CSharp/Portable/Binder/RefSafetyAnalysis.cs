@@ -188,11 +188,10 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             AddOrSetLocalScopes(local, refEscapeScope, valEscapeScope);
 
-            CheckValEscape(initializer.Syntax, initializer, escapeFrom: valEscapeScope, escapeTo: _localScopeDepth, checkingReceiver: false, _diagnostics);
-
-            if (local.RefKind != RefKind.None)
+            if (valEscapeScope > _localScopeDepth ||
+                (local.RefKind != RefKind.None && refEscapeScope > _localScopeDepth))
             {
-                CheckRefEscape(initializer.Syntax, initializer, escapeFrom: refEscapeScope, escapeTo: _localScopeDepth, checkingReceiver: false, _diagnostics);
+                Error(_diagnostics, ErrorCode.ERR_EscapeOther, initializer.Syntax);
             }
         }
 
