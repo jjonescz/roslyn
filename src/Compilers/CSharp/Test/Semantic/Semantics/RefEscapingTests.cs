@@ -10706,6 +10706,68 @@ public struct Vec4
                 Diagnostic(ErrorCode.ERR_EscapeOther, "111.M()").WithLocation(3, 3));
         }
 
+        [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        [InlineData(LanguageVersion.CSharp10)]
+        [InlineData(LanguageVersion.CSharp11)]
+        [InlineData(LanguageVersion.Preview)]
+        public void RefTemp_Forwarding(LanguageVersion langVersion)
+        {
+            var source = """
+                static ref readonly int M1(in int x) => ref x;
+
+                static void M2(int x, int y) => System.Console.WriteLine($"{x} {y}");
+
+                M2(M1(111), M1(222));
+                """;
+            CompileAndVerify(source,
+                expectedOutput: "111 222",
+                verify: Verification.Fails,
+                parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion))
+                .VerifyDiagnostics()
+                .VerifyIL("<top-level-statements-entry-point>", """
+                    {
+                      // Code size       31 (0x1f)
+                      .maxstack  2
+                      .locals init (int V_0,
+                                    int V_1)
+                      IL_0000:  ldc.i4.s   111
+                      IL_0002:  stloc.0
+                      IL_0003:  ldloca.s   V_0
+                      IL_0005:  call       "ref readonly int Program.<<Main>$>g__M1|0_0(in int)"
+                      IL_000a:  ldind.i4
+                      IL_000b:  ldc.i4     0xde
+                      IL_0010:  stloc.1
+                      IL_0011:  ldloca.s   V_1
+                      IL_0013:  call       "ref readonly int Program.<<Main>$>g__M1|0_0(in int)"
+                      IL_0018:  ldind.i4
+                      IL_0019:  call       "void Program.<<Main>$>g__M2|0_1(int, int)"
+                      IL_001e:  ret
+                    }
+                    """);
+        }
+
+        [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        [InlineData(LanguageVersion.CSharp10)]
+        [InlineData(LanguageVersion.CSharp11)]
+        [InlineData(LanguageVersion.Preview)]
+        public void RefTemp_Forwarding_ByRef(LanguageVersion langVersion)
+        {
+            var source = """
+                static ref readonly int M1(in int x) => ref x;
+
+                static void M2(in int x, in int y) { }
+
+                M2(M1(111), M1(222));
+                """;
+            CreateCompilation(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+                // (5,4): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                // M2(M1(111), M1(222));
+                Diagnostic(ErrorCode.ERR_EscapeOther, "M1(111)").WithLocation(5, 4),
+                // (5,13): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                // M2(M1(111), M1(222));
+                Diagnostic(ErrorCode.ERR_EscapeOther, "M1(222)").WithLocation(5, 13));
+        }
+
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
         public void RefTemp_Receiver_Argument()
         {
