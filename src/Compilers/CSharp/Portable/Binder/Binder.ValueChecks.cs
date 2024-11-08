@@ -3416,6 +3416,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // it can, however, ref-escape to any other level (since TypedReference can val-escape to any other level)
                     return CurrentMethodScope;
 
+                case BoundKind.DeconstructValuePlaceholder:
                 case BoundKind.DiscardExpression:
                     // same as write-only byval local
                     return scopeOfTheContainingExpression;
