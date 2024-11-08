@@ -3418,7 +3418,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 case BoundKind.DiscardExpression:
                     // same as write-only byval local
-                    break;
+                    return scopeOfTheContainingExpression;
 
                 case BoundKind.DynamicMemberAccess:
                 case BoundKind.DynamicIndexerAccess:
