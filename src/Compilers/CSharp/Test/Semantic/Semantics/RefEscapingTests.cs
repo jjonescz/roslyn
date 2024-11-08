@@ -10710,7 +10710,6 @@ public struct Vec4
         {
             var source = """
                 ref readonly int x = ref 111.M();
-                x.ToString();
 
                 static class E
                 {
