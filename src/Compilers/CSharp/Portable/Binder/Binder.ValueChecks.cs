@@ -2828,7 +2828,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     var scope = refKind != RefKind.None
                         ? GetRefEscape(argument, scopeOfTheContainingExpression)
                         : GetValEscape(argument, scopeOfTheContainingExpression);
-                    if (scope > scopeOfTheContainingExpression)
+                    if (!scope.IsConvertibleTo(scopeOfTheContainingExpression))
                     {
                         Error(_diagnostics, ErrorCode.ERR_EscapeOther, argument.Syntax);
                     }
@@ -2911,7 +2911,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     ? GetRefEscape(arg, scopeOfTheContainingExpression)
                     : GetValEscape(arg, scopeOfTheContainingExpression);
 
-                if (scope > scopeOfTheContainingExpression)
+                if (!scope.IsConvertibleTo(scopeOfTheContainingExpression))
                 {
                     valid = false;
                     Error(_diagnostics, ErrorCode.ERR_EscapeOther, arg.Syntax);
@@ -3378,7 +3378,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             // constants/literals cannot ref-escape current scope
             if (expr.ConstantValueOpt != null)
             {
-                return scopeOfTheContainingExpression + (narrowRValues ? 1u : 0u);
+                return narrowRValues
+                    ? scopeOfTheContainingExpression.Narrower()
+                    : scopeOfTheContainingExpression;
             }
 
             // cover case that cannot refer to local state
@@ -3417,7 +3419,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 case BoundKind.CapturedReceiverPlaceholder:
                     // Equivalent to a non-ref local with the underlying receiver as an initializer provided at declaration
-                    return ((BoundCapturedReceiverPlaceholder)expr).LocalScopeDepth + (narrowRValues ? 1u : 0u);
+                    var receiverScope = ((BoundCapturedReceiverPlaceholder)expr).LocalScopeDepth;
+                    return narrowRValues ? receiverScope.Narrower() : receiverScope;
 
                 case BoundKind.ThisReference:
                     var thisParam = ((MethodSymbol)_symbol).ThisParameter;
@@ -3658,7 +3661,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // At this point we should have covered all the possible cases for anything that is not a strict RValue.
-            return scopeOfTheContainingExpression + (narrowRValues ? 1u : 0u);
+            return narrowRValues
+                ? scopeOfTheContainingExpression.Narrower()
+                : scopeOfTheContainingExpression;
         }
 
         /// <summary>

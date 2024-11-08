@@ -188,8 +188,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             AddOrSetLocalScopes(local, refEscapeScope, valEscapeScope);
 
-            if (valEscapeScope > _localScopeDepth ||
-                (local.RefKind != RefKind.None && refEscapeScope > _localScopeDepth))
+            if (!valEscapeScope.IsConvertibleTo(_localScopeDepth) ||
+                (local.RefKind != RefKind.None && !refEscapeScope.IsConvertibleTo(_localScopeDepth)))
             {
                 Error(_diagnostics, ErrorCode.ERR_EscapeOther, initializer.Syntax);
             }
