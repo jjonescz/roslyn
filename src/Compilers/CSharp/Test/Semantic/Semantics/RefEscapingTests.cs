@@ -10684,6 +10684,28 @@ public struct Vec4
             CreateCompilation(source).VerifyDiagnostics(expectedDiagnostics);
         }
 
+        [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        [InlineData(LanguageVersion.CSharp10)]
+        [InlineData(LanguageVersion.CSharp11)]
+        [InlineData(LanguageVersion.Preview)]
+        public void RefTemp_ExtensionMethod(LanguageVersion langVersion)
+        {
+            var source = """
+                static void M(in int x) { }
+
+                M(111.M());
+
+                static class E
+                {
+                    public static ref readonly int M(this in int x) => ref x;
+                }
+                """;
+            CreateCompilation(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics(
+                // (3,3): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                // M(111.M());
+                Diagnostic(ErrorCode.ERR_EscapeOther, "111.M()").WithLocation(3, 3));
+        }
+
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
         public void RefTemp_Receiver_Argument()
         {

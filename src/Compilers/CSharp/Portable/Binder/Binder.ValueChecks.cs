@@ -2039,7 +2039,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // - val escape of all byval arguments  (refs cannot be wrapped into values, so their ref escape is irrelevant, only use val escapes)
                     uint argumentEscape = (isRefEscape, argumentIsRefEscape) switch
                     {
-                        (true, true) => GetRefEscape(argument, scopeOfTheContainingExpression),
+                        (true, true) => GetRefEscape(argument, scopeOfTheContainingExpression, narrowRValues: true),
                         (false, false) => GetValEscape(argument, scopeOfTheContainingExpression),
                         _ => escapeScope
                     };
@@ -2844,6 +2844,16 @@ namespace Microsoft.CodeAnalysis.CSharp
                         // infer a legal value escape for it. It does not contribute input as it's declared
                         // at this point (functions like an `out` in the new escape rules)
                         continue;
+                    }
+
+                    // Check that arguments don't have narrower escape scope than the containing expression.
+                    // That can happen when RValues are implicitly passed by reference and potentially captured to another ref.
+                    var scope = refKind != RefKind.None
+                        ? GetRefEscape(argument, scopeOfTheContainingExpression)
+                        : GetValEscape(argument, scopeOfTheContainingExpression);
+                    if (scope > scopeOfTheContainingExpression)
+                    {
+                        Error(_diagnostics, ErrorCode.ERR_EscapeOther, argument.Syntax);
                     }
 
                     if (refKind.IsWritableReference()
