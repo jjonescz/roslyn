@@ -519,6 +519,9 @@ class C
                 // (21,24): error CS8347: Cannot use a result of 'Program.Test1(Program.S1)' in this context because it may expose variables referenced by parameter 'arg' outside of their declaration scope
                 //             return ref Test1(MayNotWrap());
                 Diagnostic(ErrorCode.ERR_EscapeCall, "Test1(MayNotWrap())").WithArguments("Program.Test1(Program.S1)", "arg").WithLocation(21, 24),
+                // (21,30): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //             return ref Test1(MayNotWrap());
+                Diagnostic(ErrorCode.ERR_EscapeOther, "MayNotWrap()").WithLocation(21, 30),
                 // (21,30): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
                 //             return ref Test1(MayNotWrap());
                 Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "MayNotWrap()").WithLocation(21, 30),
@@ -6943,12 +6946,18 @@ public struct Vec4
 ";
             var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
             comp.VerifyEmitDiagnostics(
+                // (21,30): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         ref Vec4 xyzw1 = ref ReadOnlyVec.Self;
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self").WithLocation(21, 30),
                 // (22,20): error CS8157: Cannot return 'xyzw1' by reference because it was initialized to a value that cannot be returned by reference
                 //         return ref xyzw1;
                 Diagnostic(ErrorCode.ERR_RefReturnNonreturnableLocal, "xyzw1").WithArguments("xyzw1").WithLocation(22, 20),
                 // (29,20): error CS8157: Cannot return 'xyzw2' by reference because it was initialized to a value that cannot be returned by reference
                 //         return ref xyzw2;
                 Diagnostic(ErrorCode.ERR_RefReturnNonreturnableLocal, "xyzw2").WithArguments("xyzw2").WithLocation(29, 20),
+                // (34,30): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         ref Vec4 xyzw3 = ref ReadOnlyVec.Self2();
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self2()").WithLocation(34, 30),
                 // (35,20): error CS8157: Cannot return 'xyzw3' by reference because it was initialized to a value that cannot be returned by reference
                 //         return ref xyzw3;
                 Diagnostic(ErrorCode.ERR_RefReturnNonreturnableLocal, "xyzw3").WithArguments("xyzw3").WithLocation(35, 20),
@@ -7010,12 +7019,18 @@ struct Wrap
 ";
             var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
             comp.VerifyEmitDiagnostics(
+                // (11,23): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //     ref Wrap r1 = ref i.Self; // defensive copy
+                Diagnostic(ErrorCode.ERR_EscapeOther, "i.Self").WithLocation(11, 23),
                 // (12,16): error CS8157: Cannot return 'r1' by reference because it was initialized to a value that cannot be returned by reference
                 //     return ref r1; // ref to the local copy
                 Diagnostic(ErrorCode.ERR_RefReturnNonreturnableLocal, "r1").WithArguments("r1").WithLocation(12, 16),
                 // (19,16): error CS8157: Cannot return 'r2' by reference because it was initialized to a value that cannot be returned by reference
                 //     return ref r2; // ref to the local copy
                 Diagnostic(ErrorCode.ERR_RefReturnNonreturnableLocal, "r2").WithArguments("r2").WithLocation(19, 16),
+                // (24,23): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //     ref Wrap r3 = ref i.Self2();
+                Diagnostic(ErrorCode.ERR_EscapeOther, "i.Self2()").WithLocation(24, 23),
                 // (25,16): error CS8157: Cannot return 'r3' by reference because it was initialized to a value that cannot be returned by reference
                 //     return ref r3;
                 Diagnostic(ErrorCode.ERR_RefReturnNonreturnableLocal, "r3").WithArguments("r3").WithLocation(25, 16),
@@ -7158,6 +7173,9 @@ public struct Vec4
 ";
             var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
             comp.VerifyEmitDiagnostics(
+                // (15,21): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         var xyzw1 = ReadOnlyVec.Self;
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self").WithLocation(15, 21),
                 // (16,16): error CS8352: Cannot use variable 'xyzw1' in this context because it may expose referenced variables outside of their declaration scope
                 //         return xyzw1;
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "xyzw1").WithArguments("xyzw1").WithLocation(16, 16),
@@ -7304,6 +7322,9 @@ public struct Vec4
 ";
             var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
             comp.VerifyEmitDiagnostics(
+                // (15,21): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         var xyzw1 = ReadOnlyVec.Self;
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self").WithLocation(15, 21),
                 // (16,16): error CS8352: Cannot use variable 'xyzw1' in this context because it may expose referenced variables outside of their declaration scope
                 //         return xyzw1;
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "xyzw1").WithArguments("xyzw1").WithLocation(16, 16),
@@ -7441,6 +7462,9 @@ public struct Vec4
                 // (16,30): warning CS8656: Call to non-readonly member 'Vec4.Self2()' from a 'readonly' member results in an implicit copy of 'this'.
                 //         ref Vec4 xyzw3 = ref this.Self2();
                 Diagnostic(ErrorCode.WRN_ImplicitCopyInReadOnlyMember, "this").WithArguments("Vec4.Self2()", "this").WithLocation(16, 30),
+                // (16,30): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         ref Vec4 xyzw3 = ref this.Self2();
+                Diagnostic(ErrorCode.ERR_EscapeOther, "this.Self2()").WithLocation(16, 30),
                 // (17,20): error CS8157: Cannot return 'xyzw3' by reference because it was initialized to a value that cannot be returned by reference
                 //         return ref xyzw3;
                 Diagnostic(ErrorCode.ERR_RefReturnNonreturnableLocal, "xyzw3").WithArguments("xyzw3").WithLocation(17, 20),
@@ -7595,12 +7619,21 @@ public struct Vec4
 ";
             var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
             comp.VerifyEmitDiagnostics(
+                // (13,33): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //                     var xyzw1 = ReadOnlyVec.Self2();
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self2()").WithLocation(13, 33),
                 // (14,25): error CS8352: Cannot use variable 'xyzw1' in this context because it may expose referenced variables outside of their declaration scope
                 //                     x = xyzw1;
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "xyzw1").WithArguments("xyzw1").WithLocation(14, 25),
+                // (21,25): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //             var xyzw2 = ReadOnlyVec.Self2();
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self2()").WithLocation(21, 25),
                 // (22,17): error CS8352: Cannot use variable 'xyzw2' in this context because it may expose referenced variables outside of their declaration scope
                 //             x = xyzw2;
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "xyzw2").WithArguments("xyzw2").WithLocation(22, 17),
+                // (28,21): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         var xyzw3 = ReadOnlyVec.Self2();
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self2()").WithLocation(28, 21),
                 // (29,13): error CS8352: Cannot use variable 'xyzw3' in this context because it may expose referenced variables outside of their declaration scope
                 //         x = xyzw3;
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "xyzw3").WithArguments("xyzw3").WithLocation(29, 13)
@@ -7773,21 +7806,39 @@ public struct Vec4
                 // (8,20): error CS8345: Field or auto-implemented property cannot be of type 'S' unless it is an instance member of a ref struct.
                 //     private static S s;
                 Diagnostic(ErrorCode.ERR_FieldAutoPropCantBeByRefLike, "S").WithArguments("S").WithLocation(8, 20),
+                // (17,33): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //                     var xyzw2 = ReadOnlyVec.Self2();
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self2()").WithLocation(17, 33),
                 // (18,25): error CS8347: Cannot use a result of 'S.S(Span<float>)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
                 //                     s = new S(xyzw2);
                 Diagnostic(ErrorCode.ERR_EscapeCall, "new S(xyzw2)").WithArguments("S.S(System.Span<float>)", "x").WithLocation(18, 25),
+                // (18,31): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //                     s = new S(xyzw2);
+                Diagnostic(ErrorCode.ERR_EscapeOther, "xyzw2").WithLocation(18, 31),
                 // (18,31): error CS8352: Cannot use variable 'xyzw2' in this context because it may expose referenced variables outside of their declaration scope
                 //                     s = new S(xyzw2);
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "xyzw2").WithArguments("xyzw2").WithLocation(18, 31),
+                // (25,25): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //             var xyzw3 = ReadOnlyVec.Self2();
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self2()").WithLocation(25, 25),
                 // (26,17): error CS8347: Cannot use a result of 'S.S(Span<float>)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
                 //             s = new S(xyzw3);
                 Diagnostic(ErrorCode.ERR_EscapeCall, "new S(xyzw3)").WithArguments("S.S(System.Span<float>)", "x").WithLocation(26, 17),
+                // (26,23): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //             s = new S(xyzw3);
+                Diagnostic(ErrorCode.ERR_EscapeOther, "xyzw3").WithLocation(26, 23),
                 // (26,23): error CS8352: Cannot use variable 'xyzw3' in this context because it may expose referenced variables outside of their declaration scope
                 //             s = new S(xyzw3);
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "xyzw3").WithArguments("xyzw3").WithLocation(26, 23),
+                // (32,21): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         var xyzw4 = ReadOnlyVec.Self2();
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self2()").WithLocation(32, 21),
                 // (33,13): error CS8347: Cannot use a result of 'S.S(Span<float>)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
                 //         s = new S(xyzw4);
                 Diagnostic(ErrorCode.ERR_EscapeCall, "new S(xyzw4)").WithArguments("S.S(System.Span<float>)", "x").WithLocation(33, 13),
+                // (33,19): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         s = new S(xyzw4);
+                Diagnostic(ErrorCode.ERR_EscapeOther, "xyzw4").WithLocation(33, 19),
                 // (33,19): error CS8352: Cannot use variable 'xyzw4' in this context because it may expose referenced variables outside of their declaration scope
                 //         s = new S(xyzw4);
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "xyzw4").WithArguments("xyzw4").WithLocation(33, 19)
@@ -7838,12 +7889,21 @@ public struct Vec4
                 // (11,45): error CS8347: Cannot use a result of 'S.S(Span<float>)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
                 //     static int F2 = GetInt(static () => s = new S(ReadOnlyVec.Self2()));
                 Diagnostic(ErrorCode.ERR_EscapeCall, "new S(ReadOnlyVec.Self2())").WithArguments("S.S(System.Span<float>)", "x").WithLocation(11, 45),
+                // (11,51): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //     static int F2 = GetInt(static () => s = new S(ReadOnlyVec.Self2()));
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self2()").WithLocation(11, 51),
                 // (11,51): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
                 //     static int F2 = GetInt(static () => s = new S(ReadOnlyVec.Self2()));
                 Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "ReadOnlyVec").WithLocation(11, 51),
+                // (12,21): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //     int F3 = GetInt(s = new S(ReadOnlyVec.Self2()));
+                Diagnostic(ErrorCode.ERR_EscapeOther, "s = new S(ReadOnlyVec.Self2())").WithLocation(12, 21),
                 // (12,25): error CS8347: Cannot use a result of 'S.S(Span<float>)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
                 //     int F3 = GetInt(s = new S(ReadOnlyVec.Self2()));
                 Diagnostic(ErrorCode.ERR_EscapeCall, "new S(ReadOnlyVec.Self2())").WithArguments("S.S(System.Span<float>)", "x").WithLocation(12, 25),
+                // (12,31): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //     int F3 = GetInt(s = new S(ReadOnlyVec.Self2()));
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self2()").WithLocation(12, 31),
                 // (12,31): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
                 //     int F3 = GetInt(s = new S(ReadOnlyVec.Self2()));
                 Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "ReadOnlyVec").WithLocation(12, 31)
@@ -7894,12 +7954,21 @@ public struct Vec4
                 // (11,52): error CS8347: Cannot use a result of 'S.S(Span<float>)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
                 //     static int P2 {get;} = GetInt(static () => s = new S(ReadOnlyVec.Self2()));
                 Diagnostic(ErrorCode.ERR_EscapeCall, "new S(ReadOnlyVec.Self2())").WithArguments("S.S(System.Span<float>)", "x").WithLocation(11, 52),
+                // (11,58): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //     static int P2 {get;} = GetInt(static () => s = new S(ReadOnlyVec.Self2()));
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self2()").WithLocation(11, 58),
                 // (11,58): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
                 //     static int P2 {get;} = GetInt(static () => s = new S(ReadOnlyVec.Self2()));
                 Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "ReadOnlyVec").WithLocation(11, 58),
+                // (12,28): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //     int P3 {get;} = GetInt(s = new S(ReadOnlyVec.Self2()));
+                Diagnostic(ErrorCode.ERR_EscapeOther, "s = new S(ReadOnlyVec.Self2())").WithLocation(12, 28),
                 // (12,32): error CS8347: Cannot use a result of 'S.S(Span<float>)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
                 //     int P3 {get;} = GetInt(s = new S(ReadOnlyVec.Self2()));
                 Diagnostic(ErrorCode.ERR_EscapeCall, "new S(ReadOnlyVec.Self2())").WithArguments("S.S(System.Span<float>)", "x").WithLocation(12, 32),
+                // (12,38): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //     int P3 {get;} = GetInt(s = new S(ReadOnlyVec.Self2()));
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self2()").WithLocation(12, 38),
                 // (12,38): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
                 //     int P3 {get;} = GetInt(s = new S(ReadOnlyVec.Self2()));
                 Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "ReadOnlyVec").WithLocation(12, 38)
@@ -7964,15 +8033,27 @@ public struct Vec4
                 // (8,20): error CS8345: Field or auto-implemented property cannot be of type 'S' unless it is an instance member of a ref struct.
                 //     private static S s;
                 Diagnostic(ErrorCode.ERR_FieldAutoPropCantBeByRefLike, "S").WithArguments("S").WithLocation(8, 20),
+                // (20,36): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //                         var xyz2 = ReadOnlyVec.Self2(); 
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self2()").WithLocation(20, 36),
                 // (21,29): error CS8347: Cannot use a result of 'S.S(Span<float>)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
                 //                         s = new S(xyz2);
                 Diagnostic(ErrorCode.ERR_EscapeCall, "new S(xyz2)").WithArguments("S.S(System.Span<float>)", "x").WithLocation(21, 29),
+                // (21,35): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //                         s = new S(xyz2);
+                Diagnostic(ErrorCode.ERR_EscapeOther, "xyz2").WithLocation(21, 35),
                 // (21,35): error CS8352: Cannot use variable 'xyz2' in this context because it may expose referenced variables outside of their declaration scope
                 //                         s = new S(xyz2);
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "xyz2").WithArguments("xyz2").WithLocation(21, 35),
+                // (28,28): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //                 var xyz3 = ReadOnlyVec.Self2(); 
+                Diagnostic(ErrorCode.ERR_EscapeOther, "ReadOnlyVec.Self2()").WithLocation(28, 28),
                 // (29,21): error CS8347: Cannot use a result of 'S.S(Span<float>)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
                 //                 s = new S(xyz3);
                 Diagnostic(ErrorCode.ERR_EscapeCall, "new S(xyz3)").WithArguments("S.S(System.Span<float>)", "x").WithLocation(29, 21),
+                // (29,27): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //                 s = new S(xyz3);
+                Diagnostic(ErrorCode.ERR_EscapeOther, "xyz3").WithLocation(29, 27),
                 // (29,27): error CS8352: Cannot use variable 'xyz3' in this context because it may expose referenced variables outside of their declaration scope
                 //                 s = new S(xyz3);
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "xyz3").WithArguments("xyz3").WithLocation(29, 27)
@@ -8040,6 +8121,9 @@ public struct Vec4
                 // (23,16): error CS8352: Cannot use variable 'xyzw2' in this context because it may expose referenced variables outside of their declaration scope
                 //         return xyzw2;
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "xyzw2").WithArguments("xyzw2").WithLocation(23, 16),
+                // (28,37): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
+                //         ReadOnlyVec.Deconstruct(out var xyzw3, out _);
+                Diagnostic(ErrorCode.ERR_EscapeOther, "var xyzw3").WithLocation(28, 37),
                 // (29,16): error CS8352: Cannot use variable 'xyzw3' in this context because it may expose referenced variables outside of their declaration scope
                 //         return xyzw3;
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "xyzw3").WithArguments("xyzw3").WithLocation(29, 16),
@@ -8807,12 +8891,9 @@ public struct Vec4
                 // (41,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 5
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(41, 16),
-                // (46,15): error CS8347: Cannot use a result of 'S.explicit operator S(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                // (46,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
                 //         S s = (S)300;
-                Diagnostic(ErrorCode.ERR_EscapeCall, "(S)300").WithArguments("S.explicit operator S(in int)", "x").WithLocation(46, 15),
-                // (46,18): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
-                //         S s = (S)300;
-                Diagnostic(ErrorCode.ERR_EscapeOther, "300").WithLocation(46, 18),
+                Diagnostic(ErrorCode.ERR_EscapeOther, "(S)300").WithLocation(46, 15),
                 // (47,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 6
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(47, 16));
@@ -8915,9 +8996,6 @@ public struct Vec4
                 // (46,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
                 //         S s = 300;
                 Diagnostic(ErrorCode.ERR_EscapeOther, "300").WithLocation(46, 15),
-                // (46,15): error CS8347: Cannot use a result of 'S.implicit operator S(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
-                //         S s = 300;
-                Diagnostic(ErrorCode.ERR_EscapeCall, "300").WithArguments("S.implicit operator S(in int)", "x").WithLocation(46, 15),
                 // (47,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 6
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(47, 16));
@@ -9091,27 +9169,18 @@ public struct Vec4
                 // (34,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
                 //         S s = x;
                 Diagnostic(ErrorCode.ERR_EscapeOther, "x").WithLocation(34, 15),
-                // (34,15): error CS8347: Cannot use a result of 'S.implicit operator S(in int?)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
-                //         S s = x;
-                Diagnostic(ErrorCode.ERR_EscapeCall, "x").WithArguments("S.implicit operator S(in int?)", "x").WithLocation(34, 15),
                 // (35,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 6
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(35, 16),
                 // (40,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
                 //         S s = x;
                 Diagnostic(ErrorCode.ERR_EscapeOther, "x").WithLocation(40, 15),
-                // (40,15): error CS8347: Cannot use a result of 'S.implicit operator S(in int?)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
-                //         S s = x;
-                Diagnostic(ErrorCode.ERR_EscapeCall, "x").WithArguments("S.implicit operator S(in int?)", "x").WithLocation(40, 15),
                 // (41,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 7
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(41, 16),
                 // (46,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
                 //         S s = 300;
                 Diagnostic(ErrorCode.ERR_EscapeOther, "300").WithLocation(46, 15),
-                // (46,15): error CS8347: Cannot use a result of 'S.implicit operator S(in int?)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
-                //         S s = 300;
-                Diagnostic(ErrorCode.ERR_EscapeCall, "300").WithArguments("S.implicit operator S(in int?)", "x").WithLocation(46, 15),
                 // (47,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 8
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(47, 16));
@@ -9408,10 +9477,7 @@ public struct Vec4
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(41, 16),
                 // (46,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
                 //         S s = 300 + default(S);
-                Diagnostic(ErrorCode.ERR_EscapeOther, "300").WithLocation(46, 15),
-                // (46,15): error CS8347: Cannot use a result of 'S.operator +(in int, S)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
-                //         S s = 300 + default(S);
-                Diagnostic(ErrorCode.ERR_EscapeCall, "300 + default(S)").WithArguments("S.operator +(in int, S)", "x").WithLocation(46, 15),
+                Diagnostic(ErrorCode.ERR_EscapeOther, "300 + default(S)").WithLocation(46, 15),
                 // (47,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 6
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(47, 16));
@@ -9998,12 +10064,9 @@ public struct Vec4
                 // (41,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 5
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(41, 16),
-                // (46,15): error CS8347: Cannot use a result of 'S.operator +(in S)' in this context because it may expose variables referenced by parameter 's' outside of their declaration scope
+                // (46,15): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
                 //         S s = +new S();
-                Diagnostic(ErrorCode.ERR_EscapeCall, "+new S()").WithArguments("S.operator +(in S)", "s").WithLocation(46, 15),
-                // (46,16): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
-                //         S s = +new S();
-                Diagnostic(ErrorCode.ERR_EscapeOther, "new S()").WithLocation(46, 16),
+                Diagnostic(ErrorCode.ERR_EscapeOther, "+new S()").WithLocation(46, 15),
                 // (47,16): error CS8352: Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
                 //         return s; // 6
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "s").WithArguments("s").WithLocation(47, 16));

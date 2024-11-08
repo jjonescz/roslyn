@@ -20485,9 +20485,6 @@ ref struct R
 ";
             var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
             comp.VerifyDiagnostics(
-                // (3,17): error CS8352: Cannot use variable 'field = ref x' in this context because it may expose referenced variables outside of their declaration scope
-                // var r = new R() { field = ref x };
-                Diagnostic(ErrorCode.ERR_EscapeVariable, "{ field = ref x }").WithArguments("field = ref x").WithLocation(3, 17),
                 // (3,31): error CS8173: The expression must be of type 'int' because it is being assigned by reference
                 // var r = new R() { field = ref x };
                 Diagnostic(ErrorCode.ERR_RefAssignmentMustHaveIdentityConversion, "x").WithArguments("int").WithLocation(3, 31)
@@ -20518,9 +20515,6 @@ ref struct R
 ";
             var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
             comp.VerifyDiagnostics(
-                // (3,17): error CS8352: Cannot use variable 'field = ref x' in this context because it may expose referenced variables outside of their declaration scope
-                // var r = new R() { field = ref x };
-                Diagnostic(ErrorCode.ERR_EscapeVariable, "{ field = ref x }").WithArguments("field = ref x").WithLocation(3, 17),
                 // (3,31): error CS8173: The expression must be of type 'S2' because it is being assigned by reference
                 // var r = new R() { field = ref x };
                 Diagnostic(ErrorCode.ERR_RefAssignmentMustHaveIdentityConversion, "x").WithArguments("S2").WithLocation(3, 31)
@@ -21307,9 +21301,6 @@ ref struct R<T>
 ";
             var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
             comp.VerifyDiagnostics(
-                // (3,24): error CS8352: Cannot use variable 'F = ref i' in this context because it may expose referenced variables outside of their declaration scope
-                // var r = new R<dynamic> { F = ref i }; // 1
-                Diagnostic(ErrorCode.ERR_EscapeVariable, "{ F = ref i }").WithArguments("F = ref i").WithLocation(3, 24),
                 // (3,34): error CS8173: The expression must be of type 'dynamic' because it is being assigned by reference
                 // var r = new R<dynamic> { F = ref i }; // 1
                 Diagnostic(ErrorCode.ERR_RefAssignmentMustHaveIdentityConversion, "i").WithArguments("dynamic").WithLocation(3, 34)
