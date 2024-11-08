@@ -2039,7 +2039,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // - val escape of all byval arguments  (refs cannot be wrapped into values, so their ref escape is irrelevant, only use val escapes)
                     uint argumentEscape = (isRefEscape, argumentIsRefEscape) switch
                     {
-                        (true, true) => GetRefEscape(argument, scopeOfTheContainingExpression),
+                        (true, true) => GetRefEscape(argument, scopeOfTheContainingExpression, narrowRValues: true),
                         (false, false) => GetValEscape(argument, scopeOfTheContainingExpression),
                         _ => escapeScope
                     };
@@ -2106,7 +2106,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         isArgumentRefEscape == isRefEscape))
                 {
                     uint argEscape = isArgumentRefEscape ?
-                        GetRefEscape(argument, scopeOfTheContainingExpression) :
+                        GetRefEscape(argument, scopeOfTheContainingExpression, narrowRValues: true) :
                         GetValEscape(argument, scopeOfTheContainingExpression);
 
                     escapeScope = Math.Max(escapeScope, argEscape);
@@ -2470,7 +2470,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         /// <summary>
         /// Returns the set of arguments to be considered for escape analysis of a method
-        /// invocation. Each argument is returned with the correponding parameter and
+        /// invocation. Each argument is returned with the corresponding parameter and
         /// whether analysis should consider value or ref escape. Not all method arguments
         /// are included, and some arguments may be included twice - once for value, once for ref.
         /// </summary>
@@ -2846,6 +2846,16 @@ namespace Microsoft.CodeAnalysis.CSharp
                         continue;
                     }
 
+                    // Check that arguments don't have narrower escape scope than the containing expression.
+                    // That can happen when RValues are implicitly passed by reference and potentially captured to another ref.
+                    var scope = refKind != RefKind.None
+                        ? GetRefEscape(argument, scopeOfTheContainingExpression)
+                        : GetValEscape(argument, scopeOfTheContainingExpression);
+                    if (scope > scopeOfTheContainingExpression)
+                    {
+                        Error(_diagnostics, ErrorCode.ERR_EscapeOther, argument.Syntax);
+                    }
+
                     if (refKind.IsWritableReference()
                         && !argument.IsDiscardExpression()
                         && argument.Type?.IsRefLikeOrAllowsRefLikeType() == true)
@@ -2876,7 +2886,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     if (ShouldInferDeclarationExpressionValEscape(argument, out var localSymbol))
                     {
-                        SetLocalScopes(localSymbol, refEscapeScope: _localScopeDepth, valEscapeScope: inferredDestinationValEscape);
+                        SetLocalScopes(argument, localSymbol, refEscapeScope: _localScopeDepth, valEscapeScope: inferredDestinationValEscape);
                     }
                 }
 
@@ -2915,8 +2925,29 @@ namespace Microsoft.CodeAnalysis.CSharp
                 escapeValues);
 
             var valid = true;
+
+            // Check that arguments don't have narrower escape scope than the containing expression.
+            // That can happen when RValues are implicitly passed by reference and potentially captured to another ref.
+            foreach (var (_, arg, _, isRefEscape) in escapeValues)
+            {
+                var scope = isRefEscape
+                    ? GetRefEscape(arg, scopeOfTheContainingExpression)
+                    : GetValEscape(arg, scopeOfTheContainingExpression);
+
+                if (scope > scopeOfTheContainingExpression)
+                {
+                    valid = false;
+                    Error(_diagnostics, ErrorCode.ERR_EscapeOther, arg.Syntax);
+                }
+            }
+
             foreach (var mixableArg in mixableArguments)
             {
+                if (!valid)
+                {
+                    break;
+                }
+
                 var toArgEscape = GetValEscape(mixableArg.Argument, scopeOfTheContainingExpression);
                 foreach (var (fromParameter, fromArg, escapeKind, isRefEscape) in escapeValues)
                 {
@@ -2939,11 +2970,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                         break;
                     }
                 }
-
-                if (!valid)
-                {
-                    break;
-                }
             }
 
             inferDeclarationExpressionValEscape();
@@ -2960,7 +2986,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 foreach (var (_, fromArg, _, isRefEscape) in escapeValues)
                 {
                     inferredDestinationValEscape = Math.Max(inferredDestinationValEscape, isRefEscape
-                        ? GetRefEscape(fromArg, scopeOfTheContainingExpression)
+                        ? GetRefEscape(fromArg, scopeOfTheContainingExpression, narrowRValues: true)
                         : GetValEscape(fromArg, scopeOfTheContainingExpression));
                 }
 
@@ -2968,7 +2994,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     if (ShouldInferDeclarationExpressionValEscape(argument, out var localSymbol))
                     {
-                        SetLocalScopes(localSymbol, refEscapeScope: _localScopeDepth, valEscapeScope: inferredDestinationValEscape);
+                        SetLocalScopes(argument, localSymbol, refEscapeScope: _localScopeDepth, valEscapeScope: inferredDestinationValEscape);
                     }
                 }
             }
@@ -3332,12 +3358,29 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         /// <summary>
         /// Computes the widest scope depth to which the given expression can escape by reference.
-        /// 
-        /// NOTE: in a case if expression cannot be passed by an alias (RValue and similar), the ref-escape is scopeOfTheContainingExpression
-        ///       There are few cases where RValues are permitted to be passed by reference which implies that a temporary local proxy is passed instead.
-        ///       We reflect such behavior by constraining the escape value to the narrowest scope possible. 
         /// </summary>
-        internal uint GetRefEscape(BoundExpression expr, uint scopeOfTheContainingExpression)
+        /// <param name="narrowRValues">
+        /// Causes the method to return <paramref name="scopeOfTheContainingExpression"/> + 1 for RValues.
+        /// 
+        /// This is used to prevent escaping refs of temporaries which are synthesized to pass RValues by reference implicitly.
+        /// It should be set only for "inner" expressions which can cause the ref to escape.
+        /// 
+        /// In the following example, safety analysis allows M(111):
+        /// - analysis of M(111) checks whether 111 can escape to M via GetRefEscape(..., narrowRValues: false)
+        /// But not M2(ref M(444)):
+        /// - analysis of M2(ref M(444)) checks whether M(444) can escape to M2 via GetRefEscape(..., narrowRValues: false)
+        /// - that calls GetInvocationEscape for M2 which uses GetRefEscape(..., narrowRValues: true) which makes the resulting scope narrower
+        /// 
+        /// static int M(in int x) => x;
+        /// 
+        /// M(111); // ok
+        /// int x = M(222); // ok
+        /// ref int y = ref M(333); // error
+        /// M2(ref M(444)); // error
+        /// 
+        /// static void M2(ref int x) { }
+        /// </param>
+        internal uint GetRefEscape(BoundExpression expr, uint scopeOfTheContainingExpression, bool narrowRValues = false)
         {
 #if DEBUG
             AssertVisited(expr);
@@ -3358,7 +3401,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // constants/literals cannot ref-escape current scope
             if (expr.ConstantValueOpt != null)
             {
-                return scopeOfTheContainingExpression;
+                return scopeOfTheContainingExpression + (narrowRValues ? 1u : 0u);
             }
 
             // cover case that cannot refer to local state
@@ -3377,9 +3420,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // it can, however, ref-escape to any other level (since TypedReference can val-escape to any other level)
                     return CurrentMethodScope;
 
+                case BoundKind.DeconstructValuePlaceholder:
                 case BoundKind.DiscardExpression:
                     // same as write-only byval local
-                    break;
+                    return scopeOfTheContainingExpression;
 
                 case BoundKind.DynamicMemberAccess:
                 case BoundKind.DynamicIndexerAccess:
@@ -3395,8 +3439,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return GetLocalScopes(((BoundLocal)expr).LocalSymbol).RefEscapeScope;
 
                 case BoundKind.CapturedReceiverPlaceholder:
-                    // Equivalent to a non-ref local with the underlying receiver as an initializer provided at declaration 
-                    return ((BoundCapturedReceiverPlaceholder)expr).LocalScopeDepth;
+                    // Equivalent to a non-ref local with the underlying receiver as an initializer provided at declaration
+                    return ((BoundCapturedReceiverPlaceholder)expr).LocalScopeDepth + (narrowRValues ? 1u : 0u);
 
                 case BoundKind.ThisReference:
                     var thisParam = ((MethodSymbol)_symbol).ThisParameter;
@@ -3637,7 +3681,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // At this point we should have covered all the possible cases for anything that is not a strict RValue.
-            return scopeOfTheContainingExpression;
+            return scopeOfTheContainingExpression + (narrowRValues ? 1u : 0u);
         }
 
         /// <summary>
@@ -3717,7 +3761,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return CheckLocalRefEscape(node, local, escapeTo, checkingReceiver, diagnostics);
 
                 case BoundKind.CapturedReceiverPlaceholder:
-                    // Equivalent to a non-ref local with the underlying receiver as an initializer provided at declaration 
+                    // Equivalent to a non-ref local with the underlying receiver as an initializer provided at declaration
                     if (((BoundCapturedReceiverPlaceholder)expr).LocalScopeDepth <= escapeTo)
                     {
                         return true;
