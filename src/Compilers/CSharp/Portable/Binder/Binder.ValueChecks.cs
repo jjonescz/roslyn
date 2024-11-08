@@ -3358,24 +3358,28 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         /// <summary>
         /// Computes the widest scope depth to which the given expression can escape by reference.
-        ///
-        /// NOTE: in a case if expression cannot be passed by an alias (RValue and similar), the ref-escape is scopeOfTheContainingExpression + 1
-        ///       There are few cases where RValues are permitted to be passed by reference which implies that a temporary local proxy is passed instead.
-        ///       This temporary can be reused by the emit layer, so we have to constrain it to a narrower scope. Consider:
-        ///
-        ///       ref struct R(in int x);
-        ///       R r = new R(111);
-        ///
-        ///       is equivalent to:
-        ///
-        ///       R r;
-        ///       {
-        ///           int c = 111;
-        ///           r = new R(c);
-        ///       }
-        ///
-        ///       In both cases the RValue passed to the constructor has ref-escape one narrower than the local scope.
         /// </summary>
+        /// <param name="narrowRValues">
+        /// Causes the method to return <paramref name="scopeOfTheContainingExpression"/> + 1 for RValues.
+        /// 
+        /// This is used to prevent escaping refs of temporaries which are synthesized to pass RValues by reference implicitly.
+        /// It should be set only for "inner" expressions which can cause the ref to escape.
+        /// 
+        /// In the following example, safety analysis allows M(111):
+        /// - analysis of M(111) checks whether 111 can escape to M via GetRefEscape(..., narrowRValues: false)
+        /// But not M2(ref M(444)):
+        /// - analysis of M2(ref M(444)) checks whether M(444) can escape to M2 via GetRefEscape(..., narrowRValues: false)
+        /// - that calls GetInvocationEscape for M2 which uses GetRefEscape(..., narrowRValues: true) which makes the resulting scope narrower
+        /// 
+        /// static int M(in int x) => x;
+        /// 
+        /// M(111); // ok
+        /// int x = M(222); // ok
+        /// ref int y = ref M(333); // error
+        /// M2(ref M(444)); // error
+        /// 
+        /// static void M2(ref int x) { }
+        /// </param>
         internal uint GetRefEscape(BoundExpression expr, uint scopeOfTheContainingExpression, bool narrowRValues = false)
         {
 #if DEBUG
