@@ -97,20 +97,77 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
         // TODO: Return bit vector (one bit per argument)?
+        // TODO: Make static and use directly from the emit layer?
+        // TODO: Comment that it is not precise.
         internal bool MightEscapeTemporaryRefs(BoundObjectCreationExpression node)
         {
-            // TODO: We should check whether the signature allows escaping, not each argument separately.
-
-            foreach (var arg in node.Arguments)
+            if (node.Arguments.IsDefaultOrEmpty)
             {
-                var block = SafeContext.CurrentMethod.Narrower();
-                if (block.IsConvertibleTo(GetRefEscape(arg, block)))
+                return false;
+            }
+
+            int writableRefs = 0;
+            int readonlyRefs = 0;
+
+            if (node.Type.IsRefLikeType)
+            {
+                writableRefs++;
+            }
+
+            for (var arg = 0; arg < node.Arguments.Length; arg++)
+            {
+                var argument = node.Arguments[arg];
+                var parameter = Binder.GetCorrespondingParameter(
+                    arg,
+                    node.Constructor.Parameters,
+                    node.ArgsToParamsOpt,
+                    node.Expanded);
+
+                if (parameter is not null &&
+                    isReference(parameter, out var writable) &&
+                    !argument.IsDiscardExpression())
+                {
+                    if (writable)
+                    {
+                        writableRefs++;
+                    }
+                    else
+                    {
+                        readonlyRefs++;
+                    }
+                }
+
+                if (writableRefs > 0 && (writableRefs + readonlyRefs) > 1)
                 {
                     return true;
                 }
             }
 
             return false;
+
+            static bool isReference(ParameterSymbol parameter, out bool writable)
+            {
+                if (parameter.RefKind.IsWritableReference())
+                {
+                    writable = true;
+                    return true;
+                }
+
+                if (parameter.Type.IsRefLikeOrAllowsRefLikeType())
+                {
+                    writable = !parameter.Type.IsReadOnly;
+                    return true;
+                }
+
+                if (parameter.RefKind != RefKind.None)
+                {
+                    writable = false;
+                    return true;
+                }
+
+                writable = false;
+                return false;
+            }
         }
 
         private static bool InUnsafeMethod(Symbol symbol)

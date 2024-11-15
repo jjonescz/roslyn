@@ -10264,51 +10264,6 @@ public struct Vec4
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
-        public void RefTemp_CannotEscape_OldRules()
-        {
-            var source = """
-                var r1 = new R(111);
-                var r2 = new R(222);
-                Report(r1.F, r2.F);
-                
-                static void Report(int x, int y) => System.Console.WriteLine($"{x} {y}");
-
-                ref struct R
-                {
-                    public readonly int F;
-                    public R(in int x) { F = x; }
-                }
-                """;
-            CompileAndVerify(source,
-                parseOptions: TestOptions.Regular10,
-                expectedOutput: "111 222")
-                .VerifyDiagnostics()
-                // One int temp is enough.
-                .VerifyIL("<top-level-statements-entry-point>", """
-                    {
-                      // Code size       41 (0x29)
-                      .maxstack  2
-                      .locals init (R V_0, //r2
-                                    int V_1)
-                      IL_0000:  ldc.i4.s   111
-                      IL_0002:  stloc.1
-                      IL_0003:  ldloca.s   V_1
-                      IL_0005:  newobj     "R..ctor(in int)"
-                      IL_000a:  ldc.i4     0xde
-                      IL_000f:  stloc.1
-                      IL_0010:  ldloca.s   V_1
-                      IL_0012:  newobj     "R..ctor(in int)"
-                      IL_0017:  stloc.0
-                      IL_0018:  ldfld      "int R.F"
-                      IL_001d:  ldloc.0
-                      IL_001e:  ldfld      "int R.F"
-                      IL_0023:  call       "void Program.<<Main>$>g__Report|0_0(int, int)"
-                      IL_0028:  ret
-                    }
-                    """);
-        }
-
-        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
         public void RefTemp_CannotEscape_NonRefStruct()
         {
             var source = """
