@@ -13,9 +13,46 @@ using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp
 {
+    // TODO: Make this an automatic part of RefSafetyAnalysis.Analyze (rename it to AnalyzeAndRewrite).
+    internal sealed partial class RefEscapingRewriter(RefSafetyAnalysis analysis) : BoundTreeRewriterWithStackGuardWithoutRecursionOnTheLeftOfBinaryOperator
+    {
+        internal static BoundNode Rewrite(RefSafetyAnalysis analysis, BoundNode node)
+        {
+            return new RefEscapingRewriter(analysis).Visit(node);
+        }
+
+        private readonly RefSafetyAnalysis _analysis = analysis;
+
+        public override BoundNode? VisitObjectCreationExpression(BoundObjectCreationExpression node)
+        {
+            Debug.Assert(!node.MightEscapeTemporaryRefs);
+
+            // TODO: Do the logic directly here?
+            if (_analysis.MightEscapeTemporaryRefs(node))
+            {
+                return node.Update(
+                    node.Constructor,
+                    node.ConstructorsGroup,
+                    node.Arguments,
+                    node.ArgumentNamesOpt,
+                    node.ArgumentRefKindsOpt,
+                    node.Expanded,
+                    node.ArgsToParamsOpt,
+                    node.DefaultArguments,
+                    node.ConstantValueOpt,
+                    node.InitializerExpressionOpt,
+                    node.WasTargetTyped,
+                    mightEscapeTemporaryRefs: true,
+                    node.Type);
+            }
+
+            return base.VisitObjectCreationExpression(node);
+        }
+    }
+
     internal sealed partial class RefSafetyAnalysis : BoundTreeWalkerWithStackGuardWithoutRecursionOnTheLeftOfBinaryOperator
     {
-        internal static void Analyze(CSharpCompilation compilation, MethodSymbol symbol, BoundNode node, BindingDiagnosticBag diagnostics)
+        internal static RefSafetyAnalysis Analyze(CSharpCompilation compilation, MethodSymbol symbol, BoundNode node, BindingDiagnosticBag diagnostics)
         {
             var visitor = new RefSafetyAnalysis(
                 compilation,
@@ -31,6 +68,49 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 e.AddAnError(diagnostics);
             }
+
+            return visitor;
+        }
+
+        // TODO: Remove this one.
+        internal static bool MightEscapeTemporaryRefs(CSharpCompilation compilation, MethodSymbol symbol, BoundObjectCreationExpression node)
+        {
+            // TODO: Add some faster checks.
+
+            var analysis = new RefSafetyAnalysis(
+                compilation,
+                symbol,
+                inUnsafeRegion: InUnsafeMethod(symbol),
+                useUpdatedEscapeRules: symbol.ContainingModule.UseUpdatedEscapeRules,
+                BindingDiagnosticBag.Discarded);
+
+            foreach (var arg in node.Arguments)
+            {
+                var block = SafeContext.CurrentMethod.Narrower();
+                if (block.IsConvertibleTo(analysis.GetRefEscape(arg, block)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // TODO: Return bit vector (one bit per argument)?
+        internal bool MightEscapeTemporaryRefs(BoundObjectCreationExpression node)
+        {
+            // TODO: We should check whether the signature allows escaping, not each argument separately.
+
+            foreach (var arg in node.Arguments)
+            {
+                var block = SafeContext.CurrentMethod.Narrower();
+                if (block.IsConvertibleTo(GetRefEscape(arg, block)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool InUnsafeMethod(Symbol symbol)

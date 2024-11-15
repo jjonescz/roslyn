@@ -712,7 +712,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             }
         }
 
-        private void EmitArgument(BoundExpression argument, RefKind refKind)
+        private void EmitArgument(BoundExpression argument, RefKind refKind, bool mightEscapeTemporaryRefs = false)
         {
             switch (refKind)
             {
@@ -722,7 +722,10 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
                 case RefKind.In:
                     var temp = EmitAddress(argument, AddressKind.ReadOnly);
-                    AddExpressionTemp(temp);
+                    if (!mightEscapeTemporaryRefs)
+                    {
+                        AddExpressionTemp(temp);
+                    }
                     break;
 
                 default:
@@ -943,7 +946,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             }
         }
 
-        private void EmitArguments(ImmutableArray<BoundExpression> arguments, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<RefKind> argRefKindsOpt)
+        private void EmitArguments(ImmutableArray<BoundExpression> arguments, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<RefKind> argRefKindsOpt, bool mightEscapeTemporaryRefs = false)
         {
             // We might have an extra argument for the __arglist() of a varargs method.
             Debug.Assert(arguments.Length == parameters.Length ||
@@ -956,7 +959,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             for (int i = 0; i < arguments.Length; i++)
             {
                 RefKind argRefKind = GetArgumentRefKind(arguments, parameters, argRefKindsOpt, i);
-                EmitArgument(arguments[i], argRefKind);
+                EmitArgument(arguments[i], argRefKind, mightEscapeTemporaryRefs: mightEscapeTemporaryRefs);
             }
         }
 
@@ -2446,7 +2449,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 }
 
                 // none of the above cases, so just create an instance
-                EmitArguments(expression.Arguments, constructor.Parameters, expression.ArgumentRefKindsOpt);
+                EmitArguments(expression.Arguments, constructor.Parameters, expression.ArgumentRefKindsOpt, mightEscapeTemporaryRefs: expression.MightEscapeTemporaryRefs);
 
                 var stackAdjustment = GetObjCreationStackBehavior(expression);
                 _builder.EmitOpCode(ILOpCode.Newobj, stackAdjustment);
@@ -2704,7 +2707,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             Debug.Assert(temp == null, "in-place ctor target should not create temps");
 
             var constructor = objCreation.Constructor;
-            EmitArguments(objCreation.Arguments, constructor.Parameters, objCreation.ArgumentRefKindsOpt);
+            EmitArguments(objCreation.Arguments, constructor.Parameters, objCreation.ArgumentRefKindsOpt, mightEscapeTemporaryRefs: objCreation.MightEscapeTemporaryRefs);
             // -2 to adjust for consumed target address and not produced value.
             var stackAdjustment = GetObjCreationStackBehavior(objCreation) - 2;
             _builder.EmitOpCode(ILOpCode.Call, stackAdjustment);

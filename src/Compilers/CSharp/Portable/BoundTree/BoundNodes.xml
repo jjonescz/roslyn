@@ -1898,6 +1898,7 @@
     <Field Name="ConstantValueOpt" Type="ConstantValue?" PropertyOverrides="true"/>
     <Field Name="InitializerExpressionOpt" Type="BoundObjectInitializerExpressionBase?" PropertyOverrides="true"/>
     <Field Name="WasTargetTyped" Type="bool" PropertyOverrides="true"/>
+    <Field Name="MightEscapeTemporaryRefs" Type="bool"/>
   </Node>
 
   <AbstractNode Name="BoundCollectionExpressionBase" Base="BoundExpression">

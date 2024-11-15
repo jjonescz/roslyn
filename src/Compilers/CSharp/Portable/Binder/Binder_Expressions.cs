@@ -6781,6 +6781,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 constantValueOpt,
                 boundInitializerOpt,
                 wasTargetTyped,
+                mightEscapeTemporaryRefs: false,
                 type,
                 hasError);
 

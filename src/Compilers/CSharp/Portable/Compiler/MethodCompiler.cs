@@ -1843,7 +1843,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                     Debug.Assert(WasPropertyBackingFieldAccessChecked.FindUncheckedAccess(methodBody) is null);
 #endif
 
-                    RefSafetyAnalysis.Analyze(compilation, method, methodBody, diagnostics);
+                    var analysis = RefSafetyAnalysis.Analyze(compilation, method, methodBody, diagnostics);
+
+                    methodBody = RefEscapingRewriter.Rewrite(analysis, methodBody);
 
                     switch (methodBody.Kind)
                     {
