@@ -708,11 +708,11 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             {
                 BoundExpression argument = expression.Arguments[i];
                 RefKind refKind = expression.ArgumentRefKindsOpt.IsDefaultOrEmpty ? RefKind.None : expression.ArgumentRefKindsOpt[i];
-                EmitArgument(argument, refKind);
+                EmitArgument(argument, refKind, mightEscapeTemporaryRefs: false);
             }
         }
 
-        private void EmitArgument(BoundExpression argument, RefKind refKind, bool mightEscapeTemporaryRefs = false)
+        private void EmitArgument(BoundExpression argument, RefKind refKind, bool mightEscapeTemporaryRefs)
         {
             switch (refKind)
             {
