@@ -10377,6 +10377,96 @@ public struct Vec4
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_CannotEscape_ComCall()
+        {
+            var source = """
+                using System.Runtime.InteropServices;
+
+                I i = new C();
+                i.M(111);
+                i.M(222);
+
+                [ComImport, Guid("96A2DE64-6D44-4DA5-BBA4-25F5F07E0E6B")]
+                interface I
+                {
+                    void M(ref int i);
+                }
+
+                class C : I
+                {
+                    void I.M(ref int i) { }
+                }
+                """;
+            CompileAndVerify(source)
+                .VerifyDiagnostics()
+                // One int temp is enough.
+                .VerifyIL("<top-level-statements-entry-point>", """
+                    {
+                      // Code size       30 (0x1e)
+                      .maxstack  3
+                      .locals init (int V_0)
+                      IL_0000:  newobj     "C..ctor()"
+                      IL_0005:  dup
+                      IL_0006:  ldc.i4.s   111
+                      IL_0008:  stloc.0
+                      IL_0009:  ldloca.s   V_0
+                      IL_000b:  callvirt   "void I.M(ref int)"
+                      IL_0010:  ldc.i4     0xde
+                      IL_0015:  stloc.0
+                      IL_0016:  ldloca.s   V_0
+                      IL_0018:  callvirt   "void I.M(ref int)"
+                      IL_001d:  ret
+                    }
+                    """);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_Escapes_ComCall()
+        {
+            var source = """
+                using System.Diagnostics.CodeAnalysis;
+                using System.Runtime.InteropServices;
+
+                I i = new C();
+                var r1 = i.M(111);
+                var r2 = i.M(222);
+                Report(r1.F, r2.F);
+
+                static void Report(int x, int y) => System.Console.WriteLine($"{x} {y}");
+
+                [ComImport, Guid("96A2DE64-6D44-4DA5-BBA4-25F5F07E0E6B")]
+                interface I
+                {
+                    R M([UnscopedRef] ref int i);
+                }
+
+                class C : I
+                {
+                    R I.M([UnscopedRef] ref int i)
+                    {
+                        var r = new R();
+                        r.F = ref i;
+                        return r;
+                    }
+                }
+
+                ref struct R
+                {
+                    public ref int F;
+                }
+                """;
+            CompileAndVerify(source,
+                expectedOutput: "111 222",
+                targetFramework: TargetFramework.Net70,
+                verify: Verification.Fails)
+                .VerifyDiagnostics()
+                // Needs two int temps.
+                .VerifyIL("<top-level-statements-entry-point>", """
+
+                    """);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
         public void RefTemp_Constructor_Literal_String()
         {
             var source = """
