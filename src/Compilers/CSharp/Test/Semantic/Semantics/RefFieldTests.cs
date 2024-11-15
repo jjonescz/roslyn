@@ -9747,6 +9747,9 @@ class Program
             if (languageVersion == LanguageVersion.CSharp10)
             {
                 comp.VerifyEmitDiagnostics(
+                    // (8,28): error CS9063: UnscopedRefAttribute cannot be applied to this parameter because it is unscoped by default.
+                    //     static ref S<T> F1<T>([UnscopedRef] ref S<T> x1)
+                    Diagnostic(ErrorCode.ERR_UnscopedRefAttributeUnsupportedTarget, "UnscopedRef").WithLocation(8, 28),
                     // (15,20): error CS8157: Cannot return 'y2' by reference because it was initialized to a value that cannot be returned by reference
                     //         return ref y2; // 1
                     Diagnostic(ErrorCode.ERR_RefReturnNonreturnableLocal, "y2").WithArguments("y2").WithLocation(15, 20));
@@ -11071,6 +11074,9 @@ class Program
                 // (9,31): error CS8936: Feature 'ref fields' is not available in C# 10.0. Please use language version 11.0 or greater.
                 //         var f4 = (out int x4, scoped out int y4, [System.Diagnostics.CodeAnalysis.UnscopedRefAttribute] out int z4) => { x4 = 0; y4 = 0; z4 = 0; };
                 Diagnostic(ErrorCode.ERR_FeatureNotAvailableInVersion10, "scoped").WithArguments("ref fields", "11.0").WithLocation(9, 31),
+                // (9,51): error CS9063: UnscopedRefAttribute cannot be applied to this item because it is unscoped by default.
+                //         var f4 = (out int x4, scoped out int y4, [System.Diagnostics.CodeAnalysis.UnscopedRefAttribute] out int z4) => { x4 = 0; y4 = 0; z4 = 0; };
+                Diagnostic(ErrorCode.ERR_UnscopedRefAttributeUnsupportedTarget, "System.Diagnostics.CodeAnalysis.UnscopedRefAttribute").WithLocation(9, 51),
                 // (10,29): error CS8936: Feature 'ref fields' is not available in C# 10.0. Please use language version 11.0 or greater.
                 //         var f5 = (ref R x5, scoped ref R y5) => { };
                 Diagnostic(ErrorCode.ERR_FeatureNotAvailableInVersion10, "scoped").WithArguments("ref fields", "11.0").WithLocation(10, 29),
@@ -22358,7 +22364,10 @@ using @scoped = System.Int32;
                 }
                 """;
             CreateCompilation([source, UnscopedRefAttributeDefinition],
-                parseOptions: TestOptions.Regular10).VerifyDiagnostics();
+                parseOptions: TestOptions.Regular10).VerifyDiagnostics(
+                // (4,13): error CS9063: UnscopedRefAttribute cannot be applied to this parameter because it is unscoped by default.
+                //     void M([UnscopedRef] ref int x, out int y)
+                Diagnostic(ErrorCode.ERR_UnscopedRefAttributeUnsupportedTarget, "UnscopedRef").WithLocation(4, 13));
 
             var expectedDiagnostics = new[]
             {
@@ -22392,7 +22401,10 @@ using @scoped = System.Int32;
                 }
                 """;
             CreateCompilation([source, UnscopedRefAttributeDefinition],
-                parseOptions: TestOptions.Regular10).VerifyDiagnostics();
+                parseOptions: TestOptions.Regular10).VerifyDiagnostics(
+                // (6,32): error CS9063: UnscopedRefAttribute cannot be applied to this parameter because it is unscoped by default.
+                //     public static ref int Ref([UnscopedRef] out S s)
+                Diagnostic(ErrorCode.ERR_UnscopedRefAttributeUnsupportedTarget, "UnscopedRef").WithLocation(6, 32));
             CreateCompilation(source,
                 parseOptions: TestOptions.Regular10,
                 targetFramework: TargetFramework.Net70).VerifyDiagnostics();
@@ -22415,9 +22427,9 @@ using @scoped = System.Int32;
                 """;
             CreateCompilation([source, UnscopedRefAttributeDefinition],
                 parseOptions: TestOptions.Regular10).VerifyDiagnostics(
-                // (6,32): error CS9066: UnscopedRefAttribute cannot be applied to parameters that have a 'scoped' modifier.
+                // (6,32): error CS9063: UnscopedRefAttribute cannot be applied to this parameter because it is unscoped by default.
                 //     public static ref int Ref([UnscopedRef] scoped ref S s) => ref s.F;
-                Diagnostic(ErrorCode.ERR_UnscopedScoped, "UnscopedRef").WithLocation(6, 32),
+                Diagnostic(ErrorCode.ERR_UnscopedRefAttributeUnsupportedTarget, "UnscopedRef").WithLocation(6, 32),
                 // (6,45): error CS8936: Feature 'ref fields' is not available in C# 10.0. Please use language version 11.0 or greater.
                 //     public static ref int Ref([UnscopedRef] scoped ref S s) => ref s.F;
                 Diagnostic(ErrorCode.ERR_FeatureNotAvailableInVersion10, "scoped").WithArguments("ref fields", "11.0").WithLocation(6, 45),
@@ -25011,9 +25023,21 @@ class Program
             else
             {
                 comp.VerifyEmitDiagnostics(
+                    // (10,21): error CS9063: UnscopedRefAttribute cannot be applied to this parameter because it is unscoped by default.
+                    //     static void F1([UnscopedRef] out int i1) { i1 = 0; }
+                    Diagnostic(ErrorCode.ERR_UnscopedRefAttributeUnsupportedTarget, "UnscopedRef").WithLocation(10, 21),
                     // (11,21): error CS9063: UnscopedRefAttribute cannot be applied to this parameter because it is unscoped by default.
                     //     static void F2([UnscopedRef] R r2) { }
-                    Diagnostic(ErrorCode.ERR_UnscopedRefAttributeUnsupportedTarget, "UnscopedRef").WithLocation(11, 21));
+                    Diagnostic(ErrorCode.ERR_UnscopedRefAttributeUnsupportedTarget, "UnscopedRef").WithLocation(11, 21),
+                    // (12,21): error CS9063: UnscopedRefAttribute cannot be applied to this parameter because it is unscoped by default.
+                    //     static void F3([UnscopedRef] ref R r3) { }
+                    Diagnostic(ErrorCode.ERR_UnscopedRefAttributeUnsupportedTarget, "UnscopedRef").WithLocation(12, 21),
+                    // (13,21): error CS9063: UnscopedRefAttribute cannot be applied to this parameter because it is unscoped by default.
+                    //     static void F4([UnscopedRef] in R r4) { }
+                    Diagnostic(ErrorCode.ERR_UnscopedRefAttributeUnsupportedTarget, "UnscopedRef").WithLocation(13, 21),
+                    // (14,21): error CS9063: UnscopedRefAttribute cannot be applied to this parameter because it is unscoped by default.
+                    //     static void F5([UnscopedRef] out R r5) { }
+                    Diagnostic(ErrorCode.ERR_UnscopedRefAttributeUnsupportedTarget, "UnscopedRef").WithLocation(14, 21));
             }
 
             var scopedRefInCSharp10 = languageVersion == LanguageVersion.CSharp11 ? ScopedKind.None : ScopedKind.ScopedRef;

@@ -879,7 +879,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private bool IsValidUnscopedRefAttributeTarget()
         {
-            return RefKind != RefKind.None || (HasParamsModifier && Type.IsRefLikeOrAllowsRefLikeType());
+            return UseUpdatedEscapeRules && (RefKind != RefKind.None || (HasParamsModifier && Type.IsRefLikeOrAllowsRefLikeType()));
         }
 
         private static bool? DecodeMaybeNullWhenOrNotNullWhenOrDoesNotReturnIfAttribute(CSharpAttributeData attribute)
