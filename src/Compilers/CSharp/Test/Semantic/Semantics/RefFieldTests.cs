@@ -25016,7 +25016,7 @@ class Program
                     Diagnostic(ErrorCode.ERR_UnscopedRefAttributeUnsupportedTarget, "UnscopedRef").WithLocation(11, 21));
             }
 
-            VerifyParameterSymbol(comp.GetMember<MethodSymbol>("S.F").ThisParameter, "ref S this", RefKind.Ref, ScopedKind.None, expectedHasUnscopedRefAttribute: true);
+            VerifyParameterSymbol(comp.GetMember<MethodSymbol>("S.F").ThisParameter, "ref S this", RefKind.Ref, languageVersion == LanguageVersion.CSharp11 ? ScopedKind.None : ScopedKind.ScopedRef, expectedHasUnscopedRefAttribute: true);
             VerifyParameterSymbol(comp.GetMember<PropertySymbol>("S.P").GetMethod.ThisParameter, "ref S this", RefKind.Ref, ScopedKind.None, expectedHasUnscopedRefAttribute: true);
             VerifyParameterSymbol(comp.GetMember<MethodSymbol>("Program.F1").Parameters[0], "out System.Int32 i1", RefKind.Out, ScopedKind.None, expectedHasUnscopedRefAttribute: true);
             VerifyParameterSymbol(comp.GetMember<MethodSymbol>("Program.F2").Parameters[0], "R r2", RefKind.None, ScopedKind.None, expectedHasUnscopedRefAttribute: true);
