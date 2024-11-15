@@ -10462,7 +10462,34 @@ public struct Vec4
                 .VerifyDiagnostics()
                 // Needs two int temps.
                 .VerifyIL("<top-level-statements-entry-point>", """
-
+                    {
+                      // Code size       51 (0x33)
+                      .maxstack  3
+                      .locals init (R V_0, //r1
+                                    R V_1, //r2
+                                    int V_2,
+                                    int V_3)
+                      IL_0000:  newobj     "C..ctor()"
+                      IL_0005:  dup
+                      IL_0006:  ldc.i4.s   111
+                      IL_0008:  stloc.2
+                      IL_0009:  ldloca.s   V_2
+                      IL_000b:  callvirt   "R I.M(ref int)"
+                      IL_0010:  stloc.0
+                      IL_0011:  ldc.i4     0xde
+                      IL_0016:  stloc.3
+                      IL_0017:  ldloca.s   V_3
+                      IL_0019:  callvirt   "R I.M(ref int)"
+                      IL_001e:  stloc.1
+                      IL_001f:  ldloc.0
+                      IL_0020:  ldfld      "ref int R.F"
+                      IL_0025:  ldind.i4
+                      IL_0026:  ldloc.1
+                      IL_0027:  ldfld      "ref int R.F"
+                      IL_002c:  ldind.i4
+                      IL_002d:  call       "void Program.<<Main>$>g__Report|0_0(int, int)"
+                      IL_0032:  ret
+                    }
                     """);
         }
 

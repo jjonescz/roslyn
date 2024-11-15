@@ -708,11 +708,11 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             {
                 BoundExpression argument = expression.Arguments[i];
                 RefKind refKind = expression.ArgumentRefKindsOpt.IsDefaultOrEmpty ? RefKind.None : expression.ArgumentRefKindsOpt[i];
-                EmitArgument(argument, refKind, mightEscapeTemporaryRefs: false);
+                EmitArgument(argument, refKind);
             }
         }
 
-        private void EmitArgument(BoundExpression argument, RefKind refKind, bool mightEscapeTemporaryRefs)
+        private void EmitArgument(BoundExpression argument, RefKind refKind)
         {
             switch (refKind)
             {
@@ -722,14 +722,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
                 case RefKind.In:
                     var temp = EmitAddress(argument, AddressKind.ReadOnly);
-                    if (mightEscapeTemporaryRefs)
-                    {
-                        AddBlockTemp(temp);
-                    }
-                    else
-                    {
-                        AddExpressionTemp(temp);
-                    }
+                    AddExpressionTemp(temp);
                     break;
 
                 default:
@@ -961,11 +954,19 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             Debug.Assert(argRefKindsOpt.IsDefault || argRefKindsOpt.Length == arguments.Length ||
                 (argRefKindsOpt.Length == arguments.Length - 1 && arguments is [.., BoundArgListOperator]), "if we have argRefKinds, we should have one for each argument");
 
+            var oldTempRefsMightEscape = _tempRefsMightEscape;
+            if (mightEscapeTemporaryRefs)
+            {
+                _tempRefsMightEscape = true;
+            }
+
             for (int i = 0; i < arguments.Length; i++)
             {
                 RefKind argRefKind = GetArgumentRefKind(arguments, parameters, argRefKindsOpt, i);
-                EmitArgument(arguments[i], argRefKind, mightEscapeTemporaryRefs: mightEscapeTemporaryRefs);
+                EmitArgument(arguments[i], argRefKind);
             }
+
+            _tempRefsMightEscape = oldTempRefsMightEscape;
         }
 
         /// <summary>

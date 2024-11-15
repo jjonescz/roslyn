@@ -42,6 +42,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
         // If a ref to the temp could escape, it is retained for the most encompassing block.
         private ArrayBuilder<LocalDefinition> _expressionTemps;
         private ArrayBuilder<LocalDefinition> _blockTemps;
+        private bool _tempRefsMightEscape;
 
         // not 0 when in a protected region with a handler. 
         private int _tryNestingLevel;
@@ -505,7 +506,17 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             return span;
         }
 
-        private void AddExpressionTemp(LocalDefinition temp) => AddTemp(ref _expressionTemps, temp);
+        private void AddExpressionTemp(LocalDefinition temp)
+        {
+            if (_tempRefsMightEscape)
+            {
+                AddBlockTemp(temp);
+            }
+            else
+            {
+                AddTemp(ref _expressionTemps, temp);
+            }
+        }
 
         private void ReleaseExpressionTemps() => ReleaseTemps(_expressionTemps);
 
