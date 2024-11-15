@@ -10494,155 +10494,213 @@ public struct Vec4
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
-        public void RefTemp_Constructor_Literal_String()
+        public void RefTemp_NoTemp()
         {
             var source = """
-                var r = new R("abc");
-                
-                ref struct R
+                var x1 = 111;
+                var r1 = new R(x1);
+                var x2 = 222;
+                var r2 = new R(x2);
+                Report(r1.F, r2.F);
+
+                static void Report(int x, int y) => System.Console.WriteLine($"{x} {y}");
+
+                ref struct R(in int x)
                 {
-                    public R(in string x) { }
+                    public ref readonly int F = ref x;
                 }
                 """;
-
-            CreateCompilation(source, parseOptions: TestOptions.Regular10).VerifyDiagnostics();
-
-            var expectedDiagnostics = new[]
-            {
-                // (1,9): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
-                // var r = new R("abc");
-                Diagnostic(ErrorCode.ERR_EscapeOther, @"new R(""abc"")").WithLocation(1, 9)
-            };
-
-            CreateCompilation(source, parseOptions: TestOptions.Regular11).VerifyDiagnostics(expectedDiagnostics);
-            CreateCompilation(source).VerifyDiagnostics(expectedDiagnostics);
+            CompileAndVerify(source,
+                expectedOutput: "111 222",
+                targetFramework: TargetFramework.Net70)
+                .VerifyDiagnostics()
+                // No int temps needed.
+                .VerifyIL("<top-level-statements-entry-point>", """
+                    {
+                      // Code size       43 (0x2b)
+                      .maxstack  2
+                      .locals init (int V_0, //x1
+                                    int V_1, //x2
+                                    R V_2) //r2
+                      IL_0000:  ldc.i4.s   111
+                      IL_0002:  stloc.0
+                      IL_0003:  ldloca.s   V_0
+                      IL_0005:  newobj     "R..ctor(in int)"
+                      IL_000a:  ldc.i4     0xde
+                      IL_000f:  stloc.1
+                      IL_0010:  ldloca.s   V_1
+                      IL_0012:  newobj     "R..ctor(in int)"
+                      IL_0017:  stloc.2
+                      IL_0018:  ldfld      "ref readonly int R.F"
+                      IL_001d:  ldind.i4
+                      IL_001e:  ldloc.2
+                      IL_001f:  ldfld      "ref readonly int R.F"
+                      IL_0024:  ldind.i4
+                      IL_0025:  call       "void Program.<<Main>$>g__Report|0_0(int, int)"
+                      IL_002a:  ret
+                    }
+                    """);
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
-        public void RefTemp_Constructor_Conversion()
+        public void RefTemp_Escapes_RValue()
         {
             var source = """
-                string s = "abc";
-                var r = new R(s);
+                var r1 = new R(F1());
+                var r2 = new R(F2());
+                Report(r1.F, r2.F);
 
-                ref struct R
+                static int F1() => 111;
+                static int F2() => 222;
+                static void Report(int x, int y) => System.Console.WriteLine($"{x} {y}");
+
+                ref struct R(in int x)
                 {
-                    public R(in object x) { }
+                    public ref readonly int F = ref x;
                 }
                 """;
-
-            CreateCompilation(source, parseOptions: TestOptions.Regular10).VerifyDiagnostics();
-
-            var expectedDiagnostics = new[]
-            {
-                // (2,9): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
-                // var r = new R(s);
-                Diagnostic(ErrorCode.ERR_EscapeOther, "new R(s)").WithLocation(2, 9)
-            };
-
-            CreateCompilation(source, parseOptions: TestOptions.Regular11).VerifyDiagnostics(expectedDiagnostics);
-            CreateCompilation(source).VerifyDiagnostics(expectedDiagnostics);
-        }
-
-        [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
-        [InlineData(LanguageVersion.CSharp10)]
-        [InlineData(LanguageVersion.CSharp11)]
-        [InlineData(LanguageVersion.Preview)]
-        public void RefTemp_Constructor_Variable(LanguageVersion langVersion)
-        {
-            var source = """
-                string s = "abc";
-                var r = new R(s);
-
-                ref struct R
-                {
-                    public R(in string x) { }
-                }
-                """;
-            CreateCompilation(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics();
-        }
-
-        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
-        public void RefTemp_Constructor_RValue()
-        {
-            var source = """
-                var r = new R(F());
-
-                static int F() => 111;
-
-                ref struct R
-                {
-                    public R(in int x) { }
-                }
-                """;
-
-            CreateCompilation(source, parseOptions: TestOptions.Regular10).VerifyDiagnostics();
-
-            var expectedDiagnostics = new[]
-            {
-                // (1,9): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
-                // var r = new R(F());
-                Diagnostic(ErrorCode.ERR_EscapeOther, "new R(F())").WithLocation(1, 9)
-            };
-
-            CreateCompilation(source, parseOptions: TestOptions.Regular11).VerifyDiagnostics(expectedDiagnostics);
-            CreateCompilation(source).VerifyDiagnostics(expectedDiagnostics);
+            CompileAndVerify(source,
+                expectedOutput: "111 222",
+                targetFramework: TargetFramework.Net70)
+                .VerifyDiagnostics()
+                // Needs two int temps.
+                .VerifyIL("<top-level-statements-entry-point>", """
+                    {
+                      // Code size       46 (0x2e)
+                      .maxstack  2
+                      .locals init (R V_0, //r2
+                                    int V_1,
+                                    int V_2)
+                      IL_0000:  call       "int Program.<<Main>$>g__F1|0_0()"
+                      IL_0005:  stloc.1
+                      IL_0006:  ldloca.s   V_1
+                      IL_0008:  newobj     "R..ctor(in int)"
+                      IL_000d:  call       "int Program.<<Main>$>g__F2|0_1()"
+                      IL_0012:  stloc.2
+                      IL_0013:  ldloca.s   V_2
+                      IL_0015:  newobj     "R..ctor(in int)"
+                      IL_001a:  stloc.0
+                      IL_001b:  ldfld      "ref readonly int R.F"
+                      IL_0020:  ldind.i4
+                      IL_0021:  ldloc.0
+                      IL_0022:  ldfld      "ref readonly int R.F"
+                      IL_0027:  ldind.i4
+                      IL_0028:  call       "void Program.<<Main>$>g__Report|0_2(int, int)"
+                      IL_002d:  ret
+                    }
+                    """);
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
-        public void RefTemp_Constructor_Assignment()
+        public void RefTemp_Escapes_Assignment()
         {
             var source = """
-                R r = default;
-                r = new R(111);
+                var r1 = new R(100);
+                r1 = new R(101);
+                var r2 = new R(200);
+                r2 = new R(201);
+                Report(r1.F, r2.F);
 
-                ref struct R
+                static void Report(int x, int y) => System.Console.WriteLine($"{x} {y}");
+
+                ref struct R(in int x)
                 {
-                    public R(in int x) { }
+                    public ref readonly int F = ref x;
                 }
                 """;
-
-            CreateCompilation(source, parseOptions: TestOptions.Regular10).VerifyDiagnostics();
-
-            var expectedDiagnostics = new[]
-            {
-                // (2,11): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
-                // r = new R(111);
-                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "111").WithLocation(2, 11),
-                // (2,5): error CS8347: Cannot use a result of 'R.R(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
-                // r = new R(111);
-                Diagnostic(ErrorCode.ERR_EscapeCall, "new R(111)").WithArguments("R.R(in int)", "x").WithLocation(2, 5)
-            };
-
-            CreateCompilation(source, parseOptions: TestOptions.Regular11).VerifyDiagnostics(expectedDiagnostics);
-            CreateCompilation(source).VerifyDiagnostics(expectedDiagnostics);
+            CompileAndVerify(source,
+                expectedOutput: "101 201",
+                targetFramework: TargetFramework.Net70)
+                .VerifyDiagnostics()
+                // Needs at least two int temps.
+                .VerifyIL("<top-level-statements-entry-point>", """
+                    {
+                      // Code size       69 (0x45)
+                      .maxstack  2
+                      .locals init (R V_0, //r2
+                                    int V_1,
+                                    int V_2,
+                                    int V_3,
+                                    int V_4)
+                      IL_0000:  ldc.i4.s   100
+                      IL_0002:  stloc.1
+                      IL_0003:  ldloca.s   V_1
+                      IL_0005:  newobj     "R..ctor(in int)"
+                      IL_000a:  pop
+                      IL_000b:  ldc.i4.s   101
+                      IL_000d:  stloc.2
+                      IL_000e:  ldloca.s   V_2
+                      IL_0010:  newobj     "R..ctor(in int)"
+                      IL_0015:  ldc.i4     0xc8
+                      IL_001a:  stloc.3
+                      IL_001b:  ldloca.s   V_3
+                      IL_001d:  newobj     "R..ctor(in int)"
+                      IL_0022:  stloc.0
+                      IL_0023:  ldc.i4     0xc9
+                      IL_0028:  stloc.s    V_4
+                      IL_002a:  ldloca.s   V_4
+                      IL_002c:  newobj     "R..ctor(in int)"
+                      IL_0031:  stloc.0
+                      IL_0032:  ldfld      "ref readonly int R.F"
+                      IL_0037:  ldind.i4
+                      IL_0038:  ldloc.0
+                      IL_0039:  ldfld      "ref readonly int R.F"
+                      IL_003e:  ldind.i4
+                      IL_003f:  call       "void Program.<<Main>$>g__Report|0_0(int, int)"
+                      IL_0044:  ret
+                    }
+                    """);
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
-        public void RefTemp_Constructor_PatternMatch()
+        public void RefTemp_Escapes_PatternMatch()
         {
             var source = """
-                if (new R(111) is { } r)
+                if (new R(111) is { } r1 && new R(222) is { } r2)
                 {
+                    Report(r1.F, r2.F);
                 }
 
-                ref struct R
+                static void Report(int x, int y) => System.Console.WriteLine($"{x} {y}");
+
+                ref struct R(in int x)
                 {
-                    public R(in int x) { }
+                    public ref readonly int F = ref x;
                 }
                 """;
-
-            CreateCompilation(source, parseOptions: TestOptions.Regular10).VerifyDiagnostics();
-
-            var expectedDiagnostics = new[]
-            {
-                // (1,19): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
-                // if (new R(111) is { } r)
-                Diagnostic(ErrorCode.ERR_EscapeOther, "{ } r").WithLocation(1, 19)
-            };
-
-            CreateCompilation(source, parseOptions: TestOptions.Regular11).VerifyDiagnostics(expectedDiagnostics);
-            CreateCompilation(source).VerifyDiagnostics(expectedDiagnostics);
+            CompileAndVerify(source,
+                expectedOutput: "111 222",
+                targetFramework: TargetFramework.Net70)
+                .VerifyDiagnostics()
+                // Needs two int temps.
+                .VerifyIL("<top-level-statements-entry-point>", """
+                    {
+                      // Code size       45 (0x2d)
+                      .maxstack  2
+                      .locals init (R V_0, //r1
+                                    R V_1, //r2
+                                    int V_2,
+                                    int V_3)
+                      IL_0000:  ldc.i4.s   111
+                      IL_0002:  stloc.2
+                      IL_0003:  ldloca.s   V_2
+                      IL_0005:  newobj     "R..ctor(in int)"
+                      IL_000a:  stloc.0
+                      IL_000b:  ldc.i4     0xde
+                      IL_0010:  stloc.3
+                      IL_0011:  ldloca.s   V_3
+                      IL_0013:  newobj     "R..ctor(in int)"
+                      IL_0018:  stloc.1
+                      IL_0019:  ldloc.0
+                      IL_001a:  ldfld      "ref readonly int R.F"
+                      IL_001f:  ldind.i4
+                      IL_0020:  ldloc.1
+                      IL_0021:  ldfld      "ref readonly int R.F"
+                      IL_0026:  ldind.i4
+                      IL_0027:  call       "void Program.<<Main>$>g__Report|0_0(int, int)"
+                      IL_002c:  ret
+                    }
+                    """);
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
