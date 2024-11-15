@@ -722,7 +722,11 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
                 case RefKind.In:
                     var temp = EmitAddress(argument, AddressKind.ReadOnly);
-                    if (!mightEscapeTemporaryRefs)
+                    if (mightEscapeTemporaryRefs)
+                    {
+                        AddBlockTemp(temp);
+                    }
+                    else
                     {
                         AddExpressionTemp(temp);
                     }

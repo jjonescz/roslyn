@@ -10332,9 +10332,47 @@ public struct Vec4
                 expectedOutput: "111 222 333 444",
                 targetFramework: TargetFramework.Net70)
                 .VerifyDiagnostics()
-                // One int temp is enough.
+                // Two int and two R temps are enough.
                 .VerifyIL("<top-level-statements-entry-point>", """
-
+                    {
+                      // Code size       88 (0x58)
+                      .maxstack  2
+                      .locals init (R V_0, //r2
+                                    int V_1,
+                                    int V_2,
+                                    R V_3) //r2
+                      IL_0000:  ldc.i4.s   111
+                      IL_0002:  stloc.1
+                      IL_0003:  ldloca.s   V_1
+                      IL_0005:  newobj     "R..ctor(in int)"
+                      IL_000a:  ldc.i4     0xde
+                      IL_000f:  stloc.2
+                      IL_0010:  ldloca.s   V_2
+                      IL_0012:  newobj     "R..ctor(in int)"
+                      IL_0017:  stloc.0
+                      IL_0018:  ldfld      "ref readonly int R.F"
+                      IL_001d:  ldind.i4
+                      IL_001e:  ldloc.0
+                      IL_001f:  ldfld      "ref readonly int R.F"
+                      IL_0024:  ldind.i4
+                      IL_0025:  call       "void Program.<<Main>$>g__Report|0_0(int, int)"
+                      IL_002a:  ldc.i4     0x14d
+                      IL_002f:  stloc.1
+                      IL_0030:  ldloca.s   V_1
+                      IL_0032:  newobj     "R..ctor(in int)"
+                      IL_0037:  ldc.i4     0x1bc
+                      IL_003c:  stloc.2
+                      IL_003d:  ldloca.s   V_2
+                      IL_003f:  newobj     "R..ctor(in int)"
+                      IL_0044:  stloc.3
+                      IL_0045:  ldfld      "ref readonly int R.F"
+                      IL_004a:  ldind.i4
+                      IL_004b:  ldloc.3
+                      IL_004c:  ldfld      "ref readonly int R.F"
+                      IL_0051:  ldind.i4
+                      IL_0052:  call       "void Program.<<Main>$>g__Report|0_0(int, int)"
+                      IL_0057:  ret
+                    }
                     """);
         }
 
