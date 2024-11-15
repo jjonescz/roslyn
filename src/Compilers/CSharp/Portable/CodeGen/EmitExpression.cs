@@ -1999,7 +1999,11 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 }
 
                 var arguments = call.Arguments;
-                EmitArguments(arguments, method.Parameters, call.ArgumentRefKindsOpt);
+                EmitArguments(
+                    arguments,
+                    method.Parameters,
+                    call.ArgumentRefKindsOpt,
+                    mightEscapeTemporaryRefs: RefSafetyAnalysis.MightEscapeTemporaryRefs(call));
                 int stackBehavior = GetCallStackBehavior(method, arguments);
                 switch (callKind)
                 {

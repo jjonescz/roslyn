@@ -35,32 +35,75 @@ namespace Microsoft.CodeAnalysis.CSharp
             return visitor;
         }
 
-        // TODO: Return bit vector (one bit per argument)?
-        // TODO: Comment that it is not precise.
-        // TODO: Move to a separate file.
+        internal static bool MightEscapeTemporaryRefs(BoundCall node)
+        {
+            return MightEscapeTemporaryRefs(
+                returnType: node.Type,
+                receiverType: node.ReceiverOpt?.Type,
+                isReceiverReadOnly: node.Method.IsEffectivelyReadOnly,
+                parameters: node.Method.Parameters,
+                arguments: node.Arguments,
+                argsToParamsOpt: node.ArgsToParamsOpt,
+                expanded: node.Expanded);
+        }
+
         internal static bool MightEscapeTemporaryRefs(BoundObjectCreationExpression node)
         {
-            if (node.Arguments.IsDefaultOrEmpty)
-            {
-                return false;
-            }
+            return MightEscapeTemporaryRefs(
+                returnType: node.Type,
+                receiverType: null,
+                isReceiverReadOnly: false,
+                parameters: node.Constructor.Parameters,
+                arguments: node.Arguments,
+                argsToParamsOpt: node.ArgsToParamsOpt,
+                expanded: node.Expanded);
+        }
 
+        // TODO: Comment that it is not precise.
+        // TODO: Move to CodeGenerator.
+        private static bool MightEscapeTemporaryRefs(
+            TypeSymbol returnType,
+            TypeSymbol? receiverType,
+            bool isReceiverReadOnly,
+            ImmutableArray<ParameterSymbol> parameters,
+            ImmutableArray<BoundExpression> arguments,
+            ImmutableArray<int> argsToParamsOpt,
+            bool expanded)
+        {
             int writableRefs = 0;
             int readonlyRefs = 0;
 
-            if (node.Type.IsRefLikeType)
+            if (returnType.IsRefLikeType)
             {
                 writableRefs++;
             }
 
-            for (var arg = 0; arg < node.Arguments.Length; arg++)
+            if (receiverType is not null &&
+                receiverType.IsRefLikeOrAllowsRefLikeType())
             {
-                var argument = node.Arguments[arg];
+                if (isReceiverReadOnly)
+                {
+                    readonlyRefs++;
+                }
+                else
+                {
+                    writableRefs++;
+                }
+            }
+
+            if (shouldReturnTrue(writableRefs, readonlyRefs))
+            {
+                return true;
+            }
+
+            for (var arg = 0; arg < arguments.Length; arg++)
+            {
+                var argument = arguments[arg];
                 var parameter = Binder.GetCorrespondingParameter(
                     arg,
-                    node.Constructor.Parameters,
-                    node.ArgsToParamsOpt,
-                    node.Expanded);
+                    parameters,
+                    argsToParamsOpt,
+                    expanded);
 
                 if (parameter is not null &&
                     isReference(parameter, out var writable) &&
@@ -76,13 +119,18 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
                 }
 
-                if (writableRefs > 0 && (writableRefs + readonlyRefs) > 1)
+                if (shouldReturnTrue(writableRefs, readonlyRefs))
                 {
                     return true;
                 }
             }
 
             return false;
+
+            static bool shouldReturnTrue(int writableRefs, int readonlyRefs)
+            {
+                return writableRefs > 0 && (writableRefs + readonlyRefs) > 1;
+            }
 
             static bool isReference(ParameterSymbol parameter, out bool writable)
             {
