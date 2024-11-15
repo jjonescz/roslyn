@@ -1845,8 +1845,6 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     var analysis = RefSafetyAnalysis.Analyze(compilation, method, methodBody, diagnostics);
 
-                    methodBody = RefEscapingRewriter.Rewrite(analysis, methodBody);
-
                     switch (methodBody.Kind)
                     {
                         case BoundKind.ConstructorMethodBody:

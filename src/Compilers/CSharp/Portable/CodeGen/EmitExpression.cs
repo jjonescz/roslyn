@@ -946,6 +946,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             }
         }
 
+        // TODO: Remove the default parameter value.
         private void EmitArguments(ImmutableArray<BoundExpression> arguments, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<RefKind> argRefKindsOpt, bool mightEscapeTemporaryRefs = false)
         {
             // We might have an extra argument for the __arglist() of a varargs method.
@@ -2449,7 +2450,11 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 }
 
                 // none of the above cases, so just create an instance
-                EmitArguments(expression.Arguments, constructor.Parameters, expression.ArgumentRefKindsOpt, mightEscapeTemporaryRefs: expression.MightEscapeTemporaryRefs);
+                EmitArguments(
+                    expression.Arguments,
+                    constructor.Parameters,
+                    expression.ArgumentRefKindsOpt,
+                    mightEscapeTemporaryRefs: RefSafetyAnalysis.MightEscapeTemporaryRefs(expression));
 
                 var stackAdjustment = GetObjCreationStackBehavior(expression);
                 _builder.EmitOpCode(ILOpCode.Newobj, stackAdjustment);
@@ -2707,7 +2712,11 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             Debug.Assert(temp == null, "in-place ctor target should not create temps");
 
             var constructor = objCreation.Constructor;
-            EmitArguments(objCreation.Arguments, constructor.Parameters, objCreation.ArgumentRefKindsOpt, mightEscapeTemporaryRefs: objCreation.MightEscapeTemporaryRefs);
+            EmitArguments(
+                objCreation.Arguments,
+                constructor.Parameters,
+                objCreation.ArgumentRefKindsOpt,
+                mightEscapeTemporaryRefs: RefSafetyAnalysis.MightEscapeTemporaryRefs(objCreation));
             // -2 to adjust for consumed target address and not produced value.
             var stackAdjustment = GetObjCreationStackBehavior(objCreation) - 2;
             _builder.EmitOpCode(ILOpCode.Call, stackAdjustment);
