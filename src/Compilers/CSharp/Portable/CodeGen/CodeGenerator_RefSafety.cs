@@ -38,6 +38,21 @@ internal partial class CodeGenerator
             expanded: node.Expanded);
     }
 
+    private static bool MightEscapeTemporaryRefs(BoundFunctionPointerInvocation node)
+    {
+        FunctionPointerMethodSymbol method = node.FunctionPointer.Signature;
+        return MightEscapeTemporaryRefs(
+            returnType: node.Type,
+            returnRefKind: method.RefKind,
+            receiverType: null,
+            receiverAddressKind: null,
+            isReceiverReadOnly: false,
+            parameters: method.Parameters,
+            arguments: node.Arguments,
+            argsToParamsOpt: default,
+            expanded: false);
+    }
+
     private static bool MightEscapeTemporaryRefs(
         TypeSymbol returnType,
         RefKind returnRefKind,

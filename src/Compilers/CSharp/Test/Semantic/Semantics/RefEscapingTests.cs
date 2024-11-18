@@ -10815,6 +10815,35 @@ public struct Vec4
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_Escapes_FunctionPointer()
+        {
+            var source = """
+                unsafe
+                {
+                    delegate*<in int, R> f = &M;
+                    var r1 = f(111);
+                    var r2 = f(222);
+                    Report(r1.F, r2.F);
+                }
+
+                static void Report(int x, int y) => System.Console.WriteLine($"{x} {y}");
+
+                static R M(in int x) => new R(in x);
+
+                ref struct R(ref readonly int x)
+                {
+                    public ref readonly int F = ref x;
+                }
+                """;
+            CompileAndVerify(source,
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222"),
+                options: TestOptions.UnsafeReleaseExe,
+                targetFramework: TargetFramework.Net70,
+                verify: Verification.Fails)
+                .VerifyDiagnostics();
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
         public void RefTemp_Escapes_RefAssignment()
         {
             var source = """

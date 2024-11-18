@@ -943,8 +943,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             }
         }
 
-        // TODO: Remove the default parameter value.
-        private void EmitArguments(ImmutableArray<BoundExpression> arguments, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<RefKind> argRefKindsOpt, bool mightEscapeTemporaryRefs = false)
+        private void EmitArguments(ImmutableArray<BoundExpression> arguments, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<RefKind> argRefKindsOpt, bool mightEscapeTemporaryRefs)
         {
             // We might have an extra argument for the __arglist() of a varargs method.
             Debug.Assert(arguments.Length == parameters.Length ||
@@ -4061,7 +4060,11 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             }
 
             FunctionPointerMethodSymbol method = ptrInvocation.FunctionPointer.Signature;
-            EmitArguments(ptrInvocation.Arguments, method.Parameters, ptrInvocation.ArgumentRefKindsOpt);
+            EmitArguments(
+                ptrInvocation.Arguments,
+                method.Parameters,
+                ptrInvocation.ArgumentRefKindsOpt,
+                mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(ptrInvocation));
             var stackBehavior = GetCallStackBehavior(ptrInvocation.FunctionPointer.Signature, ptrInvocation.Arguments);
 
             if (temp is object)
