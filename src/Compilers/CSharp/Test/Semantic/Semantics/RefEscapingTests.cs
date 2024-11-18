@@ -10232,8 +10232,9 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "111 222",
-                targetFramework: TargetFramework.Net70)
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222"),
+                targetFramework: TargetFramework.Net70,
+                verify: Verification.FailsPEVerify)
                 .VerifyDiagnostics()
                 // Needs two int temps.
                 .VerifyIL("<top-level-statements-entry-point>", """
@@ -10321,8 +10322,9 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "111 222 333 444",
-                targetFramework: TargetFramework.Net70)
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222 333 444"),
+                targetFramework: TargetFramework.Net70,
+                verify: Verification.FailsPEVerify)
                 .VerifyDiagnostics()
                 // Two int and two R temps are enough.
                 .VerifyIL("<top-level-statements-entry-point>", """
@@ -10448,7 +10450,7 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "111 222",
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222"),
                 targetFramework: TargetFramework.Net70,
                 verify: Verification.Fails)
                 .VerifyDiagnostics()
@@ -10503,8 +10505,9 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "111 222",
-                targetFramework: TargetFramework.Net70)
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222"),
+                targetFramework: TargetFramework.Net70,
+                verify: Verification.FailsPEVerify)
                 .VerifyDiagnostics()
                 // No int temps needed.
                 .VerifyIL("<top-level-statements-entry-point>", """
@@ -10552,8 +10555,9 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "111 222",
-                targetFramework: TargetFramework.Net70)
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222"),
+                targetFramework: TargetFramework.Net70,
+                verify: Verification.FailsPEVerify)
                 .VerifyDiagnostics()
                 // Needs two int temps.
                 .VerifyIL("<top-level-statements-entry-point>", """
@@ -10601,8 +10605,9 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "101 201",
-                targetFramework: TargetFramework.Net70)
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("101 201"),
+                targetFramework: TargetFramework.Net70,
+                verify: Verification.FailsPEVerify)
                 .VerifyDiagnostics()
                 // Needs at least two int temps.
                 .VerifyIL("<top-level-statements-entry-point>", """
@@ -10661,8 +10666,9 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "111 222",
-                targetFramework: TargetFramework.Net70)
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222"),
+                targetFramework: TargetFramework.Net70,
+                verify: Verification.FailsPEVerify)
                 .VerifyDiagnostics()
                 // Needs two int temps.
                 .VerifyIL("<top-level-statements-entry-point>", """
@@ -10713,7 +10719,7 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "111 222",
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222"),
                 targetFramework: TargetFramework.Net70,
                 verify: Verification.Fails)
                 .VerifyDiagnostics();
@@ -10738,8 +10744,9 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "111 222",
-                targetFramework: TargetFramework.Net70)
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222"),
+                targetFramework: TargetFramework.Net70,
+                verify: Verification.FailsPEVerify)
                 .VerifyDiagnostics();
         }
 
@@ -10801,8 +10808,9 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "111 222",
-                targetFramework: TargetFramework.Net70)
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222"),
+                targetFramework: TargetFramework.Net70,
+                verify: Verification.FailsPEVerify)
                 .VerifyDiagnostics();
         }
 
@@ -10823,7 +10831,7 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "111 222",
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222"),
                 targetFramework: TargetFramework.Net70,
                 verify: Verification.Fails)
                 .VerifyDiagnostics();
@@ -10855,7 +10863,7 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "111 222",
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222"),
                 targetFramework: TargetFramework.Net70,
                 verify: Verification.Fails)
                 .VerifyDiagnostics();
@@ -10884,7 +10892,7 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "111 222",
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222"),
                 targetFramework: TargetFramework.Net70,
                 verify: Verification.Fails)
                 .VerifyDiagnostics(
@@ -10918,7 +10926,7 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "111 222",
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222"),
                 targetFramework: TargetFramework.Net70,
                 verify: Verification.Fails)
                 .VerifyDiagnostics()
@@ -10968,7 +10976,7 @@ public struct Vec4
                 }
                 """;
             CompileAndVerify(source,
-                expectedOutput: "111 222",
+                expectedOutput: RefFieldTests.IncludeExpectedOutput("111 222"),
                 targetFramework: TargetFramework.Net70,
                 verify: Verification.Fails)
                 .VerifyDiagnostics();
