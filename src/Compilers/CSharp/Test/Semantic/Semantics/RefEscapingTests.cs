@@ -10335,6 +10335,46 @@ public struct Vec4
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_CannotEscape_ScopedParameter()
+        {
+            var source = """
+                var r1 = new R(111);
+                var r2 = new R(222);
+                Use(r1, r2);
+
+                static void Use(R x, R y) { }
+
+                ref struct R
+                {
+                    public R(scoped in int x) { }
+                }
+                """;
+            CompileAndVerify(source)
+                .VerifyDiagnostics()
+                // One int temp is enough.
+                .VerifyIL("<top-level-statements-entry-point>", """
+                    {
+                      // Code size       31 (0x1f)
+                      .maxstack  2
+                      .locals init (R V_0, //r2
+                                    int V_1)
+                      IL_0000:  ldc.i4.s   111
+                      IL_0002:  stloc.1
+                      IL_0003:  ldloca.s   V_1
+                      IL_0005:  newobj     "R..ctor(scoped in int)"
+                      IL_000a:  ldc.i4     0xde
+                      IL_000f:  stloc.1
+                      IL_0010:  ldloca.s   V_1
+                      IL_0012:  newobj     "R..ctor(scoped in int)"
+                      IL_0017:  stloc.0
+                      IL_0018:  ldloc.0
+                      IL_0019:  call       "void Program.<<Main>$>g__Use|0_0(R, R)"
+                      IL_001e:  ret
+                    }
+                    """);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
         public void RefTemp_Escapes_NestedBlock()
         {
             var source = """

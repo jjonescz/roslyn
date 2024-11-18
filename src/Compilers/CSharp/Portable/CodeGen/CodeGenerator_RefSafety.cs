@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Immutable;
+using System.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 
 namespace Microsoft.CodeAnalysis.CSharp.CodeGen;
@@ -16,6 +17,7 @@ internal partial class CodeGenerator
             returnType: node.Type,
             returnRefKind: node.Method.RefKind,
             receiverType: node.ReceiverOpt?.Type,
+            receiverScope: node.Method.TryGetThisParameter(out var thisParameter) ? thisParameter?.EffectiveScope : null,
             receiverAddressKind: receiverAddressKind,
             isReceiverReadOnly: node.Method.IsEffectivelyReadOnly,
             parameters: node.Method.Parameters,
@@ -31,6 +33,7 @@ internal partial class CodeGenerator
             returnType: node.Type,
             returnRefKind: RefKind.None,
             receiverType: null,
+            receiverScope: null,
             receiverAddressKind: null,
             isReceiverReadOnly: false,
             parameters: node.Constructor.Parameters,
@@ -47,6 +50,7 @@ internal partial class CodeGenerator
             returnType: node.Type,
             returnRefKind: method.RefKind,
             receiverType: null,
+            receiverScope: null,
             receiverAddressKind: null,
             isReceiverReadOnly: false,
             parameters: method.Parameters,
@@ -60,6 +64,7 @@ internal partial class CodeGenerator
         TypeSymbol returnType,
         RefKind returnRefKind,
         TypeSymbol? receiverType,
+        ScopedKind? receiverScope,
         AddressKind? receiverAddressKind,
         bool isReceiverReadOnly,
         ImmutableArray<ParameterSymbol> parameters,
@@ -77,11 +82,12 @@ internal partial class CodeGenerator
 
         if (receiverType is not null)
         {
-            if (receiverAddressKind is { } a && IsAnyReadOnly(a))
+            Debug.Assert(receiverScope != null);
+            if (receiverAddressKind is { } a && IsAnyReadOnly(a) && receiverScope == ScopedKind.None)
             {
                 writableRefs++;
             }
-            else if (receiverType.IsRefLikeOrAllowsRefLikeType())
+            else if (receiverType.IsRefLikeOrAllowsRefLikeType() && receiverScope != ScopedKind.ScopedValue)
             {
                 if (isReceiverReadOnly || receiverType.IsReadOnly)
                 {
@@ -92,7 +98,7 @@ internal partial class CodeGenerator
                     writableRefs++;
                 }
             }
-            else if (receiverAddressKind != null)
+            else if (receiverAddressKind != null && receiverScope == ScopedKind.None)
             {
                 readonlyRefs++;
             }
@@ -113,11 +119,11 @@ internal partial class CodeGenerator
 
             if (parameter is not null)
             {
-                if (parameter.RefKind.IsWritableReference())
+                if (parameter.RefKind.IsWritableReference() && parameter.EffectiveScope == ScopedKind.None)
                 {
                     writableRefs++;
                 }
-                else if (parameter.Type.IsRefLikeOrAllowsRefLikeType())
+                else if (parameter.Type.IsRefLikeOrAllowsRefLikeType() && receiverScope != ScopedKind.ScopedValue)
                 {
                     if (parameter.Type.IsReadOnly)
                     {
@@ -128,7 +134,7 @@ internal partial class CodeGenerator
                         writableRefs++;
                     }
                 }
-                else if (parameter.RefKind != RefKind.None)
+                else if (parameter.RefKind != RefKind.None && parameter.EffectiveScope == ScopedKind.None)
                 {
                     readonlyRefs++;
                 }
