@@ -98,7 +98,6 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             for (var arg = 0; arg < arguments.Length; arg++)
             {
-                var argument = arguments[arg];
                 var parameter = Binder.GetCorrespondingParameter(
                     arg,
                     parameters,
@@ -106,8 +105,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     expanded);
 
                 if (parameter is not null &&
-                    isReference(parameter, out var writable) &&
-                    !argument.IsDiscardExpression())
+                    isReference(parameter, out var writable))
                 {
                     if (writable)
                     {

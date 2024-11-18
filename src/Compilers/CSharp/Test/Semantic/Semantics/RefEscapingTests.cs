@@ -10756,21 +10756,22 @@ public struct Vec4
                 """;
             CompileAndVerify(source)
                 .VerifyDiagnostics()
-                // One int temp is enough.
+                // One int temp would be enough. But currently the emit layer does not see the argument is a discard.
                 .VerifyIL("<top-level-statements-entry-point>", """
                     {
                       // Code size       28 (0x1c)
                       .maxstack  2
                       .locals init (R V_0,
-                                    int V_1)
+                                    int V_1,
+                                    int V_2)
                       IL_0000:  ldc.i4.s   111
                       IL_0002:  stloc.1
                       IL_0003:  ldloca.s   V_1
                       IL_0005:  ldloca.s   V_0
                       IL_0007:  call       "void Program.<<Main>$>g__M|0_0(in int, out R)"
                       IL_000c:  ldc.i4     0xde
-                      IL_0011:  stloc.1
-                      IL_0012:  ldloca.s   V_1
+                      IL_0011:  stloc.2
+                      IL_0012:  ldloca.s   V_2
                       IL_0014:  ldloca.s   V_0
                       IL_0016:  call       "void Program.<<Main>$>g__M|0_0(in int, out R)"
                       IL_001b:  ret
