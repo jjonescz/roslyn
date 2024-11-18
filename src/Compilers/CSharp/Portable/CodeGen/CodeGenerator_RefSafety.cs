@@ -85,7 +85,7 @@ internal partial class CodeGenerator
         if (receiverType is not null)
         {
             Debug.Assert(receiverScope != null);
-            if (receiverAddressKind is { } a && IsAnyReadOnly(a) && receiverScope == ScopedKind.None)
+            if (receiverAddressKind is { } a && !IsAnyReadOnly(a) && receiverScope == ScopedKind.None)
             {
                 writableRefs++;
             }
