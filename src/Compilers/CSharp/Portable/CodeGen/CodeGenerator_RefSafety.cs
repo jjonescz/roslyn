@@ -16,7 +16,7 @@ internal partial class CodeGenerator
             used: used,
             returnType: node.Type,
             returnRefKind: node.Method.RefKind,
-            receiverType: node.ReceiverOpt?.Type,
+            receiverType: !node.Method.RequiresInstanceReceiver ? null : node.ReceiverOpt?.Type,
             receiverScope: node.Method.TryGetThisParameter(out var thisParameter) ? thisParameter?.EffectiveScope : null,
             receiverAddressKind: receiverAddressKind,
             isReceiverReadOnly: node.Method.IsEffectivelyReadOnly,
@@ -72,6 +72,8 @@ internal partial class CodeGenerator
         ImmutableArray<int> argsToParamsOpt,
         bool expanded)
     {
+        Debug.Assert(receiverAddressKind is null || receiverType is not null);
+
         int writableRefs = 0;
         int readonlyRefs = 0;
 
