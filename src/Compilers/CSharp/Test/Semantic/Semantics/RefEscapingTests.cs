@@ -10300,6 +10300,41 @@ public struct Vec4
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_CannotEscape_UnusedResult()
+        {
+            var source = """
+                new R(111);
+                new R(222);
+
+                ref struct R
+                {
+                    public R(in int x) { }
+                }
+                """;
+            CompileAndVerify(source)
+                .VerifyDiagnostics()
+                // One int temp is enough.
+                .VerifyIL("<top-level-statements-entry-point>", """
+                    {
+                      // Code size       26 (0x1a)
+                      .maxstack  1
+                      .locals init (int V_0)
+                      IL_0000:  ldc.i4.s   111
+                      IL_0002:  stloc.0
+                      IL_0003:  ldloca.s   V_0
+                      IL_0005:  newobj     "R..ctor(in int)"
+                      IL_000a:  pop
+                      IL_000b:  ldc.i4     0xde
+                      IL_0010:  stloc.0
+                      IL_0011:  ldloca.s   V_0
+                      IL_0013:  newobj     "R..ctor(in int)"
+                      IL_0018:  pop
+                      IL_0019:  ret
+                    }
+                    """);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
         public void RefTemp_Escapes_NestedBlock()
         {
             var source = """
@@ -10612,39 +10647,38 @@ public struct Vec4
                 // Needs at least two int temps.
                 .VerifyIL("<top-level-statements-entry-point>", """
                     {
-                      // Code size       69 (0x45)
+                      // Code size       68 (0x44)
                       .maxstack  2
                       .locals init (R V_0, //r2
                                     int V_1,
                                     int V_2,
-                                    int V_3,
-                                    int V_4)
+                                    int V_3)
                       IL_0000:  ldc.i4.s   100
                       IL_0002:  stloc.1
                       IL_0003:  ldloca.s   V_1
                       IL_0005:  newobj     "R..ctor(in int)"
                       IL_000a:  pop
                       IL_000b:  ldc.i4.s   101
-                      IL_000d:  stloc.2
-                      IL_000e:  ldloca.s   V_2
+                      IL_000d:  stloc.1
+                      IL_000e:  ldloca.s   V_1
                       IL_0010:  newobj     "R..ctor(in int)"
                       IL_0015:  ldc.i4     0xc8
-                      IL_001a:  stloc.3
-                      IL_001b:  ldloca.s   V_3
+                      IL_001a:  stloc.2
+                      IL_001b:  ldloca.s   V_2
                       IL_001d:  newobj     "R..ctor(in int)"
                       IL_0022:  stloc.0
                       IL_0023:  ldc.i4     0xc9
-                      IL_0028:  stloc.s    V_4
-                      IL_002a:  ldloca.s   V_4
-                      IL_002c:  newobj     "R..ctor(in int)"
-                      IL_0031:  stloc.0
-                      IL_0032:  ldfld      "ref readonly int R.F"
-                      IL_0037:  ldind.i4
-                      IL_0038:  ldloc.0
-                      IL_0039:  ldfld      "ref readonly int R.F"
-                      IL_003e:  ldind.i4
-                      IL_003f:  call       "void Program.<<Main>$>g__Report|0_0(int, int)"
-                      IL_0044:  ret
+                      IL_0028:  stloc.3
+                      IL_0029:  ldloca.s   V_3
+                      IL_002b:  newobj     "R..ctor(in int)"
+                      IL_0030:  stloc.0
+                      IL_0031:  ldfld      "ref readonly int R.F"
+                      IL_0036:  ldind.i4
+                      IL_0037:  ldloc.0
+                      IL_0038:  ldfld      "ref readonly int R.F"
+                      IL_003d:  ldind.i4
+                      IL_003e:  call       "void Program.<<Main>$>g__Report|0_0(int, int)"
+                      IL_0043:  ret
                     }
                     """);
         }

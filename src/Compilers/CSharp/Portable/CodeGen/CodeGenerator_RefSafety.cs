@@ -3,16 +3,16 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Immutable;
-using System.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 
 namespace Microsoft.CodeAnalysis.CSharp.CodeGen;
 
 internal partial class CodeGenerator
 {
-    private static bool MightEscapeTemporaryRefs(BoundCall node, AddressKind? receiverAddressKind)
+    private static bool MightEscapeTemporaryRefs(BoundCall node, bool used, AddressKind? receiverAddressKind)
     {
         return MightEscapeTemporaryRefs(
+            used: used,
             returnType: node.Type,
             returnRefKind: node.Method.RefKind,
             receiverType: node.ReceiverOpt?.Type,
@@ -24,9 +24,10 @@ internal partial class CodeGenerator
             expanded: node.Expanded);
     }
 
-    private static bool MightEscapeTemporaryRefs(BoundObjectCreationExpression node)
+    private static bool MightEscapeTemporaryRefs(BoundObjectCreationExpression node, bool used)
     {
         return MightEscapeTemporaryRefs(
+            used: used,
             returnType: node.Type,
             returnRefKind: RefKind.None,
             receiverType: null,
@@ -38,10 +39,11 @@ internal partial class CodeGenerator
             expanded: node.Expanded);
     }
 
-    private static bool MightEscapeTemporaryRefs(BoundFunctionPointerInvocation node)
+    private static bool MightEscapeTemporaryRefs(BoundFunctionPointerInvocation node, bool used)
     {
         FunctionPointerMethodSymbol method = node.FunctionPointer.Signature;
         return MightEscapeTemporaryRefs(
+            used: used,
             returnType: node.Type,
             returnRefKind: method.RefKind,
             receiverType: null,
@@ -54,6 +56,7 @@ internal partial class CodeGenerator
     }
 
     private static bool MightEscapeTemporaryRefs(
+        bool used,
         TypeSymbol returnType,
         RefKind returnRefKind,
         TypeSymbol? receiverType,
@@ -67,7 +70,7 @@ internal partial class CodeGenerator
         int writableRefs = 0;
         int readonlyRefs = 0;
 
-        if (returnRefKind != RefKind.None || returnType.IsRefLikeOrAllowsRefLikeType())
+        if (used && (returnRefKind != RefKind.None || returnType.IsRefLikeOrAllowsRefLikeType()))
         {
             writableRefs++;
         }

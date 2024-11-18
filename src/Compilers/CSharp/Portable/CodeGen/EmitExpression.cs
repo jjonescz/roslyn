@@ -1672,7 +1672,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 arguments,
                 method.Parameters,
                 call.ArgumentRefKindsOpt,
-                mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(call, receiverAddressKind: null));
+                mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(call, used: useKind != UseKind.Unused, receiverAddressKind: null));
             int stackBehavior = GetCallStackBehavior(method, arguments);
 
             if (method.IsAbstract || method.IsVirtual)
@@ -1768,7 +1768,10 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                     }
 
                     emitArgumentsAndCallEpilogue(call, callKind, receiverUseKind,
-                        mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(call, receiverAddressKind: receiverUseKind != UseKind.UsedAsAddress ? null : addressKind));
+                        mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(
+                            call,
+                            used: useKind != UseKind.Unused,
+                            receiverAddressKind: receiverUseKind != UseKind.UsedAsAddress ? null : addressKind));
                     FreeOptTemp(tempOpt);
                     tempOpt = null;
 
@@ -1930,7 +1933,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 var receiver = call.ReceiverOpt;
                 var receiverType = receiver.Type;
                 tempOpt = null;
-                mightEscapeTemporaryRefs = MightEscapeTemporaryRefs(call, receiverAddressKind: addressKind);
+                mightEscapeTemporaryRefs = MightEscapeTemporaryRefs(call, used: useKind != UseKind.Unused, receiverAddressKind: addressKind);
 
                 if (addressKind is null)
                 {
@@ -2475,7 +2478,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                     expression.Arguments,
                     constructor.Parameters,
                     expression.ArgumentRefKindsOpt,
-                    mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(expression));
+                    mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(expression, used));
 
                 var stackAdjustment = GetObjCreationStackBehavior(expression);
                 _builder.EmitOpCode(ILOpCode.Newobj, stackAdjustment);
@@ -2737,7 +2740,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 objCreation.Arguments,
                 constructor.Parameters,
                 objCreation.ArgumentRefKindsOpt,
-                mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(objCreation));
+                mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(objCreation, used));
             // -2 to adjust for consumed target address and not produced value.
             var stackAdjustment = GetObjCreationStackBehavior(objCreation) - 2;
             _builder.EmitOpCode(ILOpCode.Call, stackAdjustment);
@@ -4064,7 +4067,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 ptrInvocation.Arguments,
                 method.Parameters,
                 ptrInvocation.ArgumentRefKindsOpt,
-                mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(ptrInvocation));
+                mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(ptrInvocation, used: useKind != UseKind.Unused));
             var stackBehavior = GetCallStackBehavior(ptrInvocation.FunctionPointer.Signature, ptrInvocation.Arguments);
 
             if (temp is object)
