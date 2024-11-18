@@ -1673,7 +1673,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 arguments,
                 method.Parameters,
                 call.ArgumentRefKindsOpt,
-                mightEscapeTemporaryRefs: RefSafetyAnalysis.MightEscapeTemporaryRefs(call));
+                mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(call, receiverAddressKind: null));
             int stackBehavior = GetCallStackBehavior(method, arguments);
 
             if (method.IsAbstract || method.IsVirtual)
@@ -1702,6 +1702,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             AddressKind? addressKind;
             bool box;
             LocalDefinition tempOpt;
+            bool mightEscapeTemporaryRefs;
 
             if (receiverIsInstanceCall(call, out BoundCall nested))
             {
@@ -1717,7 +1718,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 }
 
                 callKind = determineEmitReceiverStrategy(call, out addressKind, out box);
-                emitReceiver(call, callKind, addressKind, box, out tempOpt);
+                emitReceiver(call, callKind, addressKind, box, out tempOpt, out mightEscapeTemporaryRefs);
 
                 while (calls.Count != 0)
                 {
@@ -1767,7 +1768,8 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                         }
                     }
 
-                    emitArgumentsAndCallEpilogue(call, callKind, receiverUseKind);
+                    emitArgumentsAndCallEpilogue(call, callKind, receiverUseKind,
+                        mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(call, receiverAddressKind: receiverUseKind != UseKind.UsedAsAddress ? null : addressKind));
                     FreeOptTemp(tempOpt);
                     tempOpt = null;
 
@@ -1824,10 +1826,10 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             else
             {
                 callKind = determineEmitReceiverStrategy(call, out addressKind, out box);
-                emitReceiver(call, callKind, addressKind, box, out tempOpt);
+                emitReceiver(call, callKind, addressKind, box, out tempOpt, out mightEscapeTemporaryRefs);
             }
 
-            emitArgumentsAndCallEpilogue(call, callKind, useKind);
+            emitArgumentsAndCallEpilogue(call, callKind, useKind, mightEscapeTemporaryRefs);
             FreeOptTemp(tempOpt);
 
             return;
@@ -1924,11 +1926,12 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             }
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            void emitReceiver(BoundCall call, CallKind callKind, AddressKind? addressKind, bool box, out LocalDefinition tempOpt)
+            void emitReceiver(BoundCall call, CallKind callKind, AddressKind? addressKind, bool box, out LocalDefinition tempOpt, out bool mightEscapeTemporaryRefs)
             {
                 var receiver = call.ReceiverOpt;
                 var receiverType = receiver.Type;
                 tempOpt = null;
+                mightEscapeTemporaryRefs = MightEscapeTemporaryRefs(call, receiverAddressKind: addressKind);
 
                 if (addressKind is null)
                 {
@@ -1945,12 +1948,18 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                     Debug.Assert(!receiverType.IsVerifierReference());
                     tempOpt = EmitReceiverRef(receiver, addressKind.GetValueOrDefault());
 
+                    if (mightEscapeTemporaryRefs)
+                    {
+                        AddBlockTemp(tempOpt);
+                        tempOpt = null;
+                    }
+
                     emitGenericReceiverCloneIfNecessary(call, callKind, ref tempOpt);
                 }
             }
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            void emitArgumentsAndCallEpilogue(BoundCall call, CallKind callKind, UseKind useKind)
+            void emitArgumentsAndCallEpilogue(BoundCall call, CallKind callKind, UseKind useKind, bool mightEscapeTemporaryRefs)
             {
                 var method = call.Method;
                 var receiver = call.ReceiverOpt;
@@ -2008,7 +2017,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                     arguments,
                     method.Parameters,
                     call.ArgumentRefKindsOpt,
-                    mightEscapeTemporaryRefs: RefSafetyAnalysis.MightEscapeTemporaryRefs(call));
+                    mightEscapeTemporaryRefs: mightEscapeTemporaryRefs);
                 int stackBehavior = GetCallStackBehavior(method, arguments);
                 switch (callKind)
                 {
@@ -2467,7 +2476,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                     expression.Arguments,
                     constructor.Parameters,
                     expression.ArgumentRefKindsOpt,
-                    mightEscapeTemporaryRefs: RefSafetyAnalysis.MightEscapeTemporaryRefs(expression));
+                    mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(expression));
 
                 var stackAdjustment = GetObjCreationStackBehavior(expression);
                 _builder.EmitOpCode(ILOpCode.Newobj, stackAdjustment);
@@ -2729,7 +2738,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 objCreation.Arguments,
                 constructor.Parameters,
                 objCreation.ArgumentRefKindsOpt,
-                mightEscapeTemporaryRefs: RefSafetyAnalysis.MightEscapeTemporaryRefs(objCreation));
+                mightEscapeTemporaryRefs: MightEscapeTemporaryRefs(objCreation));
             // -2 to adjust for consumed target address and not produced value.
             var stackAdjustment = GetObjCreationStackBehavior(objCreation) - 2;
             _builder.EmitOpCode(ILOpCode.Call, stackAdjustment);
