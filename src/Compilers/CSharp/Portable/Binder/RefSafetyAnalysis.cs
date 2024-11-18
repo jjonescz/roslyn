@@ -39,6 +39,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             return MightEscapeTemporaryRefs(
                 returnType: node.Type,
+                returnRefKind: node.Method.RefKind,
                 receiverType: node.ReceiverOpt?.Type,
                 isReceiverReadOnly: node.Method.IsEffectivelyReadOnly,
                 parameters: node.Method.Parameters,
@@ -51,6 +52,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             return MightEscapeTemporaryRefs(
                 returnType: node.Type,
+                returnRefKind: RefKind.None,
                 receiverType: null,
                 isReceiverReadOnly: false,
                 parameters: node.Constructor.Parameters,
@@ -63,6 +65,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         // TODO: Move to CodeGenerator.
         private static bool MightEscapeTemporaryRefs(
             TypeSymbol returnType,
+            RefKind returnRefKind,
             TypeSymbol? receiverType,
             bool isReceiverReadOnly,
             ImmutableArray<ParameterSymbol> parameters,
@@ -73,7 +76,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             int writableRefs = 0;
             int readonlyRefs = 0;
 
-            if (returnType.IsRefLikeType)
+            if (returnRefKind != RefKind.None || returnType.IsRefLikeOrAllowsRefLikeType())
             {
                 writableRefs++;
             }
