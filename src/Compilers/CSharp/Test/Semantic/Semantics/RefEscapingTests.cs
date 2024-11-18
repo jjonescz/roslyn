@@ -10269,39 +10269,31 @@ public struct Vec4
             var source = """
                 var r1 = new R(111);
                 var r2 = new R(222);
-                Report(r1.F, r2.F);
-                
-                static void Report(int x, int y) => System.Console.WriteLine($"{x} {y}");
 
                 struct R(in int x)
                 {
                     public readonly int F = x;
                 }
                 """;
-            CompileAndVerify(source,
-                expectedOutput: "111 222")
+            CompileAndVerify(source)
                 .VerifyDiagnostics()
                 // One int temp is enough.
                 .VerifyIL("<top-level-statements-entry-point>", """
                     {
-                      // Code size       41 (0x29)
-                      .maxstack  2
-                      .locals init (R V_0, //r2
-                                    int V_1)
+                      // Code size       26 (0x1a)
+                      .maxstack  1
+                      .locals init (int V_0)
                       IL_0000:  ldc.i4.s   111
-                      IL_0002:  stloc.1
-                      IL_0003:  ldloca.s   V_1
+                      IL_0002:  stloc.0
+                      IL_0003:  ldloca.s   V_0
                       IL_0005:  newobj     "R..ctor(in int)"
-                      IL_000a:  ldc.i4     0xde
-                      IL_000f:  stloc.1
-                      IL_0010:  ldloca.s   V_1
-                      IL_0012:  newobj     "R..ctor(in int)"
-                      IL_0017:  stloc.0
-                      IL_0018:  ldfld      "int R.F"
-                      IL_001d:  ldloc.0
-                      IL_001e:  ldfld      "int R.F"
-                      IL_0023:  call       "void Program.<<Main>$>g__Report|0_0(int, int)"
-                      IL_0028:  ret
+                      IL_000a:  pop
+                      IL_000b:  ldc.i4     0xde
+                      IL_0010:  stloc.0
+                      IL_0011:  ldloca.s   V_0
+                      IL_0013:  newobj     "R..ctor(in int)"
+                      IL_0018:  pop
+                      IL_0019:  ret
                     }
                     """);
         }
@@ -10704,10 +10696,14 @@ public struct Vec4
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
-        public void RefTemp_Initializer()
+        public void RefTemp_Escapes_Initializer()
         {
             var source = """
-                var r = new R() { F = ref M(111) };
+                var r1 = new R() { F = ref M(111) };
+                var r2 = new R() { F = ref M(222) };
+                Report(r1.F, r2.F);
+
+                static void Report(int x, int y) => System.Console.WriteLine($"{x} {y}");
 
                 static ref readonly int M(in int x) => ref x;
 
@@ -10716,129 +10712,70 @@ public struct Vec4
                     public ref readonly int F;
                 }
                 """;
-            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
-                // (1,9): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
-                // var r = new R() { F = ref M(111) };
-                Diagnostic(ErrorCode.ERR_EscapeOther, "new R() { F = ref M(111) }").WithLocation(1, 9),
-                // (1,19): error CS8374: Cannot ref-assign 'M(111)' to 'F' because 'M(111)' has a narrower escape scope than 'F'.
-                // var r = new R() { F = ref M(111) };
-                Diagnostic(ErrorCode.ERR_RefAssignNarrower, "F = ref M(111)").WithArguments("F", "M(111)").WithLocation(1, 19));
+            CompileAndVerify(source,
+                expectedOutput: "111 222",
+                targetFramework: TargetFramework.Net70,
+                verify: Verification.Fails)
+                .VerifyDiagnostics();
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
-        public void RefTemp_RefStructParameter()
+        public void RefTemp_Escapes_ViaOutParameter()
         {
             var source = """
-                using System.Diagnostics.CodeAnalysis;
+                scoped R r1, r2;
+                M(111, out r1);
+                M(222, out r2);
+                Report(r1.F, r2.F);
 
-                var r = new R();
-                M1(111);
-                M2(222, r);
-                M3(333, r);
-                M4(444, ref r);
-                M5(555, ref r);
-
-                static void M1(in int x) { }
-                static void M2(in int x, R r) => r.F = ref x;
-                static void M3([UnscopedRef] in int x, R r) => r.F = ref x;
-                static void M4(in int x, ref R r) => r.F = ref x;
-                static void M5([UnscopedRef] in int x, ref R r) => r.F = ref x;
-
-                ref struct R
-                {
-                    public ref readonly int F;
-                }
-                """;
-            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
-                // (8,4): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
-                // M5(555, ref r);
-                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "555").WithLocation(8, 4),
-                // (8,1): error CS8350: This combination of arguments to 'M5(in int, ref R)' is disallowed because it may expose variables referenced by parameter 'x' outside of their declaration scope
-                // M5(555, ref r);
-                Diagnostic(ErrorCode.ERR_CallArgMixing, "M5(555, ref r)").WithArguments("M5(in int, ref R)", "x").WithLocation(8, 1),
-                // (11,34): error CS9079: Cannot ref-assign 'x' to 'F' because 'x' can only escape the current method through a return statement.
-                // static void M2(in int x, R r) => r.F = ref x;
-                Diagnostic(ErrorCode.ERR_RefAssignReturnOnly, "r.F = ref x").WithArguments("F", "x").WithLocation(11, 34),
-                // (13,38): error CS9079: Cannot ref-assign 'x' to 'F' because 'x' can only escape the current method through a return statement.
-                // static void M4(in int x, ref R r) => r.F = ref x;
-                Diagnostic(ErrorCode.ERR_RefAssignReturnOnly, "r.F = ref x").WithArguments("F", "x").WithLocation(13, 38));
-        }
-
-        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
-        public void RefTemp_FactoryMethod()
-        {
-            var source = """
-                var r = M(111);
-
-                static R M(in int x) => new R(x);
-
-                ref struct R
-                {
-                    public R(in int x) { }
-                }
-                """;
-
-            CreateCompilation(source, parseOptions: TestOptions.Regular10).VerifyDiagnostics();
-
-            var expectedDiagnostics = new[]
-            {
-                // (1,9): error CS8349: Expression cannot be used in this context because it may indirectly expose variables outside of their declaration scope
-                // var r = M(111);
-                Diagnostic(ErrorCode.ERR_EscapeOther, "M(111)").WithLocation(1, 9)
-            };
-
-            CreateCompilation(source, parseOptions: TestOptions.Regular11).VerifyDiagnostics(expectedDiagnostics);
-            CreateCompilation(source).VerifyDiagnostics(expectedDiagnostics);
-        }
-
-        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
-        public void RefTemp_FactoryMethod_OutParameter()
-        {
-            var source = """
-                R r;
-                M(111, out r);
+                static void Report(int x, int y) => System.Console.WriteLine($"{x} {y}");
 
                 static void M(in int x, out R r) => r = new R(x);
 
-                ref struct R
+                ref struct R(in int x)
                 {
-                    public R(in int x) { }
+                    public ref readonly int F = ref x;
                 }
                 """;
-
-            CreateCompilation(source, parseOptions: TestOptions.Regular10).VerifyDiagnostics();
-
-            var expectedDiagnostics = new[]
-            {
-                // (2,3): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
-                // M(111, out r);
-                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "111").WithLocation(2, 3),
-                // (2,1): error CS8350: This combination of arguments to 'M(in int, out R)' is disallowed because it may expose variables referenced by parameter 'x' outside of their declaration scope
-                // M(111, out r);
-                Diagnostic(ErrorCode.ERR_CallArgMixing, "M(111, out r)").WithArguments("M(in int, out R)", "x").WithLocation(2, 1)
-            };
-
-            CreateCompilation(source, parseOptions: TestOptions.Regular11).VerifyDiagnostics(expectedDiagnostics);
-            CreateCompilation(source).VerifyDiagnostics(expectedDiagnostics);
+            CompileAndVerify(source,
+                expectedOutput: "111 222",
+                targetFramework: TargetFramework.Net70)
+                .VerifyDiagnostics();
         }
 
-        [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
-        [InlineData(LanguageVersion.CSharp10)]
-        [InlineData(LanguageVersion.CSharp11)]
-        [InlineData(LanguageVersion.Preview)]
-        public void RefTemp_FactoryMethod_OutParameter_Discard(LanguageVersion langVersion)
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_CannotEscape_ViaOutDiscard()
         {
             var source = """
                 M(111, out _);
+                M(222, out _);
 
-                static void M(in int x, out R r) => r = new R(x);
+                static void M(in int x, out R r) => r = default;
 
-                ref struct R
-                {
-                    public R(in int x) { }
-                }
+                ref struct R;
                 """;
-            CreateCompilation(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion)).VerifyDiagnostics();
+            CompileAndVerify(source)
+                .VerifyDiagnostics()
+                // One int temp is enough.
+                .VerifyIL("<top-level-statements-entry-point>", """
+                    {
+                      // Code size       28 (0x1c)
+                      .maxstack  2
+                      .locals init (R V_0,
+                                    int V_1)
+                      IL_0000:  ldc.i4.s   111
+                      IL_0002:  stloc.1
+                      IL_0003:  ldloca.s   V_1
+                      IL_0005:  ldloca.s   V_0
+                      IL_0007:  call       "void Program.<<Main>$>g__M|0_0(in int, out R)"
+                      IL_000c:  ldc.i4     0xde
+                      IL_0011:  stloc.1
+                      IL_0012:  ldloca.s   V_1
+                      IL_0014:  ldloca.s   V_0
+                      IL_0016:  call       "void Program.<<Main>$>g__M|0_0(in int, out R)"
+                      IL_001b:  ret
+                    }
+                    """);
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
