@@ -125,7 +125,7 @@ internal partial class CodeGenerator
                 {
                     writableRefs++;
                 }
-                else if (parameter.Type.IsRefLikeOrAllowsRefLikeType() && receiverScope != ScopedKind.ScopedValue)
+                else if (parameter.Type.IsRefLikeOrAllowsRefLikeType() && parameter.EffectiveScope != ScopedKind.ScopedValue)
                 {
                     if (parameter.Type.IsReadOnly)
                     {
