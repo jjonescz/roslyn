@@ -15,7 +15,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 {
     internal sealed partial class RefSafetyAnalysis : BoundTreeWalkerWithStackGuardWithoutRecursionOnTheLeftOfBinaryOperator
     {
-        internal static RefSafetyAnalysis Analyze(CSharpCompilation compilation, MethodSymbol symbol, BoundNode node, BindingDiagnosticBag diagnostics)
+        internal static void Analyze(CSharpCompilation compilation, MethodSymbol symbol, BoundNode node, BindingDiagnosticBag diagnostics)
         {
             var visitor = new RefSafetyAnalysis(
                 compilation,
@@ -31,8 +31,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 e.AddAnError(diagnostics);
             }
-
-            return visitor;
         }
 
         private static bool InUnsafeMethod(Symbol symbol)
