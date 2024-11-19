@@ -10861,6 +10861,60 @@ public struct Vec4
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
+        public void RefTemp_CannotEscape_RefToHeap()
+        {
+            var source = """
+                var r1 = M(new R((new int[1])[0]));
+                var r2 = M(new R((new int[1])[0]));
+                Use(r1, r2);
+
+                static R M(in R r) => r;
+
+                static void Use(in R x, in R y) { }
+
+                ref struct R
+                {
+                    public R(in int x) { }
+                }
+                """;
+            CompileAndVerify(source, verify: Verification.Fails)
+                .VerifyDiagnostics()
+                // TODO: Three R locals should be enough.
+                .VerifyIL("<top-level-statements-entry-point>", """
+                    {
+                      // Code size       62 (0x3e)
+                      .maxstack  2
+                      .locals init (R V_0, //r1
+                                    R V_1, //r2
+                                    R V_2,
+                                    R V_3)
+                      IL_0000:  ldc.i4.1
+                      IL_0001:  newarr     "int"
+                      IL_0006:  ldc.i4.0
+                      IL_0007:  ldelema    "int"
+                      IL_000c:  newobj     "R..ctor(in int)"
+                      IL_0011:  stloc.2
+                      IL_0012:  ldloca.s   V_2
+                      IL_0014:  call       "R Program.<<Main>$>g__M|0_0(in R)"
+                      IL_0019:  stloc.0
+                      IL_001a:  ldc.i4.1
+                      IL_001b:  newarr     "int"
+                      IL_0020:  ldc.i4.0
+                      IL_0021:  ldelema    "int"
+                      IL_0026:  newobj     "R..ctor(in int)"
+                      IL_002b:  stloc.3
+                      IL_002c:  ldloca.s   V_3
+                      IL_002e:  call       "R Program.<<Main>$>g__M|0_0(in R)"
+                      IL_0033:  stloc.1
+                      IL_0034:  ldloca.s   V_0
+                      IL_0036:  ldloca.s   V_1
+                      IL_0038:  call       "void Program.<<Main>$>g__Use|0_1(in R, in R)"
+                      IL_003d:  ret
+                    }
+                    """);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67435")]
         public void RefTemp_Escapes_InstanceMethod()
         {
             var source = """
