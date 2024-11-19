@@ -15,7 +15,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 {
     internal sealed partial class RefSafetyAnalysis : BoundTreeWalkerWithStackGuardWithoutRecursionOnTheLeftOfBinaryOperator
     {
-        internal static RefSafetyAnalysis Analyze(CSharpCompilation compilation, MethodSymbol symbol, BoundNode node, BindingDiagnosticBag diagnostics)
+        internal static BoundNode AnalyzeAndRewrite(CSharpCompilation compilation, MethodSymbol symbol, BoundNode node, BindingDiagnosticBag diagnostics)
         {
             var visitor = new RefSafetyAnalysis(
                 compilation,
@@ -32,7 +32,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 e.AddAnError(diagnostics);
             }
 
-            return visitor;
+            return new RefSafetyRewriter(visitor).Visit(node);
         }
 
         private static bool InUnsafeMethod(Symbol symbol)
@@ -60,6 +60,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private readonly MethodSymbol _symbol;
         private readonly bool _useUpdatedEscapeRules;
         private readonly BindingDiagnosticBag _diagnostics;
+        private readonly Dictionary<BoundNode, TempRefEscapeFlags> _tempRefEscapeFlags = new Dictionary<BoundNode, TempRefEscapeFlags>();
         private bool _inUnsafeRegion;
         private SafeContext _localScopeDepth;
         private Dictionary<LocalSymbol, (SafeContext RefEscapeScope, SafeContext ValEscapeScope)>? _localEscapeScopes;
@@ -657,6 +658,13 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (!node.HasErrors)
             {
+                StoreTempRefEscapeFlags(node, GetTempRefEscapeFlags(
+                    receiver: node.ReceiverOpt,
+                    parameters: node.Method.Parameters,
+                    arguments: node.Arguments,
+                    argsToParamsOpt: node.ArgsToParamsOpt,
+                    expanded: node.Expanded));
+
                 var method = node.Method;
                 CheckInvocationArgMixing(
                     node.Syntax,
@@ -669,6 +677,99 @@ namespace Microsoft.CodeAnalysis.CSharp
                     node.ArgsToParamsOpt,
                     _localScopeDepth,
                     _diagnostics);
+            }
+        }
+
+        private void StoreTempRefEscapeFlags(BoundNode node, TempRefEscapeFlags flags)
+        {
+            if (flags != TempRefEscapeFlags.None)
+            {
+                _tempRefEscapeFlags[node] = flags;
+            }
+        }
+
+        private TempRefEscapeFlags GetTempRefEscapeFlags(
+            BoundExpression? receiver,
+            ImmutableArray<ParameterSymbol> parameters,
+            ImmutableArray<BoundExpression> arguments,
+            ImmutableArray<int> argsToParamsOpt,
+            bool expanded)
+        {
+            TempRefEscapeFlags flags = TempRefEscapeFlags.None;
+
+            // The receiver might look like it contains a reference,
+            // but that reference is allowed to escape the current block.
+            if (receiver?.Type is not null &&
+                !receiver.Type.IsVerifierReference() &&
+                !mightEscapeReferences(receiver, byRef: true))
+            {
+                flags |= TempRefEscapeFlags.CannotEscapeFromReceiver;
+            }
+
+            bool anyWritableRefs = false;
+            bool anyReadOnlyRefs = false;
+            for (var arg = 0; arg < arguments.Length; arg++)
+            {
+                var argument = arguments[arg];
+
+                if (argument.IsDiscardExpression())
+                {
+                    continue;
+                }
+
+                var parameter = Binder.GetCorrespondingParameter(
+                    arg,
+                    parameters,
+                    argsToParamsOpt,
+                    expanded);
+
+                if (parameter is not null)
+                {
+                    if (parameter.RefKind.IsWritableReference() && parameter.EffectiveScope == ScopedKind.None)
+                    {
+                        anyWritableRefs = true;
+                    }
+                    else if (parameter.Type.IsRefLikeOrAllowsRefLikeType() && parameter.EffectiveScope != ScopedKind.ScopedValue)
+                    {
+                        if (parameter.Type.IsReadOnly || !parameter.RefKind.IsWritableReference())
+                        {
+                            if (mightEscapeReferences(argument, byRef: parameter.RefKind != RefKind.None))
+                            {
+                                anyReadOnlyRefs = true;
+                            }
+                        }
+                        else
+                        {
+                            anyWritableRefs = true;
+                        }
+                    }
+                    else if (parameter.RefKind != RefKind.None && parameter.EffectiveScope == ScopedKind.None &&
+
+                        mightEscapeReferences(argument, byRef: parameter.RefKind != RefKind.None))
+                    {
+                        anyReadOnlyRefs = true;
+                    }
+                }
+            }
+
+            if (!anyWritableRefs)
+            {
+                flags |= TempRefEscapeFlags.CannotEscapeToArguments;
+            }
+
+            if (!anyReadOnlyRefs)
+            {
+                flags |= TempRefEscapeFlags.CannotEscapeFromArguments;
+            }
+
+            return flags;
+
+            bool mightEscapeReferences(BoundExpression expression, bool byRef)
+            {
+                var escape = byRef
+                    ? GetRefEscape(expression, _localScopeDepth)
+                    : GetValEscape(expression, _localScopeDepth);
+                return !escape.IsConvertibleTo(_localScopeDepth.Wider());
             }
         }
 
@@ -1117,5 +1218,48 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             diagnostics.Add(new CSDiagnostic(new CSDiagnosticInfo(code, args), location));
         }
+
+        private sealed class RefSafetyRewriter(
+            RefSafetyAnalysis analysis)
+            : BoundTreeRewriterWithStackGuardWithoutRecursionOnTheLeftOfBinaryOperator
+        {
+            private readonly RefSafetyAnalysis _analysis = analysis;
+
+            public override BoundNode? VisitCall(BoundCall node)
+            {
+                node = (BoundCall)base.VisitCall(node)!;
+
+                if (_analysis._tempRefEscapeFlags.TryGetValue(node, out var flags))
+                {
+                    node = node.Update(
+                        receiverOpt: node.ReceiverOpt,
+                        initialBindingReceiverIsSubjectToCloning: node.InitialBindingReceiverIsSubjectToCloning,
+                        method: node.Method,
+                        arguments: node.Arguments,
+                        argumentNamesOpt: node.ArgumentNamesOpt,
+                        argumentRefKindsOpt: node.ArgumentRefKindsOpt,
+                        isDelegateCall: node.IsDelegateCall,
+                        expanded: node.Expanded,
+                        invokedAsExtensionMethod: node.InvokedAsExtensionMethod,
+                        argsToParamsOpt: node.ArgsToParamsOpt,
+                        defaultArguments: node.DefaultArguments,
+                        resultKind: node.ResultKind,
+                        originalMethodsOpt: node.OriginalMethodsOpt,
+                        tempRefEscapeFlags: flags,
+                        type: node.Type);
+                }
+
+                return node;
+            }
+        }
     }
+}
+
+[Flags]
+internal enum TempRefEscapeFlags
+{
+    None = 0,
+    CannotEscapeFromReceiver = 1 << 0,
+    CannotEscapeFromArguments = 1 << 1,
+    CannotEscapeToArguments = 1 << 2,
 }

@@ -10837,22 +10837,21 @@ public struct Vec4
                 """;
             CompileAndVerify(source)
                 .VerifyDiagnostics()
-                // One int temp would be enough. But currently the emit layer does not see the argument is a discard.
+                // One int temp is enough.
                 .VerifyIL("<top-level-statements-entry-point>", """
                     {
                       // Code size       28 (0x1c)
                       .maxstack  2
                       .locals init (R V_0,
-                                    int V_1,
-                                    int V_2)
+                                    int V_1)
                       IL_0000:  ldc.i4.s   111
                       IL_0002:  stloc.1
                       IL_0003:  ldloca.s   V_1
                       IL_0005:  ldloca.s   V_0
                       IL_0007:  call       "void Program.<<Main>$>g__M|0_0(in int, out R)"
                       IL_000c:  ldc.i4     0xde
-                      IL_0011:  stloc.2
-                      IL_0012:  ldloca.s   V_2
+                      IL_0011:  stloc.1
+                      IL_0012:  ldloca.s   V_1
                       IL_0014:  ldloca.s   V_0
                       IL_0016:  call       "void Program.<<Main>$>g__M|0_0(in int, out R)"
                       IL_001b:  ret
@@ -10879,15 +10878,14 @@ public struct Vec4
                 """;
             CompileAndVerify(source, verify: Verification.Fails)
                 .VerifyDiagnostics()
-                // TODO: Three R locals should be enough.
+                // Three R locals are enough.
                 .VerifyIL("<top-level-statements-entry-point>", """
                     {
                       // Code size       62 (0x3e)
                       .maxstack  2
                       .locals init (R V_0, //r1
                                     R V_1, //r2
-                                    R V_2,
-                                    R V_3)
+                                    R V_2)
                       IL_0000:  ldc.i4.1
                       IL_0001:  newarr     "int"
                       IL_0006:  ldc.i4.0
@@ -10902,8 +10900,8 @@ public struct Vec4
                       IL_0020:  ldc.i4.0
                       IL_0021:  ldelema    "int"
                       IL_0026:  newobj     "R..ctor(in int)"
-                      IL_002b:  stloc.3
-                      IL_002c:  ldloca.s   V_3
+                      IL_002b:  stloc.2
+                      IL_002c:  ldloca.s   V_2
                       IL_002e:  call       "R Program.<<Main>$>g__M|0_0(in R)"
                       IL_0033:  stloc.1
                       IL_0034:  ldloca.s   V_0

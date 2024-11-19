@@ -13,6 +13,7 @@ internal partial class CodeGenerator
     private static bool MightEscapeTemporaryRefs(BoundCall node, bool used, AddressKind? receiverAddressKind)
     {
         return MightEscapeTemporaryRefs(
+            flags: node.TempRefEscapeFlags,
             used: used,
             returnType: node.Type,
             returnRefKind: node.Method.RefKind,
@@ -29,6 +30,7 @@ internal partial class CodeGenerator
     private static bool MightEscapeTemporaryRefs(BoundObjectCreationExpression node, bool used)
     {
         return MightEscapeTemporaryRefs(
+            flags: TempRefEscapeFlags.None,
             used: used,
             returnType: node.Type,
             returnRefKind: RefKind.None,
@@ -46,6 +48,7 @@ internal partial class CodeGenerator
     {
         FunctionPointerMethodSymbol method = node.FunctionPointer.Signature;
         return MightEscapeTemporaryRefs(
+            flags: TempRefEscapeFlags.None,
             used: used,
             returnType: node.Type,
             returnRefKind: method.RefKind,
@@ -60,6 +63,7 @@ internal partial class CodeGenerator
     }
 
     private static bool MightEscapeTemporaryRefs(
+        TempRefEscapeFlags flags,
         bool used,
         TypeSymbol returnType,
         RefKind returnRefKind,
@@ -85,22 +89,26 @@ internal partial class CodeGenerator
         if (receiverType is not null)
         {
             Debug.Assert(receiverScope != null);
-            if (receiverAddressKind is { } a && !IsAnyReadOnly(a) && receiverScope == ScopedKind.None)
+            var receiverPassedByWritableRef = receiverAddressKind is { } a && !IsAnyReadOnly(a);
+            if (receiverPassedByWritableRef && receiverScope == ScopedKind.None)
             {
                 writableRefs++;
             }
             else if (receiverType.IsRefLikeOrAllowsRefLikeType() && receiverScope != ScopedKind.ScopedValue)
             {
-                if (isReceiverReadOnly || receiverType.IsReadOnly)
+                if (isReceiverReadOnly || receiverType.IsReadOnly || !receiverPassedByWritableRef)
                 {
-                    readonlyRefs++;
+                    if (!flags.HasFlag(TempRefEscapeFlags.CannotEscapeFromReceiver))
+                    {
+                        readonlyRefs++;
+                    }
                 }
                 else
                 {
                     writableRefs++;
                 }
             }
-            else if (receiverAddressKind != null && receiverScope == ScopedKind.None)
+            else if (receiverAddressKind != null && receiverScope == ScopedKind.None && !flags.HasFlag(TempRefEscapeFlags.CannotEscapeFromReceiver))
             {
                 readonlyRefs++;
             }
@@ -123,20 +131,27 @@ internal partial class CodeGenerator
             {
                 if (parameter.RefKind.IsWritableReference() && parameter.EffectiveScope == ScopedKind.None)
                 {
-                    writableRefs++;
-                }
-                else if (parameter.Type.IsRefLikeOrAllowsRefLikeType() && parameter.EffectiveScope != ScopedKind.ScopedValue)
-                {
-                    if (parameter.Type.IsReadOnly)
-                    {
-                        readonlyRefs++;
-                    }
-                    else
+                    if (!flags.HasFlag(TempRefEscapeFlags.CannotEscapeToArguments))
                     {
                         writableRefs++;
                     }
                 }
-                else if (parameter.RefKind != RefKind.None && parameter.EffectiveScope == ScopedKind.None)
+                else if (parameter.Type.IsRefLikeOrAllowsRefLikeType() && parameter.EffectiveScope != ScopedKind.ScopedValue)
+                {
+                    if (parameter.Type.IsReadOnly || !parameter.RefKind.IsWritableReference())
+                    {
+                        if (!flags.HasFlag(TempRefEscapeFlags.CannotEscapeFromArguments))
+                        {
+                            readonlyRefs++;
+                        }
+                    }
+                    else if (!flags.HasFlag(TempRefEscapeFlags.CannotEscapeToArguments))
+                    {
+                        writableRefs++;
+                    }
+                }
+                else if (parameter.RefKind != RefKind.None && parameter.EffectiveScope == ScopedKind.None &&
+                    !flags.HasFlag(TempRefEscapeFlags.CannotEscapeFromArguments))
                 {
                     readonlyRefs++;
                 }

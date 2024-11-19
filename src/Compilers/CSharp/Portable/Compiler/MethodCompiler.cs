@@ -1000,9 +1000,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                         analyzedInitializers = InitializerRewriter.RewriteConstructor(processedInitializers.BoundInitializers, methodSymbol);
                         processedInitializers.HasErrors = processedInitializers.HasErrors || analyzedInitializers.HasAnyErrors;
 
-                        RefSafetyAnalysis.Analyze(_compilation, methodSymbol,
+                        var rewrittenBlock = (BoundBlock)RefSafetyAnalysis.AnalyzeAndRewrite(_compilation, methodSymbol,
                                                   new BoundBlock(analyzedInitializers.Syntax, ImmutableArray<LocalSymbol>.Empty, analyzedInitializers.Statements), // The block is necessary to establish the right local scope for the analysis 
                                                   diagsForCurrentMethod);
+                        analyzedInitializers = analyzedInitializers.Update(rewrittenBlock.Statements);
                     }
 
                     body = BindMethodBody(
@@ -1843,7 +1844,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     Debug.Assert(WasPropertyBackingFieldAccessChecked.FindUncheckedAccess(methodBody) is null);
 #endif
 
-                    var analysis = RefSafetyAnalysis.Analyze(compilation, method, methodBody, diagnostics);
+                    methodBody = RefSafetyAnalysis.AnalyzeAndRewrite(compilation, method, methodBody, diagnostics);
 
                     switch (methodBody.Kind)
                     {
