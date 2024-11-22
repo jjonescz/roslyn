@@ -27,6 +27,8 @@ internal sealed class DataStringHolder : DefaultTypeDef, Cci.INamespaceTypeDefin
     private readonly Cci.ITypeReference _systemObject;
     private readonly Cci.ITypeReference _systemString;
     private readonly Cci.ICustomAttribute _compilerGeneratedAttribute;
+    private readonly Cci.IMethodReference _encodingUtf8;
+    private readonly Cci.IMethodReference _encodingGetString;
     private readonly PrivateImplementationDetails _privateImplementationDetails;
 
     private int _frozen;
@@ -45,6 +47,8 @@ internal sealed class DataStringHolder : DefaultTypeDef, Cci.INamespaceTypeDefin
         Cci.ITypeReference systemObject,
         Cci.ITypeReference systemString,
         Cci.ICustomAttribute compilerGeneratedAttribute,
+        Cci.IMethodReference encodingUtf8,
+        Cci.IMethodReference encodingGetString,
         PrivateImplementationDetails privateImplementationDetails)
     {
         _name = TypeNamePrefix + dataHash;
@@ -52,6 +56,8 @@ internal sealed class DataStringHolder : DefaultTypeDef, Cci.INamespaceTypeDefin
         _systemObject = systemObject;
         _systemString = systemString;
         _compilerGeneratedAttribute = compilerGeneratedAttribute;
+        _encodingUtf8 = encodingUtf8;
+        _encodingGetString = encodingGetString;
         _privateImplementationDetails = privateImplementationDetails;
     }
 
@@ -159,7 +165,7 @@ internal sealed class DataStringHolder : DefaultTypeDef, Cci.INamespaceTypeDefin
 
         // Call `Encoding.get_UTF8()`.
         ilBuilder.EmitOpCode(ILOpCode.Call, 1);
-        ilBuilder.EmitToken(ilBuilder.module.GetEncodingUtf8(), null, diagnostics);
+        ilBuilder.EmitToken(_encodingUtf8, null, diagnostics);
 
         // Push the `byte*`.
         ilBuilder.EmitOpCode(ILOpCode.Ldarg_0);
@@ -168,9 +174,8 @@ internal sealed class DataStringHolder : DefaultTypeDef, Cci.INamespaceTypeDefin
         ilBuilder.EmitOpCode(ILOpCode.Ldarg_1);
 
         // Call `Encoding.GetString(byte*, int)`.
-        var encodingGetString = ilBuilder.module.GetEncodingGetString();
         ilBuilder.EmitOpCode(ILOpCode.Callvirt, -2);
-        ilBuilder.EmitToken(encodingGetString, null, diagnostics);
+        ilBuilder.EmitToken(_encodingGetString, null, diagnostics);
 
         // Return.
         ilBuilder.EmitRet(isVoid: false);
@@ -178,7 +183,7 @@ internal sealed class DataStringHolder : DefaultTypeDef, Cci.INamespaceTypeDefin
 
         return new BytesToStringHelper(
             containingType: _privateImplementationDetails,
-            encodingGetString: encodingGetString,
+            encodingGetString: _encodingGetString,
             maxStack: ilBuilder.MaxStack,
             il: ilBuilder.RealizedIL);
     }

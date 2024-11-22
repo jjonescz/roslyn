@@ -1076,6 +1076,8 @@ namespace Microsoft.CodeAnalysis.Emit
                     systemObject: @this.GetSpecialType(SpecialType.System_Object, tSyntaxNode, diagnostics),
                     systemString: @this.GetSpecialType(SpecialType.System_String, tSyntaxNode, diagnostics),
                     compilerGeneratedAttribute: @this.SynthesizeAttribute(WellKnownMember.System_Runtime_CompilerServices_CompilerGeneratedAttribute__ctor),
+                    encodingUtf8: (Cci.IMethodReference)@this.CommonCompilation.CommonGetWellKnownTypeMember(WellKnownMember.System_Text_Encoding__get_UTF8).GetCciAdapter(),
+                    encodingGetString: (Cci.IMethodReference)@this.CommonCompilation.CommonGetWellKnownTypeMember(WellKnownMember.System_Text_Encoding__GetString).GetCciAdapter(),
                     privateImplementationDetails: @this.GetPrivateImplClass(tSyntaxNode, diagnostics));
             },
             (this, syntaxNode, diagnostics));
@@ -1084,10 +1086,6 @@ namespace Microsoft.CodeAnalysis.Emit
         }
 
         public abstract Cci.IMethodReference GetInitArrayHelper();
-
-        public abstract Cci.IMethodReference GetEncodingUtf8();
-
-        public abstract Cci.IMethodReference GetEncodingGetString();
 
         public ArrayMethods ArrayMethods
         {

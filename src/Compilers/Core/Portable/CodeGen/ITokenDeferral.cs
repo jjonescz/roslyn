@@ -25,10 +25,6 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
         Cci.IMethodReference GetInitArrayHelper();
 
-        Cci.IMethodReference GetEncodingUtf8();
-
-        Cci.IMethodReference GetEncodingGetString();
-
         string GetStringFromToken(uint token);
         /// <summary>
         /// Gets the <see cref="Cci.IReference"/> or <see cref="Cci.ISignature"/> corresponding to this token.
