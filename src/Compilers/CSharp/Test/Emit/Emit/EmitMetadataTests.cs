@@ -2976,6 +2976,37 @@ public class Child : Parent, IParent
         }
 
         [Fact]
+        public void Utf8StringEncoding_InvalidUtf8()
+        {
+            var source = """
+                System.Console.WriteLine("Hello \uD801\uD802");
+                """;
+            CompileAndVerify(source,
+                parseOptions: TestOptions.Regular.WithFeature("utf8-string-encoding", "0"),
+                expectedOutput: "Hello \uD801\uD802",
+                symbolValidator: static (ModuleSymbol module) =>
+                {
+                    // No <S> types expected.
+                    AssertEx.AssertEqualToleratingWhitespaceDifferences("""
+                        <Module>
+                        EmbeddedAttribute
+                        RefSafetyRulesAttribute
+                        Program
+                        """, module.TypeNames.Join("\n"));
+                })
+                .VerifyDiagnostics()
+                .VerifyIL("<top-level-statements-entry-point>", $$"""
+                    {
+                      // Code size       11 (0xb)
+                      .maxstack  1
+                      IL_0000:  ldstr      "Hello {{"\uD801\uD802"}}"
+                      IL_0005:  call       "void System.Console.WriteLine(string)"
+                      IL_000a:  ret
+                    }
+                    """);
+        }
+
+        [Fact]
         public void Utf8StringEncoding_SynthesizedTypes()
         {
             var source = """
@@ -2998,6 +3029,16 @@ public class Child : Parent, IParent
                         """, module.TypeNames.Join("\n"));
                 });
             verifier.VerifyDiagnostics();
+
+            verifier.VerifyIL("<top-level-statements-entry-point>", """
+                {
+                  // Code size       11 (0xb)
+                  .maxstack  1
+                  IL_0000:  ldsfld     "string DataStringHolder: <S>185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969.s"
+                  IL_0005:  call       "void System.Console.WriteLine(string)"
+                  IL_000a:  ret
+                }
+                """);
 
             verifier.VerifyTypeIL("<PrivateImplementationDetails>", """
                 .class private auto ansi sealed '<PrivateImplementationDetails>'
