@@ -43272,5 +43272,77 @@ class Program
 
             CompileAndVerify(comp, expectedOutput: IncludeExpectedOutput("123"), verify: Verification.Skipped).VerifyDiagnostics();
         }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75143")]
+        public void TempCopy()
+        {
+            var source = """
+                using System.Collections.Generic;
+
+                class Program
+                {
+                    static int[] Test(MyArray x) => [..x];
+                }
+
+                struct MyArray
+                {
+                    public IEnumerator<int> GetEnumerator() => null;
+                    public int Length => 0;
+                }
+                """;
+            var verifier = CompileAndVerify(source);
+            verifier.VerifyDiagnostics();
+            verifier.VerifyIL("Program.Test", """
+                {
+                  // Code size       66 (0x42)
+                  .maxstack  3
+                  .locals init (MyArray V_0,
+                                int V_1,
+                                int[] V_2,
+                                System.Collections.Generic.IEnumerator<int> V_3,
+                                int V_4)
+                  IL_0000:  ldarg.0
+                  IL_0001:  stloc.0
+                  IL_0002:  ldc.i4.0
+                  IL_0003:  stloc.1
+                  IL_0004:  ldloca.s   V_0
+                  IL_0006:  call       "int MyArray.Length.get"
+                  IL_000b:  newarr     "int"
+                  IL_0010:  stloc.2
+                  IL_0011:  ldloca.s   V_0
+                  IL_0013:  call       "System.Collections.Generic.IEnumerator<int> MyArray.GetEnumerator()"
+                  IL_0018:  stloc.3
+                  .try
+                  {
+                    IL_0019:  br.s       IL_002c
+                    IL_001b:  ldloc.3
+                    IL_001c:  callvirt   "int System.Collections.Generic.IEnumerator<int>.Current.get"
+                    IL_0021:  stloc.s    V_4
+                    IL_0023:  ldloc.2
+                    IL_0024:  ldloc.1
+                    IL_0025:  ldloc.s    V_4
+                    IL_0027:  stelem.i4
+                    IL_0028:  ldloc.1
+                    IL_0029:  ldc.i4.1
+                    IL_002a:  add
+                    IL_002b:  stloc.1
+                    IL_002c:  ldloc.3
+                    IL_002d:  callvirt   "bool System.Collections.IEnumerator.MoveNext()"
+                    IL_0032:  brtrue.s   IL_001b
+                    IL_0034:  leave.s    IL_0040
+                  }
+                  finally
+                  {
+                    IL_0036:  ldloc.3
+                    IL_0037:  brfalse.s  IL_003f
+                    IL_0039:  ldloc.3
+                    IL_003a:  callvirt   "void System.IDisposable.Dispose()"
+                    IL_003f:  endfinally
+                  }
+                  IL_0040:  ldloc.2
+                  IL_0041:  ret
+                }
+                """);
+        }
     }
 }
