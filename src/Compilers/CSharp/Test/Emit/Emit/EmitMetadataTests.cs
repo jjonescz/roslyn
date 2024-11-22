@@ -3013,6 +3013,7 @@ public class Child : Parent, IParent
                 System.Console.WriteLine("Hello");
                 """;
             var verifier = CompileAndVerify(source,
+                targetFramework: TargetFramework.Mscorlib46,
                 parseOptions: TestOptions.Regular.WithFeature("utf8-string-encoding", "0"),
                 verify: Verification.Fails,
                 expectedOutput: "Hello",
@@ -3042,14 +3043,14 @@ public class Child : Parent, IParent
 
             verifier.VerifyTypeIL("<PrivateImplementationDetails>", """
                 .class private auto ansi sealed '<PrivateImplementationDetails>'
-                	extends [netstandard]System.Object
+                	extends [mscorlib]System.Object
                 {
-                	.custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+                	.custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
                 		01 00 00 00
                 	)
                 	// Nested Types
                 	.class nested assembly explicit ansi sealed '__StaticArrayInitTypeSize=5'
-                		extends [netstandard]System.ValueType
+                		extends [mscorlib]System.ValueType
                 	{
                 		.pack 1
                 		.size 5
@@ -3064,10 +3065,10 @@ public class Child : Parent, IParent
                 		// Method begins at RVA 0x207b
                 		// Code size 13 (0xd)
                 		.maxstack 8
-                		IL_0000: call class [netstandard]System.Text.Encoding [netstandard]System.Text.Encoding::get_UTF8()
+                		IL_0000: call class [mscorlib]System.Text.Encoding [mscorlib]System.Text.Encoding::get_UTF8()
                 		IL_0005: ldarg.0
                 		IL_0006: ldarg.1
-                		IL_0007: callvirt instance string [netstandard]System.Text.Encoding::GetString(uint8*, int32)
+                		IL_0007: callvirt instance string [mscorlib]System.Text.Encoding::GetString(uint8*, int32)
                 		IL_000c: ret
                 	} // end of method '<PrivateImplementationDetails>'::BytesToString
                 } // end of class <PrivateImplementationDetails>
@@ -3075,14 +3076,14 @@ public class Child : Parent, IParent
 
             verifier.VerifyTypeIL("<S>185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969", """
                 .class private auto ansi sealed '<S>185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969'
-                	extends [netstandard]System.Object
+                	extends [mscorlib]System.Object
                 {
-                	.custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+                	.custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
                 		01 00 00 00
                 	)
                 	// Fields
-                	.field assembly static initonly valuetype '<PrivateImplementationDetails>'/'__StaticArrayInitTypeSize=5' f at I_00002838
-                	.data cil I_00002838 = bytearray (
+                	.field assembly static initonly valuetype '<PrivateImplementationDetails>'/'__StaticArrayInitTypeSize=5' f at I_00002830
+                	.data cil I_00002830 = bytearray (
                 		48 65 6c 6c 6f
                 	)
                 	.field assembly static initonly string s
