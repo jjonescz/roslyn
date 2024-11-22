@@ -1061,6 +1061,28 @@ namespace Microsoft.CodeAnalysis.Emit
                 throw new InvalidOperationException($"Field {nameof(_lazyDataStringHolders)} is frozen.");
             }
 
+            ISymbolInternal encodingUtf8 = Compilation.CommonGetWellKnownTypeMember(WellKnownMember.System_Text_Encoding__get_UTF8);
+            ISymbolInternal encodingGetString = Compilation.CommonGetWellKnownTypeMember(WellKnownMember.System_Text_Encoding__GetString);
+
+            bool hasErrors = false;
+
+            if (encodingUtf8 is null)
+            {
+                reportMissingMember(Compilation, syntaxNode, diagnostics, WellKnownMember.System_Text_Encoding__get_UTF8);
+                hasErrors = true;
+            }
+
+            if (encodingGetString is null)
+            {
+                reportMissingMember(Compilation, syntaxNode, diagnostics, WellKnownMember.System_Text_Encoding__GetString);
+                hasErrors = true;
+            }
+
+            if (hasErrors)
+            {
+                return null;
+            }
+
             var holders = InterlockedOperations.Initialize(ref _lazyDataStringHolders,
                 static () => new ConcurrentDictionary<ImmutableArray<byte>, DataStringHolder>(ByteSequenceComparer.Instance));
 
@@ -1083,6 +1105,15 @@ namespace Microsoft.CodeAnalysis.Emit
             (this, syntaxNode, diagnostics));
 
             return holder.CreateDataField(data);
+
+            static void reportMissingMember(TCompilation compilation, SyntaxNode syntaxNode, DiagnosticBag diagnostics, WellKnownMember member)
+            {
+                var memberDescriptor = WellKnownMembers.GetDescriptor(member);
+                diagnostics.Add(compilation.MessageProvider.CreateDiagnostic(
+                    compilation.MessageProvider.ERR_MissingPredefinedMember,
+                    syntaxNode.GetLocation(),
+                    memberDescriptor.DeclaringTypeMetadataName, memberDescriptor.Name));
+            }
         }
 
         public abstract Cci.IMethodReference GetInitArrayHelper();

@@ -339,12 +339,6 @@ public class A
             var source = builder.ToString();
             var expectedOutput = expectedOutputBuilder.ToString();
 
-            // For debugging.
-            CompileAndVerify(source,
-                parseOptions: TestOptions.Regular.WithFeature("utf8-string-encoding")
-                , verify: Verification.Skipped
-                ).Dump();
-
             var expectedDiagnostics = new[]
             {
                 // error CS8103: Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string literals.
