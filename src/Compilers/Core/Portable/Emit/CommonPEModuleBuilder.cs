@@ -1202,7 +1202,7 @@ namespace Microsoft.CodeAnalysis.Emit
 
         public override IEnumerable<DataStringHolder> GetFrozenDataStringHolders()
         {
-            Debug.Assert(_dataStringHoldersFrozen == 1);
+            Debug.Assert(_lazyDataStringHolders is null || _dataStringHoldersFrozen == 1);
             return _lazyDataStringHolders?.Values ?? SpecializedCollections.EmptyEnumerable<DataStringHolder>();
         }
 
