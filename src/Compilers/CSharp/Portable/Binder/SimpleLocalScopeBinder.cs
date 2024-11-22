@@ -15,16 +15,23 @@ namespace Microsoft.CodeAnalysis.CSharp
     internal sealed class SimpleLocalScopeBinder : LocalScopeBinder
     {
         private readonly ImmutableArray<LocalSymbol> _locals;
+        private readonly ImmutableArray<LocalFunctionSymbol> _localFunctions;
 
-        public SimpleLocalScopeBinder(ImmutableArray<LocalSymbol> locals, Binder next) :
+        public SimpleLocalScopeBinder(ImmutableArray<LocalSymbol> locals, ImmutableArray<LocalFunctionSymbol> localFunctions, Binder next) :
             base(next)
         {
             _locals = locals;
+            _localFunctions = localFunctions;
         }
 
         protected override ImmutableArray<LocalSymbol> BuildLocals()
         {
             return _locals;
+        }
+
+        protected override ImmutableArray<LocalFunctionSymbol> BuildLocalFunctions()
+        {
+            return _localFunctions;
         }
 
         internal override ImmutableArray<LocalSymbol> GetDeclaredLocalsForScope(SyntaxNode scopeDesignator)

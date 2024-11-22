@@ -420,5 +420,27 @@ new Action<int>(x =>
                 Assert.Null(error);
             });
         }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/13181")]
+        public void CallableFromOutside()
+        {
+            var source = """
+                class C
+                {
+                    void F(int x)
+                    {
+                        int G() => 42;
+                    }
+                }
+                """;
+            var comp = CreateCompilation(source, options: TestOptions.DebugDll);
+            WithRuntimeInstance(comp, runtime =>
+            {
+                var context = CreateMethodContext(runtime, "C.F");
+                var testData = new CompilationTestData();
+                var assembly = context.CompileExpression("G()", out ResultProperties results, out string error, testData);
+                AssertEx.Equal("", error);
+            });
+        }
     }
 }
