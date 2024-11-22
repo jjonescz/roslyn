@@ -341,7 +341,7 @@ public class A
 
             var expectedDiagnostics = new[]
             {
-                // error CS8103: Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string literals.
+                // error CS8103: Combined length of user strings used by the program exceeds allowed limit. Consider using feature flag 'utf8-string-encoding'.
                 Diagnostic(ErrorCode.ERR_TooManyUserStrings).WithLocation(1, 1)
             };
 
