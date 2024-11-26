@@ -21,9 +21,7 @@ internal partial class CodeGenerator
             receiverAddressKind: receiverAddressKind,
             isReceiverReadOnly: node.Method.IsEffectivelyReadOnly,
             parameters: node.Method.Parameters,
-            arguments: node.Arguments,
-            argsToParamsOpt: node.ArgsToParamsOpt,
-            expanded: node.Expanded);
+            arguments: node.Arguments);
     }
 
     private static bool MightEscapeTemporaryRefs(BoundObjectCreationExpression node, bool used)
@@ -37,9 +35,7 @@ internal partial class CodeGenerator
             receiverAddressKind: null,
             isReceiverReadOnly: false,
             parameters: node.Constructor.Parameters,
-            arguments: node.Arguments,
-            argsToParamsOpt: node.ArgsToParamsOpt,
-            expanded: node.Expanded);
+            arguments: node.Arguments);
     }
 
     private static bool MightEscapeTemporaryRefs(BoundFunctionPointerInvocation node, bool used)
@@ -54,9 +50,7 @@ internal partial class CodeGenerator
             receiverAddressKind: null,
             isReceiverReadOnly: false,
             parameters: method.Parameters,
-            arguments: node.Arguments,
-            argsToParamsOpt: default,
-            expanded: false);
+            arguments: node.Arguments);
     }
 
     private static bool MightEscapeTemporaryRefs(
@@ -68,9 +62,7 @@ internal partial class CodeGenerator
         AddressKind? receiverAddressKind,
         bool isReceiverReadOnly,
         ImmutableArray<ParameterSymbol> parameters,
-        ImmutableArray<BoundExpression> arguments,
-        ImmutableArray<int> argsToParamsOpt,
-        bool expanded)
+        ImmutableArray<BoundExpression> arguments)
     {
         Debug.Assert(receiverAddressKind is null || receiverType is not null);
 
@@ -113,33 +105,26 @@ internal partial class CodeGenerator
 
         for (var arg = 0; arg < arguments.Length; arg++)
         {
-            var parameter = Binder.GetCorrespondingParameter(
-                arg,
-                parameters,
-                argsToParamsOpt,
-                expanded);
+            var parameter = parameters[arg];
 
-            if (parameter is not null)
+            if (parameter.RefKind.IsWritableReference() && parameter.EffectiveScope == ScopedKind.None)
             {
-                if (parameter.RefKind.IsWritableReference() && parameter.EffectiveScope == ScopedKind.None)
-                {
-                    writableRefs++;
-                }
-                else if (parameter.Type.IsRefLikeOrAllowsRefLikeType() && parameter.EffectiveScope != ScopedKind.ScopedValue)
-                {
-                    if (parameter.Type.IsReadOnly || !parameter.RefKind.IsWritableReference())
-                    {
-                        readonlyRefs++;
-                    }
-                    else
-                    {
-                        writableRefs++;
-                    }
-                }
-                else if (parameter.RefKind != RefKind.None && parameter.EffectiveScope == ScopedKind.None)
+                writableRefs++;
+            }
+            else if (parameter.Type.IsRefLikeOrAllowsRefLikeType() && parameter.EffectiveScope != ScopedKind.ScopedValue)
+            {
+                if (parameter.Type.IsReadOnly || !parameter.RefKind.IsWritableReference())
                 {
                     readonlyRefs++;
                 }
+                else
+                {
+                    writableRefs++;
+                }
+            }
+            else if (parameter.RefKind != RefKind.None && parameter.EffectiveScope == ScopedKind.None)
+            {
+                readonlyRefs++;
             }
 
             if (shouldReturnTrue(writableRefs, readonlyRefs))
