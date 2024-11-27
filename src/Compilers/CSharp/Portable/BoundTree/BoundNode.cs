@@ -485,7 +485,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         private class LocalsScanner : BoundTreeWalkerWithStackGuardWithoutRecursionOnTheLeftOfBinaryOperator
         {
             public readonly PooledHashSet<LocalSymbol> DeclaredLocals = PooledHashSet<LocalSymbol>.GetInstance();
-            public readonly PooledHashSet<LocalSymbol> SeenLocals = PooledHashSet<LocalSymbol>.GetInstance();
 
             private LocalsScanner()
             {
@@ -502,10 +501,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 foreach (var local in locals)
                 {
-                    if (!SeenLocals.Add(local))
-                    {
-                        Debug.Assert(false, "redeclared local " + local.GetDebuggerDisplay());
-                    }
                     if (!DeclaredLocals.Add(local))
                     {
                         Debug.Assert(false, "duplicate local " + local.GetDebuggerDisplay());
@@ -721,7 +716,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             public void Free()
             {
                 DeclaredLocals.Free();
-                SeenLocals.Free();
             }
         }
 #endif
