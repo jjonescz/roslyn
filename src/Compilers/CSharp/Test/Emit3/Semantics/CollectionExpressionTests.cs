@@ -11713,7 +11713,8 @@ static class Program
                                 int V_10,
                                 int V_11,
                                 int V_12,
-                                int V_13)
+                                int V_13,
+                                System.Span<int> V_14)
                   IL_0000:  ldstr      "A"
                   IL_0005:  ldc.i4.2
                   IL_0006:  newarr     "int"
@@ -11830,8 +11831,8 @@ static class Program
                   IL_0105:  ldloca.s   V_6
                   IL_0107:  ldloc.s    V_4
                   IL_0109:  newobj     "System.Span<int>..ctor(int[])"
-                  IL_010e:  stloc.s    V_7
-                  IL_0110:  ldloca.s   V_7
+                  IL_010e:  stloc.s    V_14
+                  IL_0110:  ldloca.s   V_14
                   IL_0112:  ldloc.3
                   IL_0113:  ldloca.s   V_6
                   IL_0115:  call       "int System.Span<int>.Length.get"
