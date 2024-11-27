@@ -1660,14 +1660,12 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
             Debug.Assert(method.IsStatic);
 
-            var exprTempsBefore = _expressionTemps?.Count ?? 0;
+            var countBefore = _builder.LocalSlotManager.StartScopeOfTrackingAddressedLocals();
 
             EmitArguments(arguments, method.Parameters, call.ArgumentRefKindsOpt);
 
-            if (_expressionTemps?.Count > exprTempsBefore && MightEscapeTemporaryRefs(call, used: useKind != UseKind.Unused, receiverAddressKind: null))
-            {
-                _expressionTemps.Count = exprTempsBefore;
-            }
+            _builder.LocalSlotManager.EndScopeOfTrackingAddressedLocals(countBefore,
+                MightEscapeTemporaryRefs(call, used: useKind != UseKind.Unused, receiverAddressKind: null));
 
             int stackBehavior = GetCallStackBehavior(method, arguments);
 
@@ -1697,6 +1695,8 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             AddressKind? addressKind;
             bool box;
             LocalDefinition tempOpt;
+
+            var countBefore = _builder.LocalSlotManager.StartScopeOfTrackingAddressedLocals();
 
             if (receiverIsInstanceCall(call, out BoundCall nested))
             {
@@ -1762,25 +1762,16 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                         }
                     }
 
-                    var exprTempsBeforeNested = _expressionTemps?.Count ?? 0;
-
                     emitArgumentsAndCallEpilogue(call, callKind, receiverUseKind);
 
-                    if (MightEscapeTemporaryRefs(
-                            call,
-                            used: useKind != UseKind.Unused,
-                            receiverAddressKind: receiverUseKind != UseKind.UsedAsAddress ? null : addressKind))
-                    {
-                        if (_expressionTemps?.Count > exprTempsBeforeNested)
-                        {
-                            _expressionTemps.Count = exprTempsBeforeNested;
-                        }
-                    }
-                    else
-                    {
-                        FreeOptTemp(tempOpt);
-                    }
+                    _builder.LocalSlotManager.EndScopeOfTrackingAddressedLocals(countBefore, MightEscapeTemporaryRefs(
+                        call,
+                        used: useKind != UseKind.Unused,
+                        receiverAddressKind: receiverUseKind != UseKind.UsedAsAddress ? null : addressKind));
 
+                    countBefore = _builder.LocalSlotManager.StartScopeOfTrackingAddressedLocals();
+
+                    FreeOptTemp(tempOpt);
                     tempOpt = null;
 
                     nested = call;
@@ -1839,24 +1830,14 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 emitReceiver(call, callKind, addressKind, box, out tempOpt);
             }
 
-            var exprTempsBefore = _expressionTemps?.Count ?? 0;
-
             emitArgumentsAndCallEpilogue(call, callKind, useKind);
 
-            if (MightEscapeTemporaryRefs(
-                    call,
-                    used: useKind != UseKind.Unused,
-                    receiverAddressKind: useKind != UseKind.UsedAsAddress ? null : addressKind))
-            {
-                if (_expressionTemps?.Count > exprTempsBefore)
-                {
-                    _expressionTemps.Count = exprTempsBefore;
-                }
-            }
-            else
-            {
-                FreeOptTemp(tempOpt);
-            }
+            _builder.LocalSlotManager.EndScopeOfTrackingAddressedLocals(countBefore, MightEscapeTemporaryRefs(
+                call,
+                used: useKind != UseKind.Unused,
+                receiverAddressKind: useKind != UseKind.UsedAsAddress ? null : addressKind));
+
+            FreeOptTemp(tempOpt);
 
             return;
 
@@ -2488,14 +2469,12 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
                 // none of the above cases, so just create an instance
 
-                var exprTempsBefore = _expressionTemps?.Count ?? 0;
+                var countBefore = _builder.LocalSlotManager.StartScopeOfTrackingAddressedLocals();
 
                 EmitArguments(expression.Arguments, constructor.Parameters, expression.ArgumentRefKindsOpt);
 
-                if (_expressionTemps?.Count > exprTempsBefore && MightEscapeTemporaryRefs(expression, used))
-                {
-                    _expressionTemps.Count = exprTempsBefore;
-                }
+                _builder.LocalSlotManager.EndScopeOfTrackingAddressedLocals(countBefore,
+                    MightEscapeTemporaryRefs(expression, used));
 
                 var stackAdjustment = GetObjCreationStackBehavior(expression);
                 _builder.EmitOpCode(ILOpCode.Newobj, stackAdjustment);
@@ -2754,14 +2733,12 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
             var constructor = objCreation.Constructor;
 
-            var exprTempsBefore = _expressionTemps?.Count ?? 0;
+            var countBefore = _builder.LocalSlotManager.StartScopeOfTrackingAddressedLocals();
 
             EmitArguments(objCreation.Arguments, constructor.Parameters, objCreation.ArgumentRefKindsOpt);
 
-            if (_expressionTemps?.Count > exprTempsBefore && MightEscapeTemporaryRefs(objCreation, used))
-            {
-                _expressionTemps.Count = exprTempsBefore;
-            }
+            _builder.LocalSlotManager.EndScopeOfTrackingAddressedLocals(countBefore,
+                MightEscapeTemporaryRefs(objCreation, used));
 
             // -2 to adjust for consumed target address and not produced value.
             var stackAdjustment = GetObjCreationStackBehavior(objCreation) - 2;
@@ -4086,14 +4063,12 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
             FunctionPointerMethodSymbol method = ptrInvocation.FunctionPointer.Signature;
 
-            var exprTempsBefore = _expressionTemps?.Count ?? 0;
+            var countBefore = _builder.LocalSlotManager.StartScopeOfTrackingAddressedLocals();
 
             EmitArguments(ptrInvocation.Arguments, method.Parameters, ptrInvocation.ArgumentRefKindsOpt);
 
-            if (_expressionTemps?.Count > exprTempsBefore && MightEscapeTemporaryRefs(ptrInvocation, used: useKind != UseKind.Unused))
-            {
-                _expressionTemps.Count = exprTempsBefore;
-            }
+            _builder.LocalSlotManager.EndScopeOfTrackingAddressedLocals(countBefore,
+                MightEscapeTemporaryRefs(ptrInvocation, used: useKind != UseKind.Unused));
 
             var stackBehavior = GetCallStackBehavior(ptrInvocation.FunctionPointer.Signature, ptrInvocation.Arguments);
 
