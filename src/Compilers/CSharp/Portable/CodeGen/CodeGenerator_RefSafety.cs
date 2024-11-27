@@ -20,8 +20,7 @@ internal partial class CodeGenerator
             receiverScope: node.Method.TryGetThisParameter(out var thisParameter) ? thisParameter?.EffectiveScope : null,
             receiverAddressKind: receiverAddressKind,
             isReceiverReadOnly: node.Method.IsEffectivelyReadOnly,
-            parameters: node.Method.Parameters,
-            arguments: node.Arguments);
+            parameters: node.Method.Parameters);
     }
 
     private static bool MightEscapeTemporaryRefs(BoundObjectCreationExpression node, bool used)
@@ -34,8 +33,7 @@ internal partial class CodeGenerator
             receiverScope: null,
             receiverAddressKind: null,
             isReceiverReadOnly: false,
-            parameters: node.Constructor.Parameters,
-            arguments: node.Arguments);
+            parameters: node.Constructor.Parameters);
     }
 
     private static bool MightEscapeTemporaryRefs(BoundFunctionPointerInvocation node, bool used)
@@ -49,8 +47,7 @@ internal partial class CodeGenerator
             receiverScope: null,
             receiverAddressKind: null,
             isReceiverReadOnly: false,
-            parameters: method.Parameters,
-            arguments: node.Arguments);
+            parameters: method.Parameters);
     }
 
     private static bool MightEscapeTemporaryRefs(
@@ -61,80 +58,59 @@ internal partial class CodeGenerator
         ScopedKind? receiverScope,
         AddressKind? receiverAddressKind,
         bool isReceiverReadOnly,
-        ImmutableArray<ParameterSymbol> parameters,
-        ImmutableArray<BoundExpression> arguments)
+        ImmutableArray<ParameterSymbol> parameters)
     {
         Debug.Assert(receiverAddressKind is null || receiverType is not null);
 
         // number of outputs that can capture references
-        int writableRefs = 0;
+        int refTargets = 0;
         // number of inputs that can contain references
-        int readableRefs = 0;
+        int refSources = 0;
 
         if (used && (returnRefKind != RefKind.None || returnType.IsRefLikeOrAllowsRefLikeType()))
         {
             // If returning by reference or returning a ref struct, the result might capture references.
-            writableRefs++;
+            refTargets++;
         }
 
         if (receiverType is not null)
         {
             receiverScope ??= ScopedKind.None;
-            if (receiverAddressKind is { } a && !IsAnyReadOnly(a) && receiverScope == ScopedKind.None)
+            if (receiverType.IsRefLikeOrAllowsRefLikeType() && receiverScope != ScopedKind.ScopedValue)
             {
-                writableRefs++;
-                readableRefs++;
-            }
-            else if (receiverType.IsRefLikeOrAllowsRefLikeType() && receiverScope != ScopedKind.ScopedValue)
-            {
-                if (isReceiverReadOnly || receiverType.IsReadOnly)
+                refSources++;
+                if (!isReceiverReadOnly && !receiverType.IsReadOnly)
                 {
-                    readableRefs++;
-                }
-                else
-                {
-                    writableRefs++;
-                    readableRefs++;
+                    refTargets++;
                 }
             }
             else if (receiverAddressKind != null && receiverScope == ScopedKind.None)
             {
-                readableRefs++;
+                refSources++;
             }
         }
 
-        if (shouldReturnTrue(writableRefs, readableRefs))
+        if (shouldReturnTrue(refTargets, refSources))
         {
             return true;
         }
 
-        for (var arg = 0; arg < arguments.Length; arg++)
+        foreach (var parameter in parameters)
         {
-            var parameter = parameters[arg];
-
-            if (parameter.RefKind.IsWritableReference() && parameter.EffectiveScope == ScopedKind.None)
+            if (parameter.Type.IsRefLikeOrAllowsRefLikeType() && parameter.EffectiveScope != ScopedKind.ScopedValue)
             {
-                writableRefs++;
-                readableRefs++;
-            }
-            else if (parameter.Type.IsRefLikeOrAllowsRefLikeType() && parameter.EffectiveScope != ScopedKind.ScopedValue)
-            {
-                if (parameter.Type.IsReadOnly || !parameter.RefKind.IsWritableReference())
+                refSources++;
+                if (!parameter.Type.IsReadOnly && parameter.RefKind.IsWritableReference())
                 {
-                    readableRefs++;
-                }
-                else
-                {
-                    writableRefs++;
-                    readableRefs++;
+                    refTargets++;
                 }
             }
             else if (parameter.RefKind != RefKind.None && parameter.EffectiveScope == ScopedKind.None)
             {
-                readableRefs++;
+                refSources++;
             }
 
-            if (shouldReturnTrue(writableRefs, readableRefs))
+            if (shouldReturnTrue(refTargets, refSources))
             {
                 return true;
             }
