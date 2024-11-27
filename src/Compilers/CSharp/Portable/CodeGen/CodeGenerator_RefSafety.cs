@@ -66,11 +66,14 @@ internal partial class CodeGenerator
     {
         Debug.Assert(receiverAddressKind is null || receiverType is not null);
 
+        // number of outputs that can capture references
         int writableRefs = 0;
-        int readonlyRefs = 0;
+        // number of inputs that can contain references
+        int readableRefs = 0;
 
         if (used && (returnRefKind != RefKind.None || returnType.IsRefLikeOrAllowsRefLikeType()))
         {
+            // If returning by reference or returning a ref struct, the result might capture references.
             writableRefs++;
         }
 
@@ -80,25 +83,27 @@ internal partial class CodeGenerator
             if (receiverAddressKind is { } a && !IsAnyReadOnly(a) && receiverScope == ScopedKind.None)
             {
                 writableRefs++;
+                readableRefs++;
             }
             else if (receiverType.IsRefLikeOrAllowsRefLikeType() && receiverScope != ScopedKind.ScopedValue)
             {
                 if (isReceiverReadOnly || receiverType.IsReadOnly)
                 {
-                    readonlyRefs++;
+                    readableRefs++;
                 }
                 else
                 {
                     writableRefs++;
+                    readableRefs++;
                 }
             }
             else if (receiverAddressKind != null && receiverScope == ScopedKind.None)
             {
-                readonlyRefs++;
+                readableRefs++;
             }
         }
 
-        if (shouldReturnTrue(writableRefs, readonlyRefs))
+        if (shouldReturnTrue(writableRefs, readableRefs))
         {
             return true;
         }
@@ -110,24 +115,26 @@ internal partial class CodeGenerator
             if (parameter.RefKind.IsWritableReference() && parameter.EffectiveScope == ScopedKind.None)
             {
                 writableRefs++;
+                readableRefs++;
             }
             else if (parameter.Type.IsRefLikeOrAllowsRefLikeType() && parameter.EffectiveScope != ScopedKind.ScopedValue)
             {
                 if (parameter.Type.IsReadOnly || !parameter.RefKind.IsWritableReference())
                 {
-                    readonlyRefs++;
+                    readableRefs++;
                 }
                 else
                 {
                     writableRefs++;
+                    readableRefs++;
                 }
             }
             else if (parameter.RefKind != RefKind.None && parameter.EffectiveScope == ScopedKind.None)
             {
-                readonlyRefs++;
+                readableRefs++;
             }
 
-            if (shouldReturnTrue(writableRefs, readonlyRefs))
+            if (shouldReturnTrue(writableRefs, readableRefs))
             {
                 return true;
             }
@@ -135,9 +142,10 @@ internal partial class CodeGenerator
 
         return false;
 
-        static bool shouldReturnTrue(int writableRefs, int readonlyRefs)
+        static bool shouldReturnTrue(int writableRefs, int readableRefs)
         {
-            return writableRefs > 0 && (writableRefs + readonlyRefs) > 1;
+            // If there is at least one output and at least one input, a reference can be captured.
+            return writableRefs > 0 && readableRefs > 0;
         }
     }
 }
