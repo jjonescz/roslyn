@@ -19,9 +19,9 @@ The feature is currently implemented only for C#, not VB.
 ## Configuration
 
 The feature flag can take a non-negative integer threshold.
-Only string literals whose length (number of characters, not bytes) is over the threshold are emitted using the utf8 encoding strategy.
+Only string literals whose length (number of characters, not bytes) is greater than the threshold are emitted using the utf8 encoding strategy.
 If the flag is set, but no value is specified, the threshold defaults to 100.
-Specifying 0 means all string literals are considered for the feature.
+Specifying 0 means all non-empty string literals are considered for the feature.
 Specifying `off` as the value turns the feature off (this is the default).
 
 The feature flag can be specified on the command line like `/features:experimental-data-section-string-literals` or `/features:experimental-data-section-string-literals=20`,
@@ -45,13 +45,28 @@ The utf8 string literal encoding emit strategy emits `ldsfld` of a field in a ge
 
 For every string literal, a unique internal static class is generated which:
 - has name composed of `<S>` followed by a hex-encoded XXH128 hash of the string,
-- lives in the global namespace (for consistency with other compiler-generated types),
-- has one `.data` field which is emitted the same way as for [explicit u8 string literals][u8-literals],
-- has one `string` field which is initialized in a static constructor of the class.
+- is nested in the `<PrivateImplementationDetails>` type (to avoid polluting the global namespace
+  although [some other compiler-generated types are synthesized there](https://github.com/dotnet/roslyn/blob/e3954f0cee4085436a590a14a01ec2f1b8a2571f/src/Compilers/Core/Portable/CodeGen/PrivateImplementationDetails.cs#L89)
+  and to avoid having to enforce name uniqueness across modules),
+- has one internal static readonly `string` field which is initialized in a static constructor of the class,
+- is marked `beforefieldinit` so the static constructor can be called eagerly if deemed better by the runtime for some reason.
+
+There is also an internal static readonly `.data` field generated into `<PrivateImplementationDetails>` containing the actual bytes,
+similar to [u8 string literals][u8-literals] and [constant array initializers][constant-array-init].
+These other scenarios might also reuse the data field, e.g., the following statements could all reuse the same data field:
+
+```cs
+ReadOnlySpan<byte> a = new byte[6] { 72, 101, 108, 108, 111, 46 };
+ReadOnlySpan<byte> b = stackalloc byte[6] { 72, 101, 108, 108, 111, 46 };
+ReadOnlySpan<byte> c = "Hello."u8;
+string d = "Hello."; // assuming this string literal is eligible for the `ldsfld` emit strategy
+```
 
 The initialization calls `<PrivateImplementationDetails>.BytesToString` helper which in turn calls `Encoding.UTF8.GetBytes`.
 This is an optimization so each of the generated class static constructors is slightly smaller in IL size.
 These size savings can add up since one class is generated per one eligible string literal.
+A compile-time error is reported if the `Encoding.UTF8.GetBytes` API is not available and needs to be used
+(the user can then either ensure the API is available or turn off the feature flag).
 
 The following example demonstrates the code generated for string literal `"Hello."`.
 
@@ -61,24 +76,23 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 [CompilerGenerated]
-internal static class <S>F6D59F18520336E6E57244B792249482
-{
-    internal static readonly <PrivateImplementationDetails>.__StaticArrayInitTypeSize=6 f = /* IL: data(48 65 6C 6C 6F 2E) */;
-
-    internal static readonly string s;
-
-    unsafe static <S>F6D59F18520336E6E57244B792249482()
-    {
-        s = <PrivateImplementationDetails>.BytesToString((byte*)Unsafe.AsPointer(ref f), 6);
-    }
-}
-
-[CompilerGenerated]
 internal static class <PrivateImplementationDetails>
 {
+    internal static readonly __StaticArrayInitTypeSize=6 2BBCE396D68A9BBD2517F6B7064666C772694CD92010887BA379E10E7CDDA960 = /* IL: data(48 65 6C 6C 6F 2E) */;
+
     [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 6)]
     internal struct __StaticArrayInitTypeSize=6
     {
+    }
+    
+    internal static class <S>F6D59F18520336E6E57244B792249482
+    {
+        internal static readonly string s;
+
+        unsafe static <S>F6D59F18520336E6E57244B792249482()
+        {
+            s = <PrivateImplementationDetails>.BytesToString((byte*)Unsafe.AsPointer(ref <PrivateImplementationDetails>.2BBCE396D68A9BBD2517F6B7064666C772694CD92010887BA379E10E7CDDA960), 6);
+        }
     }
 
     internal unsafe static string BytesToString(byte* bytes, int length)
@@ -92,6 +106,7 @@ internal static class <PrivateImplementationDetails>
 
 The actual generated code does not call `(byte*)Unsafe.AsPointer`.
 It simply emits `ldsflda` of the data field.
+The same approach is taken by other scenarios like [u8 string literals][u8-literals] and [constant array initializers][constant-array-init].
 That works but does not pass IL/PE verification.
 
 ## Runtime
@@ -199,3 +214,4 @@ However, that would likely result in worse machine code due to more branches and
 
 <!-- links -->
 [u8-literals]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-11.0/utf8-string-literals
+[constant-array-init]: https://github.com/dotnet/roslyn/pull/24621
