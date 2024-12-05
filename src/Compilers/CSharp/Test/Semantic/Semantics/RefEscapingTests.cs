@@ -10481,7 +10481,7 @@ public struct Vec4
         }
 
         [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/76100")]
-        public void SelfAssignment_ScopeVariance_ScopedRef_Allowed_ImplicitInterface(
+        public void SelfAssignment_ScopeVariance_ScopedRef_ImplicitInterface(
             [CombinatorialValues("scoped", "")] string scoped1,
             [CombinatorialValues("scoped", "")] string scoped2,
             [CombinatorialValues("ref", "out")] string modifier)
@@ -10499,7 +10499,20 @@ public struct Vec4
 
                 ref struct R;
                 """;
-            CreateCompilation(source).VerifyDiagnostics();
+
+            var comp = CreateCompilation(source);
+
+            if (scoped1 == "scoped" && scoped2 == "" && modifier == "ref")
+            {
+                comp.VerifyDiagnostics(
+                    // (8,17): error CS8987: The 'scoped' modifier of parameter 'r' doesn't match overridden or implemented member.
+                    //     public void M( ref R r) { }
+                    Diagnostic(ErrorCode.ERR_ScopedMismatchInParameterOfOverrideOrImplementation, "M").WithArguments("r").WithLocation(8, 17));
+            }
+            else
+            {
+                comp.VerifyDiagnostics();
+            }
         }
 
         [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/76100")]
@@ -10525,7 +10538,7 @@ public struct Vec4
         }
 
         [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/76100")]
-        public void SelfAssignment_ScopeVariance_ScopedRef_Allowed_ExplicitInterface(
+        public void SelfAssignment_ScopeVariance_ScopedRef_ExplicitInterface(
             [CombinatorialValues("scoped", "")] string scoped1,
             [CombinatorialValues("scoped", "")] string scoped2,
             [CombinatorialValues("ref", "out")] string modifier)
@@ -10543,7 +10556,20 @@ public struct Vec4
 
                 ref struct R;
                 """;
-            CreateCompilation(source).VerifyDiagnostics();
+
+            var comp = CreateCompilation(source);
+
+            if (scoped1 == "scoped" && scoped2 == "" && modifier == "ref")
+            {
+                comp.VerifyDiagnostics(
+                    // (8,12): error CS8987: The 'scoped' modifier of parameter 'r' doesn't match overridden or implemented member.
+                    //     void I.M( ref R r) { }
+                    Diagnostic(ErrorCode.ERR_ScopedMismatchInParameterOfOverrideOrImplementation, "M").WithArguments("r").WithLocation(8, 12));
+            }
+            else
+            {
+                comp.VerifyDiagnostics();
+            }
         }
 
         [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/76100")]
@@ -10569,7 +10595,7 @@ public struct Vec4
         }
 
         [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/76100")]
-        public void SelfAssignment_ScopeVariance_ScopedRef_Allowed_Override(
+        public void SelfAssignment_ScopeVariance_ScopedRef_Override(
             [CombinatorialValues("scoped", "")] string scoped1,
             [CombinatorialValues("scoped", "")] string scoped2,
             [CombinatorialValues("ref", "out")] string modifier)
@@ -10587,7 +10613,20 @@ public struct Vec4
 
                 ref struct R;
                 """;
-            CreateCompilation(source).VerifyDiagnostics();
+
+            var comp = CreateCompilation(source);
+
+            if (scoped1 == "scoped" && scoped2 == "" && modifier == "ref")
+            {
+                comp.VerifyDiagnostics(
+                    // (8,26): error CS8987: The 'scoped' modifier of parameter 'r' doesn't match overridden or implemented member.
+                    //     public override void M( ref R r) { }
+                    Diagnostic(ErrorCode.ERR_ScopedMismatchInParameterOfOverrideOrImplementation, "M").WithArguments("r").WithLocation(8, 26));
+            }
+            else
+            {
+                comp.VerifyDiagnostics();
+            }
         }
 
         [Theory, WorkItem("https://github.com/dotnet/roslyn/issues/76100")]
@@ -10612,7 +10651,7 @@ public struct Vec4
         }
 
         [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/76100")]
-        public void SelfAssignment_ScopeVariance_ScopedRef_Allowed_DelegateConversion(
+        public void SelfAssignment_ScopeVariance_ScopedRef_DelegateConversion(
             [CombinatorialValues("scoped", "")] string scoped1,
             [CombinatorialValues("scoped", "")] string scoped2,
             [CombinatorialValues("ref", "out")] string modifier)
@@ -10629,7 +10668,20 @@ public struct Vec4
 
                 ref struct R;
                 """;
-            CreateCompilation(source).VerifyDiagnostics();
+
+            var comp = CreateCompilation(source);
+
+            if (scoped1 == "scoped" && scoped2 == "" && modifier == "ref")
+            {
+                comp.VerifyDiagnostics(
+                    // (1,7): error CS8986: The 'scoped' modifier of parameter 'r' doesn't match target 'D'.
+                    // D d = C.M;
+                    Diagnostic(ErrorCode.ERR_ScopedMismatchInParameterOfTarget, "C.M").WithArguments("r", "D").WithLocation(1, 7));
+            }
+            else
+            {
+                comp.VerifyDiagnostics();
+            }
         }
     }
 }
