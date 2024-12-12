@@ -25499,9 +25499,10 @@ public class A
             }
         }
 
-        [Fact]
+        [Theory, CombinatorialData]
         [WorkItem(64508, "https://github.com/dotnet/roslyn/issues/64508")]
-        public void UnscopedRefAttribute_InterfaceImplementation_01()
+        public void UnscopedRefAttribute_InterfaceImplementation_01(
+            [CombinatorialValues(LanguageVersion.Preview, LanguageVersion.CSharp13)] LanguageVersion langVersion)
         {
             string source = """
                 using System.Diagnostics.CodeAnalysis;
@@ -25547,7 +25548,7 @@ public class A
                     [UnscopedRef] ref int I<int>.P => ref _f4; // 8
                 }
                 """;
-            var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
+            var comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion), targetFramework: TargetFramework.Net70);
             comp.VerifyEmitDiagnostics(
                 // (23,34): error CS9102: UnscopedRefAttribute cannot be applied to an interface implementation because implemented member 'I<int>.F1()' doesn't have this attribute.
                 //     [UnscopedRef] public ref int F1() => ref _f2; // 1
