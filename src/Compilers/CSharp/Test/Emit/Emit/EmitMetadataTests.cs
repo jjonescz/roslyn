@@ -3104,5 +3104,26 @@ public class Child : Parent, IParent
                 } // end of class <S>185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969
                 """);
         }
+
+        [Fact]
+        public void Utf8StringEncoding_MetadataOnly()
+        {
+            var source = """
+                System.Console.WriteLine("Hello");
+                """;
+            CompileAndVerify(source,
+                emitOptions: EmitOptions.Default.WithEmitMetadataOnly(true),
+                parseOptions: TestOptions.Regular.WithFeature("utf8-string-encoding", "0"),
+                symbolValidator: static (ModuleSymbol module) =>
+                {
+                    AssertEx.AssertEqualToleratingWhitespaceDifferences("""
+                        <Module>
+                        EmbeddedAttribute
+                        RefSafetyRulesAttribute
+                        Program
+                        """, module.TypeNames.Join("\n"));
+                })
+                .VerifyDiagnostics();
+        }
     }
 }
