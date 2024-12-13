@@ -3492,7 +3492,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
         {
             // Emit long strings into data section so they don't overflow the UserString heap.
             if (constantValue.IsString &&
-                constantValue.StringValue.Length > _utf8StringEncodingThreshold &&
+                constantValue.StringValue.Length > _dataSectionStringLiteralThreshold &&
                 LocalRewriter.TryGetUtf8ByteRepresentation(constantValue.StringValue, out byte[] utf8Bytes, out _))
             {
                 var data = utf8Bytes.ToImmutableArray();

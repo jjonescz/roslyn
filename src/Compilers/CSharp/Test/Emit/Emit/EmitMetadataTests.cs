@@ -2938,27 +2938,27 @@ public class Child : Parent, IParent
         }
 
         [Fact]
-        public void Utf8StringEncoding_MissingMembers()
+        public void DataSectionStringLiterals_MissingMembers()
         {
             var source = """
                 System.Console.WriteLine("Hello");
                 """;
 
-            var comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("utf8-string-encoding", "0"));
+            var comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "0"));
             comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__get_UTF8);
             comp.VerifyEmitDiagnostics(
                 // (1,26): error CS0656: Missing compiler required member 'System.Text.Encoding.get_UTF8'
                 // System.Console.WriteLine("Hello");
                 Diagnostic(ErrorCode.ERR_MissingPredefinedMember, @"""Hello""").WithArguments("System.Text.Encoding", "get_UTF8").WithLocation(1, 26));
 
-            comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("utf8-string-encoding", "0"));
+            comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "0"));
             comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__GetString);
             comp.VerifyEmitDiagnostics(
                 // (1,26): error CS0656: Missing compiler required member 'System.Text.Encoding.GetString'
                 // System.Console.WriteLine("Hello");
                 Diagnostic(ErrorCode.ERR_MissingPredefinedMember, @"""Hello""").WithArguments("System.Text.Encoding", "GetString").WithLocation(1, 26));
 
-            comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("utf8-string-encoding", "0"));
+            comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "0"));
             comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__get_UTF8);
             comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__GetString);
             comp.VerifyEmitDiagnostics(
@@ -2969,20 +2969,20 @@ public class Child : Parent, IParent
                 // System.Console.WriteLine("Hello");
                 Diagnostic(ErrorCode.ERR_MissingPredefinedMember, @"""Hello""").WithArguments("System.Text.Encoding", "GetString").WithLocation(1, 26));
 
-            comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("utf8-string-encoding", "20"));
+            comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "20"));
             comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__get_UTF8);
             comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__GetString);
             CompileAndVerify(comp, expectedOutput: "Hello").VerifyDiagnostics();
         }
 
         [Fact]
-        public void Utf8StringEncoding_InvalidUtf8()
+        public void DataSectionStringLiterals_InvalidUtf8()
         {
             var source = """
                 System.Console.WriteLine("Hello \uD801\uD802");
                 """;
             CompileAndVerify(source,
-                parseOptions: TestOptions.Regular.WithFeature("utf8-string-encoding", "0"),
+                parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "0"),
                 expectedOutput: "Hello \uD801\uD802",
                 symbolValidator: static (ModuleSymbol module) =>
                 {
@@ -3007,14 +3007,14 @@ public class Child : Parent, IParent
         }
 
         [Fact]
-        public void Utf8StringEncoding_SynthesizedTypes()
+        public void DataSectionStringLiterals_SynthesizedTypes()
         {
             var source = """
                 System.Console.WriteLine("Hello");
                 """;
             var verifier = CompileAndVerify(source,
                 targetFramework: TargetFramework.Mscorlib46,
-                parseOptions: TestOptions.Regular.WithFeature("utf8-string-encoding", "0"),
+                parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "0"),
                 verify: Verification.Fails,
                 expectedOutput: "Hello",
                 symbolValidator: static (ModuleSymbol module) =>
@@ -3106,14 +3106,14 @@ public class Child : Parent, IParent
         }
 
         [Fact]
-        public void Utf8StringEncoding_MetadataOnly()
+        public void DataSectionStringLiterals_MetadataOnly()
         {
             var source = """
                 System.Console.WriteLine("Hello");
                 """;
             CompileAndVerify(source,
                 emitOptions: EmitOptions.Default.WithEmitMetadataOnly(true),
-                parseOptions: TestOptions.Regular.WithFeature("utf8-string-encoding", "0"),
+                parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "0"),
                 symbolValidator: static (ModuleSymbol module) =>
                 {
                     AssertEx.AssertEqualToleratingWhitespaceDifferences("""
