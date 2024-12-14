@@ -3080,7 +3080,7 @@ public class Child : Parent, IParent
                 		48 65 6c 6c 6f
                 	)
                 	// Methods
-                	.method assembly hidebysig static 
+                	.method private hidebysig static 
                 		string BytesToString (
                 			uint8* bytes,
                 			int32 length

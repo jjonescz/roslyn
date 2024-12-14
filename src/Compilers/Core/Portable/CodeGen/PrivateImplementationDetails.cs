@@ -376,7 +376,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
                 {
                     return new DefaultMethodDef(
                         name: SynthesizedBytesToStringFunctionName,
-                        visibility: Cci.TypeMemberVisibility.Assembly,
+                        visibility: Cci.TypeMemberVisibility.Private,
                         containingType: @this,
                         maxStack: 8,
                         il: []);
@@ -1154,7 +1154,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
         ImmutableArray<byte> il)
         : DefaultMethodDef(
             PrivateImplementationDetails.SynthesizedBytesToStringFunctionName,
-            Cci.TypeMemberVisibility.Assembly,
+            Cci.TypeMemberVisibility.Private,
             containingType,
             maxStack,
             il)
