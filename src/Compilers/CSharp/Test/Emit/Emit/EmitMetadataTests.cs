@@ -3025,8 +3025,8 @@ public class Child : Parent, IParent
                         RefSafetyRulesAttribute
                         Program
                         <PrivateImplementationDetails>
-                        <S>185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969
                         __StaticArrayInitTypeSize=5
+                        <S>1BFD09D1A433FB78117B4C7B1583D16D
                         """, module.TypeNames.Join("\n"));
                 });
             verifier.VerifyDiagnostics();
@@ -3035,7 +3035,7 @@ public class Child : Parent, IParent
                 {
                   // Code size       11 (0xb)
                   .maxstack  1
-                  IL_0000:  ldsfld     "string DataStringHolder: <S>185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969.s"
+                  IL_0000:  ldsfld     "string <PrivateImplementationDetails>.<S>1BFD09D1A433FB78117B4C7B1583D16D.s"
                   IL_0005:  call       "void System.Console.WriteLine(string)"
                   IL_000a:  ret
                 }
@@ -3055,6 +3055,30 @@ public class Child : Parent, IParent
                 		.pack 1
                 		.size 5
                 	} // end of class __StaticArrayInitTypeSize=5
+                	.class nested assembly auto ansi sealed '<S>1BFD09D1A433FB78117B4C7B1583D16D'
+                		extends [mscorlib]System.Object
+                	{
+                		// Fields
+                		.field assembly static initonly string s
+                		// Methods
+                		.method private hidebysig specialname rtspecialname static 
+                			void .cctor () cil managed 
+                		{
+                			// Method begins at RVA 0x2089
+                			// Code size 17 (0x11)
+                			.maxstack 8
+                			IL_0000: ldsflda valuetype '<PrivateImplementationDetails>'/'__StaticArrayInitTypeSize=5' '<PrivateImplementationDetails>'::'185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969'
+                			IL_0005: ldc.i4.5
+                			IL_0006: call string '<PrivateImplementationDetails>'::BytesToString(uint8*, int32)
+                			IL_000b: stsfld string '<PrivateImplementationDetails>'/'<S>1BFD09D1A433FB78117B4C7B1583D16D'::s
+                			IL_0010: ret
+                		} // end of method '<S>1BFD09D1A433FB78117B4C7B1583D16D'::.cctor
+                	} // end of class <S>1BFD09D1A433FB78117B4C7B1583D16D
+                	// Fields
+                	.field assembly static initonly valuetype '<PrivateImplementationDetails>'/'__StaticArrayInitTypeSize=5' '185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969' at I_00002850
+                	.data cil I_00002850 = bytearray (
+                		48 65 6c 6c 6f
+                	)
                 	// Methods
                 	.method assembly hidebysig static 
                 		string BytesToString (
@@ -3072,36 +3096,6 @@ public class Child : Parent, IParent
                 		IL_000c: ret
                 	} // end of method '<PrivateImplementationDetails>'::BytesToString
                 } // end of class <PrivateImplementationDetails>
-                """);
-
-            var offset = ExecutionConditionUtil.IsLinux ? "00002878" : "00002830";
-            verifier.VerifyTypeIL("<S>185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969", $$"""
-                .class private auto ansi sealed '<S>185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969'
-                	extends [mscorlib]System.Object
-                {
-                	.custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
-                		01 00 00 00
-                	)
-                	// Fields
-                	.field assembly static initonly valuetype '<PrivateImplementationDetails>'/'__StaticArrayInitTypeSize=5' f at I_{{offset}}
-                    .data cil I_{{offset}} = bytearray (
-                		48 65 6c 6c 6f
-                	)
-                	.field assembly static initonly string s
-                	// Methods
-                	.method private hidebysig specialname rtspecialname static 
-                		void .cctor () cil managed 
-                	{
-                		// Method begins at RVA 0x2089
-                		// Code size 17 (0x11)
-                		.maxstack 8
-                		IL_0000: ldsflda valuetype '<PrivateImplementationDetails>'/'__StaticArrayInitTypeSize=5' '<S>185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969'::f
-                		IL_0005: ldc.i4.5
-                		IL_0006: call string '<PrivateImplementationDetails>'::BytesToString(uint8*, int32)
-                		IL_000b: stsfld string '<S>185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969'::s
-                		IL_0010: ret
-                	} // end of method '<S>185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969'::.cctor
-                } // end of class <S>185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969
                 """);
         }
 

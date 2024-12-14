@@ -3496,7 +3496,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 LocalRewriter.TryGetUtf8ByteRepresentation(constantValue.StringValue, out byte[] utf8Bytes, out _))
             {
                 var data = utf8Bytes.ToImmutableArray();
-                var field = _builder.module.GetFieldForDataString(data, syntaxNode, _diagnostics.DiagnosticBag);
+                var field = _builder.module.GetFieldForDataString(constantValue.StringValue, data, syntaxNode, _diagnostics.DiagnosticBag);
                 if (field is null)
                 {
                     return false;
