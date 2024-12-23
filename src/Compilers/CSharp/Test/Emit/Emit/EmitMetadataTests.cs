@@ -2999,23 +2999,26 @@ public class Child : Parent, IParent
 
             var expectedOutput = "abbccc";
 
-            CompileAndVerify(source,
-                parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "3"),
-                expectedOutput: expectedOutput)
-                .VerifyDiagnostics()
-                .VerifyIL("<top-level-statements-entry-point>", """
-                {
-                  // Code size       31 (0x1f)
-                  .maxstack  1
-                  IL_0000:  ldstr      "a"
-                  IL_0005:  call       "void System.Console.Write(string)"
-                  IL_000a:  ldstr      "bb"
-                  IL_000f:  call       "void System.Console.Write(string)"
-                  IL_0014:  ldstr      "ccc"
-                  IL_0019:  call       "void System.Console.Write(string)"
-                  IL_001e:  ret
-                }
-                """);
+            foreach (var feature in new[] { "3", "1000", "off" })
+            {
+                CompileAndVerify(source,
+                    parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", feature),
+                    expectedOutput: expectedOutput)
+                    .VerifyDiagnostics()
+                    .VerifyIL("<top-level-statements-entry-point>", """
+                    {
+                      // Code size       31 (0x1f)
+                      .maxstack  1
+                      IL_0000:  ldstr      "a"
+                      IL_0005:  call       "void System.Console.Write(string)"
+                      IL_000a:  ldstr      "bb"
+                      IL_000f:  call       "void System.Console.Write(string)"
+                      IL_0014:  ldstr      "ccc"
+                      IL_0019:  call       "void System.Console.Write(string)"
+                      IL_001e:  ret
+                    }
+                    """);
+            }
 
             CompileAndVerify(source,
                 parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "2"),
@@ -3199,15 +3202,22 @@ public class Child : Parent, IParent
                 """);
         }
 
-        [Fact]
-        public void DataSectionStringLiterals_MetadataOnly()
+        [Theory, CombinatorialData]
+        public void DataSectionStringLiterals_MetadataOnly(
+            [CombinatorialValues("0", "off")] string feature)
         {
             var source = """
                 System.Console.WriteLine("Hello");
                 """;
             CompileAndVerify(source,
                 emitOptions: EmitOptions.Default.WithEmitMetadataOnly(true),
-                parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "0"),
+                parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", feature),
+                verify: Verification.FailsPEVerify with
+                {
+                    PEVerifyMessage = """
+                        Bad token as entry point in CLR header.
+                        """,
+                },
                 symbolValidator: static (ModuleSymbol module) =>
                 {
                     AssertEx.AssertEqualToleratingWhitespaceDifferences("""
