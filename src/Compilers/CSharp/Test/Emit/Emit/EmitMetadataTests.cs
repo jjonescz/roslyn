@@ -3144,7 +3144,7 @@ public class Child : Parent, IParent
                 }
                 """);
 
-            var offset = ExecutionConditionUtil.IsLinux ? "00002890" : "00002850";
+            var offset = ExecutionConditionUtil.IsUnix ? "00002890" : "00002850";
             verifier.VerifyTypeIL("<PrivateImplementationDetails>", $$"""
                 .class private auto ansi sealed '<PrivateImplementationDetails>'
                 	extends [mscorlib]System.Object
