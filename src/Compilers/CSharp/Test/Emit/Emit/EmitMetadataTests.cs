@@ -3144,7 +3144,8 @@ public class Child : Parent, IParent
                 }
                 """);
 
-            verifier.VerifyTypeIL("<PrivateImplementationDetails>", """
+            var offset = ExecutionConditionUtil.IsLinux ? "00002890" : "00002850";
+            verifier.VerifyTypeIL("<PrivateImplementationDetails>", $$"""
                 .class private auto ansi sealed '<PrivateImplementationDetails>'
                 	extends [mscorlib]System.Object
                 {
@@ -3178,8 +3179,8 @@ public class Child : Parent, IParent
                 		} // end of method '<S>1BFD09D1A433FB78117B4C7B1583D16D'::.cctor
                 	} // end of class <S>1BFD09D1A433FB78117B4C7B1583D16D
                 	// Fields
-                	.field assembly static initonly valuetype '<PrivateImplementationDetails>'/'__StaticArrayInitTypeSize=5' '185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969' at I_00002850
-                	.data cil I_00002850 = bytearray (
+                	.field assembly static initonly valuetype '<PrivateImplementationDetails>'/'__StaticArrayInitTypeSize=5' '185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969' at I_{{offset}}
+                    .data cil I_{{offset}} = bytearray (
                 		48 65 6c 6c 6f
                 	)
                 	// Methods
