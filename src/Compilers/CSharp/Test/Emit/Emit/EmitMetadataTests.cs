@@ -2942,6 +2942,8 @@ public class Child : Parent, IParent
         {
             var source = """
                 System.Console.WriteLine("Hello");
+                System.Console.WriteLine("Hello2");
+                System.Console.WriteLine("Hello");
                 """;
 
             var comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "0"));
@@ -2972,7 +2974,11 @@ public class Child : Parent, IParent
             comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "20"));
             comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__get_UTF8);
             comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__GetString);
-            CompileAndVerify(comp, expectedOutput: "Hello").VerifyDiagnostics();
+            CompileAndVerify(comp, expectedOutput: """
+                Hello
+                Hello2
+                Hello
+                """).VerifyDiagnostics();
         }
 
         [Fact]
