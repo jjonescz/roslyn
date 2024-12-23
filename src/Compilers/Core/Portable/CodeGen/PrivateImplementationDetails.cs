@@ -764,6 +764,11 @@ namespace Microsoft.CodeAnalysis.CodeGen
         public override Cci.INestedTypeReference AsNestedTypeReference => this;
     }
 
+    /// <summary>
+    /// A type synthesized for each eligible string literal to hold the lazily-initialized string.
+    ///
+    /// https://github.com/dotnet/roslyn/blob/main/docs/features/string-literals-data-section.md
+    /// </summary>
     internal sealed class DataSectionStringType : DefaultTypeDef, Cci.INestedTypeDefinition
     {
         private readonly string _name;
