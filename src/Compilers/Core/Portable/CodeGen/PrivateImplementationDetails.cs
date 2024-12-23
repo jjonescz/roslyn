@@ -192,8 +192,8 @@ namespace Microsoft.CodeAnalysis.CodeGen
             _orderedTopLevelTypes = _synthesizedTopLevelTypes.OrderBy(kvp => kvp.Key).Select(kvp => (Cci.INamespaceTypeDefinition)kvp.Value).AsImmutable();
 
             // Sort nested types.
-            _orderedNestedTypes = _dataFieldTypes.OrderBy(kvp => kvp.Key.Size).ThenBy(kvp => kvp.Key.Alignment).Select(kvp => kvp.Value).OfType<Cci.INestedTypeDefinition>()
-                .Concat(_dataSectionStringLiteralTypes.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value)).AsImmutable();
+            _orderedNestedTypes = _dataFieldTypes.OrderBy(kvp => kvp.Key.Size).ThenBy(kvp => kvp.Key.Alignment).Select(kvp => kvp.Value).OfType<ExplicitSizeStruct>()
+                .Concat<Cci.INestedTypeDefinition>(_dataSectionStringLiteralTypes.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value)).AsImmutable();
         }
 
         internal bool IsFrozen => _frozen != 0;
