@@ -2941,44 +2941,138 @@ public class Child : Parent, IParent
         public void DataSectionStringLiterals_MissingMembers()
         {
             var source = """
-                System.Console.WriteLine("Hello");
-                System.Console.WriteLine("Hello2");
-                System.Console.WriteLine("Hello");
+                System.Console.Write("a");
+                System.Console.Write("bb");
+                System.Console.Write("ccc");
                 """;
 
             var comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "0"));
             comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__get_UTF8);
             comp.VerifyEmitDiagnostics(
-                // (1,26): error CS0656: Missing compiler required member 'System.Text.Encoding.get_UTF8'
-                // System.Console.WriteLine("Hello");
-                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, @"""Hello""").WithArguments("System.Text.Encoding", "get_UTF8").WithLocation(1, 26));
+                // (1,22): error CS0656: Missing compiler required member 'System.Text.Encoding.get_UTF8'
+                // System.Console.Write("a");
+                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, @"""a""").WithArguments("System.Text.Encoding", "get_UTF8").WithLocation(1, 22));
 
             comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "0"));
             comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__GetString);
             comp.VerifyEmitDiagnostics(
-                // (1,26): error CS0656: Missing compiler required member 'System.Text.Encoding.GetString'
-                // System.Console.WriteLine("Hello");
-                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, @"""Hello""").WithArguments("System.Text.Encoding", "GetString").WithLocation(1, 26));
+                // (1,22): error CS0656: Missing compiler required member 'System.Text.Encoding.GetString'
+                // System.Console.Write("a");
+                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, @"""a""").WithArguments("System.Text.Encoding", "GetString").WithLocation(1, 22));
 
             comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "0"));
             comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__get_UTF8);
             comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__GetString);
             comp.VerifyEmitDiagnostics(
-                // (1,26): error CS0656: Missing compiler required member 'System.Text.Encoding.get_UTF8'
-                // System.Console.WriteLine("Hello");
-                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, @"""Hello""").WithArguments("System.Text.Encoding", "get_UTF8").WithLocation(1, 26),
-                // (1,26): error CS0656: Missing compiler required member 'System.Text.Encoding.GetString'
-                // System.Console.WriteLine("Hello");
-                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, @"""Hello""").WithArguments("System.Text.Encoding", "GetString").WithLocation(1, 26));
+                // (1,22): error CS0656: Missing compiler required member 'System.Text.Encoding.get_UTF8'
+                // System.Console.Write("a");
+                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, @"""a""").WithArguments("System.Text.Encoding", "get_UTF8").WithLocation(1, 22),
+                // (1,22): error CS0656: Missing compiler required member 'System.Text.Encoding.GetString'
+                // System.Console.Write("a");
+                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, @"""a""").WithArguments("System.Text.Encoding", "GetString").WithLocation(1, 22));
 
-            comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "20"));
+            comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "1"));
             comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__get_UTF8);
             comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__GetString);
-            CompileAndVerify(comp, expectedOutput: """
-                Hello
-                Hello2
-                Hello
-                """).VerifyDiagnostics();
+            comp.VerifyEmitDiagnostics(
+                // (2,26): error CS0656: Missing compiler required member 'System.Text.Encoding.get_UTF8'
+                // System.Console.Write("bb");
+                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, @"""bb""").WithArguments("System.Text.Encoding", "get_UTF8").WithLocation(2, 22),
+                // (2,26): error CS0656: Missing compiler required member 'System.Text.Encoding.GetString'
+                // System.Console.Write("bb");
+                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, @"""bb""").WithArguments("System.Text.Encoding", "GetString").WithLocation(2, 22));
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "3"));
+            comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__get_UTF8);
+            comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__GetString);
+            CompileAndVerify(comp, expectedOutput: "abbccc").VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void DataSectionStringLiterals_Threshold()
+        {
+            var source = """
+                System.Console.Write("a");
+                System.Console.Write("bb");
+                System.Console.Write("ccc");
+                """;
+
+            var expectedOutput = "abbccc";
+
+            CompileAndVerify(source,
+                parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "3"),
+                expectedOutput: expectedOutput)
+                .VerifyDiagnostics()
+                .VerifyIL("<top-level-statements-entry-point>", """
+                {
+                  // Code size       31 (0x1f)
+                  .maxstack  1
+                  IL_0000:  ldstr      "a"
+                  IL_0005:  call       "void System.Console.Write(string)"
+                  IL_000a:  ldstr      "bb"
+                  IL_000f:  call       "void System.Console.Write(string)"
+                  IL_0014:  ldstr      "ccc"
+                  IL_0019:  call       "void System.Console.Write(string)"
+                  IL_001e:  ret
+                }
+                """);
+
+            CompileAndVerify(source,
+                parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "2"),
+                verify: Verification.Fails,
+                expectedOutput: expectedOutput)
+                .VerifyDiagnostics()
+                .VerifyIL("<top-level-statements-entry-point>", """
+                {
+                  // Code size       31 (0x1f)
+                  .maxstack  1
+                  IL_0000:  ldstr      "a"
+                  IL_0005:  call       "void System.Console.Write(string)"
+                  IL_000a:  ldstr      "bb"
+                  IL_000f:  call       "void System.Console.Write(string)"
+                  IL_0014:  ldsfld     "string <PrivateImplementationDetails>.<S>BE20CA004CC2993A396345E0D52DF013.s"
+                  IL_0019:  call       "void System.Console.Write(string)"
+                  IL_001e:  ret
+                }
+                """);
+
+            CompileAndVerify(source,
+                parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "1"),
+                verify: Verification.Fails,
+                expectedOutput: expectedOutput)
+                .VerifyDiagnostics()
+                .VerifyIL("<top-level-statements-entry-point>", """
+                {
+                  // Code size       31 (0x1f)
+                  .maxstack  1
+                  IL_0000:  ldstr      "a"
+                  IL_0005:  call       "void System.Console.Write(string)"
+                  IL_000a:  ldsfld     "string <PrivateImplementationDetails>.<S>DB1DE4B3DA6C7871B776D5CB968AA5A4.s"
+                  IL_000f:  call       "void System.Console.Write(string)"
+                  IL_0014:  ldsfld     "string <PrivateImplementationDetails>.<S>BE20CA004CC2993A396345E0D52DF013.s"
+                  IL_0019:  call       "void System.Console.Write(string)"
+                  IL_001e:  ret
+                }
+                """);
+
+            CompileAndVerify(source,
+                parseOptions: TestOptions.Regular.WithFeature("experimental-data-section-string-literals", "0"),
+                verify: Verification.Fails,
+                expectedOutput: expectedOutput)
+                .VerifyDiagnostics()
+                .VerifyIL("<top-level-statements-entry-point>", """
+                {
+                  // Code size       31 (0x1f)
+                  .maxstack  1
+                  IL_0000:  ldsfld     "string <PrivateImplementationDetails>.<S>A96FAF705AF16834E6C632B61E964E1F.s"
+                  IL_0005:  call       "void System.Console.Write(string)"
+                  IL_000a:  ldsfld     "string <PrivateImplementationDetails>.<S>DB1DE4B3DA6C7871B776D5CB968AA5A4.s"
+                  IL_000f:  call       "void System.Console.Write(string)"
+                  IL_0014:  ldsfld     "string <PrivateImplementationDetails>.<S>BE20CA004CC2993A396345E0D52DF013.s"
+                  IL_0019:  call       "void System.Console.Write(string)"
+                  IL_001e:  ret
+                }
+                """);
         }
 
         [Fact]
