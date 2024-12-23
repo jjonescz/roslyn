@@ -246,6 +246,9 @@ namespace Microsoft.CodeAnalysis.CodeGen
             });
         }
 
+        /// <summary>
+        /// Gets a struct type of the given size and alignment or creates it if it does not exist yet.
+        /// </summary>
         private Cci.ITypeReference GetOrAddDataFieldType(int length, ushort alignment)
         {
             Debug.Assert(!IsFrozen);
@@ -351,6 +354,9 @@ namespace Microsoft.CodeAnalysis.CodeGen
             (this, data, compilation, syntaxNode, diagnostics));
         }
 
+        /// <summary>
+        /// Gets the <see cref="BytesToStringHelper"/> or creates it if it does not exist yet.
+        /// </summary>
         private Cci.IMethodDefinition GetOrSynthesizeBytesToStringHelper(Compilation compilation, SyntaxNode syntaxNode, DiagnosticBag diagnostics)
         {
             var method = GetMethod(SynthesizedBytesToStringFunctionName);
@@ -1153,6 +1159,10 @@ namespace Microsoft.CodeAnalysis.CodeGen
         }
     }
 
+    /// <summary>
+    /// A helper method used in static constructor of <see cref="DataSectionStringType"/>.
+    /// to share IL and hence save assembly size.
+    /// </summary>
     file sealed class BytesToStringHelper(
         Cci.INamespaceTypeDefinition containingType,
         Cci.IMethodReference encodingGetString,
