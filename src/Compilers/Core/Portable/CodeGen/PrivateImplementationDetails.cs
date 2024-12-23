@@ -842,6 +842,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
         public override Cci.INestedTypeReference AsNestedTypeReference => this;
         public override IEnumerable<Cci.IFieldDefinition> GetFields(EmitContext context) => _fields;
         public override IEnumerable<Cci.IMethodDefinition> GetMethods(EmitContext context) => _methods;
+        public override bool IsBeforeFieldInit => true;
         public override string ToString() => $"{_containingType}.{this.Name}";
 
         private sealed class DataSectionStringField(
@@ -1048,7 +1049,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
         public bool IsAbstract => false;
 
-        public bool IsBeforeFieldInit => false;
+        public virtual bool IsBeforeFieldInit => false;
 
         public bool IsComObject => false;
 

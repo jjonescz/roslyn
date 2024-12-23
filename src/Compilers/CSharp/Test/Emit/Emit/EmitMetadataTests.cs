@@ -3055,7 +3055,7 @@ public class Child : Parent, IParent
                 		.pack 1
                 		.size 5
                 	} // end of class __StaticArrayInitTypeSize=5
-                	.class nested assembly auto ansi sealed '<S>1BFD09D1A433FB78117B4C7B1583D16D'
+                	.class nested assembly auto ansi sealed beforefieldinit '<S>1BFD09D1A433FB78117B4C7B1583D16D'
                 		extends [mscorlib]System.Object
                 	{
                 		// Fields
