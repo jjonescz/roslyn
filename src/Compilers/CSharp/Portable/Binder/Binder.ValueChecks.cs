@@ -2099,6 +2099,97 @@ namespace Microsoft.CodeAnalysis.CSharp
             return escapeScope;
         }
 
+        // TODO: Old vs updated rules.
+        private SafeContext GetInvocationEscapeToReceiver(
+            in MethodInfo methodInfo,
+            ImmutableArray<ParameterSymbol> parameters,
+            ImmutableArray<BoundExpression> argsOpt,
+            ImmutableArray<RefKind> argRefKindsOpt,
+            ImmutableArray<int> argsToParamsOpt,
+            SafeContext localScopeDepth)
+        {
+            // By default it is safe to escape.
+            SafeContext escapeScope = SafeContext.CallingMethod;
+
+            // If the receiver is not a ref to a ref struct, it cannot capture anything.
+            ParameterSymbol? extensionReceiver = null;
+            if (methodInfo.Symbol.RequiresInstanceReceiver())
+            {
+                // We have an instance method receiver.
+                if (!hasRefToRefStructThis(methodInfo.Method) && !hasRefToRefStructThis(methodInfo.SetMethod))
+                {
+                    return escapeScope;
+                }
+            }
+            else
+            {
+                // We have an extension method receiver.
+                Debug.Assert(methodInfo.Method?.IsExtensionMethod != false);
+
+                if (parameters is [var extReceiver, ..])
+                {
+                    extensionReceiver = extReceiver;
+                    if (isRefToRefStruct(extensionReceiver))
+                    {
+                        return escapeScope;
+                    }
+                }
+            }
+
+            var escapeValues = ArrayBuilder<EscapeValue>.GetInstance();
+            GetEscapeValuesForUpdatedRules(
+                methodInfo,
+                // We handle receiver specially, no need to pass it down.
+                receiver: null,
+                receiverIsSubjectToCloning: ThreeState.Unknown,
+                parameters,
+                argsOpt,
+                argRefKindsOpt,
+                argsToParamsOpt,
+                ignoreArglistRefKinds: true, // TODO
+                mixableArguments: null,
+                escapeValues);
+
+            foreach (var (parameter, argument, _, isArgumentRefEscape) in escapeValues)
+            {
+                // Skip if this is the extension method receiver.
+                if (extensionReceiver is not null && parameter == extensionReceiver)
+                {
+                    continue;
+                }
+
+                // We did not pass the instance method receiver to GetEscapeValues so we cannot encounter it here.
+                Debug.Assert(parameter?.IsThis != true);
+
+                SafeContext argEscape = isArgumentRefEscape
+                    ? GetRefEscape(argument, localScopeDepth)
+                    : GetValEscape(argument, localScopeDepth);
+
+                escapeScope = escapeScope.Intersect(argEscape);
+                if (localScopeDepth.IsConvertibleTo(escapeScope))
+                {
+                    // Can't get any worse.
+                    break;
+                }
+            }
+
+            escapeValues.Free();
+
+            return escapeScope;
+
+            static bool hasRefToRefStructThis(MethodSymbol? method)
+            {
+                return method?.TryGetThisParameter(out var thisParameter) == true &&
+                    isRefToRefStruct(thisParameter);
+            }
+
+            static bool isRefToRefStruct(ParameterSymbol parameter)
+            {
+                return parameter.RefKind == RefKind.Ref &&
+                    parameter.Type.IsRefLikeOrAllowsRefLikeType();
+            }
+        }
+
         /// <summary>
         /// Validates whether given invocation can allow its results to escape from <paramref name="escapeFrom"/> level to <paramref name="escapeTo"/> level.
         /// The result indicates whether the escape is possible. 
@@ -4455,11 +4546,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 case BoundKind.CollectionInitializerExpression:
                     var colExpr = (BoundCollectionInitializerExpression)expr;
-                    return GetValEscape(colExpr.Initializers, localScopeDepth);
-
-                case BoundKind.CollectionElementInitializer:
-                    var colElement = (BoundCollectionElementInitializer)expr;
-                    return GetValEscape(colElement.Arguments, localScopeDepth);
+                    return GetValEscapeOfCollectionInitializer(colExpr, localScopeDepth);
 
                 case BoundKind.ObjectInitializerMember:
                     // this node generally makes no sense outside of the context of containing initializer
@@ -4569,6 +4656,29 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             return narrowestScope;
+        }
+
+        private SafeContext GetValEscapeOfCollectionInitializer(BoundCollectionInitializerExpression colExpr, SafeContext localScopeDepth)
+        {
+            var result = SafeContext.CallingMethod;
+            foreach (var expr in colExpr.Initializers)
+            {
+                result = result.Intersect(expr is BoundCollectionElementInitializer colElement
+                    ? GetValEscapeOfCollectionElementInitializer(colElement, localScopeDepth)
+                    : GetValEscape(expr, localScopeDepth));
+            }
+            return result;
+        }
+
+        private SafeContext GetValEscapeOfCollectionElementInitializer(BoundCollectionElementInitializer colElement, SafeContext localScopeDepth)
+        {
+            return GetInvocationEscapeToReceiver(
+                MethodInfo.Create(colElement.AddMethod),
+                colElement.AddMethod.Parameters,
+                colElement.Arguments,
+                argRefKindsOpt: default,
+                colElement.ArgsToParamsOpt,
+                localScopeDepth);
         }
 
         /// <summary>
