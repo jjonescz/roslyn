@@ -2139,7 +2139,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var escapeValues = ArrayBuilder<EscapeValue>.GetInstance();
             GetEscapeValuesForUpdatedRules(
                 methodInfo,
-                // We handle receiver specially, no need to pass it down.
+                // We do not need the receiver in `escapeValues`.
                 receiver: null,
                 receiverIsSubjectToCloning: ThreeState.Unknown,
                 parameters,
