@@ -2129,7 +2129,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (parameters is [var extReceiver, ..])
                 {
                     extensionReceiver = extReceiver;
-                    if (isRefToRefStruct(extensionReceiver))
+                    if (!isRefToRefStruct(extensionReceiver))
                     {
                         return escapeScope;
                     }
