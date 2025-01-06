@@ -5373,17 +5373,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                     var initExpr = (BoundObjectInitializerExpression)expr;
                     return CheckValEscapeOfObjectInitializer(initExpr, escapeFrom, escapeTo, diagnostics);
 
-                // this would be correct implementation for CollectionInitializerExpression 
-                // however it is unclear if it is reachable since the initialized type must implement IEnumerable
                 case BoundKind.CollectionInitializerExpression:
                     var colExpr = (BoundCollectionInitializerExpression)expr;
-                    return CheckValEscape(colExpr.Initializers, escapeFrom, escapeTo, diagnostics);
-
-                // this would be correct implementation for CollectionElementInitializer 
-                // however it is unclear if it is reachable since the initialized type must implement IEnumerable
-                case BoundKind.CollectionElementInitializer:
-                    var colElement = (BoundCollectionElementInitializer)expr;
-                    return CheckValEscape(colElement.Arguments, escapeFrom, escapeTo, diagnostics);
+                    return CheckValEscapeOfCollectionInitializer(colExpr, escapeFrom, escapeTo, diagnostics);
 
                 case BoundKind.PointerElementAccess:
                     var accessedExpression = ((BoundPointerElementAccess)expr).Expression;
@@ -5663,6 +5655,27 @@ namespace Microsoft.CodeAnalysis.CSharp
 
 #nullable enable
 
+        private bool CheckValEscapeOfCollectionInitializer(BoundCollectionInitializerExpression colExpr, SafeContext escapeFrom, SafeContext escapeTo, BindingDiagnosticBag diagnostics)
+        {
+            foreach (var expr in colExpr.Initializers)
+            {
+                if (expr is BoundCollectionElementInitializer colElement)
+                {
+                    if (!GetValEscapeOfCollectionElementInitializer(colElement, escapeFrom).IsConvertibleTo(escapeTo))
+                    {
+                        Error(diagnostics, _inUnsafeRegion ? ErrorCode.WRN_EscapeVariable : ErrorCode.ERR_EscapeVariable, colExpr.Syntax, colElement.Syntax);
+                        return false;
+                    }
+                }
+                else if (!CheckValEscape(expr.Syntax, expr, escapeFrom, escapeTo, checkingReceiver: false, diagnostics: diagnostics))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private bool CheckValEscapeOfObjectInitializer(BoundObjectInitializerExpression initExpr, SafeContext escapeFrom, SafeContext escapeTo, BindingDiagnosticBag diagnostics)
         {
             foreach (var expr in initExpr.Initializers)
@@ -5678,19 +5691,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
 #nullable disable
-
-        private bool CheckValEscape(ImmutableArray<BoundExpression> expressions, SafeContext escapeFrom, SafeContext escapeTo, BindingDiagnosticBag diagnostics)
-        {
-            foreach (var expression in expressions)
-            {
-                if (!CheckValEscape(expression.Syntax, expression, escapeFrom, escapeTo, checkingReceiver: false, diagnostics: diagnostics))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
 
         private bool CheckInterpolatedStringHandlerConversionEscape(BoundExpression expression, SafeContext escapeFrom, SafeContext escapeTo, BindingDiagnosticBag diagnostics)
         {

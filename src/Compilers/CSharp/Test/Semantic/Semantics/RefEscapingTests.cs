@@ -4423,27 +4423,18 @@ class X : List<int>
                     """)}}
                 """;
             CreateCompilation([source, UnscopedRefAttributeDefinition], options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
-                // (9,26): error CS8168: Cannot return local 'local' by reference because it is not a ref local
+                // (8,24): error CS8352: Cannot use variable 'local' in this context because it may expose referenced variables outside of their declaration scope
                 //         return new R() { local }; // 1
-                Diagnostic(ErrorCode.ERR_RefReturnLocal, "local").WithArguments("local").WithLocation(9, 26),
-                // (9,26): error CS8350: This combination of arguments to 'R.Add(in int)' is disallowed because it may expose variables referenced by parameter 'x' outside of their declaration scope
-                //         return new R() { local }; // 1
-                Diagnostic(ErrorCode.ERR_CallArgMixing, "local").WithArguments("R.Add(in int)", "x").WithLocation(9, 26),
-                // (15,26): warning CS9091: This returns local 'local' by reference but it is not a ref local
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "{ local }").WithArguments("local").WithLocation(8, 24),
+                // (13,24): warning CS9080: Use of variable 'local' in this context may expose referenced variables outside of their declaration scope
                 //         return new R() { local }; // 2
-                Diagnostic(ErrorCode.WRN_RefReturnLocal, "local").WithArguments("local").WithLocation(15, 26),
-                // (20,26): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                Diagnostic(ErrorCode.WRN_EscapeVariable, "{ local }").WithArguments("local").WithLocation(13, 24),
+                // (17,24): error CS8352: Cannot use variable '1' in this context because it may expose referenced variables outside of their declaration scope
                 //         return new R() { 1 }; // 3
-                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "1").WithLocation(20, 26),
-                // (20,26): error CS8350: This combination of arguments to 'R.Add(in int)' is disallowed because it may expose variables referenced by parameter 'x' outside of their declaration scope
-                //         return new R() { 1 }; // 3
-                Diagnostic(ErrorCode.ERR_CallArgMixing, "1").WithArguments("R.Add(in int)", "x").WithLocation(20, 26),
-                // (25,26): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "{ 1 }").WithArguments("1").WithLocation(17, 24),
+                // (21,24): warning CS9080: Use of variable '1' in this context may expose referenced variables outside of their declaration scope
                 //         return new R() { 1 }; // 4
-                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "1").WithLocation(25, 26),
-                // (25,26): error CS8350: This combination of arguments to 'R.Add(in int)' is disallowed because it may expose variables referenced by parameter 'x' outside of their declaration scope
-                //         return new R() { 1 }; // 4
-                Diagnostic(ErrorCode.ERR_CallArgMixing, "1").WithArguments("R.Add(in int)", "x").WithLocation(25, 26));
+                Diagnostic(ErrorCode.WRN_EscapeVariable, "{ 1 }").WithArguments("1").WithLocation(21, 24));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75802")]
