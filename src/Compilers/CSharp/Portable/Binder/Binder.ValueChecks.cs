@@ -5738,6 +5738,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             arguments.Free();
+
+            // Narrow the scope for implicit calls which allow the receiver to capture refs from the arguments.
+            result &= CheckValEscapeOfInterpolatedStringHandlerCalls(expression, escapeFrom, escapeTo, diagnostics);
+
             return result;
         }
 
@@ -5833,6 +5837,59 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
 
                 return scope;
+            }
+        }
+
+        private bool CheckValEscapeOfInterpolatedStringHandlerCalls(BoundExpression expression, SafeContext escapeFrom, SafeContext escapeTo, BindingDiagnosticBag diagnostics)
+        {
+            bool result = true;
+
+            while (true)
+            {
+                switch (expression)
+                {
+                    case BoundBinaryOperator binary:
+                        result &= CheckValEscapeOfInterpolatedStringHandlerCalls(binary.Right, escapeFrom, escapeTo, diagnostics);
+                        expression = binary.Left;
+                        break;
+
+                    case BoundInterpolatedString interpolatedString:
+                        result &= getParts(interpolatedString, escapeFrom, escapeTo, diagnostics);
+                        return result;
+
+                    default:
+                        throw ExceptionUtilities.UnexpectedValue(expression.Kind);
+                }
+            }
+
+            bool getParts(BoundInterpolatedString interpolatedString, SafeContext escapeFrom, SafeContext escapeTo, BindingDiagnosticBag diagnostics)
+            {
+                bool result = true;
+
+                foreach (var part in interpolatedString.Parts)
+                {
+                    if (part is not BoundCall { Method.Name: BoundInterpolatedString.AppendFormattedMethod } call)
+                    {
+                        // Dynamic calls cannot have ref struct parameters, and AppendLiteral calls will always have literal
+                        // string arguments and do not require us to be concerned with escape
+                        continue;
+                    }
+
+                    var escape = GetInvocationEscapeToReceiver(
+                        MethodInfo.Create(call.Method),
+                        call.Method.Parameters,
+                        call.Arguments,
+                        call.ArgumentRefKindsOpt,
+                        call.ArgsToParamsOpt,
+                        escapeFrom);
+                    if (!escape.IsConvertibleTo(escapeTo))
+                    {
+                        Error(diagnostics, _inUnsafeRegion ? ErrorCode.WRN_EscapeVariable : ErrorCode.ERR_EscapeVariable, interpolatedString.Syntax, call.Syntax);
+                        result = false;
+                    }
+                }
+
+                return result;
             }
         }
     }

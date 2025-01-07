@@ -4702,12 +4702,9 @@ class X : List<int>
                 }
                 """;
             CreateCompilation([source, UnscopedRefAttributeDefinition, InterpolatedStringHandlerAttribute]).VerifyDiagnostics(
-                // (8,18): error CS8350: This combination of arguments to 'R.AppendFormatted(in int)' is disallowed because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                // (8,16): error CS8352: Cannot use variable '{local}' in this context because it may expose referenced variables outside of their declaration scope
                 //         return $"{local}";
-                Diagnostic(ErrorCode.ERR_CallArgMixing, "{local}").WithArguments("R.AppendFormatted(in int)", "x").WithLocation(8, 18),
-                // (8,19): error CS8168: Cannot return local 'local' by reference because it is not a ref local
-                //         return $"{local}";
-                Diagnostic(ErrorCode.ERR_RefReturnLocal, "local").WithArguments("local").WithLocation(8, 19));
+                Diagnostic(ErrorCode.ERR_EscapeVariable, @"$""{local}""").WithArguments("{local}").WithLocation(8, 16));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/63306")]
