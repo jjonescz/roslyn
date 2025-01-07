@@ -2368,6 +2368,108 @@ namespace Microsoft.CodeAnalysis.CSharp
             return result;
         }
 
+        // TODO: Old vs updated rules.
+        // TODO: Share logic with the Get* equivalent.
+        private bool CheckInvocationEscapeToReceiver(
+            SyntaxNode syntax,
+            in MethodInfo methodInfo,
+            ImmutableArray<ParameterSymbol> parameters,
+            ImmutableArray<BoundExpression> argsOpt,
+            ImmutableArray<RefKind> argRefKindsOpt,
+            ImmutableArray<int> argsToParamsOpt,
+            bool checkingReceiver,
+            SafeContext escapeFrom,
+            SafeContext escapeTo,
+            BindingDiagnosticBag diagnostics)
+        {
+            bool result = true;
+
+            // If the receiver is not a ref to a ref struct, it cannot capture anything.
+            ParameterSymbol? extensionReceiver = null;
+            if (methodInfo.Symbol.RequiresInstanceReceiver())
+            {
+                // We have an instance method receiver.
+                if (!hasRefToRefStructThis(methodInfo.Method) && !hasRefToRefStructThis(methodInfo.SetMethod))
+                {
+                    return result;
+                }
+            }
+            else
+            {
+                // We have an extension method receiver.
+                Debug.Assert(methodInfo.Method?.IsExtensionMethod != false);
+
+                if (parameters is [var extReceiver, ..])
+                {
+                    extensionReceiver = extReceiver;
+                    if (!isRefToRefStruct(extensionReceiver))
+                    {
+                        return result;
+                    }
+                }
+            }
+
+            var escapeValues = ArrayBuilder<EscapeValue>.GetInstance();
+            GetEscapeValuesForUpdatedRules(
+                methodInfo,
+                // We do not need the receiver in `escapeValues`.
+                receiver: null,
+                receiverIsSubjectToCloning: ThreeState.Unknown,
+                parameters,
+                argsOpt,
+                argRefKindsOpt,
+                argsToParamsOpt,
+                ignoreArglistRefKinds: true, // TODO
+                mixableArguments: null,
+                escapeValues);
+
+            foreach (var (parameter, argument, escapeLevel, isArgumentRefEscape) in escapeValues)
+            {
+                // Skip if this is the extension method receiver.
+                if (extensionReceiver is not null && parameter == extensionReceiver)
+                {
+                    continue;
+                }
+
+                // We did not pass the instance method receiver to GetEscapeValues so we cannot encounter it here.
+                Debug.Assert(parameter?.IsThis != true);
+
+                // Skip if the parameter cannot escape from the method to the receiver.
+                if (escapeLevel != EscapeLevel.CallingMethod)
+                {
+                    Debug.Assert(escapeLevel == EscapeLevel.ReturnOnly);
+                    continue;
+                }
+
+                bool valid = isArgumentRefEscape
+                    ? CheckRefEscape(argument.Syntax, argument, escapeFrom, escapeTo, false, diagnostics)
+                    : CheckValEscape(argument.Syntax, argument, escapeFrom, escapeTo, false, diagnostics);
+
+                if (!valid)
+                {
+                    ReportInvocationEscapeError(syntax, methodInfo.Symbol, parameter, checkingReceiver, diagnostics);
+                    result = false;
+                    break;
+                }
+            }
+
+            escapeValues.Free();
+
+            return result;
+
+            static bool hasRefToRefStructThis(MethodSymbol? method)
+            {
+                return method?.TryGetThisParameter(out var thisParameter) == true &&
+                    isRefToRefStruct(thisParameter);
+            }
+
+            static bool isRefToRefStruct(ParameterSymbol parameter)
+            {
+                return parameter.RefKind == RefKind.Ref &&
+                    parameter.Type.IsRefLikeOrAllowsRefLikeType();
+            }
+        }
+
         /// <summary>
         /// Returns the set of arguments to be considered for escape analysis of a method invocation. This
         /// set potentially includes the receiver of the method call. Each argument is returned (only once)
@@ -5672,19 +5774,33 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (expr is BoundCollectionElementInitializer colElement)
                 {
-                    if (!GetValEscapeOfCollectionElementInitializer(colElement, escapeFrom).IsConvertibleTo(escapeTo))
+                    if (!CheckValEscapeOfCollectionElementInitializer(colElement, escapeFrom, escapeTo, checkingReceiver: false, diagnostics))
                     {
-                        Error(diagnostics, _inUnsafeRegion ? ErrorCode.WRN_EscapeVariable : ErrorCode.ERR_EscapeVariable, colExpr.Syntax, colElement.Syntax);
                         return false;
                     }
                 }
-                else if (!CheckValEscape(expr.Syntax, expr, escapeFrom, escapeTo, checkingReceiver: false, diagnostics: diagnostics))
+                else if (!CheckValEscape(expr.Syntax, expr, escapeFrom, escapeTo, checkingReceiver: false, diagnostics))
                 {
                     return false;
                 }
             }
 
             return true;
+        }
+
+        private bool CheckValEscapeOfCollectionElementInitializer(BoundCollectionElementInitializer colElement, SafeContext escapeFrom, SafeContext escapeTo, bool checkingReceiver, BindingDiagnosticBag diagnostics)
+        {
+            return CheckInvocationEscapeToReceiver(
+                colElement.Syntax,
+                MethodInfo.Create(colElement.AddMethod),
+                colElement.AddMethod.Parameters,
+                colElement.Arguments,
+                argRefKindsOpt: default,
+                colElement.ArgsToParamsOpt,
+                checkingReceiver: checkingReceiver,
+                escapeFrom,
+                escapeTo,
+                diagnostics);
         }
 
         private bool CheckValEscapeOfObjectInitializer(BoundObjectInitializerExpression initExpr, SafeContext escapeFrom, SafeContext escapeTo, BindingDiagnosticBag diagnostics)
@@ -5854,7 +5970,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         break;
 
                     case BoundInterpolatedString interpolatedString:
-                        result &= getParts(interpolatedString, escapeFrom, escapeTo, diagnostics);
+                        result &= checkParts(interpolatedString, escapeFrom, escapeTo, diagnostics);
                         return result;
 
                     default:
@@ -5862,7 +5978,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            bool getParts(BoundInterpolatedString interpolatedString, SafeContext escapeFrom, SafeContext escapeTo, BindingDiagnosticBag diagnostics)
+            bool checkParts(BoundInterpolatedString interpolatedString, SafeContext escapeFrom, SafeContext escapeTo, BindingDiagnosticBag diagnostics)
             {
                 bool result = true;
 
@@ -5875,18 +5991,17 @@ namespace Microsoft.CodeAnalysis.CSharp
                         continue;
                     }
 
-                    var escape = GetInvocationEscapeToReceiver(
+                    result &= CheckInvocationEscapeToReceiver(
+                        call.Syntax,
                         MethodInfo.Create(call.Method),
                         call.Method.Parameters,
                         call.Arguments,
                         call.ArgumentRefKindsOpt,
                         call.ArgsToParamsOpt,
-                        escapeFrom);
-                    if (!escape.IsConvertibleTo(escapeTo))
-                    {
-                        Error(diagnostics, _inUnsafeRegion ? ErrorCode.WRN_EscapeVariable : ErrorCode.ERR_EscapeVariable, interpolatedString.Syntax, call.Syntax);
-                        result = false;
-                    }
+                        checkingReceiver: false,
+                        escapeFrom,
+                        escapeTo,
+                        diagnostics);
                 }
 
                 return result;
