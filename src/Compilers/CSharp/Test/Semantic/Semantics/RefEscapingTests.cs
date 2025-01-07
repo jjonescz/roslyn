@@ -4586,29 +4586,7 @@ class X : List<int>
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75802")]
-        public void CollectionInitializer_ScopedRef_Return()
-        {
-            var source = """
-                using System.Collections;
-                class C
-                {
-                    R M()
-                    {
-                        var local = 1;
-                        return new R() { local };
-                    }
-                }
-                ref struct R : IEnumerable
-                {
-                    public void Add(in int x) { }
-                    IEnumerator IEnumerable.GetEnumerator() => throw null;
-                }
-                """;
-            CreateCompilation(source).VerifyDiagnostics();
-        }
-
-        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75802")]
-        public void CollectionInitializer_ScopedRef_Assignment()
+        public void CollectionInitializer_ScopedRef()
         {
             var source = """
                 using System.Collections;
@@ -4617,16 +4595,21 @@ class X : List<int>
                     R M1()
                     {
                         var local = 1;
+                        return new R() { local };
+                    }
+                    R M2()
+                    {
+                        var local = 1;
                         var r = new R() { local };
                         return r;
                     }
-                    void M2()
+                    void M3()
                     {
                         var local = 1;
                         scoped R r;
                         r = new R() { local };
                     }
-                    void M3()
+                    void M4()
                     {
                         var local = 1;
                         R r;
@@ -4640,6 +4623,41 @@ class X : List<int>
                 }
                 """;
             CreateCompilation(source).VerifyDiagnostics();
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75802")]
+        public void CollectionInitializer_NonRefStruct()
+        {
+            var source = """
+                using System.Collections;
+                using System.Diagnostics.CodeAnalysis;
+                class C
+                {
+                    R M1()
+                    {
+                        var local = 1;
+                        return new R() { local };
+                    }
+                    R M2()
+                    {
+                        var local = 1;
+                        var r = new R() { local };
+                        return r;
+                    }
+                    void M3()
+                    {
+                        var local = 1;
+                        R r;
+                        r = new R() { local };
+                    }
+                }
+                struct R : IEnumerable
+                {
+                    public void Add([UnscopedRef] in int x) { }
+                    IEnumerator IEnumerable.GetEnumerator() => throw null;
+                }
+                """;
+            CreateCompilation([source, UnscopedRefAttributeDefinition]).VerifyDiagnostics();
         }
 
         [Theory]
@@ -4712,10 +4730,28 @@ class X : List<int>
                 using System.Runtime.CompilerServices;
                 class C
                 {
-                    R M()
+                    R M1()
                     {
                         var local = 1;
-                        return $"{local}";
+                        return $"{local}"; // 1
+                    }
+                    unsafe R M2()
+                    {
+                        var local = 1;
+                        return $"{local}"; // 2
+                    }
+                    R M3()
+                    {
+                        return $"{1}"; // 3
+                    }
+                    R M4()
+                    {
+                        return $"{1}" + $"{2}"; // 4
+                    }
+                    R M5(ref int param)
+                    {
+                        int local = 1;
+                        return $"{param}{local}"; // 5
                     }
                 }
                 [InterpolatedStringHandlerAttribute]
@@ -4725,13 +4761,40 @@ class X : List<int>
                     public void AppendFormatted([UnscopedRef] in int x) { }
                 }
                 """;
-            CreateCompilation([source, UnscopedRefAttributeDefinition, InterpolatedStringHandlerAttribute]).VerifyDiagnostics(
+            CreateCompilation([source, UnscopedRefAttributeDefinition, InterpolatedStringHandlerAttribute], options: TestOptions.UnsafeDebugDll).VerifyDiagnostics(
                 // (8,18): error CS8347: Cannot use a result of 'R.AppendFormatted(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
-                //         return $"{local}";
+                //         return $"{local}"; // 1
                 Diagnostic(ErrorCode.ERR_EscapeCall, "{local}").WithArguments("R.AppendFormatted(in int)", "x").WithLocation(8, 18),
                 // (8,19): error CS8168: Cannot return local 'local' by reference because it is not a ref local
-                //         return $"{local}";
-                Diagnostic(ErrorCode.ERR_RefReturnLocal, "local").WithArguments("local").WithLocation(8, 19));
+                //         return $"{local}"; // 1
+                Diagnostic(ErrorCode.ERR_RefReturnLocal, "local").WithArguments("local").WithLocation(8, 19),
+                // (13,19): warning CS9091: This returns local 'local' by reference but it is not a ref local
+                //         return $"{local}"; // 2
+                Diagnostic(ErrorCode.WRN_RefReturnLocal, "local").WithArguments("local").WithLocation(13, 19),
+                // (17,18): error CS8347: Cannot use a result of 'R.AppendFormatted(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                //         return $"{1}"; // 3
+                Diagnostic(ErrorCode.ERR_EscapeCall, "{1}").WithArguments("R.AppendFormatted(in int)", "x").WithLocation(17, 18),
+                // (17,19): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                //         return $"{1}"; // 3
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "1").WithLocation(17, 19),
+                // (21,18): error CS8347: Cannot use a result of 'R.AppendFormatted(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                //         return $"{1}" + $"{2}"; // 4
+                Diagnostic(ErrorCode.ERR_EscapeCall, "{1}").WithArguments("R.AppendFormatted(in int)", "x").WithLocation(21, 18),
+                // (21,19): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                //         return $"{1}" + $"{2}"; // 4
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "1").WithLocation(21, 19),
+                // (21,27): error CS8347: Cannot use a result of 'R.AppendFormatted(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                //         return $"{1}" + $"{2}"; // 4
+                Diagnostic(ErrorCode.ERR_EscapeCall, "{2}").WithArguments("R.AppendFormatted(in int)", "x").WithLocation(21, 27),
+                // (21,28): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
+                //         return $"{1}" + $"{2}"; // 4
+                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "2").WithLocation(21, 28),
+                // (26,25): error CS8347: Cannot use a result of 'R.AppendFormatted(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                //         return $"{param}{local}"; // 5
+                Diagnostic(ErrorCode.ERR_EscapeCall, "{local}").WithArguments("R.AppendFormatted(in int)", "x").WithLocation(26, 25),
+                // (26,26): error CS8168: Cannot return local 'local' by reference because it is not a ref local
+                //         return $"{param}{local}"; // 5
+                Diagnostic(ErrorCode.ERR_RefReturnLocal, "local").WithArguments("local").WithLocation(26, 26));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/63306")]
@@ -4742,11 +4805,23 @@ class X : List<int>
                 using System.Runtime.CompilerServices;
                 class C
                 {
-                    R M()
+                    R M1()
                     {
                         var local = 1;
                         R r = $"{local}";
-                        return r;
+                        return r; // 1
+                    }
+                    void M2()
+                    {
+                        var local = 1;
+                        scoped R r;
+                        r = $"{local}";
+                    }
+                    void M3()
+                    {
+                        var local = 1;
+                        R r;
+                        r = $"{local}"; // 2
                     }
                 }
                 [InterpolatedStringHandlerAttribute]
@@ -4758,8 +4833,14 @@ class X : List<int>
                 """;
             CreateCompilation([source, UnscopedRefAttributeDefinition, InterpolatedStringHandlerAttribute]).VerifyDiagnostics(
                 // (9,16): error CS8352: Cannot use variable 'r' in this context because it may expose referenced variables outside of their declaration scope
-                //         return r;
-                Diagnostic(ErrorCode.ERR_EscapeVariable, "r").WithArguments("r").WithLocation(9, 16));
+                //         return r; // 1
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "r").WithArguments("r").WithLocation(9, 16),
+                // (21,15): error CS8347: Cannot use a result of 'R.AppendFormatted(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
+                //         r = $"{local}"; // 2
+                Diagnostic(ErrorCode.ERR_EscapeCall, "{local}").WithArguments("R.AppendFormatted(in int)", "x").WithLocation(21, 15),
+                // (21,16): error CS8168: Cannot return local 'local' by reference because it is not a ref local
+                //         r = $"{local}"; // 2
+                Diagnostic(ErrorCode.ERR_RefReturnLocal, "local").WithArguments("local").WithLocation(21, 16));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/63306")]
@@ -4769,10 +4850,23 @@ class X : List<int>
                 using System.Runtime.CompilerServices;
                 class C
                 {
-                    R M()
+                    R M1()
                     {
                         var local = 1;
                         return $"{local}";
+                    }
+                    R M2()
+                    {
+                        return $"{1}";
+                    }
+                    R M3()
+                    {
+                        return $"{1}" + $"{2}";
+                    }
+                    R M4(ref int param)
+                    {
+                        int local = 1;
+                        return $"{param}{local}";
                     }
                 }
                 [InterpolatedStringHandlerAttribute]
@@ -4792,11 +4886,23 @@ class X : List<int>
                 using System.Runtime.CompilerServices;
                 class C
                 {
-                    R M()
+                    R M1()
                     {
                         var local = 1;
                         R r = $"{local}";
                         return r;
+                    }
+                    void M2()
+                    {
+                        var local = 1;
+                        scoped R r;
+                        r = $"{local}";
+                    }
+                    void M3()
+                    {
+                        var local = 1;
+                        R r;
+                        r = $"{local}";
                     }
                 }
                 [InterpolatedStringHandlerAttribute]
