@@ -1941,6 +1941,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             arguments.Free();
+
+            // Narrow the scope for implicit calls which allow the receiver to capture refs from the arguments.
+            escapeScope = escapeScope.Intersect(GetValEscapeOfInterpolatedStringHandlerCalls(expression, localScopeDepth));
+
             return escapeScope;
         }
 
@@ -5782,6 +5786,53 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     arguments.Add(call.Arguments[0]);
                 }
+            }
+        }
+
+        private SafeContext GetValEscapeOfInterpolatedStringHandlerCalls(BoundExpression expression, SafeContext localScopeDepth)
+        {
+            SafeContext scope = SafeContext.CallingMethod;
+
+            while (true)
+            {
+                switch (expression)
+                {
+                    case BoundBinaryOperator binary:
+                        scope = scope.Intersect(GetValEscapeOfInterpolatedStringHandlerCalls(binary.Right, localScopeDepth));
+                        expression = binary.Left;
+                        break;
+
+                    case BoundInterpolatedString interpolatedString:
+                        return scope.Intersect(getParts(interpolatedString, localScopeDepth));
+
+                    default:
+                        throw ExceptionUtilities.UnexpectedValue(expression.Kind);
+                }
+            }
+
+            SafeContext getParts(BoundInterpolatedString interpolatedString, SafeContext localScopeDepth)
+            {
+                SafeContext scope = SafeContext.CallingMethod;
+
+                foreach (var part in interpolatedString.Parts)
+                {
+                    if (part is not BoundCall { Method.Name: BoundInterpolatedString.AppendFormattedMethod } call)
+                    {
+                        // Dynamic calls cannot have ref struct parameters, and AppendLiteral calls will always have literal
+                        // string arguments and do not require us to be concerned with escape
+                        continue;
+                    }
+
+                    scope = scope.Intersect(GetInvocationEscapeToReceiver(
+                        MethodInfo.Create(call.Method),
+                        call.Method.Parameters,
+                        call.Arguments,
+                        call.ArgumentRefKindsOpt,
+                        call.ArgsToParamsOpt,
+                        localScopeDepth));
+                }
+
+                return scope;
             }
         }
     }
