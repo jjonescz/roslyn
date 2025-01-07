@@ -4777,12 +4777,6 @@ class X : List<int>
                 // (17,19): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
                 //         return $"{1}"; // 3
                 Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "1").WithLocation(17, 19),
-                // (21,18): error CS8347: Cannot use a result of 'R.AppendFormatted(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
-                //         return $"{1}" + $"{2}"; // 4
-                Diagnostic(ErrorCode.ERR_EscapeCall, "{1}").WithArguments("R.AppendFormatted(in int)", "x").WithLocation(21, 18),
-                // (21,19): error CS8156: An expression cannot be used in this context because it may not be passed or returned by reference
-                //         return $"{1}" + $"{2}"; // 4
-                Diagnostic(ErrorCode.ERR_RefReturnLvalueExpected, "1").WithLocation(21, 19),
                 // (21,27): error CS8347: Cannot use a result of 'R.AppendFormatted(in int)' in this context because it may expose variables referenced by parameter 'x' outside of their declaration scope
                 //         return $"{1}" + $"{2}"; // 4
                 Diagnostic(ErrorCode.ERR_EscapeCall, "{2}").WithArguments("R.AppendFormatted(in int)", "x").WithLocation(21, 27),
