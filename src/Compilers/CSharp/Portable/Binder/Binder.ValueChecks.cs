@@ -2121,7 +2121,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 argsOpt,
                 argRefKindsOpt,
                 argsToParamsOpt,
-                ignoreArglistRefKinds: true, // TODO
                 escapeValues);
 
             foreach (var (_, argument, _, isArgumentRefEscape) in escapeValues)
@@ -2331,7 +2330,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 argsOpt,
                 argRefKindsOpt,
                 argsToParamsOpt,
-                ignoreArglistRefKinds: true, // TODO
                 escapeValues);
 
             foreach (var (parameter, argument, _, isArgumentRefEscape) in escapeValues)
@@ -2610,7 +2608,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<BoundExpression> argsOpt,
             ImmutableArray<RefKind> argRefKindsOpt,
             ImmutableArray<int> argsToParamsOpt,
-            bool ignoreArglistRefKinds,
             ArrayBuilder<EscapeValue> escapeValues)
         {
             // If the receiver is not a ref to a ref struct, it cannot capture anything.
@@ -2648,7 +2645,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 argsOpt,
                 argRefKindsOpt,
                 argsToParamsOpt,
-                ignoreArglistRefKinds: ignoreArglistRefKinds,
+                ignoreArglistRefKinds: true,
                 mixableArguments: null,
                 unfilteredEscapeValues);
 
