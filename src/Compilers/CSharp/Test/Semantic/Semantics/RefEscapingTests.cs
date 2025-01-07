@@ -4461,13 +4461,13 @@ class X : List<int>
                     {
                         var local = 1;
                         R r;
-                        r = new R() { local };
+                        r = new R() { local }; // 2
                     }
                     unsafe R M4()
                     {
                         var local = 1;
                         var r = new R() { local };
-                        return r; // 2
+                        return r; // 3
                     }
                     unsafe void M5()
                     {
@@ -4479,7 +4479,7 @@ class X : List<int>
                     {
                         var local = 1;
                         R r;
-                        r = new R() { local };
+                        r = new R() { local }; // 4
                     }
                 }
                 ref struct R : IEnumerable
@@ -4492,9 +4492,15 @@ class X : List<int>
                 // (9,16): error CS8352: Cannot use variable 'r' in this context because it may expose referenced variables outside of their declaration scope
                 //         return r; // 1
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "r").WithArguments("r").WithLocation(9, 16),
+                // (21,21): error CS8352: Cannot use variable 'local' in this context because it may expose referenced variables outside of their declaration scope
+                //         r = new R() { local }; // 2
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "{ local }").WithArguments("local").WithLocation(21, 21),
                 // (27,16): warning CS9080: Use of variable 'r' in this context may expose referenced variables outside of their declaration scope
-                //         return r; // 2
-                Diagnostic(ErrorCode.WRN_EscapeVariable, "r").WithArguments("r").WithLocation(27, 16));
+                //         return r; // 3
+                Diagnostic(ErrorCode.WRN_EscapeVariable, "r").WithArguments("r").WithLocation(27, 16),
+                // (39,21): warning CS9080: Use of variable 'local' in this context may expose referenced variables outside of their declaration scope
+                //         r = new R() { local }; // 4
+                Diagnostic(ErrorCode.WRN_EscapeVariable, "{ local }").WithArguments("local").WithLocation(39, 21));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75802")]
