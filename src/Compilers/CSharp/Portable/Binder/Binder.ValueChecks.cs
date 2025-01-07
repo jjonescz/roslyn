@@ -2115,63 +2115,18 @@ namespace Microsoft.CodeAnalysis.CSharp
             // By default it is safe to escape.
             SafeContext escapeScope = SafeContext.CallingMethod;
 
-            // If the receiver is not a ref to a ref struct, it cannot capture anything.
-            ParameterSymbol? extensionReceiver = null;
-            if (methodInfo.Symbol.RequiresInstanceReceiver())
-            {
-                // We have an instance method receiver.
-                if (!hasRefToRefStructThis(methodInfo.Method) && !hasRefToRefStructThis(methodInfo.SetMethod))
-                {
-                    return escapeScope;
-                }
-            }
-            else
-            {
-                // We have an extension method receiver.
-                Debug.Assert(methodInfo.Method?.IsExtensionMethod != false);
-
-                if (parameters is [var extReceiver, ..])
-                {
-                    extensionReceiver = extReceiver;
-                    if (!isRefToRefStruct(extensionReceiver))
-                    {
-                        return escapeScope;
-                    }
-                }
-            }
-
             var escapeValues = ArrayBuilder<EscapeValue>.GetInstance();
-            GetEscapeValuesForUpdatedRules(
+            GetFilteredInvocationArgumentsForEscapeToReceiver(
                 methodInfo,
-                // We do not need the receiver in `escapeValues`.
-                receiver: null,
-                receiverIsSubjectToCloning: ThreeState.Unknown,
                 parameters,
                 argsOpt,
                 argRefKindsOpt,
                 argsToParamsOpt,
                 ignoreArglistRefKinds: true, // TODO
-                mixableArguments: null,
                 escapeValues);
 
-            foreach (var (parameter, argument, escapeLevel, isArgumentRefEscape) in escapeValues)
+            foreach (var (_, argument, _, isArgumentRefEscape) in escapeValues)
             {
-                // Skip if this is the extension method receiver.
-                if (extensionReceiver is not null && parameter == extensionReceiver)
-                {
-                    continue;
-                }
-
-                // We did not pass the instance method receiver to GetEscapeValues so we cannot encounter it here.
-                Debug.Assert(parameter?.IsThis != true);
-
-                // Skip if the parameter cannot escape from the method to the receiver.
-                if (escapeLevel != EscapeLevel.CallingMethod)
-                {
-                    Debug.Assert(escapeLevel == EscapeLevel.ReturnOnly);
-                    continue;
-                }
-
                 SafeContext argEscape = isArgumentRefEscape
                     ? GetRefEscape(argument, localScopeDepth)
                     : GetValEscape(argument, localScopeDepth);
@@ -2187,18 +2142,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             escapeValues.Free();
 
             return escapeScope;
-
-            static bool hasRefToRefStructThis(MethodSymbol? method)
-            {
-                return method?.TryGetThisParameter(out var thisParameter) == true &&
-                    isRefToRefStruct(thisParameter);
-            }
-
-            static bool isRefToRefStruct(ParameterSymbol parameter)
-            {
-                return parameter.RefKind == RefKind.Ref &&
-                    parameter.Type.IsRefLikeOrAllowsRefLikeType();
-            }
         }
 
         /// <summary>
@@ -2369,7 +2312,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
         // TODO: Old vs updated rules.
-        // TODO: Share logic with the Get* equivalent.
         private bool CheckInvocationEscapeToReceiver(
             SyntaxNode syntax,
             in MethodInfo methodInfo,
@@ -2384,66 +2326,21 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             bool result = true;
 
-            // If the receiver is not a ref to a ref struct, it cannot capture anything.
-            ParameterSymbol? extensionReceiver = null;
-            if (methodInfo.Symbol.RequiresInstanceReceiver())
-            {
-                // We have an instance method receiver.
-                if (!hasRefToRefStructThis(methodInfo.Method) && !hasRefToRefStructThis(methodInfo.SetMethod))
-                {
-                    return result;
-                }
-            }
-            else
-            {
-                // We have an extension method receiver.
-                Debug.Assert(methodInfo.Method?.IsExtensionMethod != false);
-
-                if (parameters is [var extReceiver, ..])
-                {
-                    extensionReceiver = extReceiver;
-                    if (!isRefToRefStruct(extensionReceiver))
-                    {
-                        return result;
-                    }
-                }
-            }
-
             var escapeValues = ArrayBuilder<EscapeValue>.GetInstance();
-            GetEscapeValuesForUpdatedRules(
+            GetFilteredInvocationArgumentsForEscapeToReceiver(
                 methodInfo,
-                // We do not need the receiver in `escapeValues`.
-                receiver: null,
-                receiverIsSubjectToCloning: ThreeState.Unknown,
                 parameters,
                 argsOpt,
                 argRefKindsOpt,
                 argsToParamsOpt,
                 ignoreArglistRefKinds: true, // TODO
-                mixableArguments: null,
                 escapeValues);
 
-            foreach (var (parameter, argument, escapeLevel, isArgumentRefEscape) in escapeValues)
+            foreach (var (parameter, argument, _, isArgumentRefEscape) in escapeValues)
             {
-                // Skip if this is the extension method receiver.
-                if (extensionReceiver is not null && parameter == extensionReceiver)
-                {
-                    continue;
-                }
-
-                // We did not pass the instance method receiver to GetEscapeValues so we cannot encounter it here.
-                Debug.Assert(parameter?.IsThis != true);
-
-                // Skip if the parameter cannot escape from the method to the receiver.
-                if (escapeLevel != EscapeLevel.CallingMethod)
-                {
-                    Debug.Assert(escapeLevel == EscapeLevel.ReturnOnly);
-                    continue;
-                }
-
                 bool valid = isArgumentRefEscape
-                    ? CheckRefEscape(argument.Syntax, argument, escapeFrom, escapeTo, false, diagnostics)
-                    : CheckValEscape(argument.Syntax, argument, escapeFrom, escapeTo, false, diagnostics);
+                    ? CheckRefEscape(argument.Syntax, argument, escapeFrom, escapeTo, checkingReceiver: false, diagnostics)
+                    : CheckValEscape(argument.Syntax, argument, escapeFrom, escapeTo, checkingReceiver: false, diagnostics);
 
                 if (!valid)
                 {
@@ -2456,18 +2353,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             escapeValues.Free();
 
             return result;
-
-            static bool hasRefToRefStructThis(MethodSymbol? method)
-            {
-                return method?.TryGetThisParameter(out var thisParameter) == true &&
-                    isRefToRefStruct(thisParameter);
-            }
-
-            static bool isRefToRefStruct(ParameterSymbol parameter)
-            {
-                return parameter.RefKind == RefKind.Ref &&
-                    parameter.Type.IsRefLikeOrAllowsRefLikeType();
-            }
         }
 
         /// <summary>
@@ -2718,6 +2603,90 @@ namespace Microsoft.CodeAnalysis.CSharp
                     default:
                         return false;
                 }
+            }
+        }
+
+        private void GetFilteredInvocationArgumentsForEscapeToReceiver(
+            in MethodInfo methodInfo,
+            ImmutableArray<ParameterSymbol> parameters,
+            ImmutableArray<BoundExpression> argsOpt,
+            ImmutableArray<RefKind> argRefKindsOpt,
+            ImmutableArray<int> argsToParamsOpt,
+            bool ignoreArglistRefKinds,
+            ArrayBuilder<EscapeValue> escapeValues)
+        {
+            // If the receiver is not a ref to a ref struct, it cannot capture anything.
+            ParameterSymbol? extensionReceiver = null;
+            if (methodInfo.Symbol.RequiresInstanceReceiver())
+            {
+                // We have an instance method receiver.
+                if (!hasRefToRefStructThis(methodInfo.Method) && !hasRefToRefStructThis(methodInfo.SetMethod))
+                {
+                    return;
+                }
+            }
+            else
+            {
+                // We have an extension method receiver.
+                Debug.Assert(methodInfo.Method?.IsExtensionMethod != false);
+
+                if (parameters is [var extReceiver, ..])
+                {
+                    extensionReceiver = extReceiver;
+                    if (!isRefToRefStruct(extensionReceiver))
+                    {
+                        return;
+                    }
+                }
+            }
+
+            var unfilteredEscapeValues = ArrayBuilder<EscapeValue>.GetInstance();
+            GetEscapeValuesForUpdatedRules(
+                methodInfo,
+                // We do not need the receiver in `escapeValues`.
+                receiver: null,
+                receiverIsSubjectToCloning: ThreeState.Unknown,
+                parameters,
+                argsOpt,
+                argRefKindsOpt,
+                argsToParamsOpt,
+                ignoreArglistRefKinds: ignoreArglistRefKinds,
+                mixableArguments: null,
+                unfilteredEscapeValues);
+
+            foreach (var (parameter, argument, escapeLevel, isArgumentRefEscape) in unfilteredEscapeValues)
+            {
+                // Skip if this is the extension method receiver.
+                if (extensionReceiver is not null && parameter == extensionReceiver)
+                {
+                    continue;
+                }
+
+                // We did not pass the instance method receiver to GetEscapeValues so we cannot encounter it here.
+                Debug.Assert(parameter?.IsThis != true);
+
+                // Skip if the parameter cannot escape from the method to the receiver.
+                if (escapeLevel != EscapeLevel.CallingMethod)
+                {
+                    Debug.Assert(escapeLevel == EscapeLevel.ReturnOnly);
+                    continue;
+                }
+
+                escapeValues.Add(new EscapeValue(parameter, argument, escapeLevel, isArgumentRefEscape));
+            }
+
+            unfilteredEscapeValues.Free();
+
+            static bool hasRefToRefStructThis(MethodSymbol? method)
+            {
+                return method?.TryGetThisParameter(out var thisParameter) == true &&
+                    isRefToRefStruct(thisParameter);
+            }
+
+            static bool isRefToRefStruct(ParameterSymbol parameter)
+            {
+                return parameter.RefKind == RefKind.Ref &&
+                    parameter.Type.IsRefLikeOrAllowsRefLikeType();
             }
         }
 
