@@ -2103,7 +2103,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             return escapeScope;
         }
 
-        // TODO: Old vs updated rules.
         private SafeContext GetInvocationEscapeToReceiver(
             in MethodInfo methodInfo,
             ImmutableArray<ParameterSymbol> parameters,
@@ -2311,7 +2310,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             return result;
         }
 
-        // TODO: Old vs updated rules.
         private bool CheckInvocationEscapeToReceiver(
             SyntaxNode syntax,
             in MethodInfo methodInfo,
@@ -2641,7 +2639,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var unfilteredEscapeValues = ArrayBuilder<EscapeValue>.GetInstance();
-            GetEscapeValuesForUpdatedRules(
+            GetEscapeValues(
                 methodInfo,
                 // We do not need the receiver in `escapeValues`.
                 receiver: null,
