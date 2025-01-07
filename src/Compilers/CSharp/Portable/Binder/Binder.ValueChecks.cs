@@ -2150,7 +2150,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 mixableArguments: null,
                 escapeValues);
 
-            foreach (var (parameter, argument, _, isArgumentRefEscape) in escapeValues)
+            foreach (var (parameter, argument, escapeLevel, isArgumentRefEscape) in escapeValues)
             {
                 // Skip if this is the extension method receiver.
                 if (extensionReceiver is not null && parameter == extensionReceiver)
@@ -2160,6 +2160,13 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 // We did not pass the instance method receiver to GetEscapeValues so we cannot encounter it here.
                 Debug.Assert(parameter?.IsThis != true);
+
+                // Skip if the parameter cannot escape from the method to the receiver.
+                if (escapeLevel != EscapeLevel.CallingMethod)
+                {
+                    Debug.Assert(escapeLevel == EscapeLevel.ReturnOnly);
+                    continue;
+                }
 
                 SafeContext argEscape = isArgumentRefEscape
                     ? GetRefEscape(argument, localScopeDepth)
