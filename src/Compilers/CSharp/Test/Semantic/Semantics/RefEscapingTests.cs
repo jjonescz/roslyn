@@ -4537,12 +4537,17 @@ class X : List<int>
                         var r = new R(x) { y };
                         return r; // 3
                     }
+                    R M6(ref int x, scoped ref int y)
+                    {
+                        return new R() { { x, y } }; // 4
+                    }
                 }
                 ref struct R : IEnumerable
                 {
                     public R() { }
                     public R(in int p) : this() { }
                     public void Add([UnscopedRef] in int x) { }
+                    public void Add(in int x, [UnscopedRef] in int y) { }
                     IEnumerator IEnumerable.GetEnumerator() => throw null;
                 }
                 """;
@@ -4558,7 +4563,10 @@ class X : List<int>
                 Diagnostic(ErrorCode.ERR_EscapeVariable, "r").WithArguments("r").WithLocation(19, 16),
                 // (29,16): error CS8352: Cannot use variable 'r' in this context because it may expose referenced variables outside of their declaration scope
                 //         return r; // 3
-                Diagnostic(ErrorCode.ERR_EscapeVariable, "r").WithArguments("r").WithLocation(29, 16));
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "r").WithArguments("r").WithLocation(29, 16),
+                // (33,24): error CS8352: Cannot use variable '{ x, y }' in this context because it may expose referenced variables outside of their declaration scope
+                //         return new R() { { x, y } }; // 4
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "{ { x, y } }").WithArguments("{ x, y }").WithLocation(33, 24));
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/75802")]
