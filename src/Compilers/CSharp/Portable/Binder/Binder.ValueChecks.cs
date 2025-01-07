@@ -4741,21 +4741,16 @@ namespace Microsoft.CodeAnalysis.CSharp
             foreach (var expr in colExpr.Initializers)
             {
                 result = result.Intersect(expr is BoundCollectionElementInitializer colElement
-                    ? GetValEscapeOfCollectionElementInitializer(colElement, localScopeDepth)
+                    ? GetInvocationEscapeToReceiver(
+                        MethodInfo.Create(colElement.AddMethod),
+                        colElement.AddMethod.Parameters,
+                        colElement.Arguments,
+                        argRefKindsOpt: default,
+                        colElement.ArgsToParamsOpt,
+                        localScopeDepth)
                     : GetValEscape(expr, localScopeDepth));
             }
             return result;
-        }
-
-        private SafeContext GetValEscapeOfCollectionElementInitializer(BoundCollectionElementInitializer colElement, SafeContext localScopeDepth)
-        {
-            return GetInvocationEscapeToReceiver(
-                MethodInfo.Create(colElement.AddMethod),
-                colElement.AddMethod.Parameters,
-                colElement.Arguments,
-                argRefKindsOpt: default,
-                colElement.ArgsToParamsOpt,
-                localScopeDepth);
         }
 
         /// <summary>
@@ -5738,7 +5733,17 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (expr is BoundCollectionElementInitializer colElement)
                 {
-                    if (!CheckValEscapeOfCollectionElementInitializer(colElement, escapeFrom, escapeTo, checkingReceiver: false, diagnostics))
+                    if (!CheckInvocationEscapeToReceiver(
+                            colElement.Syntax,
+                            MethodInfo.Create(colElement.AddMethod),
+                            colElement.AddMethod.Parameters,
+                            colElement.Arguments,
+                            argRefKindsOpt: default,
+                            colElement.ArgsToParamsOpt,
+                            checkingReceiver: false,
+                            escapeFrom,
+                            escapeTo,
+                            diagnostics))
                     {
                         return false;
                     }
@@ -5750,21 +5755,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             return true;
-        }
-
-        private bool CheckValEscapeOfCollectionElementInitializer(BoundCollectionElementInitializer colElement, SafeContext escapeFrom, SafeContext escapeTo, bool checkingReceiver, BindingDiagnosticBag diagnostics)
-        {
-            return CheckInvocationEscapeToReceiver(
-                colElement.Syntax,
-                MethodInfo.Create(colElement.AddMethod),
-                colElement.AddMethod.Parameters,
-                colElement.Arguments,
-                argRefKindsOpt: default,
-                colElement.ArgsToParamsOpt,
-                checkingReceiver: checkingReceiver,
-                escapeFrom,
-                escapeTo,
-                diagnostics);
         }
 
         private bool CheckValEscapeOfObjectInitializer(BoundObjectInitializerExpression initExpr, SafeContext escapeFrom, SafeContext escapeTo, BindingDiagnosticBag diagnostics)
@@ -5820,7 +5810,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             arguments.Free();
 
             // Narrow the scope for implicit calls which allow the receiver to capture refs from the arguments.
-            result &= CheckValEscapeOfInterpolatedStringHandlerCalls(expression, escapeFrom, escapeTo, diagnostics);
+            result = result && CheckValEscapeOfInterpolatedStringHandlerCalls(expression, escapeFrom, escapeTo, diagnostics);
 
             return result;
         }
@@ -5922,20 +5912,21 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private bool CheckValEscapeOfInterpolatedStringHandlerCalls(BoundExpression expression, SafeContext escapeFrom, SafeContext escapeTo, BindingDiagnosticBag diagnostics)
         {
-            bool result = true;
-
             while (true)
             {
                 switch (expression)
                 {
                     case BoundBinaryOperator binary:
-                        result &= CheckValEscapeOfInterpolatedStringHandlerCalls(binary.Right, escapeFrom, escapeTo, diagnostics);
+                        if (!CheckValEscapeOfInterpolatedStringHandlerCalls(binary.Right, escapeFrom, escapeTo, diagnostics))
+                        {
+                            return false;
+                        }
+
                         expression = binary.Left;
                         break;
 
                     case BoundInterpolatedString interpolatedString:
-                        result &= checkParts(interpolatedString, escapeFrom, escapeTo, diagnostics);
-                        return result;
+                        return checkParts(interpolatedString, escapeFrom, escapeTo, diagnostics);
 
                     default:
                         throw ExceptionUtilities.UnexpectedValue(expression.Kind);
@@ -5944,8 +5935,6 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             bool checkParts(BoundInterpolatedString interpolatedString, SafeContext escapeFrom, SafeContext escapeTo, BindingDiagnosticBag diagnostics)
             {
-                bool result = true;
-
                 foreach (var part in interpolatedString.Parts)
                 {
                     if (part is not BoundCall { Method.Name: BoundInterpolatedString.AppendFormattedMethod } call)
@@ -5955,20 +5944,23 @@ namespace Microsoft.CodeAnalysis.CSharp
                         continue;
                     }
 
-                    result &= CheckInvocationEscapeToReceiver(
-                        call.Syntax,
-                        MethodInfo.Create(call.Method),
-                        call.Method.Parameters,
-                        call.Arguments,
-                        call.ArgumentRefKindsOpt,
-                        call.ArgsToParamsOpt,
-                        checkingReceiver: false,
-                        escapeFrom,
-                        escapeTo,
-                        diagnostics);
+                    if (!CheckInvocationEscapeToReceiver(
+                            call.Syntax,
+                            MethodInfo.Create(call.Method),
+                            call.Method.Parameters,
+                            call.Arguments,
+                            call.ArgumentRefKindsOpt,
+                            call.ArgsToParamsOpt,
+                            checkingReceiver: false,
+                            escapeFrom,
+                            escapeTo,
+                            diagnostics))
+                    {
+                        return false;
+                    }
                 }
 
-                return result;
+                return true;
             }
         }
     }
