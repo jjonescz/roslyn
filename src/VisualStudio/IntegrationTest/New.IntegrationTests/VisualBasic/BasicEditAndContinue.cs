@@ -227,7 +227,7 @@ End Module
         await TestServices.Workspace.WaitForAsyncOperationsAsync(FeatureAttribute.Workspace, cancellationToken);
     }
 
-    [IdeFact]
+    [IdeFact(Skip = "https://github.com/dotnet/roslyn/issues/75456")]
     public async Task MultiProjectDebuggingWhereNotAllModulesAreLoaded()
     {
         await SetupMultiProjectSolutionAsync(HangMitigatingCancellationToken);
