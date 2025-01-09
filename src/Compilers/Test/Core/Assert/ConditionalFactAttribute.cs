@@ -240,15 +240,18 @@ namespace Roslyn.Test.Utilities
         {
             get
             {
-                // WSL environments can have this value as empty string
-                if (string.IsNullOrEmpty(CultureInfo.CurrentCulture.Name))
-                {
-                    return false;
-                }
+                return shouldSkip(CultureInfo.CurrentUICulture.Name) || shouldSkip(CultureInfo.CurrentCulture.Name);
 
-                return
-                    !CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase) ||
-                    !CultureInfo.CurrentCulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+                static bool shouldSkip(string cultureName)
+                {
+                    // WSL environments can have this value as empty string
+                    if (string.IsNullOrEmpty(cultureName))
+                    {
+                        return false;
+                    }
+
+                    return !cultureName.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+                }
             }
         }
 
