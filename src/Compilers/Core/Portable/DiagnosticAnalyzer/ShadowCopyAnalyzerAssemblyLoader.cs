@@ -44,16 +44,16 @@ namespace Microsoft.CodeAnalysis
         internal int CopyCount => _mvidPathMap.Count;
 
 #if NET
-        public ShadowCopyAnalyzerAssemblyLoader(string baseDirectory, ImmutableArray<IAnalyzerAssemblyResolver> externalResolvers = default)
+        public ShadowCopyAnalyzerAssemblyLoader(string baseDirectory, ImmutableArray<IAnalyzerAssemblyResolver>? externalResolvers = null)
             : this(null, baseDirectory, externalResolvers)
         {
         }
 
-        public ShadowCopyAnalyzerAssemblyLoader(AssemblyLoadContext? compilerLoadContext, string baseDirectory, ImmutableArray<IAnalyzerAssemblyResolver> externalResolvers = default)
-            : base(compilerLoadContext, AnalyzerLoadOption.LoadFromDisk, externalResolvers)
+        public ShadowCopyAnalyzerAssemblyLoader(AssemblyLoadContext? compilerLoadContext, string baseDirectory, ImmutableArray<IAnalyzerAssemblyResolver>? externalResolvers = null)
+            : base(compilerLoadContext, AnalyzerLoadOption.LoadFromDisk, externalResolvers ?? [])
 #else
-        public ShadowCopyAnalyzerAssemblyLoader(string baseDirectory, ImmutableArray<IAnalyzerAssemblyResolver> externalResolvers = default)
-            : base(externalResolvers)
+        public ShadowCopyAnalyzerAssemblyLoader(string baseDirectory, ImmutableArray<IAnalyzerAssemblyResolver>? externalResolvers = null)
+            : base(externalResolvers ?? [])
 #endif
         {
             if (baseDirectory is null)

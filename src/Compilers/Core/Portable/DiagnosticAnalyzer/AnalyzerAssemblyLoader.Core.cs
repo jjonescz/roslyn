@@ -54,7 +54,7 @@ namespace Microsoft.CodeAnalysis
         {
             _loadOption = loadOption;
             _compilerLoadContext = compilerLoadContext ?? AssemblyLoadContext.GetLoadContext(typeof(AnalyzerAssemblyLoader).GetTypeInfo().Assembly)!;
-            _externalResolvers = [.. externalResolvers.NullToEmpty(), new CompilerAnalyzerAssemblyResolver(_compilerLoadContext)];
+            _externalResolvers = [.. externalResolvers, new CompilerAnalyzerAssemblyResolver(_compilerLoadContext)];
         }
 
         public bool IsHostAssembly(Assembly assembly)

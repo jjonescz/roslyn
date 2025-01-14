@@ -16,8 +16,8 @@ internal sealed class RemoteAnalyzerAssemblyLoader : AnalyzerAssemblyLoader
 {
     private readonly string _baseDirectory;
 
-    public RemoteAnalyzerAssemblyLoader(string baseDirectory, ImmutableArray<IAnalyzerAssemblyResolver> externalResolvers = default)
-        : base(externalResolvers)
+    public RemoteAnalyzerAssemblyLoader(string baseDirectory, ImmutableArray<IAnalyzerAssemblyResolver>? externalResolvers = null)
+        : base(externalResolvers ?? [])
     {
         _baseDirectory = baseDirectory;
     }
