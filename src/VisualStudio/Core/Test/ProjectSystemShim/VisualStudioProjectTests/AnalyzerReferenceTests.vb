@@ -2,16 +2,13 @@
 ' The .NET Foundation licenses this file to you under the MIT license.
 ' See the LICENSE file in the project root for more information.
 
-Imports System.Collections.Immutable
 Imports System.ComponentModel.Composition
 Imports System.IO
 Imports System.Threading
 Imports Microsoft.CodeAnalysis
-Imports Microsoft.CodeAnalysis.Diagnostics
-Imports Microsoft.CodeAnalysis.Diagnostics.Redirecting
 Imports Microsoft.CodeAnalysis.Host.Mef
-Imports Microsoft.CodeAnalysis.[Shared].TestHooks
 Imports Microsoft.CodeAnalysis.Test.Utilities
+Imports Microsoft.CodeAnalysis.Workspaces.AnalyzerRedirecting
 Imports Microsoft.VisualStudio.LanguageServices.Implementation.Diagnostics
 Imports Microsoft.VisualStudio.LanguageServices.UnitTests.Diagnostics
 Imports Microsoft.VisualStudio.LanguageServices.UnitTests.ProjectSystemShim.Framework
