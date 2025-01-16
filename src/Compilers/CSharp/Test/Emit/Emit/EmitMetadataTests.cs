@@ -3507,5 +3507,26 @@ public class Child : Parent, IParent
                     // warning CS8021: No value for RuntimeMetadataVersion found. No assembly containing System.Object was found nor was a value for RuntimeMetadataVersion specified through options.
                     Diagnostic(ErrorCode.WRN_NoRuntimeMetadataVersion).WithLocation(1, 1));
         }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/76707")]
+        public void EmitMetadataOnly_Exe()
+        {
+            CompileAndVerify("""
+                System.Console.WriteLine("a");
+                """,
+                options: TestOptions.ReleaseExe,
+                emitOptions: EmitOptions.Default.WithEmitMetadataOnly(true))
+                .VerifyDiagnostics();
+
+            var emitResult = CreateCompilation("""
+                class Program;
+                """,
+                options: TestOptions.ReleaseExe)
+                .Emit(new MemoryStream(), options: EmitOptions.Default.WithEmitMetadataOnly(true));
+            Assert.False(emitResult.Success);
+            emitResult.Diagnostics.Verify(
+                // error CS5001: Program does not contain a static 'Main' method suitable for an entry point
+                Diagnostic(ErrorCode.ERR_NoEntryPoint).WithLocation(1, 1));
+        }
     }
 }
