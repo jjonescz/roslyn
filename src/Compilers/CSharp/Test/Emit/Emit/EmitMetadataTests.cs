@@ -3515,7 +3515,11 @@ public class Child : Parent, IParent
                 System.Console.WriteLine("a");
                 """,
                 options: TestOptions.ReleaseExe,
-                emitOptions: EmitOptions.Default.WithEmitMetadataOnly(true))
+                emitOptions: EmitOptions.Default.WithEmitMetadataOnly(true),
+                symbolValidator: static (ModuleSymbol module) =>
+                {
+                    Assert.NotEqual(0, module.GetMetadata().Module.PEReaderOpt.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress);
+                })
                 .VerifyDiagnostics();
         }
 
@@ -3545,13 +3549,18 @@ public class Child : Parent, IParent
                 options: TestOptions.ReleaseExe,
                 emitOptions: EmitOptions.Default
                     .WithEmitMetadataOnly(true)
-                    .WithIncludePrivateMembers(false))
+                    .WithIncludePrivateMembers(false),
+                symbolValidator: static (ModuleSymbol module) =>
+                {
+                    Assert.Equal(0, module.GetMetadata().Module.PEReaderOpt.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress);
+                })
                 .VerifyDiagnostics();
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/76707")]
         public void ExcludePrivateMembers_PrivateMain()
         {
+            using var metadataStream = new MemoryStream();
             var emitResult = CreateCompilation("""
                 class Program
                 {
@@ -3562,10 +3571,12 @@ public class Child : Parent, IParent
                 .Emit(
                     peStream: new MemoryStream(),
                     // Passing `metadataPEStream: null` would cause IncludePrivateMembers to be reset back to `true`.
-                    metadataPEStream: new MemoryStream(),
+                    metadataPEStream: metadataStream,
                     options: EmitOptions.Default.WithIncludePrivateMembers(false));
             Assert.True(emitResult.Success);
             emitResult.Diagnostics.Verify();
+            metadataStream.Position = 0;
+            Assert.Equal(0, new PEHeaders(metadataStream).CorHeader.EntryPointTokenOrRelativeVirtualAddress);
         }
     }
 }
