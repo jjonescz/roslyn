@@ -3517,7 +3517,11 @@ public class Child : Parent, IParent
                 options: TestOptions.ReleaseExe,
                 emitOptions: EmitOptions.Default.WithEmitMetadataOnly(true))
                 .VerifyDiagnostics();
+        }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/76707")]
+        public void EmitMetadataOnly_Exe_NoMain()
+        {
             var emitResult = CreateCompilation("""
                 class Program;
                 """,
@@ -3527,6 +3531,41 @@ public class Child : Parent, IParent
             emitResult.Diagnostics.Verify(
                 // error CS5001: Program does not contain a static 'Main' method suitable for an entry point
                 Diagnostic(ErrorCode.ERR_NoEntryPoint).WithLocation(1, 1));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/76707")]
+        public void EmitMetadataOnly_Exe_PrivateMain_ExcludePrivateMembers()
+        {
+            CompileAndVerify("""
+                class Program
+                {
+                    private static void Main() { }
+                }
+                """,
+                options: TestOptions.ReleaseExe,
+                emitOptions: EmitOptions.Default
+                    .WithEmitMetadataOnly(true)
+                    .WithIncludePrivateMembers(false))
+                .VerifyDiagnostics();
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/76707")]
+        public void ExcludePrivateMembers_PrivateMain()
+        {
+            var emitResult = CreateCompilation("""
+                class Program
+                {
+                    private static void Main() { }
+                }
+                """,
+                options: TestOptions.ReleaseExe)
+                .Emit(
+                    peStream: new MemoryStream(),
+                    // Passing `metadataPEStream: null` would cause IncludePrivateMembers to be reset back to `true`.
+                    metadataPEStream: new MemoryStream(),
+                    options: EmitOptions.Default.WithIncludePrivateMembers(false));
+            Assert.True(emitResult.Success);
+            emitResult.Diagnostics.Verify();
         }
     }
 }
