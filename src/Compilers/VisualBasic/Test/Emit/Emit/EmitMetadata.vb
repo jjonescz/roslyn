@@ -992,7 +992,7 @@ End Module
                 emitOptions:=EmitOptions.Default.WithEmitMetadataOnly(True),
                 symbolValidator:=Sub(m)
                                      Assert.NotEqual(0, m.GetMetadata().Module.PEReaderOpt.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress)
-                                     Assert.NotNull(TryCast(m.GlobalNamespace.GetMember("Program.Main"), MethodSymbol))
+                                     Assert.NotNull(m.GlobalNamespace.GetMember(Of MethodSymbol)("Program.Main"))
                                  End Sub
             ).VerifyDiagnostics()
         End Sub
@@ -1029,8 +1029,8 @@ End Module
                 options:=TestOptions.ReleaseExe.WithMetadataImportOptions(MetadataImportOptions.All),
                 emitOptions:=EmitOptions.Default.WithEmitMetadataOnly(True).WithIncludePrivateMembers(False),
                 symbolValidator:=Sub(m)
-                                     Assert.Equal(0, m.GetMetadata().Module.PEReaderOpt.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress)
-                                     Assert.Empty(m.GlobalNamespace.GetTypeMember("Program").GetMembers())
+                                     Assert.NotEqual(0, m.GetMetadata().Module.PEReaderOpt.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress)
+                                     Assert.NotNull(m.GlobalNamespace.GetMember(Of MethodSymbol)("Program.Main"))
                                  End Sub
             ).VerifyDiagnostics()
         End Sub
@@ -1039,7 +1039,7 @@ End Module
         Public Sub ExcludePrivateMembers_PrivateMain()
             Using peStream As New MemoryStream()
                 Using metadataStream As New MemoryStream()
-                    Dim emitResult = CreateCompilation(
+                    Dim comp = CreateCompilation(
                         <compilation>
                             <file>
 Module Program
@@ -1049,26 +1049,30 @@ End Module
                             </file>
                         </compilation>,
                         options:=TestOptions.ReleaseExe
-                    ).Emit(peStream:=peStream,
-                           metadataPEStream:=metadataStream,
-                           options:=EmitOptions.Default.WithIncludePrivateMembers(False))
+                    )
+                    Dim emitResult = comp.Emit(
+                        peStream:=peStream,
+                        metadataPEStream:=metadataStream,
+                        options:=EmitOptions.Default.WithIncludePrivateMembers(False))
                     Assert.True(emitResult.Success)
                     emitResult.Diagnostics.Verify()
 
-                    Verify(peStream, entryPoint:=True, main:=True)
-                    Verify(metadataStream, entryPoint:=False, main:=False)
+                    Verify(peStream)
+                    Verify(metadataStream)
+
+                    CompileAndVerify(comp).VerifyDiagnostics()
                 End Using
             End Using
         End Sub
 
-        Private Shared Sub Verify(stream As Stream, entryPoint As Boolean, main As Boolean)
+        Private Shared Sub Verify(stream As Stream)
             stream.Position = 0
-            Assert.Equal(entryPoint, 0 <> New PEHeaders(stream).CorHeader.EntryPointTokenOrRelativeVirtualAddress)
+            Assert.NotEqual(0, New PEHeaders(stream).CorHeader.EntryPointTokenOrRelativeVirtualAddress)
 
             stream.Position = 0
             Dim reference = AssemblyMetadata.CreateFromStream(stream).GetReference()
             Dim comp = CreateCompilation("", references:={reference}, options:=TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All))
-            Assert.Equal(main, comp.GetMember(Of MethodSymbol)("Program.Main") IsNot Nothing)
+            Assert.NotNull(comp.GetMember(Of MethodSymbol)("Program.Main") IsNot Nothing)
         End Sub
     End Class
 End Namespace

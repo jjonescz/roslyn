@@ -3519,7 +3519,7 @@ public class Child : Parent, IParent
                 symbolValidator: static (ModuleSymbol module) =>
                 {
                     Assert.NotEqual(0, module.GetMetadata().Module.PEReaderOpt.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress);
-                    Assert.NotNull(module.GlobalNamespace.GetMember("Program.<Main>$") as MethodSymbol);
+                    Assert.NotNull(module.GlobalNamespace.GetMember<MethodSymbol>("Program.<Main>$"));
                 })
                 .VerifyDiagnostics();
         }
@@ -3553,8 +3553,8 @@ public class Child : Parent, IParent
                     .WithIncludePrivateMembers(false),
                 symbolValidator: static (ModuleSymbol module) =>
                 {
-                    Assert.Equal(0, module.GetMetadata().Module.PEReaderOpt.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress);
-                    Assert.Empty(module.GlobalNamespace.GetTypeMember("Program").GetMembers());
+                    Assert.NotEqual(0, module.GetMetadata().Module.PEReaderOpt.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress);
+                    Assert.NotNull(module.GlobalNamespace.GetMember<MethodSymbol>("Program.Main"));
                 })
                 .VerifyDiagnostics();
         }
@@ -3564,33 +3564,35 @@ public class Child : Parent, IParent
         {
             using var peStream = new MemoryStream();
             using var metadataStream = new MemoryStream();
-            var emitResult = CreateCompilation("""
+            var comp = CreateCompilation("""
                 static class Program
                 {
                     private static void Main() { }
                 }
                 """,
-                options: TestOptions.ReleaseExe)
-                .Emit(
-                    peStream: peStream,
-                    metadataPEStream: metadataStream,
-                    options: EmitOptions.Default.WithIncludePrivateMembers(false));
+                options: TestOptions.ReleaseExe);
+            var emitResult = comp.Emit(
+                peStream: peStream,
+                metadataPEStream: metadataStream,
+                options: EmitOptions.Default.WithIncludePrivateMembers(false));
             Assert.True(emitResult.Success);
             emitResult.Diagnostics.Verify();
 
-            verify(peStream, entryPoint: true, main: true);
-            verify(metadataStream, entryPoint: false, main: false);
+            verify(peStream);
+            verify(metadataStream);
 
-            static void verify(Stream stream, bool entryPoint, bool main)
+            CompileAndVerify(comp).VerifyDiagnostics();
+
+            static void verify(Stream stream)
             {
                 stream.Position = 0;
-                Assert.Equal(entryPoint, 0 != new PEHeaders(stream).CorHeader.EntryPointTokenOrRelativeVirtualAddress);
+                Assert.NotEqual(0, new PEHeaders(stream).CorHeader.EntryPointTokenOrRelativeVirtualAddress);
 
                 stream.Position = 0;
                 var reference = AssemblyMetadata.CreateFromStream(stream).GetReference();
                 var comp = CreateCompilation("", references: [reference],
                     options: TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All));
-                Assert.Equal(main, null != comp.GetMember<MethodSymbol>("Program.Main"));
+                Assert.NotNull(comp.GetMember<MethodSymbol>("Program.Main"));
             }
         }
     }

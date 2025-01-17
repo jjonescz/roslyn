@@ -1047,6 +1047,11 @@ namespace Microsoft.Cci
                 }
             }
 
+            if (context.Module.PEEntryPoint == method || context.Module.DebugEntryPoint == method)
+            {
+                return true;
+            }
+
             return false;
         }
     }

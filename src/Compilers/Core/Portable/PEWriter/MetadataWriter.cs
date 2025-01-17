@@ -1873,13 +1873,13 @@ namespace Microsoft.Cci
             {
                 // PE entry point is set for executable programs
                 IMethodReference entryPoint = module.PEEntryPoint;
-                entryPointHandle = entryPoint != null && TryGetMethodDefinitionHandle((IMethodDefinition)entryPoint.AsDefinition(Context), out var h) ? h : default(MethodDefinitionHandle);
+                entryPointHandle = entryPoint != null ? (MethodDefinitionHandle)GetMethodHandle((IMethodDefinition)entryPoint.AsDefinition(Context)) : default(MethodDefinitionHandle);
 
                 // debug entry point may be different from PE entry point, it may also be set for libraries
                 IMethodReference debugEntryPoint = module.DebugEntryPoint;
                 if (debugEntryPoint != null && debugEntryPoint != entryPoint)
                 {
-                    debugEntryPointHandle = TryGetMethodDefinitionHandle((IMethodDefinition)debugEntryPoint.AsDefinition(Context), out var dh) ? dh : default(MethodDefinitionHandle);
+                    debugEntryPointHandle = (MethodDefinitionHandle)GetMethodHandle((IMethodDefinition)debugEntryPoint.AsDefinition(Context));
                 }
                 else
                 {
