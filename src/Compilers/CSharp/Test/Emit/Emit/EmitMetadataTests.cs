@@ -3514,11 +3514,12 @@ public class Child : Parent, IParent
             CompileAndVerify("""
                 System.Console.WriteLine("a");
                 """,
-                options: TestOptions.ReleaseExe,
+                options: TestOptions.ReleaseExe.WithMetadataImportOptions(MetadataImportOptions.All),
                 emitOptions: EmitOptions.Default.WithEmitMetadataOnly(true),
                 symbolValidator: static (ModuleSymbol module) =>
                 {
                     Assert.NotEqual(0, module.GetMetadata().Module.PEReaderOpt.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress);
+                    Assert.NotNull(module.GlobalNamespace.GetMember("Program.<Main>$") as MethodSymbol);
                 })
                 .VerifyDiagnostics();
         }
@@ -3541,18 +3542,19 @@ public class Child : Parent, IParent
         public void EmitMetadataOnly_Exe_PrivateMain_ExcludePrivateMembers()
         {
             CompileAndVerify("""
-                class Program
+                static class Program
                 {
                     private static void Main() { }
                 }
                 """,
-                options: TestOptions.ReleaseExe,
+                options: TestOptions.ReleaseExe.WithMetadataImportOptions(MetadataImportOptions.All),
                 emitOptions: EmitOptions.Default
                     .WithEmitMetadataOnly(true)
                     .WithIncludePrivateMembers(false),
                 symbolValidator: static (ModuleSymbol module) =>
                 {
                     Assert.Equal(0, module.GetMetadata().Module.PEReaderOpt.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress);
+                    Assert.Empty(module.GlobalNamespace.GetTypeMember("Program").GetMembers());
                 })
                 .VerifyDiagnostics();
         }
@@ -3560,23 +3562,31 @@ public class Child : Parent, IParent
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/76707")]
         public void ExcludePrivateMembers_PrivateMain()
         {
+            using var peStream = new MemoryStream();
             using var metadataStream = new MemoryStream();
             var emitResult = CreateCompilation("""
-                class Program
+                static class Program
                 {
                     private static void Main() { }
                 }
                 """,
                 options: TestOptions.ReleaseExe)
                 .Emit(
-                    peStream: new MemoryStream(),
+                    peStream: peStream,
                     // Passing `metadataPEStream: null` would cause IncludePrivateMembers to be reset back to `true`.
                     metadataPEStream: metadataStream,
                     options: EmitOptions.Default.WithIncludePrivateMembers(false));
             Assert.True(emitResult.Success);
             emitResult.Diagnostics.Verify();
+
             metadataStream.Position = 0;
             Assert.Equal(0, new PEHeaders(metadataStream).CorHeader.EntryPointTokenOrRelativeVirtualAddress);
+
+            peStream.Position = 0;
+            var reference = AssemblyMetadata.CreateFromStream(peStream).GetReference();
+            var comp = CreateCompilation("", references: [reference],
+                options: TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All));
+            Assert.NotNull(comp.GetMember<MethodSymbol>("Program.Main"));
         }
     }
 }
