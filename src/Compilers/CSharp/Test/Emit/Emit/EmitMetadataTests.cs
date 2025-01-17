@@ -3573,20 +3573,25 @@ public class Child : Parent, IParent
                 options: TestOptions.ReleaseExe)
                 .Emit(
                     peStream: peStream,
-                    // Passing `metadataPEStream: null` would cause IncludePrivateMembers to be reset back to `true`.
                     metadataPEStream: metadataStream,
                     options: EmitOptions.Default.WithIncludePrivateMembers(false));
             Assert.True(emitResult.Success);
             emitResult.Diagnostics.Verify();
 
-            metadataStream.Position = 0;
-            Assert.Equal(0, new PEHeaders(metadataStream).CorHeader.EntryPointTokenOrRelativeVirtualAddress);
+            verify(peStream, entryPoint: true, main: true);
+            verify(metadataStream, entryPoint: false, main: false);
 
-            peStream.Position = 0;
-            var reference = AssemblyMetadata.CreateFromStream(peStream).GetReference();
-            var comp = CreateCompilation("", references: [reference],
-                options: TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All));
-            Assert.NotNull(comp.GetMember<MethodSymbol>("Program.Main"));
+            static void verify(Stream stream, bool entryPoint, bool main)
+            {
+                stream.Position = 0;
+                Assert.Equal(entryPoint, 0 != new PEHeaders(stream).CorHeader.EntryPointTokenOrRelativeVirtualAddress);
+
+                stream.Position = 0;
+                var reference = AssemblyMetadata.CreateFromStream(stream).GetReference();
+                var comp = CreateCompilation("", references: [reference],
+                    options: TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All));
+                Assert.Equal(main, null != comp.GetMember<MethodSymbol>("Program.Main"));
+            }
         }
     }
 }
