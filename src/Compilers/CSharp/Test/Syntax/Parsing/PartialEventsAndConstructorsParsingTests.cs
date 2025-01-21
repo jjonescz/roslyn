@@ -727,4 +727,335 @@ public sealed class PartialEventsAndConstructorsParsingTests(ITestOutputHelper o
         }
         EOF();
     }
+
+    [Fact]
+    public void Constructor_Tree()
+    {
+        UsingTree("""
+            partial class C
+            {
+                partial C();
+                partial C() { }
+            }
+            """);
+
+        N(SyntaxKind.CompilationUnit);
+        {
+            N(SyntaxKind.ClassDeclaration);
+            {
+                N(SyntaxKind.PartialKeyword);
+                N(SyntaxKind.ClassKeyword);
+                N(SyntaxKind.IdentifierToken, "C");
+                N(SyntaxKind.OpenBraceToken);
+                N(SyntaxKind.ConstructorDeclaration);
+                {
+                    N(SyntaxKind.PartialKeyword);
+                    N(SyntaxKind.IdentifierToken, "C");
+                    N(SyntaxKind.ParameterList);
+                    {
+                        N(SyntaxKind.OpenParenToken);
+                        N(SyntaxKind.CloseParenToken);
+                    }
+                    N(SyntaxKind.SemicolonToken);
+                }
+                N(SyntaxKind.ConstructorDeclaration);
+                {
+                    N(SyntaxKind.PartialKeyword);
+                    N(SyntaxKind.IdentifierToken, "C");
+                    N(SyntaxKind.ParameterList);
+                    {
+                        N(SyntaxKind.OpenParenToken);
+                        N(SyntaxKind.CloseParenToken);
+                    }
+                    N(SyntaxKind.Block);
+                    {
+                        N(SyntaxKind.OpenBraceToken);
+                        N(SyntaxKind.CloseBraceToken);
+                    }
+                }
+                N(SyntaxKind.CloseBraceToken);
+            }
+            N(SyntaxKind.EndOfFileToken);
+        }
+        EOF();
+    }
+
+    [Fact]
+    public void Constructor_ArrowBody()
+    {
+        UsingDeclaration("""
+            partial C() => throw null;
+            """);
+
+        N(SyntaxKind.ConstructorDeclaration);
+        {
+            N(SyntaxKind.PartialKeyword);
+            N(SyntaxKind.IdentifierToken, "C");
+            N(SyntaxKind.ParameterList);
+            {
+                N(SyntaxKind.OpenParenToken);
+                N(SyntaxKind.CloseParenToken);
+            }
+            N(SyntaxKind.ArrowExpressionClause);
+            {
+                N(SyntaxKind.EqualsGreaterThanToken);
+                N(SyntaxKind.ThrowExpression);
+                {
+                    N(SyntaxKind.ThrowKeyword);
+                    N(SyntaxKind.NullLiteralExpression);
+                    {
+                        N(SyntaxKind.NullKeyword);
+                    }
+                }
+            }
+            N(SyntaxKind.SemicolonToken);
+        }
+        EOF();
+    }
+
+    [Fact]
+    public void Constructor_NoParens()
+    {
+        UsingDeclaration("""
+            partial C;
+            """);
+
+        N(SyntaxKind.FieldDeclaration);
+        {
+            N(SyntaxKind.VariableDeclaration);
+            {
+                N(SyntaxKind.IdentifierName);
+                {
+                    N(SyntaxKind.IdentifierToken, "partial");
+                }
+                N(SyntaxKind.VariableDeclarator);
+                {
+                    N(SyntaxKind.IdentifierToken, "C");
+                }
+            }
+            N(SyntaxKind.SemicolonToken);
+        }
+        EOF();
+    }
+
+    [Fact]
+    public void Constructor_NoName()
+    {
+        UsingDeclaration("""
+            partial ();
+            """);
+
+        N(SyntaxKind.ConstructorDeclaration);
+        {
+            N(SyntaxKind.IdentifierToken, "partial");
+            N(SyntaxKind.ParameterList);
+            {
+                N(SyntaxKind.OpenParenToken);
+                N(SyntaxKind.CloseParenToken);
+            }
+            N(SyntaxKind.SemicolonToken);
+        }
+        EOF();
+    }
+
+    [Fact]
+    public void Constructor_PartialAfterName()
+    {
+        UsingDeclaration("""
+            C partial();
+            """);
+
+        N(SyntaxKind.MethodDeclaration);
+        {
+            N(SyntaxKind.IdentifierName);
+            {
+                N(SyntaxKind.IdentifierToken, "C");
+            }
+            N(SyntaxKind.IdentifierToken, "partial");
+            N(SyntaxKind.ParameterList);
+            {
+                N(SyntaxKind.OpenParenToken);
+                N(SyntaxKind.CloseParenToken);
+            }
+            N(SyntaxKind.SemicolonToken);
+        }
+        EOF();
+    }
+
+    [Fact]
+    public void Constructor_PartialAfterPublic()
+    {
+        UsingDeclaration("""
+            public partial C();
+            """);
+
+        N(SyntaxKind.ConstructorDeclaration);
+        {
+            N(SyntaxKind.PublicKeyword);
+            N(SyntaxKind.PartialKeyword);
+            N(SyntaxKind.IdentifierToken, "C");
+            N(SyntaxKind.ParameterList);
+            {
+                N(SyntaxKind.OpenParenToken);
+                N(SyntaxKind.CloseParenToken);
+            }
+            N(SyntaxKind.SemicolonToken);
+        }
+        EOF();
+    }
+
+    [Fact]
+    public void Constructor_PartialBeforePublic()
+    {
+        UsingDeclaration("""
+            partial public C();
+            """);
+
+        N(SyntaxKind.ConstructorDeclaration);
+        {
+            N(SyntaxKind.PartialKeyword);
+            N(SyntaxKind.PublicKeyword);
+            N(SyntaxKind.IdentifierToken, "C");
+            N(SyntaxKind.ParameterList);
+            {
+                N(SyntaxKind.OpenParenToken);
+                N(SyntaxKind.CloseParenToken);
+            }
+            N(SyntaxKind.SemicolonToken);
+        }
+        EOF();
+    }
+
+    [Fact]
+    public void Constructor_TypeTwice()
+    {
+        UsingDeclaration("""
+            partial C C();
+            """);
+
+        N(SyntaxKind.MethodDeclaration);
+        {
+            N(SyntaxKind.PartialKeyword);
+            N(SyntaxKind.IdentifierName);
+            {
+                N(SyntaxKind.IdentifierToken, "C");
+            }
+            N(SyntaxKind.IdentifierToken, "C");
+            N(SyntaxKind.ParameterList);
+            {
+                N(SyntaxKind.OpenParenToken);
+                N(SyntaxKind.CloseParenToken);
+            }
+            N(SyntaxKind.SemicolonToken);
+        }
+        EOF();
+    }
+
+    [Fact]
+    public void Constructor_PartialEscaped()
+    {
+        UsingDeclaration("""
+            @partial C();
+            """);
+
+        N(SyntaxKind.MethodDeclaration);
+        {
+            N(SyntaxKind.IdentifierName);
+            {
+                N(SyntaxKind.IdentifierToken, "@partial");
+            }
+            N(SyntaxKind.IdentifierToken, "C");
+            N(SyntaxKind.ParameterList);
+            {
+                N(SyntaxKind.OpenParenToken);
+                N(SyntaxKind.CloseParenToken);
+            }
+            N(SyntaxKind.SemicolonToken);
+        }
+        EOF();
+    }
+
+    [Fact]
+    public void Constructor_KeywordName()
+    {
+        UsingDeclaration("""
+            partial const();
+            """,
+            null,
+            // (1,1): error CS1073: Unexpected token 'const'
+            // partial const();
+            Diagnostic(ErrorCode.ERR_UnexpectedToken, "partial").WithArguments("const").WithLocation(1, 1),
+            // (1,9): error CS1519: Invalid token 'const' in class, record, struct, or interface member declaration
+            // partial const();
+            Diagnostic(ErrorCode.ERR_InvalidMemberDecl, "const").WithArguments("const").WithLocation(1, 9));
+
+        N(SyntaxKind.IncompleteMember);
+        {
+            N(SyntaxKind.IdentifierName);
+            {
+                N(SyntaxKind.IdentifierToken, "partial");
+            }
+        }
+        EOF();
+    }
+
+    [Fact]
+    public void Constructor_InPlaceOfIdentifier()
+    {
+        UsingTree("""
+            partial class C
+            {
+                [Attr(
+                partial C();
+            }
+            """,
+            // (3,11): error CS1026: ) expected
+            //     [Attr(
+            Diagnostic(ErrorCode.ERR_CloseParenExpected, "").WithLocation(3, 11),
+            // (3,11): error CS1003: Syntax error, ']' expected
+            //     [Attr(
+            Diagnostic(ErrorCode.ERR_SyntaxError, "").WithArguments("]").WithLocation(3, 11));
+
+        N(SyntaxKind.CompilationUnit);
+        {
+            N(SyntaxKind.ClassDeclaration);
+            {
+                N(SyntaxKind.PartialKeyword);
+                N(SyntaxKind.ClassKeyword);
+                N(SyntaxKind.IdentifierToken, "C");
+                N(SyntaxKind.OpenBraceToken);
+                N(SyntaxKind.ConstructorDeclaration);
+                {
+                    N(SyntaxKind.AttributeList);
+                    {
+                        N(SyntaxKind.OpenBracketToken);
+                        N(SyntaxKind.Attribute);
+                        {
+                            N(SyntaxKind.IdentifierName);
+                            {
+                                N(SyntaxKind.IdentifierToken, "Attr");
+                            }
+                            N(SyntaxKind.AttributeArgumentList);
+                            {
+                                N(SyntaxKind.OpenParenToken);
+                                M(SyntaxKind.CloseParenToken);
+                            }
+                        }
+                        M(SyntaxKind.CloseBracketToken);
+                    }
+                    N(SyntaxKind.PartialKeyword);
+                    N(SyntaxKind.IdentifierToken, "C");
+                    N(SyntaxKind.ParameterList);
+                    {
+                        N(SyntaxKind.OpenParenToken);
+                        N(SyntaxKind.CloseParenToken);
+                    }
+                    N(SyntaxKind.SemicolonToken);
+                }
+                N(SyntaxKind.CloseBraceToken);
+            }
+            N(SyntaxKind.EndOfFileToken);
+        }
+        EOF();
+    }
 }

@@ -1643,7 +1643,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                 return true;
             }
 
-            // Check for:
+            // Check for constructor:
+            //   partial Identifier(
+            if (this.PeekToken(1).Kind == SyntaxKind.IdentifierToken && this.PeekToken(2).Kind == SyntaxKind.OpenParenToken)
+            {
+                return true;
+            }
+
+            // Check for method/property:
             //   partial ReturnType MemberName
             using var _ = this.GetDisposableResetPoint(resetOnDispose: true);
 
