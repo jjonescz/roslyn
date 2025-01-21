@@ -5236,8 +5236,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                     }
                                 }
 
-                                Debug.Assert((object)@event.AddMethod != null);
-                                Debug.Assert((object)@event.RemoveMethod != null);
+                                Debug.Assert(@event.IsPartial || @event.AddMethod is not null);
+                                Debug.Assert(@event.IsPartial || @event.RemoveMethod is not null);
 
                                 AddAccessorIfAvailable(builder.NonTypeMembers, @event.AddMethod);
                                 AddAccessorIfAvailable(builder.NonTypeMembers, @event.RemoveMethod);

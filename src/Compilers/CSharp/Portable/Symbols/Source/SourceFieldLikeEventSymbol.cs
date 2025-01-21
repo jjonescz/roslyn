@@ -22,8 +22,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     {
         private readonly string _name;
         private readonly TypeWithAnnotations _type;
-        private readonly SynthesizedEventAccessorSymbol _addMethod;
-        private readonly SynthesizedEventAccessorSymbol _removeMethod;
+        private readonly SynthesizedEventAccessorSymbol? _addMethod;
+        private readonly SynthesizedEventAccessorSymbol? _removeMethod;
 
         internal SourceFieldLikeEventSymbol(SourceMemberContainerTypeSymbol containingType, Binder binder, SyntaxTokenList modifiers, VariableDeclaratorSyntax declaratorSyntax, BindingDiagnosticBag diagnostics)
             : base(containingType, declaratorSyntax, modifiers, isFieldLike: true, interfaceSpecifierSyntaxOpt: null,
@@ -81,7 +81,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             // NOTE: if there's an initializer in source, we'd better create a backing field, regardless of
             // whether or not the initializer is legal.
-            if (hasInitializer || !(this.IsExtern || this.IsAbstract))
+            if (hasInitializer || !(this.IsExtern || this.IsAbstract || this.IsPartial))
             {
                 AssociatedEventField = MakeAssociatedField(declaratorSyntax);
                 // Don't initialize this.type - we'll just use the type of the field (which is lazy and handles var)
@@ -114,8 +114,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 }
             }
 
-            _addMethod = new SynthesizedEventAccessorSymbol(this, isAdder: true, isExpressionBodied: false);
-            _removeMethod = new SynthesizedEventAccessorSymbol(this, isAdder: false, isExpressionBodied: false);
+            if (!this.IsPartial)
+            {
+                _addMethod = new SynthesizedEventAccessorSymbol(this, isAdder: true, isExpressionBodied: false);
+                _removeMethod = new SynthesizedEventAccessorSymbol(this, isAdder: false, isExpressionBodied: false);
+            }
 
             if (declarationSyntax.Variables[0] == declaratorSyntax)
             {
@@ -146,14 +149,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get { return _type; }
         }
 
-        public override MethodSymbol AddMethod
+        public override MethodSymbol? AddMethod
         {
-            get { return _addMethod; }
+            get { return PartialDefinitionPart?.AddMethod ?? _addMethod; }
         }
 
-        public override MethodSymbol RemoveMethod
+        public override MethodSymbol? RemoveMethod
         {
-            get { return _removeMethod; }
+            get { return PartialDefinitionPart?.RemoveMethod ?? _removeMethod; }
         }
 
         internal override bool IsExplicitInterfaceImplementation

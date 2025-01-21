@@ -21,11 +21,7 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
                 partial event System.Action E { add { } remove { } }
             }
             """;
-        // PROTOTYPE: warning CS0067 should not be reported
-        CreateCompilation(source).VerifyDiagnostics(
-            // (4,33): warning CS0067: The event 'C.E' is never used
-            //     partial event System.Action E;
-            Diagnostic(ErrorCode.WRN_UnreferencedEvent, "E").WithArguments("C.E").WithLocation(4, 33));
+        CreateCompilation(source).VerifyDiagnostics();
     }
 
     [Fact]
@@ -38,14 +34,10 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
                 partial public event System.Action E { add { } remove { } }
             }
             """;
-        // PROTOTYPE: warning CS0067 should not be reported
         CreateCompilation(source).VerifyDiagnostics(
             // (3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', a constructor identifier, or a method or property return type.
             //     partial public event System.Action E;
             Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 5),
-            // (3,40): warning CS0067: The event 'C.E' is never used
-            //     partial public event System.Action E;
-            Diagnostic(ErrorCode.WRN_UnreferencedEvent, "E").WithArguments("C.E").WithLocation(3, 40),
             // (4,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', a constructor identifier, or a method or property return type.
             //     partial public event System.Action E { add { } remove { } }
             Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(4, 5));
