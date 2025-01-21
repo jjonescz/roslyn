@@ -226,6 +226,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal SourceConstructorSymbol? OtherPartOfPartial => _otherPartOfPartial;
 
+        public override MethodSymbol? PartialDefinitionPart => IsPartialImplementation ? OtherPartOfPartial : null;
+
+        public override MethodSymbol? PartialImplementationPart => IsPartialDefinition ? OtherPartOfPartial : null;
+
         internal static void InitializePartialConstructorParts(SourceConstructorSymbol definition, SourceConstructorSymbol implementation)
         {
             Debug.Assert(definition.IsPartialDefinition);
