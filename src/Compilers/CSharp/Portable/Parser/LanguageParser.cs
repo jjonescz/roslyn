@@ -1379,7 +1379,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                 {
                     case DeclarationModifiers.Partial:
                         var nextToken = PeekToken(1);
-                        if (this.IsPartialType() || this.IsPartialMember())
+                        if (this.IsPartialType() || this.IsPartialEvent() || this.IsPartialMember())
                         {
                             // Standard legal cases.
                             modTok = ConvertToKeyword(this.EatToken());
@@ -1630,6 +1630,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             }
 
             return false;
+        }
+
+        // PROTOTYPE: Should be used from IsCurrentTokenPartialKeywordOfPartialMethodOrType too?
+        private bool IsPartialEvent()
+        {
+            Debug.Assert(this.CurrentToken.ContextualKind == SyntaxKind.PartialKeyword);
+            return this.PeekToken(1).Kind == SyntaxKind.EventKeyword;
         }
 
         private bool IsPartialMember()
