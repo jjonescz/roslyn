@@ -396,9 +396,12 @@ public sealed class PartialEventsAndConstructorsParsingTests(ITestOutputHelper o
             partial partial event Action E;
             """,
             null,
-            // (1,17): error CS1003: Syntax error, ',' expected
+            // (1,9): error CS1525: Invalid expression term 'partial'
             // partial partial event Action E;
-            Diagnostic(ErrorCode.ERR_SyntaxError, "event").WithArguments(",").WithLocation(1, 17));
+            Diagnostic(ErrorCode.ERR_InvalidExprTerm, "partial").WithArguments("partial").WithLocation(1, 9),
+            // (1,9): error CS1003: Syntax error, ',' expected
+            // partial partial event Action E;
+            Diagnostic(ErrorCode.ERR_SyntaxError, "partial").WithArguments(",").WithLocation(1, 9));
 
         N(SyntaxKind.FieldDeclaration);
         {
@@ -408,9 +411,9 @@ public sealed class PartialEventsAndConstructorsParsingTests(ITestOutputHelper o
                 {
                     N(SyntaxKind.IdentifierToken, "partial");
                 }
-                N(SyntaxKind.VariableDeclarator);
+                M(SyntaxKind.VariableDeclarator);
                 {
-                    N(SyntaxKind.IdentifierToken, "partial");
+                    M(SyntaxKind.IdentifierToken);
                 }
             }
             N(SyntaxKind.SemicolonToken);
@@ -669,12 +672,12 @@ public sealed class PartialEventsAndConstructorsParsingTests(ITestOutputHelper o
                 partial event Action E;
             }
             """,
-            // (4,13): error CS1026: ) expected
-            //     partial event Action E;
-            Diagnostic(ErrorCode.ERR_CloseParenExpected, "event").WithLocation(4, 13),
-            // (4,13): error CS1003: Syntax error, ']' expected
-            //     partial event Action E;
-            Diagnostic(ErrorCode.ERR_SyntaxError, "event").WithArguments("]").WithLocation(4, 13));
+            // (3,11): error CS1026: ) expected
+            //     [Attr(
+            Diagnostic(ErrorCode.ERR_CloseParenExpected, "").WithLocation(3, 11),
+            // (3,11): error CS1003: Syntax error, ']' expected
+            //     [Attr(
+            Diagnostic(ErrorCode.ERR_SyntaxError, "").WithArguments("]").WithLocation(3, 11));
 
         N(SyntaxKind.CompilationUnit);
         {
@@ -698,18 +701,12 @@ public sealed class PartialEventsAndConstructorsParsingTests(ITestOutputHelper o
                             N(SyntaxKind.AttributeArgumentList);
                             {
                                 N(SyntaxKind.OpenParenToken);
-                                N(SyntaxKind.AttributeArgument);
-                                {
-                                    N(SyntaxKind.IdentifierName);
-                                    {
-                                        N(SyntaxKind.IdentifierToken, "partial");
-                                    }
-                                }
                                 M(SyntaxKind.CloseParenToken);
                             }
                         }
                         M(SyntaxKind.CloseBracketToken);
                     }
+                    N(SyntaxKind.PartialKeyword);
                     N(SyntaxKind.EventKeyword);
                     N(SyntaxKind.VariableDeclaration);
                     {
