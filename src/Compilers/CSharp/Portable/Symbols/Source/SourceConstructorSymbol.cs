@@ -130,6 +130,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 DeclarationModifiers.AccessibilityMask |
                 DeclarationModifiers.Static |
                 DeclarationModifiers.Extern |
+                DeclarationModifiers.Partial |
                 DeclarationModifiers.Unsafe;
 
             bool isInterface = containingType.IsInterface;
