@@ -2360,6 +2360,12 @@ namespace Microsoft.CodeAnalysis.CSharp
         ERR_ImplicitlyTypedParamsParameter = 9272,
         ERR_VariableDeclarationNamedField = 9273,
 
+        // PROTOTYPE: compact
+        ERR_PartialConstructorMissingImplementation = 9400,
+        ERR_PartialConstructorMissingDefinition = 9401,
+        ERR_PartialConstructorDuplicateDefinition = 9402,
+        ERR_PartialConstructorDuplicateImplementation = 9403,
+
         // Note: you will need to do the following after adding errors:
         //  1) Update ErrorFacts.IsBuildOnlyDiagnostic (src/Compilers/CSharp/Portable/Errors/ErrorFacts.cs)
 

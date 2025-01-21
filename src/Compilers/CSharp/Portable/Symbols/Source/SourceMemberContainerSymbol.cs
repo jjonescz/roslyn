@@ -3644,14 +3644,20 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                             mergePartialProperties(ref membersByName, name, currentProperty, prevProperty, diagnostics);
                             break;
 
+                        case (SourceConstructorSymbol { IsStatic: false } currentConstructor, SourceConstructorSymbol { IsStatic: false } prevConstructor):
+                            Debug.Assert(name.Equals(WellKnownMemberNames.InstanceConstructorName.AsMemory()));
+                            mergePartialConstructors(ref membersByName, name, currentConstructor, prevConstructor, diagnostics);
+                            break;
+
                         case (SourcePropertyAccessorSymbol, SourcePropertyAccessorSymbol):
                             break; // accessor symbols and their diagnostics are handled by processing the associated property
 
                         default:
                             // This is an error scenario. We simply don't merge the symbols in this case and a duplicate name diagnostic is reported separately.
-                            // One way this case can be reached is if type contains both `public partial int P { get; }` and `public partial int P_get();`.
+                            // One way this case can be reached is if type contains both `public partial int P { get; }` and `public partial int get_P();`.
                             Debug.Assert(symbol is SourceOrdinaryMethodSymbol or SourcePropertySymbol or SourcePropertyAccessorSymbol);
                             Debug.Assert(prev is SourceOrdinaryMethodSymbol or SourcePropertySymbol or SourcePropertyAccessorSymbol);
+                            // PROTOTYPE
                             break;
                     }
                 }
@@ -3679,6 +3685,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                     property.IsPartialDefinition ? ErrorCode.ERR_PartialPropertyMissingImplementation : ErrorCode.ERR_PartialPropertyMissingDefinition,
                                     property.GetFirstLocation(),
                                     property);
+                            }
+                            break;
+
+                        case SourceConstructorSymbol constructor:
+                            if (constructor.OtherPartOfPartial is null)
+                            {
+                                diagnostics.Add(
+                                    constructor.IsPartialDefinition ? ErrorCode.ERR_PartialConstructorMissingImplementation : ErrorCode.ERR_PartialConstructorMissingDefinition,
+                                    constructor.GetFirstLocation(),
+                                    constructor);
                             }
                             break;
 
@@ -3764,6 +3780,27 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     return property.DeclaredBackingField?.HasInitializer == true;
                 }
             }
+
+            void mergePartialConstructors(ref Dictionary<ReadOnlyMemory<char>, ImmutableArray<Symbol>> membersByName, ReadOnlyMemory<char> name, SourceConstructorSymbol currentConstructor, SourceConstructorSymbol prevConstructor, BindingDiagnosticBag diagnostics)
+            {
+                if (currentConstructor.IsPartialImplementation &&
+                    (prevConstructor.IsPartialImplementation || (prevConstructor.OtherPartOfPartial is { } otherImplementation && (object)otherImplementation != currentConstructor)))
+                {
+                    // A partial constructor may not have multiple implementing declarations
+                    diagnostics.Add(ErrorCode.ERR_PartialConstructorDuplicateImplementation, currentConstructor.GetFirstLocation());
+                }
+                else if (currentConstructor.IsPartialDefinition &&
+                    (prevConstructor.IsPartialDefinition || (prevConstructor.OtherPartOfPartial is { } otherDefinition && (object)otherDefinition != currentConstructor)))
+                {
+                    // A partial constructor may not have multiple defining declarations
+                    diagnostics.Add(ErrorCode.ERR_PartialConstructorDuplicateImplementation, currentConstructor.GetFirstLocation());
+                }
+                else
+                {
+                    DuplicateMembersByNameIfCached(ref membersByName);
+                    membersByName[name] = FixPartialConstructor(membersByName[name], prevConstructor, currentConstructor);
+                }
+            }
         }
 
         private void DuplicateMembersByNameIfCached(ref Dictionary<ReadOnlyMemory<char>, ImmutableArray<Symbol>> membersByName)
@@ -3824,6 +3861,28 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             // a partial property is represented in the member list by its definition part:
             membersByName[name] = Remove(membersByName[name], implementation);
+        }
+
+        /// <summary>Links together the definition and implementation parts of a partial constructor. Returns a member list which has the implementation part removed.</summary>
+        private static ImmutableArray<Symbol> FixPartialConstructor(ImmutableArray<Symbol> symbols, SourceConstructorSymbol part1, SourceConstructorSymbol part2)
+        {
+            SourceConstructorSymbol definition;
+            SourceConstructorSymbol implementation;
+            if (part1.IsPartialDefinition)
+            {
+                definition = part1;
+                implementation = part2;
+            }
+            else
+            {
+                definition = part2;
+                implementation = part1;
+            }
+
+            SourceConstructorSymbol.InitializePartialConstructorParts(definition, implementation);
+
+            // a partial constructor is represented in the member list by its definition part:
+            return Remove(symbols, implementation);
         }
 
         private static ImmutableArray<Symbol> Remove(ImmutableArray<Symbol> symbols, Symbol symbol)

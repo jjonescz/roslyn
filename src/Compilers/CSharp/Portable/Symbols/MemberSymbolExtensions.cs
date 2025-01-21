@@ -545,31 +545,37 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
+        // PROTOTYPE: test all callers
         internal static bool IsPartialMember(this Symbol member)
         {
             Debug.Assert(member.IsDefinition);
             return member
                 is SourceOrdinaryMethodSymbol { IsPartial: true }
                 or SourcePropertySymbol { IsPartial: true }
-                or SourcePropertyAccessorSymbol { IsPartial: true };
+                or SourcePropertyAccessorSymbol { IsPartial: true }
+                or SourceConstructorSymbol { IsPartial: true };
         }
 
+        // PROTOTYPE: test all callers
         internal static bool IsPartialImplementation(this Symbol member)
         {
             Debug.Assert(member.IsDefinition);
             return member
                 is SourceOrdinaryMethodSymbol { IsPartialImplementation: true }
                 or SourcePropertySymbol { IsPartialImplementation: true }
-                or SourcePropertyAccessorSymbol { IsPartialImplementation: true };
+                or SourcePropertyAccessorSymbol { IsPartialImplementation: true }
+                or SourceConstructorSymbol { IsPartialImplementation: true };
         }
 
+        // PROTOTYPE: test all callers
         internal static bool IsPartialDefinition(this Symbol member)
         {
             Debug.Assert(member.IsDefinition);
             return member
                 is SourceOrdinaryMethodSymbol { IsPartialDefinition: true }
                 or SourcePropertySymbol { IsPartialDefinition: true }
-                or SourcePropertyAccessorSymbol { IsPartialDefinition: true };
+                or SourcePropertyAccessorSymbol { IsPartialDefinition: true }
+                or SourceConstructorSymbol { IsPartialDefinition: true };
         }
 
         internal static bool ContainsTupleNames(this Symbol member)
