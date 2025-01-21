@@ -1687,6 +1687,26 @@
         <target state="new">Partial constructor '{0}' must have an implementation part.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_PartialEventDuplicateDefinition">
+        <source>A partial event may not have multiple defining declarations.</source>
+        <target state="new">A partial event may not have multiple defining declarations.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ERR_PartialEventDuplicateImplementation">
+        <source>A partial event may not have multiple implementing declarations.</source>
+        <target state="new">A partial event may not have multiple implementing declarations.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ERR_PartialEventMissingDefinition">
+        <source>Partial event '{0}' must have a definition part.</source>
+        <target state="new">Partial event '{0}' must have a definition part.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ERR_PartialEventMissingImplementation">
+        <source>Partial event '{0}' must have an implementation part.</source>
+        <target state="new">Partial event '{0}' must have an implementation part.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_PartialMemberAccessibilityDifference">
         <source>Both partial member declarations must have identical accessibility modifiers.</source>
         <target state="translated">Obie częściowe deklaracje elementów członkowskich muszą mieć identyczne modyfikatory dostępności.</target>

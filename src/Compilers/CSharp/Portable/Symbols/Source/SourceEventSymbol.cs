@@ -22,6 +22,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     /// </summary>
     internal abstract class SourceEventSymbol : EventSymbol, IAttributeTargetSymbol
     {
+        private SourceEventSymbol? _otherPartOfPartial;
+
         private readonly Location _location;
         private readonly SyntaxReference _syntaxRef;
         private readonly DeclarationModifiers _modifiers;
@@ -779,6 +781,35 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 diagnostics.Add(ErrorCode.ERR_ExplicitPropertyAddingAccessor, thisAccessor.GetFirstLocation(), thisAccessor, explicitlyImplementedEvent);
             }
+        }
+
+        internal bool IsPartial => (this.Modifiers & DeclarationModifiers.Partial) != 0;
+
+        /// <summary>
+        /// <see langword="true"/> if this symbol corresponds to a semi-colon body declaration.
+        /// <see langword="false"/> if this symbol corresponds to a declaration with custom <see langword="add"/> and <see langword="remove"/> accessors.
+        /// </summary>
+        protected abstract bool IsFieldLike { get; }
+
+        internal bool IsPartialDefinition => IsPartial && IsFieldLike && !IsExtern;
+
+        internal bool IsPartialImplementation => IsPartial && (!IsFieldLike || IsExtern);
+
+        internal SourceEventSymbol? OtherPartOfPartial => _otherPartOfPartial;
+
+        internal static void InitializePartialEventParts(SourceEventSymbol definition, SourceEventSymbol implementation)
+        {
+            Debug.Assert(definition.IsPartialDefinition);
+            Debug.Assert(implementation.IsPartialImplementation);
+
+            Debug.Assert(definition._otherPartOfPartial is not { } alreadySetImplPart || alreadySetImplPart == implementation);
+            Debug.Assert(implementation._otherPartOfPartial is not { } alreadySetDefPart || alreadySetDefPart == definition);
+
+            definition._otherPartOfPartial = implementation;
+            implementation._otherPartOfPartial = definition;
+
+            Debug.Assert(definition._otherPartOfPartial == implementation);
+            Debug.Assert(implementation._otherPartOfPartial == definition);
         }
     }
 }

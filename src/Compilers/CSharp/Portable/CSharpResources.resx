@@ -8059,4 +8059,16 @@ To remove the warning, you can use /reference instead (set the Embed Interop Typ
   <data name="ERR_PartialConstructorDuplicateImplementation" xml:space="preserve">
     <value>A partial constructor may not have multiple implementing declarations.</value>
   </data>
+  <data name="ERR_PartialEventMissingImplementation" xml:space="preserve">
+    <value>Partial event '{0}' must have an implementation part.</value>
+  </data>
+  <data name="ERR_PartialEventMissingDefinition" xml:space="preserve">
+    <value>Partial event '{0}' must have a definition part.</value>
+  </data>
+  <data name="ERR_PartialEventDuplicateDefinition" xml:space="preserve">
+    <value>A partial event may not have multiple defining declarations.</value>
+  </data>
+  <data name="ERR_PartialEventDuplicateImplementation" xml:space="preserve">
+    <value>A partial event may not have multiple implementing declarations.</value>
+  </data>
 </root>

@@ -126,6 +126,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             declaratorDiagnostics.Free();
         }
 
+        protected override bool IsFieldLike => true;
+
         /// <summary>
         /// Backing field for field-like event. Will be null if the event
         /// has no initializer and is either extern or inside an interface.

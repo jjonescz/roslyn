@@ -3649,6 +3649,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                             mergePartialConstructors(ref membersByName, name, currentConstructor, prevConstructor, diagnostics);
                             break;
 
+                        case (SourceEventSymbol currentEvent, SourceEventSymbol prevEvent):
+                            mergePartialEvents(ref membersByName, name, currentEvent, prevEvent, diagnostics);
+                            break;
+
                         case (SourcePropertyAccessorSymbol, SourcePropertyAccessorSymbol):
                             break; // accessor symbols and their diagnostics are handled by processing the associated property
 
@@ -3695,6 +3699,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                     constructor.IsPartialDefinition ? ErrorCode.ERR_PartialConstructorMissingImplementation : ErrorCode.ERR_PartialConstructorMissingDefinition,
                                     constructor.GetFirstLocation(),
                                     constructor);
+                            }
+                            break;
+
+                        case SourceEventSymbol ev:
+                            if (ev.OtherPartOfPartial is null)
+                            {
+                                diagnostics.Add(
+                                    ev.IsPartialDefinition ? ErrorCode.ERR_PartialEventMissingImplementation : ErrorCode.ERR_PartialEventMissingDefinition,
+                                    ev.GetFirstLocation(),
+                                    ev);
                             }
                             break;
 
@@ -3801,6 +3815,27 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     membersByName[name] = FixPartialConstructor(membersByName[name], prevConstructor, currentConstructor);
                 }
             }
+
+            void mergePartialEvents(ref Dictionary<ReadOnlyMemory<char>, ImmutableArray<Symbol>> membersByName, ReadOnlyMemory<char> name, SourceEventSymbol currentEvent, SourceEventSymbol prevEvent, BindingDiagnosticBag diagnostics)
+            {
+                if (currentEvent.IsPartialImplementation &&
+                    (prevEvent.IsPartialImplementation || (prevEvent.OtherPartOfPartial is { } otherImplementation && (object)otherImplementation != currentEvent)))
+                {
+                    // A partial event may not have multiple implementing declarations
+                    diagnostics.Add(ErrorCode.ERR_PartialEventDuplicateImplementation, currentEvent.GetFirstLocation());
+                }
+                else if (currentEvent.IsPartialDefinition &&
+                    (prevEvent.IsPartialDefinition || (prevEvent.OtherPartOfPartial is { } otherDefinition && (object)otherDefinition != currentEvent)))
+                {
+                    // A partial event may not have multiple defining declarations
+                    diagnostics.Add(ErrorCode.ERR_PartialEventDuplicateImplementation, currentEvent.GetFirstLocation());
+                }
+                else
+                {
+                    DuplicateMembersByNameIfCached(ref membersByName);
+                    membersByName[name] = FixPartialEvent(membersByName[name], prevEvent, currentEvent);
+                }
+            }
         }
 
         private void DuplicateMembersByNameIfCached(ref Dictionary<ReadOnlyMemory<char>, ImmutableArray<Symbol>> membersByName)
@@ -3882,6 +3917,28 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             SourceConstructorSymbol.InitializePartialConstructorParts(definition, implementation);
 
             // a partial constructor is represented in the member list by its definition part:
+            return Remove(symbols, implementation);
+        }
+
+        /// <summary>Links together the definition and implementation parts of a partial event. Returns a member list which has the implementation part removed.</summary>
+        private static ImmutableArray<Symbol> FixPartialEvent(ImmutableArray<Symbol> symbols, SourceEventSymbol part1, SourceEventSymbol part2)
+        {
+            SourceEventSymbol definition;
+            SourceEventSymbol implementation;
+            if (part1.IsPartialDefinition)
+            {
+                definition = part1;
+                implementation = part2;
+            }
+            else
+            {
+                definition = part2;
+                implementation = part1;
+            }
+
+            SourceEventSymbol.InitializePartialEventParts(definition, implementation);
+
+            // a partial event is represented in the member list by its definition part:
             return Remove(symbols, implementation);
         }
 
