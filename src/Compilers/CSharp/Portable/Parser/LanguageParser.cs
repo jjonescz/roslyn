@@ -1379,7 +1379,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                 {
                     case DeclarationModifiers.Partial:
                         var nextToken = PeekToken(1);
-                        if (this.IsPartialType() || this.IsPartialMember())
+                        if (this.IsPartialType() || this.IsPartialMember(allowPartialCtor: !forTopLevelStatements))
                         {
                             // Standard legal cases.
                             modTok = ConvertToKeyword(this.EatToken());
@@ -1632,7 +1632,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             return false;
         }
 
-        private bool IsPartialMember()
+        private bool IsPartialMember(bool allowPartialCtor)
         {
             Debug.Assert(this.CurrentToken.ContextualKind == SyntaxKind.PartialKeyword);
 
@@ -1645,7 +1645,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
 
             // Check for constructor:
             //   partial Identifier(
-            if (this.PeekToken(1).Kind == SyntaxKind.IdentifierToken && this.PeekToken(2).Kind == SyntaxKind.OpenParenToken)
+            if (allowPartialCtor &&
+                this.PeekToken(1).Kind == SyntaxKind.IdentifierToken &&
+                this.PeekToken(2).Kind == SyntaxKind.OpenParenToken)
             {
                 return true;
             }
@@ -5758,7 +5760,7 @@ parse_member_name:;
         {
             if (this.CurrentToken.ContextualKind == SyntaxKind.PartialKeyword)
             {
-                if (this.IsPartialType() || this.IsPartialMember())
+                if (this.IsPartialType() || this.IsPartialMember(allowPartialCtor: false))
                 {
                     return true;
                 }
