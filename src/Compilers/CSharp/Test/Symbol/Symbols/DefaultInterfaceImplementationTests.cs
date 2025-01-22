@@ -44585,24 +44585,24 @@ interface I19
                 // (62,20): error CS0106: The modifier 'virtual' is not valid for this item
                 //     virtual static I13() => throw null;
                 Diagnostic(ErrorCode.ERR_BadMemberFlag, "I13").WithArguments("virtual").WithLocation(62, 20),
-                // (66,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', a constructor identifier, or a method or property return type.
+                // (66,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
                 //     partial static I14();
                 Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(66, 5),
-                // (66,20): error CS9400: Partial constructor 'I14.I14()' must have an implementation part.
+                // (66,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
                 //     partial static I14();
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingImplementation, "I14").WithArguments("I14.I14()").WithLocation(66, 20),
-                // (70,20): error CS9400: Partial constructor 'I15.I15()' must have an implementation part.
+                Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(66, 5),
+                // (70,12): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
                 //     static partial I15();
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingImplementation, "I15").WithArguments("I15.I15()").WithLocation(70, 20),
-                // (74,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', a constructor identifier, or a method or property return type.
+                Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(70, 12),
+                // (74,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
                 //     partial static I16() {}
                 Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(74, 5),
-                // (74,20): error CS9401: Partial constructor 'I16.I16()' must have a definition part.
+                // (74,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
                 //     partial static I16() {}
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingDefinition, "I16").WithArguments("I16.I16()").WithLocation(74, 20),
-                // (78,20): error CS9401: Partial constructor 'I17.I17()' must have a definition part.
+                Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(74, 5),
+                // (78,12): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
                 //     static partial I17() => throw null;
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingDefinition, "I17").WithArguments("I17.I17()").WithLocation(78, 20),
+                Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(78, 12),
                 // (82,19): error CS0179: 'I18.I18()' cannot be extern and declare a body
                 //     extern static I18() {}
                 Diagnostic(ErrorCode.ERR_ExternHasBody, "I18").WithArguments("I18.I18()").WithLocation(82, 19),

@@ -22136,7 +22136,7 @@ using System.Runtime.CompilerServices;
                 }
                 """
             }).VerifyDiagnostics(
-                // 2.cs(3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', a constructor identifier, or a method or property return type.
+                // 2.cs(3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
                 //     partial public PartialPublicCtor() { }
                 Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 5),
                 // 0.cs(3,13): error CS9401: Partial constructor 'PartialCtor.PartialCtor()' must have a definition part.
@@ -22204,63 +22204,63 @@ using System.Runtime.CompilerServices;
                 }
                 """,
             }).VerifyDiagnostics(
-                // 6.cs(3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', a constructor identifier, or a method or property return type.
+                // 6.cs(3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
                 //     partial static public PartialStaticPublicCtor() { }
                 Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 5),
-                // 0.cs(3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', a constructor identifier, or a method or property return type.
+                // 6.cs(3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
+                //     partial static public PartialStaticPublicCtor() { }
+                Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 5),
+                // 0.cs(3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
                 //     partial static PartialStaticCtor() { }
                 Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 5),
-                // 7.cs(3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', a constructor identifier, or a method or property return type.
+                // 0.cs(3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
+                //     partial static PartialStaticCtor() { }
+                Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 5),
+                // 7.cs(3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
                 //     partial public static PartialPublicStaticCtor() { }
                 Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 5),
-                // 3.cs(3,12): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', a constructor identifier, or a method or property return type.
+                // 7.cs(3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
+                //     partial public static PartialPublicStaticCtor() { }
+                Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 5),
+                // 3.cs(3,12): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
                 //     public partial static PublicPartialStaticCtor() { }
                 Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 12),
-                // 5.cs(3,12): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', a constructor identifier, or a method or property return type.
+                // 3.cs(3,12): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
+                //     public partial static PublicPartialStaticCtor() { }
+                Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 12),
+                // 1.cs(3,12): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
+                //     static partial StaticPartialCtor() { }
+                Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 12),
+                // 5.cs(3,12): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
                 //     static partial public StaticPartialPublicCtor() { }
                 Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 12),
-                // 0.cs(3,20): error CS9401: Partial constructor 'PartialStaticCtor.PartialStaticCtor()' must have a definition part.
-                //     partial static PartialStaticCtor() { }
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingDefinition, "PartialStaticCtor").WithArguments("PartialStaticCtor.PartialStaticCtor()").WithLocation(3, 20),
-                // 1.cs(3,20): error CS9401: Partial constructor 'StaticPartialCtor.StaticPartialCtor()' must have a definition part.
-                //     static partial StaticPartialCtor() { }
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingDefinition, "StaticPartialCtor").WithArguments("StaticPartialCtor.StaticPartialCtor()").WithLocation(3, 20),
+                // 5.cs(3,12): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
+                //     static partial public StaticPartialPublicCtor() { }
+                Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 12),
+                // 2.cs(3,19): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
+                //     public static partial PublicStaticPartialCtor() { }
+                Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 19),
+                // 4.cs(3,19): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
+                //     static public partial StaticPublicPartialCtor() { }
+                Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 19),
+                // 3.cs(3,27): error CS0515: 'PublicPartialStaticCtor.PublicPartialStaticCtor()': access modifiers are not allowed on static constructors
+                //     public partial static PublicPartialStaticCtor() { }
+                Diagnostic(ErrorCode.ERR_StaticConstructorWithAccessModifiers, "PublicPartialStaticCtor").WithArguments("PublicPartialStaticCtor.PublicPartialStaticCtor()").WithLocation(3, 27),
+                // 6.cs(3,27): error CS0515: 'PartialStaticPublicCtor.PartialStaticPublicCtor()': access modifiers are not allowed on static constructors
+                //     partial static public PartialStaticPublicCtor() { }
+                Diagnostic(ErrorCode.ERR_StaticConstructorWithAccessModifiers, "PartialStaticPublicCtor").WithArguments("PartialStaticPublicCtor.PartialStaticPublicCtor()").WithLocation(3, 27),
                 // 2.cs(3,27): error CS0515: 'PublicStaticPartialCtor.PublicStaticPartialCtor()': access modifiers are not allowed on static constructors
                 //     public static partial PublicStaticPartialCtor() { }
                 Diagnostic(ErrorCode.ERR_StaticConstructorWithAccessModifiers, "PublicStaticPartialCtor").WithArguments("PublicStaticPartialCtor.PublicStaticPartialCtor()").WithLocation(3, 27),
                 // 4.cs(3,27): error CS0515: 'StaticPublicPartialCtor.StaticPublicPartialCtor()': access modifiers are not allowed on static constructors
                 //     static public partial StaticPublicPartialCtor() { }
                 Diagnostic(ErrorCode.ERR_StaticConstructorWithAccessModifiers, "StaticPublicPartialCtor").WithArguments("StaticPublicPartialCtor.StaticPublicPartialCtor()").WithLocation(3, 27),
-                // 6.cs(3,27): error CS0515: 'PartialStaticPublicCtor.PartialStaticPublicCtor()': access modifiers are not allowed on static constructors
-                //     partial static public PartialStaticPublicCtor() { }
-                Diagnostic(ErrorCode.ERR_StaticConstructorWithAccessModifiers, "PartialStaticPublicCtor").WithArguments("PartialStaticPublicCtor.PartialStaticPublicCtor()").WithLocation(3, 27),
-                // 3.cs(3,27): error CS0515: 'PublicPartialStaticCtor.PublicPartialStaticCtor()': access modifiers are not allowed on static constructors
-                //     public partial static PublicPartialStaticCtor() { }
-                Diagnostic(ErrorCode.ERR_StaticConstructorWithAccessModifiers, "PublicPartialStaticCtor").WithArguments("PublicPartialStaticCtor.PublicPartialStaticCtor()").WithLocation(3, 27),
                 // 7.cs(3,27): error CS0515: 'PartialPublicStaticCtor.PartialPublicStaticCtor()': access modifiers are not allowed on static constructors
                 //     partial public static PartialPublicStaticCtor() { }
                 Diagnostic(ErrorCode.ERR_StaticConstructorWithAccessModifiers, "PartialPublicStaticCtor").WithArguments("PartialPublicStaticCtor.PartialPublicStaticCtor()").WithLocation(3, 27),
                 // 5.cs(3,27): error CS0515: 'StaticPartialPublicCtor.StaticPartialPublicCtor()': access modifiers are not allowed on static constructors
                 //     static partial public StaticPartialPublicCtor() { }
-                Diagnostic(ErrorCode.ERR_StaticConstructorWithAccessModifiers, "StaticPartialPublicCtor").WithArguments("StaticPartialPublicCtor.StaticPartialPublicCtor()").WithLocation(3, 27),
-                // 5.cs(3,27): error CS9401: Partial constructor 'StaticPartialPublicCtor.StaticPartialPublicCtor()' must have a definition part.
-                //     static partial public StaticPartialPublicCtor() { }
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingDefinition, "StaticPartialPublicCtor").WithArguments("StaticPartialPublicCtor.StaticPartialPublicCtor()").WithLocation(3, 27),
-                // 7.cs(3,27): error CS9401: Partial constructor 'PartialPublicStaticCtor.PartialPublicStaticCtor()' must have a definition part.
-                //     partial public static PartialPublicStaticCtor() { }
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingDefinition, "PartialPublicStaticCtor").WithArguments("PartialPublicStaticCtor.PartialPublicStaticCtor()").WithLocation(3, 27),
-                // 2.cs(3,27): error CS9401: Partial constructor 'PublicStaticPartialCtor.PublicStaticPartialCtor()' must have a definition part.
-                //     public static partial PublicStaticPartialCtor() { }
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingDefinition, "PublicStaticPartialCtor").WithArguments("PublicStaticPartialCtor.PublicStaticPartialCtor()").WithLocation(3, 27),
-                // 6.cs(3,27): error CS9401: Partial constructor 'PartialStaticPublicCtor.PartialStaticPublicCtor()' must have a definition part.
-                //     partial static public PartialStaticPublicCtor() { }
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingDefinition, "PartialStaticPublicCtor").WithArguments("PartialStaticPublicCtor.PartialStaticPublicCtor()").WithLocation(3, 27),
-                // 3.cs(3,27): error CS9401: Partial constructor 'PublicPartialStaticCtor.PublicPartialStaticCtor()' must have a definition part.
-                //     public partial static PublicPartialStaticCtor() { }
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingDefinition, "PublicPartialStaticCtor").WithArguments("PublicPartialStaticCtor.PublicPartialStaticCtor()").WithLocation(3, 27),
-                // 4.cs(3,27): error CS9401: Partial constructor 'StaticPublicPartialCtor.StaticPublicPartialCtor()' must have a definition part.
-                //     static public partial StaticPublicPartialCtor() { }
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingDefinition, "StaticPublicPartialCtor").WithArguments("StaticPublicPartialCtor.StaticPublicPartialCtor()").WithLocation(3, 27));
+                Diagnostic(ErrorCode.ERR_StaticConstructorWithAccessModifiers, "StaticPartialPublicCtor").WithArguments("StaticPartialPublicCtor.StaticPartialPublicCtor()").WithLocation(3, 27));
         }
     }
 }

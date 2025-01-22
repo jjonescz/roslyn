@@ -35,10 +35,10 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             }
             """;
         CreateCompilation(source).VerifyDiagnostics(
-            // (3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', a constructor identifier, or a method or property return type.
+            // (3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
             //     partial public event System.Action E;
             Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 5),
-            // (4,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', a constructor identifier, or a method or property return type.
+            // (4,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
             //     partial public event System.Action E { add { } remove { } }
             Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(4, 5));
     }
@@ -69,11 +69,33 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             }
             """;
         CreateCompilation(source).VerifyDiagnostics(
-            // (3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', a constructor identifier, or a method or property return type.
+            // (3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
             //     partial public C();
             Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 5),
-            // (4,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', a constructor identifier, or a method or property return type.
+            // (4,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
             //     partial public C() { }
             Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(4, 5));
+    }
+
+    [Fact]
+    public void Constructor_StaticPartial()
+    {
+        var source = """
+            partial class C
+            {
+                static partial C();
+                static partial C() { }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (3,12): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
+            //     static partial C();
+            Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 12),
+            // (4,12): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
+            //     static partial C() { }
+            Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(4, 12),
+            // (4,20): error CS0111: Type 'C' already defines a member called 'C' with the same parameter types
+            //     static partial C() { }
+            Diagnostic(ErrorCode.ERR_MemberAlreadyExists, "C").WithArguments("C", "C").WithLocation(4, 20));
     }
 }

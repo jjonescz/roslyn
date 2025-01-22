@@ -128,12 +128,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             var defaultAccess = (methodKind == MethodKind.StaticConstructor) ? DeclarationModifiers.None : DeclarationModifiers.Private;
 
             // Check that the set of modifiers is allowed
-            const DeclarationModifiers allowedModifiers =
+            DeclarationModifiers allowedModifiers =
                 DeclarationModifiers.AccessibilityMask |
                 DeclarationModifiers.Static |
                 DeclarationModifiers.Extern |
-                DeclarationModifiers.Partial |
                 DeclarationModifiers.Unsafe;
+
+            if (methodKind == MethodKind.Constructor)
+            {
+                allowedModifiers |= DeclarationModifiers.Partial;
+            }
 
             bool isInterface = containingType.IsInterface;
             var mods = ModifierUtils.MakeAndCheckNonTypeMemberModifiers(isOrdinaryMethod: false, isForInterfaceMember: isInterface, syntax.Modifiers, defaultAccess, allowedModifiers, location, diagnostics, out modifierErrors);
