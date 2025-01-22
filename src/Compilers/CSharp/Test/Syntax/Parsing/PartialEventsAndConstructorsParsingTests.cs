@@ -1009,12 +1009,18 @@ public sealed class PartialEventsAndConstructorsParsingTests(ITestOutputHelper o
                 partial C();
             }
             """,
-            // (3,11): error CS1026: ) expected
-            //     [Attr(
-            Diagnostic(ErrorCode.ERR_CloseParenExpected, "").WithLocation(3, 11),
-            // (3,11): error CS1003: Syntax error, ']' expected
-            //     [Attr(
-            Diagnostic(ErrorCode.ERR_SyntaxError, "").WithArguments("]").WithLocation(3, 11));
+            // (4,13): error CS1003: Syntax error, ',' expected
+            //     partial C();
+            Diagnostic(ErrorCode.ERR_SyntaxError, "C").WithArguments(",").WithLocation(4, 13),
+            // (4,16): error CS1003: Syntax error, ',' expected
+            //     partial C();
+            Diagnostic(ErrorCode.ERR_SyntaxError, ";").WithArguments(",").WithLocation(4, 16),
+            // (4,17): error CS1026: ) expected
+            //     partial C();
+            Diagnostic(ErrorCode.ERR_CloseParenExpected, "").WithLocation(4, 17),
+            // (4,17): error CS1003: Syntax error, ']' expected
+            //     partial C();
+            Diagnostic(ErrorCode.ERR_SyntaxError, "").WithArguments("]").WithLocation(4, 17));
 
         N(SyntaxKind.CompilationUnit);
         {
@@ -1024,7 +1030,7 @@ public sealed class PartialEventsAndConstructorsParsingTests(ITestOutputHelper o
                 N(SyntaxKind.ClassKeyword);
                 N(SyntaxKind.IdentifierToken, "C");
                 N(SyntaxKind.OpenBraceToken);
-                N(SyntaxKind.ConstructorDeclaration);
+                N(SyntaxKind.IncompleteMember);
                 {
                     N(SyntaxKind.AttributeList);
                     {
@@ -1038,19 +1044,34 @@ public sealed class PartialEventsAndConstructorsParsingTests(ITestOutputHelper o
                             N(SyntaxKind.AttributeArgumentList);
                             {
                                 N(SyntaxKind.OpenParenToken);
+                                N(SyntaxKind.AttributeArgument);
+                                {
+                                    N(SyntaxKind.IdentifierName);
+                                    {
+                                        N(SyntaxKind.IdentifierToken, "partial");
+                                    }
+                                }
+                                M(SyntaxKind.CommaToken);
+                                N(SyntaxKind.AttributeArgument);
+                                {
+                                    N(SyntaxKind.InvocationExpression);
+                                    {
+                                        N(SyntaxKind.IdentifierName);
+                                        {
+                                            N(SyntaxKind.IdentifierToken, "C");
+                                        }
+                                        N(SyntaxKind.ArgumentList);
+                                        {
+                                            N(SyntaxKind.OpenParenToken);
+                                            N(SyntaxKind.CloseParenToken);
+                                        }
+                                    }
+                                }
                                 M(SyntaxKind.CloseParenToken);
                             }
                         }
                         M(SyntaxKind.CloseBracketToken);
                     }
-                    N(SyntaxKind.PartialKeyword);
-                    N(SyntaxKind.IdentifierToken, "C");
-                    N(SyntaxKind.ParameterList);
-                    {
-                        N(SyntaxKind.OpenParenToken);
-                        N(SyntaxKind.CloseParenToken);
-                    }
-                    N(SyntaxKind.SemicolonToken);
                 }
                 N(SyntaxKind.CloseBraceToken);
             }
