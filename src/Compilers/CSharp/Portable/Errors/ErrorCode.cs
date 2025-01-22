@@ -2361,15 +2361,11 @@ namespace Microsoft.CodeAnalysis.CSharp
         ERR_VariableDeclarationNamedField = 9273,
 
         // PROTOTYPE: compact
-        ERR_PartialConstructorMissingImplementation = 9400,
-        ERR_PartialConstructorMissingDefinition = 9401,
-        ERR_PartialConstructorDuplicateDefinition = 9402,
-        ERR_PartialConstructorDuplicateImplementation = 9403,
-        ERR_PartialEventMissingImplementation = 9404,
-        ERR_PartialEventMissingDefinition = 9405,
-        ERR_PartialEventDuplicateDefinition = 9406,
-        ERR_PartialEventDuplicateImplementation = 9407,
-        ERR_PartialEventInitializer = 9408,
+        ERR_PartialMemberMissingImplementation = 9400,
+        ERR_PartialMemberMissingDefinition = 9401,
+        ERR_PartialMemberDuplicateDefinition = 9402,
+        ERR_PartialMemberDuplicateImplementation = 9403,
+        ERR_PartialEventInitializer = 9404,
 
         // Note: you will need to do the following after adding errors:
         //  1) Update ErrorFacts.IsBuildOnlyDiagnostic (src/Compilers/CSharp/Portable/Errors/ErrorFacts.cs)

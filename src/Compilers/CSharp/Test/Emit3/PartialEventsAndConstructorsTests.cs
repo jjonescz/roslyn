@@ -97,7 +97,7 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             }
             """;
         CreateCompilation(source).VerifyDiagnostics(
-            // (3,33): error CS9408: 'C.E': partial event cannot have initializer
+            // (3,33): error CS9404: 'C.E': partial event cannot have initializer
             //     partial event System.Action E = null;
             Diagnostic(ErrorCode.ERR_PartialEventInitializer, "E").WithArguments("C.E").WithLocation(3, 33),
             // (3,33): warning CS0414: The field 'C.E' is assigned but its value is never used
@@ -117,7 +117,7 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             }
             """;
         CreateCompilation(source).VerifyDiagnostics(
-            // (3,36): error CS9408: 'C.F': partial event cannot have initializer
+            // (3,36): error CS9404: 'C.F': partial event cannot have initializer
             //     partial event System.Action E, F = null;
             Diagnostic(ErrorCode.ERR_PartialEventInitializer, "F").WithArguments("C.F").WithLocation(3, 36),
             // (3,36): warning CS0414: The field 'C.F' is assigned but its value is never used
@@ -137,13 +137,13 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             }
             """;
         CreateCompilation(source).VerifyDiagnostics(
-            // (3,33): error CS9408: 'C.E': partial event cannot have initializer
+            // (3,33): error CS9404: 'C.E': partial event cannot have initializer
             //     partial event System.Action E = null, F = null;
             Diagnostic(ErrorCode.ERR_PartialEventInitializer, "E").WithArguments("C.E").WithLocation(3, 33),
             // (3,33): warning CS0414: The field 'C.E' is assigned but its value is never used
             //     partial event System.Action E = null, F = null;
             Diagnostic(ErrorCode.WRN_UnreferencedFieldAssg, "E").WithArguments("C.E").WithLocation(3, 33),
-            // (3,43): error CS9408: 'C.F': partial event cannot have initializer
+            // (3,43): error CS9404: 'C.F': partial event cannot have initializer
             //     partial event System.Action E = null, F = null;
             Diagnostic(ErrorCode.ERR_PartialEventInitializer, "F").WithArguments("C.F").WithLocation(3, 43),
             // (3,43): warning CS0414: The field 'C.F' is assigned but its value is never used
@@ -190,9 +190,9 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (3,33): error CS0751: A partial member must be declared within a partial type
             //     partial event System.Action E;
             Diagnostic(ErrorCode.ERR_PartialMemberOnlyInPartialClass, "E").WithLocation(3, 33),
-            // (5,33): error CS9405: Partial event 'C.F' must have a definition part.
+            // (5,33): error CS9401: Partial event 'C.F' must have a definition part.
             //     partial event System.Action F { add { } remove { } }
-            Diagnostic(ErrorCode.ERR_PartialEventMissingDefinition, "F").WithArguments("C.F").WithLocation(5, 33),
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "F").WithArguments("C.F").WithLocation(5, 33),
             // (5,33): error CS0751: A partial member must be declared within a partial type
             //     partial event System.Action F { add { } remove { } }
             Diagnostic(ErrorCode.ERR_PartialMemberOnlyInPartialClass, "F").WithLocation(5, 33),
@@ -252,15 +252,15 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (7,35): error CS0071: An explicit interface implementation of an event must use event accessor syntax
             //     partial event System.Action I.E;
             Diagnostic(ErrorCode.ERR_ExplicitEventFieldImpl, "E").WithLocation(7, 35),
-            // (7,35): error CS9405: Partial event 'C.I.E' must have a definition part.
+            // (7,35): error CS9401: Partial member 'C.I.E' must have a definition part.
             //     partial event System.Action I.E;
-            Diagnostic(ErrorCode.ERR_PartialEventMissingDefinition, "E").WithArguments("C.I.E").WithLocation(7, 35),
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "E").WithArguments("C.I.E").WithLocation(7, 35),
             // (7,35): error CS0754: A partial member may not explicitly implement an interface member
             //     partial event System.Action I.E;
             Diagnostic(ErrorCode.ERR_PartialMemberNotExplicit, "E").WithLocation(7, 35),
-            // (8,35): error CS9407: A partial event may not have multiple implementing declarations.
+            // (8,35): error CS9403: Partial member 'C.I.E' may not have multiple implementing declarations.
             //     partial event System.Action I.E { add { } remove { } }
-            Diagnostic(ErrorCode.ERR_PartialEventDuplicateImplementation, "E").WithLocation(8, 35),
+            Diagnostic(ErrorCode.ERR_PartialMemberDuplicateImplementation, "E").WithArguments("C.I.E").WithLocation(8, 35),
             // (8,35): error CS0102: The type 'C' already contains a definition for 'I.E'
             //     partial event System.Action I.E { add { } remove { } }
             Diagnostic(ErrorCode.ERR_DuplicateNameInClass, "E").WithArguments("C", "I.E").WithLocation(8, 35),

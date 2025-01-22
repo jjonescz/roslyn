@@ -22139,15 +22139,24 @@ using System.Runtime.CompilerServices;
                 // 2.cs(3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', 'event', an instance constructor identifier, or a method or property return type.
                 //     partial public PartialPublicCtor() { }
                 Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 5),
-                // 0.cs(3,13): error CS9401: Partial constructor 'PartialCtor.PartialCtor()' must have a definition part.
+                // 0.cs(3,13): error CS0751: A partial member must be declared within a partial type
                 //     partial PartialCtor() { }
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingDefinition, "PartialCtor").WithArguments("PartialCtor.PartialCtor()").WithLocation(3, 13),
-                // 1.cs(3,20): error CS9401: Partial constructor 'PublicPartialCtor.PublicPartialCtor()' must have a definition part.
-                //     public partial PublicPartialCtor() { }
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingDefinition, "PublicPartialCtor").WithArguments("PublicPartialCtor.PublicPartialCtor()").WithLocation(3, 20),
-                // 2.cs(3,20): error CS9401: Partial constructor 'PartialPublicCtor.PartialPublicCtor()' must have a definition part.
+                Diagnostic(ErrorCode.ERR_PartialMemberOnlyInPartialClass, "PartialCtor").WithLocation(3, 13),
+                // 0.cs(3,13): error CS9401: Partial member 'PartialCtor.PartialCtor()' must have a definition part.
+                //     partial PartialCtor() { }
+                Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "PartialCtor").WithArguments("PartialCtor.PartialCtor()").WithLocation(3, 13),
+                // 2.cs(3,20): error CS0751: A partial member must be declared within a partial type
                 //     partial public PartialPublicCtor() { }
-                Diagnostic(ErrorCode.ERR_PartialConstructorMissingDefinition, "PartialPublicCtor").WithArguments("PartialPublicCtor.PartialPublicCtor()").WithLocation(3, 20));
+                Diagnostic(ErrorCode.ERR_PartialMemberOnlyInPartialClass, "PartialPublicCtor").WithLocation(3, 20),
+                // 1.cs(3,20): error CS0751: A partial member must be declared within a partial type
+                //     public partial PublicPartialCtor() { }
+                Diagnostic(ErrorCode.ERR_PartialMemberOnlyInPartialClass, "PublicPartialCtor").WithLocation(3, 20),
+                // 1.cs(3,20): error CS9401: Partial member 'PublicPartialCtor.PublicPartialCtor()' must have a definition part.
+                //     public partial PublicPartialCtor() { }
+                Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "PublicPartialCtor").WithArguments("PublicPartialCtor.PublicPartialCtor()").WithLocation(3, 20),
+                // 2.cs(3,20): error CS9401: Partial member 'PartialPublicCtor.PartialPublicCtor()' must have a definition part.
+                //     partial public PartialPublicCtor() { }
+                Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "PartialPublicCtor").WithArguments("PartialPublicCtor.PartialPublicCtor()").WithLocation(3, 20));
         }
 
         [Fact]

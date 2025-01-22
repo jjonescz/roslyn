@@ -3695,7 +3695,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                             if (constructor.OtherPartOfPartial is null)
                             {
                                 diagnostics.Add(
-                                    constructor.IsPartialDefinition ? ErrorCode.ERR_PartialConstructorMissingImplementation : ErrorCode.ERR_PartialConstructorMissingDefinition,
+                                    constructor.IsPartialDefinition ? ErrorCode.ERR_PartialMemberMissingImplementation : ErrorCode.ERR_PartialMemberMissingDefinition,
                                     constructor.GetFirstLocation(),
                                     constructor);
                             }
@@ -3705,7 +3705,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                             if (ev.OtherPartOfPartial is null)
                             {
                                 diagnostics.Add(
-                                    ev.IsPartialDefinition ? ErrorCode.ERR_PartialEventMissingImplementation : ErrorCode.ERR_PartialEventMissingDefinition,
+                                    ev.IsPartialDefinition ? ErrorCode.ERR_PartialMemberMissingImplementation : ErrorCode.ERR_PartialMemberMissingDefinition,
                                     ev.GetFirstLocation(),
                                     ev);
                             }
@@ -3800,13 +3800,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     (prevConstructor.IsPartialImplementation || (prevConstructor.OtherPartOfPartial is { } otherImplementation && (object)otherImplementation != currentConstructor)))
                 {
                     // A partial constructor may not have multiple implementing declarations
-                    diagnostics.Add(ErrorCode.ERR_PartialConstructorDuplicateImplementation, currentConstructor.GetFirstLocation());
+                    diagnostics.Add(ErrorCode.ERR_PartialMemberDuplicateImplementation, currentConstructor.GetFirstLocation(), currentConstructor);
                 }
                 else if (currentConstructor.IsPartialDefinition &&
                     (prevConstructor.IsPartialDefinition || (prevConstructor.OtherPartOfPartial is { } otherDefinition && (object)otherDefinition != currentConstructor)))
                 {
                     // A partial constructor may not have multiple defining declarations
-                    diagnostics.Add(ErrorCode.ERR_PartialConstructorDuplicateImplementation, currentConstructor.GetFirstLocation());
+                    diagnostics.Add(ErrorCode.ERR_PartialMemberDuplicateImplementation, currentConstructor.GetFirstLocation(), currentConstructor);
                 }
                 else
                 {
@@ -3821,13 +3821,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     (prevEvent.IsPartialImplementation || (prevEvent.OtherPartOfPartial is { } otherImplementation && (object)otherImplementation != currentEvent)))
                 {
                     // A partial event may not have multiple implementing declarations
-                    diagnostics.Add(ErrorCode.ERR_PartialEventDuplicateImplementation, currentEvent.GetFirstLocation());
+                    diagnostics.Add(ErrorCode.ERR_PartialMemberDuplicateImplementation, currentEvent.GetFirstLocation(), currentEvent);
                 }
                 else if (currentEvent.IsPartialDefinition &&
                     (prevEvent.IsPartialDefinition || (prevEvent.OtherPartOfPartial is { } otherDefinition && (object)otherDefinition != currentEvent)))
                 {
                     // A partial event may not have multiple defining declarations
-                    diagnostics.Add(ErrorCode.ERR_PartialEventDuplicateImplementation, currentEvent.GetFirstLocation());
+                    diagnostics.Add(ErrorCode.ERR_PartialMemberDuplicateImplementation, currentEvent.GetFirstLocation(), currentEvent);
                 }
                 else
                 {

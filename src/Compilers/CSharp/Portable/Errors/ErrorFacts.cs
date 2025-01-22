@@ -2479,14 +2479,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                 or ErrorCode.WRN_InterceptsLocationAttributeUnsupportedSignature
                 or ErrorCode.ERR_ImplicitlyTypedParamsParameter
                 or ErrorCode.ERR_VariableDeclarationNamedField
-                or ErrorCode.ERR_PartialConstructorMissingImplementation
-                or ErrorCode.ERR_PartialConstructorMissingDefinition
-                or ErrorCode.ERR_PartialConstructorDuplicateDefinition
-                or ErrorCode.ERR_PartialConstructorDuplicateImplementation
-                or ErrorCode.ERR_PartialEventMissingImplementation
-                or ErrorCode.ERR_PartialEventMissingDefinition
-                or ErrorCode.ERR_PartialEventDuplicateDefinition
-                or ErrorCode.ERR_PartialEventDuplicateImplementation
+                or ErrorCode.ERR_PartialMemberMissingImplementation
+                or ErrorCode.ERR_PartialMemberMissingDefinition
+                or ErrorCode.ERR_PartialMemberDuplicateDefinition
+                or ErrorCode.ERR_PartialMemberDuplicateImplementation
                 or ErrorCode.ERR_PartialEventInitializer
                     => false,
             };

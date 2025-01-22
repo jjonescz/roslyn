@@ -1667,49 +1667,9 @@
         <target state="translated">params 매개 변수는 유효한 컬렉션 형식이어야 합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ERR_PartialConstructorDuplicateDefinition">
-        <source>A partial constructor may not have multiple defining declarations.</source>
-        <target state="new">A partial constructor may not have multiple defining declarations.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_PartialConstructorDuplicateImplementation">
-        <source>A partial constructor may not have multiple implementing declarations.</source>
-        <target state="new">A partial constructor may not have multiple implementing declarations.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_PartialConstructorMissingDefinition">
-        <source>Partial constructor '{0}' must have a definition part.</source>
-        <target state="new">Partial constructor '{0}' must have a definition part.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_PartialConstructorMissingImplementation">
-        <source>Partial constructor '{0}' must have an implementation part.</source>
-        <target state="new">Partial constructor '{0}' must have an implementation part.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_PartialEventDuplicateDefinition">
-        <source>A partial event may not have multiple defining declarations.</source>
-        <target state="new">A partial event may not have multiple defining declarations.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_PartialEventDuplicateImplementation">
-        <source>A partial event may not have multiple implementing declarations.</source>
-        <target state="new">A partial event may not have multiple implementing declarations.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ERR_PartialEventInitializer">
         <source>'{0}': partial event cannot have initializer</source>
         <target state="new">'{0}': partial event cannot have initializer</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_PartialEventMissingDefinition">
-        <source>Partial event '{0}' must have a definition part.</source>
-        <target state="new">Partial event '{0}' must have a definition part.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_PartialEventMissingImplementation">
-        <source>Partial event '{0}' must have an implementation part.</source>
-        <target state="new">Partial event '{0}' must have an implementation part.</target>
         <note />
       </trans-unit>
       <trans-unit id="ERR_PartialMemberAccessibilityDifference">
@@ -1722,9 +1682,29 @@
         <target state="translated">부분 멤버는 'abstract' 한정자를 갖을 수 없습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_PartialMemberDuplicateDefinition">
+        <source>Partial member '{0}' may not have multiple defining declarations.</source>
+        <target state="new">Partial member '{0}' may not have multiple defining declarations.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ERR_PartialMemberDuplicateImplementation">
+        <source>Partial member '{0}' may not have multiple implementing declarations.</source>
+        <target state="new">Partial member '{0}' may not have multiple implementing declarations.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_PartialMemberInconsistentTupleNames">
         <source>Both partial member declarations, '{0}' and '{1}', must use the same tuple element names.</source>
         <target state="translated">두 부분 멤버 선언은 '{0}' 및 '{1}' 모두에서 동일한 튜플 요소 이름을 사용해야 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ERR_PartialMemberMissingDefinition">
+        <source>Partial member '{0}' must have a definition part.</source>
+        <target state="new">Partial member '{0}' must have a definition part.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ERR_PartialMemberMissingImplementation">
+        <source>Partial member '{0}' must have an implementation part.</source>
+        <target state="new">Partial member '{0}' must have an implementation part.</target>
         <note />
       </trans-unit>
       <trans-unit id="ERR_PartialMemberOnlyInPartialClass">
