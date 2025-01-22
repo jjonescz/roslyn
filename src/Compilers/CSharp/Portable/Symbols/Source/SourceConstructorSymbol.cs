@@ -183,6 +183,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 diagnostics.Add(ErrorCode.ERR_ConstructorInStaticClass, location);
             }
+
+            if (IsPartial)
+            {
+                ModifierUtils.CheckFeatureAvailabilityForPartialEventsAndConstructors(location, diagnostics);
+            }
         }
 
         internal override OneOrMany<SyntaxList<AttributeListSyntax>> GetAttributeDeclarations()

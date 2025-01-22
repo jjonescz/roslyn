@@ -296,6 +296,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         IDS_FeatureFirstClassSpan = MessageBase + 12849,
         IDS_FeatureUnboundGenericTypesInNameof = MessageBase + 12850,
         IDS_FeatureSimpleLambdaParameterModifiers = MessageBase + 12851,
+
+        // PROTOTYPE: compact
+        IDS_FeaturePartialEventsAndConstructors = MessageBase + 12900,
     }
 
     // Message IDs may refer to strings that need to be localized.
@@ -480,6 +483,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case MessageID.IDS_FeatureFirstClassSpan:
                 case MessageID.IDS_FeatureUnboundGenericTypesInNameof:
                 case MessageID.IDS_FeatureSimpleLambdaParameterModifiers:
+                case MessageID.IDS_FeaturePartialEventsAndConstructors:
                     return LanguageVersion.Preview;
 
                 // C# 13.0 features.

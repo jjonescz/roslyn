@@ -9,6 +9,37 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests;
 
 public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
 {
+    [Fact]
+    public void LangVersion()
+    {
+        var source = """
+            partial class C
+            {
+                partial event System.Action E;
+                partial event System.Action E { add { } remove { } }
+                partial C();
+                partial C() { }
+            }
+            """;
+
+        CreateCompilation(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
+            // (3,33): error CS8703: The modifier 'partial' is not valid for this item in C# 13.0. Please use language version 'preview' or greater.
+            //     partial event System.Action E;
+            Diagnostic(ErrorCode.ERR_InvalidModifierForLanguageVersion, "E").WithArguments("partial", "13.0", "preview").WithLocation(3, 33),
+            // (4,33): error CS8703: The modifier 'partial' is not valid for this item in C# 13.0. Please use language version 'preview' or greater.
+            //     partial event System.Action E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_InvalidModifierForLanguageVersion, "E").WithArguments("partial", "13.0", "preview").WithLocation(4, 33),
+            // (5,13): error CS8703: The modifier 'partial' is not valid for this item in C# 13.0. Please use language version 'preview' or greater.
+            //     partial C();
+            Diagnostic(ErrorCode.ERR_InvalidModifierForLanguageVersion, "C").WithArguments("partial", "13.0", "preview").WithLocation(5, 13),
+            // (6,13): error CS8703: The modifier 'partial' is not valid for this item in C# 13.0. Please use language version 'preview' or greater.
+            //     partial C() { }
+            Diagnostic(ErrorCode.ERR_InvalidModifierForLanguageVersion, "C").WithArguments("partial", "13.0", "preview").WithLocation(6, 13));
+
+        CreateCompilation(source, parseOptions: TestOptions.RegularNext).VerifyDiagnostics();
+        CreateCompilation(source).VerifyDiagnostics();
+    }
+
     [Theory, CombinatorialData]
     public void Event_PartialLast([CombinatorialValues("", "public")] string modifier)
     {

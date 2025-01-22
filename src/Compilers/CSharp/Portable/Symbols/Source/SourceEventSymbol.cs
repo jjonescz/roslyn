@@ -57,6 +57,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             bool modifierErrors;
             _modifiers = MakeModifiers(modifiers, isExplicitInterfaceImplementation, isFieldLike, _location, diagnostics, out modifierErrors);
             this.CheckAccessibility(_location, diagnostics, isExplicitInterfaceImplementation);
+
+            if (IsPartial)
+            {
+                ModifierUtils.CheckFeatureAvailabilityForPartialEventsAndConstructors(_location, diagnostics);
+            }
         }
 
         public Location Location
