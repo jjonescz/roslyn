@@ -194,4 +194,100 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             //     static partial C() { }
             Diagnostic(ErrorCode.ERR_MemberAlreadyExists, "C").WithArguments("C", "C").WithLocation(4, 20));
     }
+
+    [Fact]
+    public void NotInPartialType()
+    {
+        var source = """
+            class C
+            {
+                partial event System.Action E;
+                partial event System.Action E { add { } remove { } }
+                partial event System.Action F { add { } remove { } }
+                partial C();
+                partial C() { }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (3,33): error CS0751: A partial member must be declared within a partial type
+            //     partial event System.Action E;
+            Diagnostic(ErrorCode.ERR_PartialMemberOnlyInPartialClass, "E").WithLocation(3, 33),
+            // (5,33): error CS9405: Partial event 'C.F' must have a definition part.
+            //     partial event System.Action F { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_PartialEventMissingDefinition, "F").WithArguments("C.F").WithLocation(5, 33),
+            // (5,33): error CS0751: A partial member must be declared within a partial type
+            //     partial event System.Action F { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_PartialMemberOnlyInPartialClass, "F").WithLocation(5, 33),
+            // (6,13): error CS0751: A partial member must be declared within a partial type
+            //     partial C();
+            Diagnostic(ErrorCode.ERR_PartialMemberOnlyInPartialClass, "C").WithLocation(6, 13),
+            // (7,13): error CS0751: A partial member must be declared within a partial type
+            //     partial C() { }
+            Diagnostic(ErrorCode.ERR_PartialMemberOnlyInPartialClass, "C").WithLocation(7, 13));
+    }
+
+    [Fact]
+    public void Abstract()
+    {
+        var source = """
+            abstract partial class C
+            {
+                protected abstract partial event System.Action E;
+                protected abstract partial event System.Action E { add { } remove { } }
+                protected abstract partial C();
+                protected abstract partial C() { }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (3,52): error CS0750: A partial member cannot have the 'abstract' modifier
+            //     protected abstract partial event System.Action E;
+            Diagnostic(ErrorCode.ERR_PartialMemberCannotBeAbstract, "E").WithLocation(3, 52),
+            // (4,54): error CS8712: 'C.E': abstract event cannot use event accessor syntax
+            //     protected abstract partial event System.Action E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_AbstractEventHasAccessors, "{").WithArguments("C.E").WithLocation(4, 54),
+            // (5,32): error CS0106: The modifier 'abstract' is not valid for this item
+            //     protected abstract partial C();
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "C").WithArguments("abstract").WithLocation(5, 32),
+            // (6,32): error CS0106: The modifier 'abstract' is not valid for this item
+            //     protected abstract partial C() { }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "C").WithArguments("abstract").WithLocation(6, 32));
+    }
+
+    [Fact]
+    public void ExplicitInterfaceImplementation()
+    {
+        var source = """
+            interface I
+            {
+                event System.Action E;
+            }
+            partial class C : I
+            {
+                partial event System.Action I.E;
+                partial event System.Action I.E { add { } remove { } }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (5,15): error CS8646: 'I.E' is explicitly implemented more than once.
+            // partial class C : I
+            Diagnostic(ErrorCode.ERR_DuplicateExplicitImpl, "C").WithArguments("I.E").WithLocation(5, 15),
+            // (7,35): error CS0071: An explicit interface implementation of an event must use event accessor syntax
+            //     partial event System.Action I.E;
+            Diagnostic(ErrorCode.ERR_ExplicitEventFieldImpl, "E").WithLocation(7, 35),
+            // (7,35): error CS9405: Partial event 'C.I.E' must have a definition part.
+            //     partial event System.Action I.E;
+            Diagnostic(ErrorCode.ERR_PartialEventMissingDefinition, "E").WithArguments("C.I.E").WithLocation(7, 35),
+            // (7,35): error CS0754: A partial member may not explicitly implement an interface member
+            //     partial event System.Action I.E;
+            Diagnostic(ErrorCode.ERR_PartialMemberNotExplicit, "E").WithLocation(7, 35),
+            // (8,35): error CS9407: A partial event may not have multiple implementing declarations.
+            //     partial event System.Action I.E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_PartialEventDuplicateImplementation, "E").WithLocation(8, 35),
+            // (8,35): error CS0102: The type 'C' already contains a definition for 'I.E'
+            //     partial event System.Action I.E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_DuplicateNameInClass, "E").WithArguments("C", "I.E").WithLocation(8, 35),
+            // (8,35): error CS0754: A partial member may not explicitly implement an interface member
+            //     partial event System.Action I.E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_PartialMemberNotExplicit, "E").WithLocation(8, 35));
+    }
 }
