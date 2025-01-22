@@ -2369,6 +2369,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         ERR_PartialEventMissingDefinition = 9405,
         ERR_PartialEventDuplicateDefinition = 9406,
         ERR_PartialEventDuplicateImplementation = 9407,
+        ERR_PartialEventInitializer = 9408,
 
         // Note: you will need to do the following after adding errors:
         //  1) Update ErrorFacts.IsBuildOnlyDiagnostic (src/Compilers/CSharp/Portable/Errors/ErrorFacts.cs)

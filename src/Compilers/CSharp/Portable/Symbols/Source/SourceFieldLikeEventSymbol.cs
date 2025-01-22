@@ -77,6 +77,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 {
                     diagnostics.Add(ErrorCode.ERR_ExternEventInitializer, this.GetFirstLocation(), this);
                 }
+                else if (this.IsPartial)
+                {
+                    diagnostics.Add(ErrorCode.ERR_PartialEventInitializer, this.GetFirstLocation(), this);
+                }
             }
 
             // NOTE: if there's an initializer in source, we'd better create a backing field, regardless of

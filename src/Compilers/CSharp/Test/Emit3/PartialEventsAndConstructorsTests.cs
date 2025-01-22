@@ -74,6 +74,71 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(4, 5));
     }
 
+    [Fact]
+    public void Event_Initializer_Single()
+    {
+        var source = """
+            partial class C
+            {
+                partial event System.Action E = null;
+                partial event System.Action E { add { } remove { } }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (3,33): error CS9408: 'C.E': partial event cannot have initializer
+            //     partial event System.Action E = null;
+            Diagnostic(ErrorCode.ERR_PartialEventInitializer, "E").WithArguments("C.E").WithLocation(3, 33),
+            // (3,33): warning CS0414: The field 'C.E' is assigned but its value is never used
+            //     partial event System.Action E = null;
+            Diagnostic(ErrorCode.WRN_UnreferencedFieldAssg, "E").WithArguments("C.E").WithLocation(3, 33));
+    }
+
+    [Fact]
+    public void Event_Initializer_Multiple_01()
+    {
+        var source = """
+            partial class C
+            {
+                partial event System.Action E, F = null;
+                partial event System.Action E { add { } remove { } }
+                partial event System.Action F { add { } remove { } }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (3,36): error CS9408: 'C.F': partial event cannot have initializer
+            //     partial event System.Action E, F = null;
+            Diagnostic(ErrorCode.ERR_PartialEventInitializer, "F").WithArguments("C.F").WithLocation(3, 36),
+            // (3,36): warning CS0414: The field 'C.F' is assigned but its value is never used
+            //     partial event System.Action E, F = null;
+            Diagnostic(ErrorCode.WRN_UnreferencedFieldAssg, "F").WithArguments("C.F").WithLocation(3, 36));
+    }
+
+    [Fact]
+    public void Event_Initializer_Multiple_02()
+    {
+        var source = """
+            partial class C
+            {
+                partial event System.Action E = null, F = null;
+                partial event System.Action E { add { } remove { } }
+                partial event System.Action F { add { } remove { } }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (3,33): error CS9408: 'C.E': partial event cannot have initializer
+            //     partial event System.Action E = null, F = null;
+            Diagnostic(ErrorCode.ERR_PartialEventInitializer, "E").WithArguments("C.E").WithLocation(3, 33),
+            // (3,33): warning CS0414: The field 'C.E' is assigned but its value is never used
+            //     partial event System.Action E = null, F = null;
+            Diagnostic(ErrorCode.WRN_UnreferencedFieldAssg, "E").WithArguments("C.E").WithLocation(3, 33),
+            // (3,43): error CS9408: 'C.F': partial event cannot have initializer
+            //     partial event System.Action E = null, F = null;
+            Diagnostic(ErrorCode.ERR_PartialEventInitializer, "F").WithArguments("C.F").WithLocation(3, 43),
+            // (3,43): warning CS0414: The field 'C.F' is assigned but its value is never used
+            //     partial event System.Action E = null, F = null;
+            Diagnostic(ErrorCode.WRN_UnreferencedFieldAssg, "F").WithArguments("C.F").WithLocation(3, 43));
+    }
+
     [Theory, CombinatorialData]
     public void Constructor_PartialLast([CombinatorialValues("", "public")] string modifier)
     {

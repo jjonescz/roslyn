@@ -8071,4 +8071,7 @@ To remove the warning, you can use /reference instead (set the Embed Interop Typ
   <data name="ERR_PartialEventDuplicateImplementation" xml:space="preserve">
     <value>A partial event may not have multiple implementing declarations.</value>
   </data>
+  <data name="ERR_PartialEventInitializer" xml:space="preserve">
+    <value>'{0}': partial event cannot have initializer</value>
+  </data>
 </root>
