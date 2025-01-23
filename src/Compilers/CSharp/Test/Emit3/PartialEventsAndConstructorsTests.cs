@@ -4,6 +4,9 @@
 
 using System;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using ICSharpCode.Decompiler.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities;
@@ -634,6 +637,130 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (7,13): error CS0111: Type 'C' already defines a member called 'C' with the same parameter types
             //     partial C() { }
             Diagnostic(ErrorCode.ERR_MemberAlreadyExists, "C").WithArguments("C", "C").WithLocation(7, 13));
+    }
+
+    [Fact]
+    public void Extern_DllImport()
+    {
+        var source = """
+            using System;
+            using System.Runtime.InteropServices;
+            public partial class C
+            {
+                public static partial event Action E;
+                [method: DllImport("something.dll")]
+                public static extern partial event Action E;
+            }
+            """;
+        CompileAndVerify(source,
+            sourceSymbolValidator: verify,
+            symbolValidator: verify)
+            .VerifyDiagnostics();
+
+        static void verify(ModuleSymbol module)
+        {
+            var e = module.GlobalNamespace.GetMember<EventSymbol>("C.E");
+            Assert.True(e.GetPublicSymbol().IsExtern);
+            // unexpected mismatch between metadata and entrypoint name: https://github.com/dotnet/roslyn/issues/76882
+            verifyAccessor(e.AddMethod!, "add_E", "remove_E");
+            verifyAccessor(e.RemoveMethod!, "remove_E", "remove_E");
+
+            if (module is SourceModuleSymbol)
+            {
+                var eImpl = ((SourceEventSymbol)e).PartialImplementationPart!;
+                Assert.True(eImpl.GetPublicSymbol().IsExtern);
+                // unexpected mismatch between metadata and entrypoint name: https://github.com/dotnet/roslyn/issues/76882
+                verifyAccessor(eImpl.AddMethod!, "add_E", "remove_E");
+                verifyAccessor(eImpl.RemoveMethod!, "remove_E", "remove_E");
+            }
+        }
+
+        static void verifyAccessor(MethodSymbol accessor, string expectedMetadataName, string expectedEntryPointName)
+        {
+            Assert.True(accessor.GetPublicSymbol().IsExtern);
+            Assert.Equal(expectedMetadataName, accessor.MetadataName);
+
+            var importData = accessor.GetDllImportData()!;
+            Assert.Equal("something.dll", importData.ModuleName);
+            Assert.Equal(expectedEntryPointName, importData.EntryPointName);
+            Assert.Equal(CharSet.None, importData.CharacterSet);
+            Assert.False(importData.SetLastError);
+            Assert.False(importData.ExactSpelling);
+            Assert.Equal(MethodImplAttributes.PreserveSig, accessor.ImplementationAttributes);
+            Assert.Equal(CallingConvention.Winapi, importData.CallingConvention);
+            Assert.Null(importData.BestFitMapping);
+            Assert.Null(importData.ThrowOnUnmappableCharacter);
+        }
+    }
+
+    [Fact]
+    public void Extern_InternalCall()
+    {
+        var source = """
+            using System;
+            using System.Runtime.CompilerServices;
+            public partial class C
+            {
+                public partial C();
+                [MethodImpl(MethodImplOptions.InternalCall)]
+                public extern partial C();
+            
+                public partial event Action E;
+                [method: MethodImpl(MethodImplOptions.InternalCall)]
+                public extern partial event Action E;
+            }
+            """;
+        CompileAndVerify(source,
+            sourceSymbolValidator: verifySource,
+            symbolValidator: verifyMetadata,
+            // PEVerify fails when extern methods lack an implementation
+            verify: Verification.FailsPEVerify with
+            {
+                PEVerifyMessage = """
+                    Error: Method marked Abstract, Runtime, InternalCall or Imported must have zero RVA, and vice versa.
+                    Type load failed.
+                    """,
+            })
+            .VerifyDiagnostics();
+
+        static void verifySource(ModuleSymbol module)
+        {
+            var ev = module.GlobalNamespace.GetMember<SourceEventSymbol>("C.E");
+            Assert.True(ev.GetPublicSymbol().IsExtern);
+            Assert.True(ev.AddMethod!.GetPublicSymbol().IsExtern);
+            Assert.Null(ev.AddMethod!.GetDllImportData());
+            Assert.Equal(MethodImplAttributes.InternalCall, ev.AddMethod.ImplementationAttributes);
+            Assert.True(ev.RemoveMethod!.GetPublicSymbol().IsExtern);
+            Assert.Null(ev.RemoveMethod!.GetDllImportData());
+            Assert.Equal(MethodImplAttributes.InternalCall, ev.RemoveMethod.ImplementationAttributes);
+
+            var c = module.GlobalNamespace.GetMember<SourceConstructorSymbol>("C..ctor");
+            Assert.True(c.GetPublicSymbol().IsExtern);
+            Assert.Null(c.GetDllImportData());
+            // PROTOTYPE: needs attribute merging
+            //Assert.Equal(MethodImplAttributes.InternalCall, c.ImplementationAttributes);
+        }
+
+        static void verifyMetadata(ModuleSymbol module)
+        {
+            // IsExtern doesn't round trip from metadata when DllImportAttribute is missing.
+            // This is consistent with the behavior of partial methods and properties.
+
+            var ev = module.GlobalNamespace.GetMember<EventSymbol>("C.E");
+            Assert.False(ev.GetPublicSymbol().IsExtern);
+            Assert.False(ev.AddMethod!.GetPublicSymbol().IsExtern);
+            Assert.Null(ev.AddMethod!.GetDllImportData());
+            Assert.Equal(MethodImplAttributes.InternalCall, ev.AddMethod.ImplementationAttributes);
+            Assert.False(ev.RemoveMethod!.GetPublicSymbol().IsExtern);
+            Assert.Null(ev.RemoveMethod!.GetDllImportData());
+            Assert.Equal(MethodImplAttributes.InternalCall, ev.RemoveMethod.ImplementationAttributes);
+
+            var c = module.GlobalNamespace.GetMember<MethodSymbol>("C..ctor");
+            Assert.False(c.GetPublicSymbol().IsExtern);
+            Assert.Null(c.GetDllImportData());
+            // PROTOTYPE: needs attribute merging
+            //Assert.Equal(MethodImplAttributes.InternalCall, c.ImplementationAttributes);
+        }
     }
 
     [Fact]
