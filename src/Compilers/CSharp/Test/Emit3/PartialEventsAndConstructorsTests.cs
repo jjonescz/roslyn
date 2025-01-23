@@ -2,7 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
+using System.Linq;
+using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
+using Roslyn.Test.Utilities;
+using Roslyn.Utilities;
 using Xunit;
 
 namespace Microsoft.CodeAnalysis.CSharp.UnitTests;
@@ -561,5 +566,147 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (7,13): error CS0111: Type 'C' already defines a member called 'C' with the same parameter types
             //     partial C() { }
             Diagnostic(ErrorCode.ERR_MemberAlreadyExists, "C").WithArguments("C", "C").WithLocation(7, 13));
+    }
+
+    [Fact]
+    public void EmitOrder_01()
+    {
+        verify("""
+            partial class C
+            {
+                partial event System.Action E;
+                partial event System.Action E { add { } remove { } }
+                partial C();
+                partial C() { }
+            }
+            """);
+
+        verify("""
+            partial class C
+            {
+                partial event System.Action E { add { } remove { } }
+                partial event System.Action E;
+                partial C() { }
+                partial C();
+            }
+            """);
+
+        verify("""
+            partial class C
+            {
+                partial event System.Action E { add { } remove { } }
+                partial C() { }
+            }
+            """, """
+            partial class C
+            {
+                partial event System.Action E;
+                partial C();
+            }
+            """);
+
+        verify("""
+            partial class C
+            {
+                partial C() { }
+                partial event System.Action E { add { } remove { } }
+            }
+            """, """
+            partial class C
+            {
+                partial C();
+                partial event System.Action E;
+            }
+            """);
+
+        void verify(params CSharpTestSource sources)
+        {
+            CompileAndVerify(sources,
+                options: TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All),
+                symbolValidator: validate)
+                .VerifyDiagnostics();
+        }
+
+        static void validate(ModuleSymbol module)
+        {
+            var members = module.GlobalNamespace.GetTypeMember("C").GetMembers().Select(s => s.ToTestDisplayString()).Join("\n");
+            AssertEx.AssertEqualToleratingWhitespaceDifferences("""
+                void C.E.add
+                void C.E.remove
+                C..ctor()
+                event System.Action C.E
+                """, members);
+        }
+    }
+
+    [Fact]
+    public void EmitOrder_02()
+    {
+        verify("""
+            partial class C
+            {
+                partial C();
+                partial C() { }
+                partial event System.Action E;
+                partial event System.Action E { add { } remove { } }
+            }
+            """);
+
+        verify("""
+            partial class C
+            {
+                partial C() { }
+                partial C();
+                partial event System.Action E { add { } remove { } }
+                partial event System.Action E;
+            }
+            """);
+
+        verify("""
+            partial class C
+            {
+                partial C();
+                partial event System.Action E;
+            }
+            """, """
+            partial class C
+            {
+                partial C() { }
+                partial event System.Action E { add { } remove { } }
+            }
+            """);
+
+        verify("""
+            partial class C
+            {
+                partial event System.Action E;
+                partial C();
+            }
+            """, """
+            partial class C
+            {
+                partial event System.Action E { add { } remove { } }
+                partial C() { }
+            }
+            """);
+
+        void verify(params CSharpTestSource sources)
+        {
+            CompileAndVerify(sources,
+                options: TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All),
+                symbolValidator: validate)
+                .VerifyDiagnostics();
+        }
+
+        static void validate(ModuleSymbol module)
+        {
+            var members = module.GlobalNamespace.GetTypeMember("C").GetMembers().Select(s => s.ToTestDisplayString()).Join("\n");
+            AssertEx.AssertEqualToleratingWhitespaceDifferences("""
+                C..ctor()
+                void C.E.add
+                void C.E.remove
+                event System.Action C.E
+                """, members);
+        }
     }
 }
