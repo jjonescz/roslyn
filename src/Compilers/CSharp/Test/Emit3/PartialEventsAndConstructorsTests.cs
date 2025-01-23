@@ -342,6 +342,26 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
     }
 
     [Fact]
+    public void EventAccessorMissing()
+    {
+        var source = """
+            partial class C
+            {
+                partial event System.Action E, F;
+                partial event System.Action E { add { } }
+                partial event System.Action F { remove { } }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (4,33): error CS0065: 'C.E': event property must have both add and remove accessors
+            //     partial event System.Action E { add { } }
+            Diagnostic(ErrorCode.ERR_EventNeedsBothAccessors, "E").WithArguments("C.E").WithLocation(4, 33),
+            // (5,33): error CS0065: 'C.F': event property must have both add and remove accessors
+            //     partial event System.Action F { remove { } }
+            Diagnostic(ErrorCode.ERR_EventNeedsBothAccessors, "F").WithArguments("C.F").WithLocation(5, 33));
+    }
+
+    [Fact]
     public void StaticPartialConstructor()
     {
         var source = """
