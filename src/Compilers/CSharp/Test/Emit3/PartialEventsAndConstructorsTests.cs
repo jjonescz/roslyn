@@ -2,11 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using ICSharpCode.Decompiler.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities;
@@ -760,6 +758,62 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             Assert.Null(c.GetDllImportData());
             // PROTOTYPE: needs attribute merging
             //Assert.Equal(MethodImplAttributes.InternalCall, c.ImplementationAttributes);
+        }
+    }
+
+    [Fact]
+    public void Metadata()
+    {
+        var source = """
+            public partial class C
+            {
+                public partial event System.Action E;
+                public partial event System.Action E { add { } remove { } }
+                public partial C();
+                public partial C() { }
+            }
+            """;
+        CompileAndVerify(source,
+            sourceSymbolValidator: verifySource,
+            symbolValidator: verifyMetadata)
+            .VerifyDiagnostics();
+
+        static void verifySource(ModuleSymbol module)
+        {
+            var e = module.GlobalNamespace.GetMember<SourceEventSymbol>("C.E");
+            Assert.True(e.IsPartialDefinition);
+            Assert.False(e.IsPartialImplementation);
+            Assert.False(e.HasAssociatedField);
+            Assert.Null(e.PartialDefinitionPart);
+            Assert.True(e.PartialImplementationPart!.IsPartialImplementation);
+            Assert.False(e.PartialImplementationPart.IsPartialDefinition);
+            Assert.False(e.PartialImplementationPart.HasAssociatedField);
+
+            var addMethod = e.AddMethod!;
+            Assert.Equal("add_E", addMethod.Name);
+            Assert.Same(addMethod, e.PartialImplementationPart.AddMethod);
+            var removeMethod = e.RemoveMethod!;
+            Assert.Equal("remove_E", removeMethod.Name);
+            Assert.Same(removeMethod, e.PartialImplementationPart.RemoveMethod);
+
+            var c = module.GlobalNamespace.GetMember<SourceConstructorSymbol>("C..ctor");
+            Assert.True(c.IsPartialDefinition);
+            Assert.False(c.IsPartialImplementation);
+            Assert.Null(c.PartialDefinitionPart);
+            var cImpl = (SourceConstructorSymbol)c.PartialImplementationPart!;
+            Assert.True(cImpl.IsPartialImplementation);
+            Assert.False(cImpl.IsPartialDefinition);
+        }
+
+        static void verifyMetadata(ModuleSymbol module)
+        {
+            var e = module.GlobalNamespace.GetMember<EventSymbol>("C.E");
+            Assert.False(e.HasAssociatedField);
+
+            var addMethod = e.AddMethod!;
+            Assert.Equal("add_E", addMethod.Name);
+            var removeMethod = e.RemoveMethod!;
+            Assert.Equal("remove_E", removeMethod.Name);
         }
     }
 
