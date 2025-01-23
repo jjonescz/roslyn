@@ -15,7 +15,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     /// <summary>
     /// This class represents an event declared in source without explicit accessors.
     /// It implicitly has thread safe accessors and an associated field (of the same
-    /// name), unless it does not have an initializer and is either extern or inside
+    /// name), unless it does not have an initializer and is extern, partial, or inside
     /// an interface, in which case it only has accessors.
     /// </summary>
     internal sealed class SourceFieldLikeEventSymbol : SourceEventSymbol
