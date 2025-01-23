@@ -816,7 +816,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal SourceEventSymbol? OtherPartOfPartial => _otherPartOfPartial;
 
-        internal SourceEventSymbol? PartialDefinitionPart => IsPartialDefinition ? OtherPartOfPartial : null;
+        internal SourceEventSymbol? PartialDefinitionPart => IsPartialImplementation ? OtherPartOfPartial : null;
 
         internal SourceEventSymbol? PartialImplementationPart => IsPartialDefinition ? OtherPartOfPartial : null;
 

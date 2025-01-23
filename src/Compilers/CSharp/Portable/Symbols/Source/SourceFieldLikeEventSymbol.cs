@@ -155,12 +155,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         public override MethodSymbol? AddMethod
         {
-            get { return PartialDefinitionPart?.AddMethod ?? _addMethod; }
+            get { return PartialImplementationPart?.AddMethod ?? _addMethod; }
         }
 
         public override MethodSymbol? RemoveMethod
         {
-            get { return PartialDefinitionPart?.RemoveMethod ?? _removeMethod; }
+            get { return PartialImplementationPart?.RemoveMethod ?? _removeMethod; }
         }
 
         internal override bool IsExplicitInterfaceImplementation
