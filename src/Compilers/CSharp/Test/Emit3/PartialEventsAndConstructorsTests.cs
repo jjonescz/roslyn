@@ -478,4 +478,88 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             //     partial event System.Action I.E { add { } remove { } }
             Diagnostic(ErrorCode.ERR_PartialMemberNotExplicit, "E").WithLocation(8, 35));
     }
+
+    [Fact]
+    public void Extern_01()
+    {
+        var source = """
+            partial class C
+            {
+                partial event System.Action E;
+                extern partial event System.Action E;
+
+                partial C();
+                extern partial C();
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Extern_02()
+    {
+        var source = """
+            partial class C
+            {
+                partial event System.Action E;
+                extern event System.Action E;
+
+                partial C();
+                extern C();
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (3,33): error CS9400: Partial member 'C.E' must have an implementation part.
+            //     partial event System.Action E;
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingImplementation, "E").WithArguments("C.E").WithLocation(3, 33),
+            // (4,32): error CS0102: The type 'C' already contains a definition for 'E'
+            //     extern event System.Action E;
+            Diagnostic(ErrorCode.ERR_DuplicateNameInClass, "E").WithArguments("C", "E").WithLocation(4, 32),
+            // (4,32): warning CS0626: Method, operator, or accessor 'C.E.remove' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+            //     extern event System.Action E;
+            Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "E").WithArguments("C.E.remove").WithLocation(4, 32),
+            // (6,13): error CS9400: Partial member 'C.C()' must have an implementation part.
+            //     partial C();
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingImplementation, "C").WithArguments("C.C()").WithLocation(6, 13),
+            // (7,12): error CS0111: Type 'C' already defines a member called 'C' with the same parameter types
+            //     extern C();
+            Diagnostic(ErrorCode.ERR_MemberAlreadyExists, "C").WithArguments("C", "C").WithLocation(7, 12),
+            // (7,12): warning CS0824: Constructor 'C.C()' is marked external
+            //     extern C();
+            Diagnostic(ErrorCode.WRN_ExternCtorNoImplementation, "C").WithArguments("C.C()").WithLocation(7, 12));
+    }
+
+    [Fact]
+    public void Extern_03()
+    {
+        var source = """
+            partial class C
+            {
+                extern partial event System.Action E;
+                partial event System.Action E { add { } remove { } }
+
+                extern partial C();
+                partial C() { }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (3,40): error CS9401: Partial member 'C.E' must have a definition part.
+            //     extern partial event System.Action E;
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "E").WithArguments("C.E").WithLocation(3, 40),
+            // (4,33): error CS9403: Partial member 'C.E' may not have multiple implementing declarations.
+            //     partial event System.Action E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_PartialMemberDuplicateImplementation, "E").WithArguments("C.E").WithLocation(4, 33),
+            // (4,33): error CS0102: The type 'C' already contains a definition for 'E'
+            //     partial event System.Action E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_DuplicateNameInClass, "E").WithArguments("C", "E").WithLocation(4, 33),
+            // (6,20): error CS9401: Partial member 'C.C()' must have a definition part.
+            //     extern partial C();
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "C").WithArguments("C.C()").WithLocation(6, 20),
+            // (7,13): error CS9403: Partial member 'C.C()' may not have multiple implementing declarations.
+            //     partial C() { }
+            Diagnostic(ErrorCode.ERR_PartialMemberDuplicateImplementation, "C").WithArguments("C.C()").WithLocation(7, 13),
+            // (7,13): error CS0111: Type 'C' already defines a member called 'C' with the same parameter types
+            //     partial C() { }
+            Diagnostic(ErrorCode.ERR_MemberAlreadyExists, "C").WithArguments("C", "C").WithLocation(7, 13));
+    }
 }
