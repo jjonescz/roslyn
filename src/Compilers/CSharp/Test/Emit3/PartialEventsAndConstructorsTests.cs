@@ -6,6 +6,7 @@ using System;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
+using Microsoft.CodeAnalysis.Test.Utilities;
 using Roslyn.Test.Utilities;
 using Roslyn.Utilities;
 using Xunit;
@@ -497,7 +498,71 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
                 extern partial C();
             }
             """;
-        CreateCompilation(source).VerifyDiagnostics();
+        CompileAndVerify(source,
+            options: TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All),
+            sourceSymbolValidator: verifySource,
+            symbolValidator: verifyMetadata,
+            // PEVerify fails when extern methods lack an implementation
+            verify: Verification.FailsPEVerify with
+            {
+                PEVerifyMessage = """
+                    Error: Method marked Abstract, Runtime, InternalCall or Imported must have zero RVA, and vice versa.
+                    Error: Method marked Abstract, Runtime, InternalCall or Imported must have zero RVA, and vice versa.
+                    Error: Method marked Abstract, Runtime, InternalCall or Imported must have zero RVA, and vice versa.
+                    Type load failed.
+                    """,
+            })
+            .VerifyDiagnostics(
+                // (4,40): warning CS0626: Method, operator, or accessor 'C.E.remove' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+                //     extern partial event System.Action E;
+                Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "E").WithArguments("C.E.remove").WithLocation(4, 40));
+
+        static void verifySource(ModuleSymbol module)
+        {
+            var ev = module.GlobalNamespace.GetMember<SourceEventSymbol>("C.E");
+            Assert.True(ev.IsPartialDefinition);
+            Assert.True(ev.GetPublicSymbol().IsExtern);
+            Assert.True(ev.AddMethod!.GetPublicSymbol().IsExtern);
+            Assert.True(ev.RemoveMethod!.GetPublicSymbol().IsExtern);
+            Assert.True(ev.PartialImplementationPart!.GetPublicSymbol().IsExtern);
+            Assert.True(ev.PartialImplementationPart!.AddMethod!.GetPublicSymbol().IsExtern);
+            Assert.True(ev.PartialImplementationPart!.RemoveMethod!.GetPublicSymbol().IsExtern);
+
+            var c = module.GlobalNamespace.GetMember<SourceConstructorSymbol>("C..ctor");
+            Assert.True(c.IsPartialDefinition);
+            Assert.True(c.GetPublicSymbol().IsExtern);
+            Assert.True(c.PartialImplementationPart!.GetPublicSymbol().IsExtern);
+
+            var members = module.GlobalNamespace.GetTypeMember("C").GetMembers().Select(s => s.ToTestDisplayString()).Join("\n");
+            AssertEx.AssertEqualToleratingWhitespaceDifferences("""
+                event System.Action C.E
+                void C.E.add
+                void C.E.remove
+                C..ctor()
+                """, members);
+        }
+
+        static void verifyMetadata(ModuleSymbol module)
+        {
+            // IsExtern doesn't round trip from metadata when DllImportAttribute is missing.
+            // This is consistent with the behavior of partial methods and properties.
+
+            var ev = module.GlobalNamespace.GetMember<EventSymbol>("C.E");
+            Assert.False(ev.GetPublicSymbol().IsExtern);
+            Assert.False(ev.AddMethod!.GetPublicSymbol().IsExtern);
+            Assert.False(ev.RemoveMethod!.GetPublicSymbol().IsExtern);
+
+            var c = module.GlobalNamespace.GetMember<MethodSymbol>("C..ctor");
+            Assert.False(c.GetPublicSymbol().IsExtern);
+
+            var members = module.GlobalNamespace.GetTypeMember("C").GetMembers().Select(s => s.ToTestDisplayString()).Join("\n");
+            AssertEx.AssertEqualToleratingWhitespaceDifferences("""
+                void C.E.add
+                void C.E.remove
+                C..ctor()
+                event System.Action C.E
+                """, members);
+        }
     }
 
     [Fact]
@@ -551,6 +616,9 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (3,40): error CS9401: Partial member 'C.E' must have a definition part.
             //     extern partial event System.Action E;
             Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "E").WithArguments("C.E").WithLocation(3, 40),
+            // (3,40): warning CS0626: Method, operator, or accessor 'C.E.remove' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+            //     extern partial event System.Action E;
+            Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "E").WithArguments("C.E.remove").WithLocation(3, 40),
             // (4,33): error CS9403: Partial member 'C.E' may not have multiple implementing declarations.
             //     partial event System.Action E { add { } remove { } }
             Diagnostic(ErrorCode.ERR_PartialMemberDuplicateImplementation, "E").WithArguments("C.E").WithLocation(4, 33),

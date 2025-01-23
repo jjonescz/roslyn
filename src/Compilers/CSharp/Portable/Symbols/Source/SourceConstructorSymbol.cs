@@ -231,11 +231,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         }
 
 #nullable enable
+        public sealed override bool IsExtern => PartialImplementationPart is { } implementation ? implementation.IsExtern : HasExternModifier;
+
         private bool HasAnyBody => flags.HasAnyBody;
 
-        internal bool IsPartialDefinition => IsPartial && !HasAnyBody && !IsExtern;
+        internal bool IsPartialDefinition => IsPartial && !HasAnyBody && !HasExternModifier;
 
-        internal bool IsPartialImplementation => IsPartial && (HasAnyBody || IsExtern);
+        internal bool IsPartialImplementation => IsPartial && (HasAnyBody || HasExternModifier);
 
         internal SourceConstructorSymbol? OtherPartOfPartial => _otherPartOfPartial;
 

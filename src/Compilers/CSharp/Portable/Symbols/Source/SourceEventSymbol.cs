@@ -377,10 +377,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get { return (_modifiers & DeclarationModifiers.Abstract) != 0; }
         }
 
-        public sealed override bool IsExtern
+        private bool HasExternModifier
         {
             get { return (_modifiers & DeclarationModifiers.Extern) != 0; }
         }
+
+        public sealed override bool IsExtern => PartialImplementationPart is { } implementation ? implementation.IsExtern : HasExternModifier;
 
         public sealed override bool IsStatic
         {
@@ -808,9 +810,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// </summary>
         protected abstract bool IsFieldLike { get; }
 
-        internal bool IsPartialDefinition => IsPartial && IsFieldLike && !IsExtern;
+        internal bool IsPartialDefinition => IsPartial && IsFieldLike && !HasExternModifier;
 
-        internal bool IsPartialImplementation => IsPartial && (!IsFieldLike || IsExtern);
+        internal bool IsPartialImplementation => IsPartial && (!IsFieldLike || HasExternModifier);
 
         internal SourceEventSymbol? OtherPartOfPartial => _otherPartOfPartial;
 
