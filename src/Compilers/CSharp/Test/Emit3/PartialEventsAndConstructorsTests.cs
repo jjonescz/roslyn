@@ -709,4 +709,98 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
                 """, members);
         }
     }
+
+    [Fact]
+    public void Use_Valid()
+    {
+        var source = """
+            using System;
+
+            var c = new C();
+            c.E += () => Console.Write(1);
+            c.E -= () => Console.Write(2);
+
+            partial class C
+            {
+                public partial event Action E;
+                public partial event Action E
+                {
+                    add { Console.Write(3); value(); }
+                    remove { Console.Write(4); value(); }
+                }
+                public partial C();
+                public partial C() { Console.Write(5); }
+            }
+            """;
+        CompileAndVerify(source, expectedOutput: "53142").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Use_EventAsValue()
+    {
+        var source = """
+            using System;
+
+            var c = new C();
+            Action a = c.E;
+            c.E();
+
+            partial class C
+            {
+                public partial event Action E;
+                public partial event Action E { add { } remove { } }
+
+                void M()
+                {
+                    Action a = this.E;
+                    this.E();
+                }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (4,14): error CS0079: The event 'C.E' can only appear on the left hand side of += or -=
+            // Action a = c.E;
+            Diagnostic(ErrorCode.ERR_BadEventUsageNoField, "E").WithArguments("C.E").WithLocation(4, 14),
+            // (5,3): error CS0079: The event 'C.E' can only appear on the left hand side of += or -=
+            // c.E();
+            Diagnostic(ErrorCode.ERR_BadEventUsageNoField, "E").WithArguments("C.E").WithLocation(5, 3),
+            // (14,25): error CS0079: The event 'C.E' can only appear on the left hand side of += or -=
+            //         Action a = this.E;
+            Diagnostic(ErrorCode.ERR_BadEventUsageNoField, "E").WithArguments("C.E").WithLocation(14, 25),
+            // (15,14): error CS0079: The event 'C.E' can only appear on the left hand side of += or -=
+            //         this.E();
+            Diagnostic(ErrorCode.ERR_BadEventUsageNoField, "E").WithArguments("C.E").WithLocation(15, 14));
+    }
+
+    [Fact]
+    public void Use_EventAccessorsInaccessible()
+    {
+        var source = """
+            using System;
+
+            var c = new C();
+            c.E += () => { };
+            c.E -= () => { };
+
+            partial class C
+            {
+                public partial event Action E;
+                partial event Action E { add { } remove { } }
+
+                void M()
+                {
+                    this.E += () => { };
+                    this.E -= () => { };
+                }
+            }
+            """;
+        // PROTOTYPE: Mismatch between accessibility modifiers of parts should be reported.
+        CreateCompilation(source).VerifyDiagnostics(
+            // (4,1): error CS0122: 'C.E.add' is inaccessible due to its protection level
+            // c.E += () => { };
+            Diagnostic(ErrorCode.ERR_BadAccess, "c.E += () => { }").WithArguments("C.E.add").WithLocation(4, 1),
+            // (5,1): error CS0122: 'C.E.remove' is inaccessible due to its protection level
+            // c.E -= () => { };
+            Diagnostic(ErrorCode.ERR_BadAccess, "c.E -= () => { }").WithArguments("C.E.remove").WithLocation(5, 1));
+    }
 }
