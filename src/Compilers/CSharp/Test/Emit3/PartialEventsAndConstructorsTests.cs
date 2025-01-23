@@ -87,6 +87,23 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
     }
 
     [Fact]
+    public void PartialAsType()
+    {
+        var source = """
+            partial class C
+            {
+                partial C() => new partial();
+            }
+
+            class @partial;
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (3,13): error CS9401: Partial member 'C.C()' must have a definition part.
+            //     partial C() => new partial();
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "C").WithArguments("C.C()").WithLocation(3, 13));
+    }
+
+    [Fact]
     public void EventInitializer_Single()
     {
         var source = """
