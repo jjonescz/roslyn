@@ -419,10 +419,10 @@ namespace N1
                 "<global namespace>",
                 "N1",
                 "N1.Class",
-                "N1.Class..ctor(System.Int32 a, System.Int32 b, System.Int32 c, System.Int32 d)",
-                "N1.Class..ctor(System.Int32 a, System.Int32 b, System.Int32 c)",
                 "N1.Class..ctor(System.Int32 a)",
-            ], declaredSymbols.OrderBy(name => name));
+                "N1.Class..ctor(System.Int32 a, System.Int32 b, System.Int32 c)",
+                "N1.Class..ctor(System.Int32 a, System.Int32 b, System.Int32 c, System.Int32 d)",
+            ], declaredSymbols.OrderBy(name => name, StringComparer.Ordinal));
 
             AssertEx.Equal(["file1"], completedCompilationUnits.OrderBy(name => name));
         }
