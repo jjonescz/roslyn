@@ -331,8 +331,8 @@ namespace N1
 } 
 ";
 
-            var tree1 = CSharpSyntaxTree.ParseText(source1, path: "file1");
-            var tree2 = CSharpSyntaxTree.ParseText(source2, path: "file2");
+            var tree1 = CSharpSyntaxTree.ParseText(source1, path: "file1", options: TestOptions.RegularPreview);
+            var tree2 = CSharpSyntaxTree.ParseText(source2, path: "file2", options: TestOptions.RegularPreview);
             var eventQueue = new AsyncQueue<CompilationEvent>();
             var compilation = CreateCompilationWithMscorlib461(new[] { tree1, tree2 }).WithEventQueue(eventQueue);
 
@@ -397,8 +397,8 @@ namespace N1
 } 
 ";
 
-            var tree1 = CSharpSyntaxTree.ParseText(source1, path: "file1");
-            var tree2 = CSharpSyntaxTree.ParseText(source2, path: "file2");
+            var tree1 = CSharpSyntaxTree.ParseText(source1, path: "file1", options: TestOptions.RegularPreview);
+            var tree2 = CSharpSyntaxTree.ParseText(source2, path: "file2", options: TestOptions.RegularPreview);
             var eventQueue = new AsyncQueue<CompilationEvent>();
             var compilation = CreateCompilationWithMscorlib461(new[] { tree1, tree2 }).WithEventQueue(eventQueue);
 
