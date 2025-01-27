@@ -297,8 +297,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         IDS_FeatureUnboundGenericTypesInNameof = MessageBase + 12850,
         IDS_FeatureSimpleLambdaParameterModifiers = MessageBase + 12851,
 
-        // PROTOTYPE: compact
-        IDS_FeaturePartialEventsAndConstructors = MessageBase + 12900,
+        IDS_FeaturePartialEventsAndConstructors = MessageBase + 12852,
     }
 
     // Message IDs may refer to strings that need to be localized.
