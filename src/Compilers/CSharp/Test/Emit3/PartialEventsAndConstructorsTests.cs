@@ -39,12 +39,15 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (5,50): error CS1513: } expected
             //         System.Console.Write(F().GetType().Name);
             Diagnostic(ErrorCode.ERR_RbraceExpected, "").WithLocation(5, 50),
-            // (6,9): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', or a method or property return type.
-            //         partial F() => new();
-            Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(6, 9),
             // (6,17): error CS1520: Method must have a return type
             //         partial F() => new();
             Diagnostic(ErrorCode.ERR_MemberNeedsType, "F").WithLocation(6, 17),
+            // (6,17): error CS0751: A partial member must be declared within a partial type
+            //         partial F() => new();
+            Diagnostic(ErrorCode.ERR_PartialMemberOnlyInPartialClass, "F").WithLocation(6, 17),
+            // (6,17): error CS9401: Partial member 'partial.partial()' must have a definition part.
+            //         partial F() => new();
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "F").WithArguments("partial.partial()").WithLocation(6, 17),
             // (6,24): error CS0201: Only assignment, call, increment, decrement, await, and new object expressions can be used as a statement
             //         partial F() => new();
             Diagnostic(ErrorCode.ERR_IllegalStatement, "new()").WithLocation(6, 24),
@@ -102,12 +105,15 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
 
         var expectedDiagnostics = new[]
         {
-            // (3,5): error CS0267: The 'partial' modifier can only appear immediately before 'class', 'record', 'struct', 'interface', or a method or property return type.
-            //     partial F() => new();
-            Diagnostic(ErrorCode.ERR_PartialMisplaced, "partial").WithLocation(3, 5),
             // (3,13): error CS1520: Method must have a return type
             //     partial F() => new();
             Diagnostic(ErrorCode.ERR_MemberNeedsType, "F").WithLocation(3, 13),
+            // (3,13): error CS0751: A partial member must be declared within a partial type
+            //     partial F() => new();
+            Diagnostic(ErrorCode.ERR_PartialMemberOnlyInPartialClass, "F").WithLocation(3, 13),
+            // (3,13): error CS9401: Partial member 'C.C()' must have a definition part.
+            //     partial F() => new();
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "F").WithArguments("C.C()").WithLocation(3, 13),
             // (3,20): error CS0201: Only assignment, call, increment, decrement, await, and new object expressions can be used as a statement
             //     partial F() => new();
             Diagnostic(ErrorCode.ERR_IllegalStatement, "new()").WithLocation(3, 20),
