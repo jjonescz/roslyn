@@ -916,16 +916,16 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             Assert.False(e.IsPartialImplementation);
             Assert.False(e.HasAssociatedField);
             Assert.Null(e.PartialDefinitionPart);
-            Assert.True(e.PartialImplementationPart!.IsPartialImplementation);
-            Assert.False(e.PartialImplementationPart.IsPartialDefinition);
-            Assert.False(e.PartialImplementationPart.HasAssociatedField);
+            Assert.True(e.SourcePartialImplementationPart!.IsPartialImplementation);
+            Assert.False(e.SourcePartialImplementationPart.IsPartialDefinition);
+            Assert.False(e.SourcePartialImplementationPart.HasAssociatedField);
 
             var addMethod = e.AddMethod!;
             Assert.Equal("add_E", addMethod.Name);
-            Assert.Same(addMethod, e.PartialImplementationPart.AddMethod);
+            Assert.Same(addMethod, e.SourcePartialImplementationPart.AddMethod);
             var removeMethod = e.RemoveMethod!;
             Assert.Equal("remove_E", removeMethod.Name);
-            Assert.Same(removeMethod, e.PartialImplementationPart.RemoveMethod);
+            Assert.Same(removeMethod, e.SourcePartialImplementationPart.RemoveMethod);
 
             var c = module.GlobalNamespace.GetMember<SourceConstructorSymbol>("C..ctor");
             Assert.True(c.IsPartialDefinition);

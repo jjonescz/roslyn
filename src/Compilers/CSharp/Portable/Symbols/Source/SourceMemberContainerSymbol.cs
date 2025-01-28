@@ -1751,6 +1751,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     case PropertySymbol property:
                         member = property.PartialDefinitionPart ?? property;
                         break;
+                    case EventSymbol ev:
+                        member = ev.PartialDefinitionPart ?? ev;
+                        break;
                 }
 
                 return membersAndInitializers?.NonTypeMembers.Contains(m => m == (object)member) == true;
@@ -3702,12 +3705,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                 break;
 
                             case (SourceConstructorSymbol { IsStatic: false } currentConstructor, SourceConstructorSymbol { IsStatic: false } prevConstructor):
-                                Debug.Assert(name.Equals(WellKnownMemberNames.InstanceConstructorName.AsMemory()));
-                                mergePartialConstructors(ref membersByName, name, currentConstructor, prevConstructor, diagnostics);
+                                Debug.Assert(pair.Key.Equals(WellKnownMemberNames.InstanceConstructorName.AsMemory()));
+                                mergePartialConstructors(nonTypeMembers, currentConstructor, prevConstructor, diagnostics);
                                 break;
 
                             case (SourceEventSymbol currentEvent, SourceEventSymbol prevEvent):
-                                mergePartialEvents(ref membersByName, name, currentEvent, prevEvent, diagnostics);
+                                mergePartialEvents(nonTypeMembers, currentEvent, prevEvent, diagnostics);
                                 break;
 
                             case (SourcePropertyAccessorSymbol, SourcePropertyAccessorSymbol):
@@ -3877,7 +3880,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 }
             }
 
-            void mergePartialConstructors(ref Dictionary<ReadOnlyMemory<char>, ImmutableArray<Symbol>> membersByName, ReadOnlyMemory<char> name, SourceConstructorSymbol currentConstructor, SourceConstructorSymbol prevConstructor, BindingDiagnosticBag diagnostics)
+            static void mergePartialConstructors(ArrayBuilder<Symbol> nonTypeMembers, SourceConstructorSymbol currentConstructor, SourceConstructorSymbol prevConstructor, BindingDiagnosticBag diagnostics)
             {
                 if (currentConstructor.IsPartialImplementation &&
                     (prevConstructor.IsPartialImplementation || (prevConstructor.OtherPartOfPartial is { } otherImplementation && (object)otherImplementation != currentConstructor)))
@@ -3893,12 +3896,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 }
                 else
                 {
-                    DuplicateMembersByNameIfCached(ref membersByName);
-                    membersByName[name] = FixPartialConstructor(membersByName[name], prevConstructor, currentConstructor);
+                    FixPartialConstructor(nonTypeMembers, prevConstructor, currentConstructor);
                 }
             }
 
-            void mergePartialEvents(ref Dictionary<ReadOnlyMemory<char>, ImmutableArray<Symbol>> membersByName, ReadOnlyMemory<char> name, SourceEventSymbol currentEvent, SourceEventSymbol prevEvent, BindingDiagnosticBag diagnostics)
+            static void mergePartialEvents(ArrayBuilder<Symbol> nonTypeMembers, SourceEventSymbol currentEvent, SourceEventSymbol prevEvent, BindingDiagnosticBag diagnostics)
             {
                 if (currentEvent.IsPartialImplementation &&
                     (prevEvent.IsPartialImplementation || (prevEvent.OtherPartOfPartial is { } otherImplementation && (object)otherImplementation != currentEvent)))
@@ -3914,8 +3916,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 }
                 else
                 {
-                    DuplicateMembersByNameIfCached(ref membersByName);
-                    membersByName[name] = FixPartialEvent(membersByName[name], prevEvent, currentEvent);
+                    FixPartialEvent(nonTypeMembers, prevEvent, currentEvent);
                 }
             }
         }
@@ -3971,7 +3972,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         }
 
         /// <summary>Links together the definition and implementation parts of a partial constructor. Returns a member list which has the implementation part removed.</summary>
-        private static ImmutableArray<Symbol> FixPartialConstructor(ImmutableArray<Symbol> symbols, SourceConstructorSymbol part1, SourceConstructorSymbol part2)
+        private static void FixPartialConstructor(ArrayBuilder<Symbol> nonTypeMembers, SourceConstructorSymbol part1, SourceConstructorSymbol part2)
         {
             SourceConstructorSymbol definition;
             SourceConstructorSymbol implementation;
@@ -3989,11 +3990,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             SourceConstructorSymbol.InitializePartialConstructorParts(definition, implementation);
 
             // a partial constructor is represented in the member list by its definition part:
-            return Remove(symbols, implementation);
+            Remove(nonTypeMembers, implementation);
         }
 
         /// <summary>Links together the definition and implementation parts of a partial event. Returns a member list which has the implementation part removed.</summary>
-        private static ImmutableArray<Symbol> FixPartialEvent(ImmutableArray<Symbol> symbols, SourceEventSymbol part1, SourceEventSymbol part2)
+        private static void FixPartialEvent(ArrayBuilder<Symbol> nonTypeMembers, SourceEventSymbol part1, SourceEventSymbol part2)
         {
             SourceEventSymbol definition;
             SourceEventSymbol implementation;
@@ -4011,7 +4012,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             SourceEventSymbol.InitializePartialEventParts(definition, implementation);
 
             // a partial event is represented in the member list by its definition part:
-            return Remove(symbols, implementation);
+            Remove(nonTypeMembers, implementation);
         }
 
         private static void Remove(ArrayBuilder<Symbol> symbols, Symbol symbol)
