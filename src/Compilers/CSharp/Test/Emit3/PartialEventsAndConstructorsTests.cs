@@ -127,6 +127,40 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
     }
 
     [Fact]
+    public void ReturningPartialType_Method_CouldBePartialConstructor()
+    {
+        var source = """
+            class C
+            {
+                partial F() { }
+                partial C() { }
+            }
+            """;
+        CreateCompilation(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
+            // (3,5): error CS0246: The type or namespace name 'partial' could not be found (are you missing a using directive or an assembly reference?)
+            //     partial F() { }
+            Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "partial").WithArguments("partial").WithLocation(3, 5),
+            // (3,5): error CS8652: The feature 'partial events and constructors' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     partial F() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "partial").WithArguments("partial events and constructors").WithLocation(3, 5),
+            // (3,13): error CS0161: 'C.F()': not all code paths return a value
+            //     partial F() { }
+            Diagnostic(ErrorCode.ERR_ReturnExpected, "F").WithArguments("C.F()").WithLocation(3, 13),
+            // (4,5): error CS0246: The type or namespace name 'partial' could not be found (are you missing a using directive or an assembly reference?)
+            //     partial C() { }
+            Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "partial").WithArguments("partial").WithLocation(4, 5),
+            // (4,5): error CS8652: The feature 'partial events and constructors' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     partial C() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "partial").WithArguments("partial events and constructors").WithLocation(4, 5),
+            // (4,13): error CS0542: 'C': member names cannot be the same as their enclosing type
+            //     partial C() { }
+            Diagnostic(ErrorCode.ERR_MemberNameSameAsType, "C").WithArguments("C").WithLocation(4, 13),
+            // (4,13): error CS0161: 'C.C()': not all code paths return a value
+            //     partial C() { }
+            Diagnostic(ErrorCode.ERR_ReturnExpected, "C").WithArguments("C.C()").WithLocation(4, 13));
+    }
+
+    [Fact]
     public void LangVersion()
     {
         var source = """
@@ -149,6 +183,9 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (5,5): error CS0246: The type or namespace name 'partial' could not be found (are you missing a using directive or an assembly reference?)
             //     partial C();
             Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "partial").WithArguments("partial").WithLocation(5, 5),
+            // (5,5): error CS8652: The feature 'partial events and constructors' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     partial C();
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "partial").WithArguments("partial events and constructors").WithLocation(5, 5),
             // (5,13): error CS0501: 'C.C()' must declare a body because it is not marked abstract, extern, or partial
             //     partial C();
             Diagnostic(ErrorCode.ERR_ConcreteMissingBody, "C").WithArguments("C.C()").WithLocation(5, 13),
@@ -158,6 +195,9 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (6,5): error CS0246: The type or namespace name 'partial' could not be found (are you missing a using directive or an assembly reference?)
             //     partial C() { }
             Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "partial").WithArguments("partial").WithLocation(6, 5),
+            // (6,5): error CS8652: The feature 'partial events and constructors' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     partial C() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "partial").WithArguments("partial events and constructors").WithLocation(6, 5),
             // (6,13): error CS0542: 'C': member names cannot be the same as their enclosing type
             //     partial C() { }
             Diagnostic(ErrorCode.ERR_MemberNameSameAsType, "C").WithArguments("C").WithLocation(6, 13),
