@@ -135,13 +135,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             returnTypeSyntax = returnTypeSyntax.SkipScoped(out _).SkipRef();
             TypeWithAnnotations returnType = signatureBinder.BindType(returnTypeSyntax, diagnostics);
 
-            if (returnType.Type?.IsErrorType() == true &&
-                returnTypeSyntax is IdentifierNameSyntax { Identifier.RawContextualKind: (int)SyntaxKind.PartialKeyword })
-            {
-                var available = MessageID.IDS_FeaturePartialEventsAndConstructors.CheckFeatureAvailability(diagnostics, returnTypeSyntax);
-                Debug.Assert(!available, "Should have been parsed as partial constructor.");
-            }
-
             // span-like types are returnable in general
             if (returnType.IsRestrictedType(ignoreSpanLikeTypes: true))
             {
@@ -685,6 +678,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
 
             CheckModifiers(MethodKind == MethodKind.ExplicitInterfaceImplementation, _location, diagnostics);
+        }
+
+        internal override void AfterAddingTypeMembersChecks(ConversionsBase conversions, BindingDiagnosticBag diagnostics)
+        {
+            base.AfterAddingTypeMembersChecks(conversions, diagnostics);
+
+            if (this.ReturnType?.IsErrorType() == true && this.ReturnType.Name == "partial")
+            {
+                var available = MessageID.IDS_FeaturePartialEventsAndConstructors.CheckFeatureAvailability(diagnostics, DeclaringCompilation, ReturnTypeLocation);
+                Debug.Assert(!available, "Should have been parsed as partial constructor.");
+            }
         }
 #nullable disable
 
