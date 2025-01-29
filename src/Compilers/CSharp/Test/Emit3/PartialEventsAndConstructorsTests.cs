@@ -140,18 +140,12 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             """;
 
         CreateCompilation(source, parseOptions: TestOptions.Regular13).VerifyDiagnostics(
-            // (3,13): error CS1519: Invalid token 'event' in class, record, struct, or interface member declaration
+            // (3,33): error CS8703: The modifier 'partial' is not valid for this item in C# 13.0. Please use language version 'preview' or greater.
             //     partial event System.Action E;
-            Diagnostic(ErrorCode.ERR_InvalidMemberDecl, "event").WithArguments("event").WithLocation(3, 13),
-            // (3,33): warning CS0067: The event 'C.E' is never used
-            //     partial event System.Action E;
-            Diagnostic(ErrorCode.WRN_UnreferencedEvent, "E").WithArguments("C.E").WithLocation(3, 33),
-            // (4,13): error CS1519: Invalid token 'event' in class, record, struct, or interface member declaration
+            Diagnostic(ErrorCode.ERR_InvalidModifierForLanguageVersion, "E").WithArguments("partial", "13.0", "preview").WithLocation(3, 33),
+            // (4,33): error CS8703: The modifier 'partial' is not valid for this item in C# 13.0. Please use language version 'preview' or greater.
             //     partial event System.Action E { add { } remove { } }
-            Diagnostic(ErrorCode.ERR_InvalidMemberDecl, "event").WithArguments("event").WithLocation(4, 13),
-            // (4,33): error CS0102: The type 'C' already contains a definition for 'E'
-            //     partial event System.Action E { add { } remove { } }
-            Diagnostic(ErrorCode.ERR_DuplicateNameInClass, "E").WithArguments("C", "E").WithLocation(4, 33),
+            Diagnostic(ErrorCode.ERR_InvalidModifierForLanguageVersion, "E").WithArguments("partial", "13.0", "preview").WithLocation(4, 33),
             // (5,5): error CS0246: The type or namespace name 'partial' could not be found (are you missing a using directive or an assembly reference?)
             //     partial C();
             Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "partial").WithArguments("partial").WithLocation(5, 5),
