@@ -79,6 +79,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal override void ForceComplete(SourceLocation? locationOpt, Predicate<Symbol>? filter, CancellationToken cancellationToken)
         {
+            SourcePartialImplementationPart?.ForceComplete(locationOpt, filter, cancellationToken);
+
             if (filter?.Invoke(this) == false)
             {
                 return;
