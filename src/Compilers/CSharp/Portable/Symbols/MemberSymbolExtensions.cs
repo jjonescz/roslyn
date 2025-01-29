@@ -545,7 +545,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        // PROTOTYPE: test all callers
         internal static bool IsPartialMember(this Symbol member)
         {
             Debug.Assert(member.IsDefinition);
@@ -557,7 +556,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 or SourceEventSymbol { IsPartial: true };
         }
 
-        // PROTOTYPE: test all callers
         internal static bool IsPartialImplementation(this Symbol member)
         {
             Debug.Assert(member.IsDefinition);
@@ -569,7 +567,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 or SourceEventSymbol { IsPartialImplementation: true };
         }
 
-        // PROTOTYPE: test all callers
         internal static bool IsPartialDefinition(this Symbol member)
         {
             Debug.Assert(member.IsDefinition);
