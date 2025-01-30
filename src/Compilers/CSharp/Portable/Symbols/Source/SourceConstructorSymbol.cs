@@ -90,12 +90,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             out bool report_ERR_StaticConstructorWithAccessModifiers)
         {
             bool hasAnyBody = syntax.HasAnyBody();
-            DeclarationModifiers declarationModifiers = MakeModifiers(containingType, syntax, methodKind, hasAnyBody, location, diagnostics, out modifierErrors, out report_ERR_StaticConstructorWithAccessModifiers);
+            DeclarationModifiers declarationModifiers = MakeModifiers(containingType, syntax, methodKind, hasAnyBody, location, diagnostics, out modifierErrors, out bool hasExplicitAccessModifier, out report_ERR_StaticConstructorWithAccessModifiers);
             Flags flags = new Flags(
                 methodKind, RefKind.None, declarationModifiers, returnsVoid: true, returnsVoidIsSet: true, hasAnyBody: hasAnyBody,
                 isExpressionBodied: syntax.IsExpressionBodied(), isExtensionMethod: false, isVararg: syntax.IsVarArg(),
                 isNullableAnalysisEnabled: isNullableAnalysisEnabled, isExplicitInterfaceImplementation: false,
-                hasThisInitializer: hasThisInitializer);
+                hasThisInitializer: hasThisInitializer, hasExplicitAccessModifier: hasExplicitAccessModifier);
 
             return (declarationModifiers, flags);
         }
@@ -123,7 +123,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private static DeclarationModifiers MakeModifiers(
             NamedTypeSymbol containingType, ConstructorDeclarationSyntax syntax, MethodKind methodKind, bool hasBody, Location location, BindingDiagnosticBag diagnostics,
-            out bool modifierErrors, out bool report_ERR_StaticConstructorWithAccessModifiers)
+            out bool modifierErrors, out bool hasExplicitAccessModifier, out bool report_ERR_StaticConstructorWithAccessModifiers)
         {
             var defaultAccess = (methodKind == MethodKind.StaticConstructor) ? DeclarationModifiers.None : DeclarationModifiers.Private;
 
@@ -140,7 +140,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
 
             bool isInterface = containingType.IsInterface;
-            var mods = ModifierUtils.MakeAndCheckNonTypeMemberModifiers(isOrdinaryMethod: false, isForInterfaceMember: isInterface, syntax.Modifiers, defaultAccess, allowedModifiers, location, diagnostics, out modifierErrors);
+            var mods = ModifierUtils.MakeAndCheckNonTypeMemberModifiers(isOrdinaryMethod: false, isForInterfaceMember: isInterface, syntax.Modifiers, defaultAccess, allowedModifiers, location, diagnostics, out modifierErrors, out hasExplicitAccessModifier);
 
             report_ERR_StaticConstructorWithAccessModifiers = false;
             if (methodKind == MethodKind.StaticConstructor)

@@ -1208,13 +1208,15 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
                 }
             }
             """;
-        // PROTOTYPE: Mismatch between accessibility modifiers of parts should be reported.
         CreateCompilation(source).VerifyDiagnostics(
             // (4,1): error CS0122: 'C.E.add' is inaccessible due to its protection level
             // c.E += () => { };
             Diagnostic(ErrorCode.ERR_BadAccess, "c.E += () => { }").WithArguments("C.E.add").WithLocation(4, 1),
             // (5,1): error CS0122: 'C.E.remove' is inaccessible due to its protection level
             // c.E -= () => { };
-            Diagnostic(ErrorCode.ERR_BadAccess, "c.E -= () => { }").WithArguments("C.E.remove").WithLocation(5, 1));
+            Diagnostic(ErrorCode.ERR_BadAccess, "c.E -= () => { }").WithArguments("C.E.remove").WithLocation(5, 1),
+            // (10,26): error CS8799: Both partial member declarations must have identical accessibility modifiers.
+            //     partial event Action E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_PartialMemberAccessibilityDifference, "E").WithLocation(10, 26));
     }
 }
