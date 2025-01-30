@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Diagnostics;
+using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Roslyn.Utilities;
 
@@ -231,9 +232,63 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         }
 
 #nullable enable
+        protected override void PartialConstructorChecks(BindingDiagnosticBag diagnostics)
+        {
+            if (SourcePartialImplementationPart is { } implementation)
+            {
+                PartialConstructorChecks(implementation, diagnostics);
+            }
+        }
+
+        private void PartialConstructorChecks(SourceConstructorSymbol implementation, BindingDiagnosticBag diagnostics)
+        {
+            Debug.Assert(this.IsPartialDefinition);
+            Debug.Assert((object)this != implementation);
+            Debug.Assert((object?)this.OtherPartOfPartial == implementation);
+
+            if (!MemberSignatureComparer.PartialMethodsStrictComparer.Equals(this, implementation)
+                || !Parameters.SequenceEqual(implementation.Parameters, static (a, b) => a.Name == b.Name))
+            {
+                diagnostics.Add(ErrorCode.WRN_PartialMemberSignatureDifference, implementation.GetFirstLocation(),
+                    new FormattedSymbol(this, SymbolDisplayFormat.MinimallyQualifiedFormat),
+                    new FormattedSymbol(implementation, SymbolDisplayFormat.MinimallyQualifiedFormat));
+            }
+
+            if (IsUnsafe != implementation.IsUnsafe && this.CompilationAllowsUnsafe())
+            {
+                diagnostics.Add(ErrorCode.ERR_PartialMemberUnsafeDifference, implementation.GetFirstLocation());
+            }
+
+            if (this.IsParams() != implementation.IsParams())
+            {
+                diagnostics.Add(ErrorCode.ERR_PartialMemberParamsDifference, implementation.GetFirstLocation());
+            }
+
+            if (DeclaredAccessibility != implementation.DeclaredAccessibility
+                || HasExplicitAccessModifier != implementation.HasExplicitAccessModifier)
+            {
+                diagnostics.Add(ErrorCode.ERR_PartialMemberAccessibilityDifference, implementation.GetFirstLocation());
+            }
+
+            Debug.Assert(this.ParameterCount == implementation.ParameterCount);
+            for (var i = 0; i < this.ParameterCount; i++)
+            {
+                // An error is only reported for a modifier difference here, regardless of whether the difference is safe or not.
+                // Presence of UnscopedRefAttribute is also not considered when checking partial signatures, because when the attribute is used, it will affect both parts the same way.
+                var definitionParameter = (SourceParameterSymbol)this.Parameters[i];
+                var implementationParameter = (SourceParameterSymbol)implementation.Parameters[i];
+                if (definitionParameter.DeclaredScope != implementationParameter.DeclaredScope)
+                {
+                    diagnostics.Add(ErrorCode.ERR_ScopedMismatchInParameterOfPartial, implementation.GetFirstLocation(), new FormattedSymbol(implementation.Parameters[i], SymbolDisplayFormat.ShortFormat));
+                }
+            }
+        }
+
         public sealed override bool IsExtern => PartialImplementationPart is { } implementation ? implementation.IsExtern : HasExternModifier;
 
         private bool HasAnyBody => flags.HasAnyBody;
+
+        private bool HasExplicitAccessModifier => flags.HasExplicitAccessModifier;
 
         internal bool IsPartialDefinition => IsPartial && !HasAnyBody && !HasExternModifier;
 
@@ -241,9 +296,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal SourceConstructorSymbol? OtherPartOfPartial => _otherPartOfPartial;
 
-        public override MethodSymbol? PartialDefinitionPart => IsPartialImplementation ? OtherPartOfPartial : null;
+        internal SourceConstructorSymbol? SourcePartialDefinitionPart => IsPartialImplementation ? OtherPartOfPartial : null;
 
-        public override MethodSymbol? PartialImplementationPart => IsPartialDefinition ? OtherPartOfPartial : null;
+        internal SourceConstructorSymbol? SourcePartialImplementationPart => IsPartialDefinition ? OtherPartOfPartial : null;
+
+        public override MethodSymbol? PartialDefinitionPart => SourcePartialDefinitionPart;
+
+        public override MethodSymbol? PartialImplementationPart => SourcePartialImplementationPart;
 
         internal static void InitializePartialConstructorParts(SourceConstructorSymbol definition, SourceConstructorSymbol implementation)
         {

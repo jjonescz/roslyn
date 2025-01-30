@@ -1329,6 +1329,12 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             }
             """;
         CreateCompilation(source).VerifyDiagnostics(
+            // (10,20): error CS8799: Both partial member declarations must have identical accessibility modifiers.
+            //     public partial C() { }
+            Diagnostic(ErrorCode.ERR_PartialMemberAccessibilityDifference, "C").WithLocation(10, 20),
+            // (11,21): error CS8799: Both partial member declarations must have identical accessibility modifiers.
+            //     private partial C(int x) { }
+            Diagnostic(ErrorCode.ERR_PartialMemberAccessibilityDifference, "C").WithLocation(11, 21),
             // (12,41): error CS8799: Both partial member declarations must have identical accessibility modifiers.
             //     private partial event System.Action E { add { } remove { } }
             Diagnostic(ErrorCode.ERR_PartialMemberAccessibilityDifference, "E").WithLocation(12, 41),
@@ -1490,6 +1496,12 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (4,11): warning CS8625: Cannot convert null literal to non-nullable reference type.
             // c = new C(null, 0);
             Diagnostic(ErrorCode.WRN_NullAsNonNullable, "null").WithLocation(4, 11),
+            // (20,20): warning CS9256: Partial member declarations 'C.C(int x, string? y)' and 'C.C(int x, string y)' have signature differences.
+            //     public partial C(int x, string y)
+            Diagnostic(ErrorCode.WRN_PartialMemberSignatureDifference, "C").WithArguments("C.C(int x, string? y)", "C.C(int x, string y)").WithLocation(20, 20),
+            // (24,20): warning CS9256: Partial member declarations 'C.C(string x, int y)' and 'C.C(string? x, int y)' have signature differences.
+            //     public partial C(string? x, int y)
+            Diagnostic(ErrorCode.WRN_PartialMemberSignatureDifference, "C").WithArguments("C.C(string x, int y)", "C.C(string? x, int y)").WithLocation(24, 20),
             // (26,9): warning CS8602: Dereference of a possibly null reference.
             //         x.ToString();
             Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "x").WithLocation(26, 9),
@@ -1544,6 +1556,9 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             }
             """;
         CreateCompilation(source, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+            // (8,13): error CS0764: Both partial member declarations must be unsafe or neither may be unsafe
+            //     partial C() { }
+            Diagnostic(ErrorCode.ERR_PartialMemberUnsafeDifference, "C").WithLocation(8, 13),
             // (10,33): error CS0764: Both partial member declarations must be unsafe or neither may be unsafe
             //     partial event System.Action F { add { } remove { } }
             Diagnostic(ErrorCode.ERR_PartialMemberUnsafeDifference, "F").WithLocation(10, 33));
