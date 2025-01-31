@@ -1382,6 +1382,52 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
     }
 
     [Fact]
+    public void Difference_ParameterType()
+    {
+        var source = """
+            partial class C1
+            {
+                partial C1(string x);
+                partial C1(int x) { }
+            }
+            partial class C2
+            {
+                partial C2(dynamic x);
+                partial C2(object x) { }
+            }
+            partial class C3
+            {
+                partial C3((int X, int Y) x);
+                partial C3((int A, int B) x) { }
+            }
+            partial class C4
+            {
+                partial C4((int X, int Y) x);
+                partial C4((string A, string B) x) { }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (3,13): error CS9400: Partial member 'C1.C1(string)' must have an implementation part.
+            //     partial C1(string x);
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingImplementation, "C1").WithArguments("C1.C1(string)").WithLocation(3, 13),
+            // (4,13): error CS9401: Partial member 'C1.C1(int)' must have a definition part.
+            //     partial C1(int x) { }
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "C1").WithArguments("C1.C1(int)").WithLocation(4, 13),
+            // (9,13): warning CS9256: Partial member declarations 'C2.C2(dynamic x)' and 'C2.C2(object x)' have signature differences.
+            //     partial C2(object x) { }
+            Diagnostic(ErrorCode.WRN_PartialMemberSignatureDifference, "C2").WithArguments("C2.C2(dynamic x)", "C2.C2(object x)").WithLocation(9, 13),
+            // (14,13): warning CS9256: Partial member declarations 'C3.C3((int X, int Y) x)' and 'C3.C3((int A, int B) x)' have signature differences.
+            //     partial C3((int A, int B) x) { }
+            Diagnostic(ErrorCode.WRN_PartialMemberSignatureDifference, "C3").WithArguments("C3.C3((int X, int Y) x)", "C3.C3((int A, int B) x)").WithLocation(14, 13),
+            // (18,13): error CS9400: Partial member 'C4.C4((int X, int Y))' must have an implementation part.
+            //     partial C4((int X, int Y) x);
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingImplementation, "C4").WithArguments("C4.C4((int X, int Y))").WithLocation(18, 13),
+            // (19,13): error CS9401: Partial member 'C4.C4((string A, string B))' must have a definition part.
+            //     partial C4((string A, string B) x) { }
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "C4").WithArguments("C4.C4((string A, string B))").WithLocation(19, 13));
+    }
+
+    [Fact]
     public void Difference_Nullability()
     {
         var source = """
@@ -1410,6 +1456,36 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (11,34): warning CS9256: Partial member declarations 'event Action C.G' and 'event Action? C.G' have signature differences.
             //     partial event System.Action? G { add { } remove { } }
             Diagnostic(ErrorCode.WRN_PartialMemberSignatureDifference, "G").WithArguments("event Action C.G", "event Action? C.G").WithLocation(11, 34)
+        };
+
+        CreateCompilation(source, options: TestOptions.DebugDll.WithNullableContextOptions(NullableContextOptions.Enable)).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation(source, options: TestOptions.DebugDll.WithNullableContextOptions(NullableContextOptions.Annotations)).VerifyDiagnostics(expectedDiagnostics);
+    }
+
+    [Fact]
+    public void Difference_ParameterNullability()
+    {
+        var source = """
+            partial class C1
+            {
+                partial C1(string x);
+                partial C1(string? x) { }
+            }
+            partial class C2
+            {
+                partial C2(string? x);
+                partial C2(string x) { }
+            }
+            """;
+
+        var expectedDiagnostics = new[]
+        {
+            // (4,13): warning CS9256: Partial member declarations 'C1.C1(string x)' and 'C1.C1(string? x)' have signature differences.
+            //     partial C1(string? x) { }
+            Diagnostic(ErrorCode.WRN_PartialMemberSignatureDifference, "C1").WithArguments("C1.C1(string x)", "C1.C1(string? x)").WithLocation(4, 13),
+            // (9,13): warning CS9256: Partial member declarations 'C2.C2(string? x)' and 'C2.C2(string x)' have signature differences.
+            //     partial C2(string x) { }
+            Diagnostic(ErrorCode.WRN_PartialMemberSignatureDifference, "C2").WithArguments("C2.C2(string? x)", "C2.C2(string x)").WithLocation(9, 13)
         };
 
         CreateCompilation(source, options: TestOptions.DebugDll.WithNullableContextOptions(NullableContextOptions.Enable)).VerifyDiagnostics(expectedDiagnostics);
@@ -1626,5 +1702,167 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (12,43): error CS8800: Both partial member declarations must have identical combinations of 'virtual', 'override', 'sealed', and 'new' modifiers.
             //     protected partial event System.Action F { add { } remove { } }
             Diagnostic(ErrorCode.ERR_PartialMemberExtendedModDifference, "F").WithLocation(12, 43));
+    }
+
+    [Fact]
+    public void Difference_RefKind()
+    {
+        var source = """
+            partial class C1
+            {
+                partial C1(int x);
+                partial C1(ref int x) { }
+            }
+            partial class C2
+            {
+                partial C2(in int x);
+                partial C2(ref readonly int x) { }
+            }
+            partial class C3
+            {
+                partial C3(ref int x);
+                partial C3(out int x) => throw null;
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (3,13): error CS9400: Partial member 'C1.C1(int)' must have an implementation part.
+            //     partial C1(int x);
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingImplementation, "C1").WithArguments("C1.C1(int)").WithLocation(3, 13),
+            // (4,13): error CS9401: Partial member 'C1.C1(ref int)' must have a definition part.
+            //     partial C1(ref int x) { }
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "C1").WithArguments("C1.C1(ref int)").WithLocation(4, 13),
+            // (8,13): error CS9400: Partial member 'C2.C2(in int)' must have an implementation part.
+            //     partial C2(in int x);
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingImplementation, "C2").WithArguments("C2.C2(in int)").WithLocation(8, 13),
+            // (9,13): error CS9401: Partial member 'C2.C2(ref readonly int)' must have a definition part.
+            //     partial C2(ref readonly int x) { }
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "C2").WithArguments("C2.C2(ref readonly int)").WithLocation(9, 13),
+            // (9,13): error CS0663: 'C2' cannot define an overloaded constructor that differs only on parameter modifiers 'ref readonly' and 'in'
+            //     partial C2(ref readonly int x) { }
+            Diagnostic(ErrorCode.ERR_OverloadRefKind, "C2").WithArguments("C2", "constructor", "ref readonly", "in").WithLocation(9, 13),
+            // (13,13): error CS9400: Partial member 'C3.C3(ref int)' must have an implementation part.
+            //     partial C3(ref int x);
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingImplementation, "C3").WithArguments("C3.C3(ref int)").WithLocation(13, 13),
+            // (14,13): error CS9401: Partial member 'C3.C3(out int)' must have a definition part.
+            //     partial C3(out int x) => throw null;
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "C3").WithArguments("C3.C3(out int)").WithLocation(14, 13),
+            // (14,13): error CS0663: 'C3' cannot define an overloaded constructor that differs only on parameter modifiers 'out' and 'ref'
+            //     partial C3(out int x) => throw null;
+            Diagnostic(ErrorCode.ERR_OverloadRefKind, "C3").WithArguments("C3", "constructor", "out", "ref").WithLocation(14, 13));
+    }
+
+    [Fact]
+    public void Difference_Params()
+    {
+        var source = """
+            using System.Collections.Generic;
+            partial class C1
+            {
+                partial C1(object[] x);
+                partial C1(params object[] x) { }
+            }
+            partial class C2
+            {
+                partial C2(int x, params IEnumerable<object> y);
+                partial C2(int x, IEnumerable<object> y) { }
+            }
+            partial class C3
+            {
+                partial C3(params IEnumerable<object> x, int y);
+                partial C3(IEnumerable<object> x, int y) { }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (5,13): error CS0758: Both partial member declarations must use a params parameter or neither may use a params parameter
+            //     partial C1(params object[] x) { }
+            Diagnostic(ErrorCode.ERR_PartialMemberParamsDifference, "C1").WithLocation(5, 13),
+            // (10,13): error CS0758: Both partial member declarations must use a params parameter or neither may use a params parameter
+            //     partial C2(int x, IEnumerable<object> y) { }
+            Diagnostic(ErrorCode.ERR_PartialMemberParamsDifference, "C2").WithLocation(10, 13),
+            // (14,16): error CS0231: A params parameter must be the last parameter in a parameter list
+            //     partial C3(params IEnumerable<object> x, int y);
+            Diagnostic(ErrorCode.ERR_ParamsLast, "params IEnumerable<object> x").WithLocation(14, 16));
+    }
+
+    [Fact]
+    public void Difference_ParameterNames()
+    {
+        var source = """
+            partial class C
+            {
+                partial C(int x);
+                partial C(int y) { }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (4,13): warning CS9256: Partial member declarations 'C.C(int x)' and 'C.C(int y)' have signature differences.
+            //     partial C(int y) { }
+            Diagnostic(ErrorCode.WRN_PartialMemberSignatureDifference, "C").WithArguments("C.C(int x)", "C.C(int y)").WithLocation(4, 13));
+    }
+
+    [Fact]
+    public void Difference_OptionalParameters()
+    {
+        var source = """
+            partial class C1
+            {
+                partial C1(int x = 1);
+                partial C1(int x) { }
+            }
+            partial class C2
+            {
+                partial C2(int x);
+                partial C2(int x = 1) { }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Difference_DefaultParameterValues()
+    {
+        var source = """
+            partial class C
+            {
+                partial C(int x = 1);
+                partial C(int x = 2) { }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Difference_Scoped()
+    {
+        var source = """
+            using System.Diagnostics.CodeAnalysis;
+            partial class C1
+            {
+                partial C1(scoped ref int x);
+                partial C1(ref int x) { }
+            }
+            partial class C2
+            {
+                partial C2(ref int x);
+                partial C2(scoped ref int x) { }
+            }
+            partial class C3
+            {
+                partial C3([UnscopedRef] ref int x);
+                partial C3(ref int x) { }
+            }
+            partial class C4
+            {
+                partial C4(ref int x);
+                partial C4([UnscopedRef] ref int x) { }
+            }
+            """;
+        CreateCompilation([source, UnscopedRefAttributeDefinition]).VerifyDiagnostics(
+            // (5,13): error CS8988: The 'scoped' modifier of parameter 'x' doesn't match partial definition.
+            //     partial C1(ref int x) { }
+            Diagnostic(ErrorCode.ERR_ScopedMismatchInParameterOfPartial, "C1").WithArguments("x").WithLocation(5, 13),
+            // (10,13): error CS8988: The 'scoped' modifier of parameter 'x' doesn't match partial definition.
+            //     partial C2(scoped ref int x) { }
+            Diagnostic(ErrorCode.ERR_ScopedMismatchInParameterOfPartial, "C2").WithArguments("x").WithLocation(10, 13));
     }
 }
