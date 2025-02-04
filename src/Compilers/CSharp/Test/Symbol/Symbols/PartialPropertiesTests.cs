@@ -690,7 +690,13 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.Symbols
                 symbolValidator: verifyMetadata,
                 // PEVerify fails when extern methods lack an implementation
                 verify: Verification.Skipped);
-            verifier.VerifyDiagnostics();
+            verifier.VerifyDiagnostics(
+                // (3,28): warning CS0626: Method, operator, or accessor 'C.P.get' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+                //     public partial int P { get; set; }
+                Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "get").WithArguments("C.P.get").WithLocation(3, 28),
+                // (3,33): warning CS0626: Method, operator, or accessor 'C.P.set' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+                //     public partial int P { get; set; }
+                Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "set").WithArguments("C.P.set").WithLocation(3, 33));
 
             void verifySource(ModuleSymbol module)
             {
@@ -729,12 +735,24 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.Symbols
                 // (3,24): error CS9249: Partial property 'C.P' must have a definition part.
                 //     extern partial int P { get; set; }
                 Diagnostic(ErrorCode.ERR_PartialPropertyMissingDefinition, "P").WithArguments("C.P").WithLocation(3, 24),
+                // (3,28): warning CS0626: Method, operator, or accessor 'C.P.get' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+                //     extern partial int P { get; set; }
+                Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "get").WithArguments("C.P.get").WithLocation(3, 28),
+                // (3,33): warning CS0626: Method, operator, or accessor 'C.P.set' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+                //     extern partial int P { get; set; }
+                Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "set").WithArguments("C.P.set").WithLocation(3, 33),
                 // (4,24): error CS9251: A partial property may not have multiple implementing declarations
                 //     extern partial int P { get; set; }
                 Diagnostic(ErrorCode.ERR_PartialPropertyDuplicateImplementation, "P").WithLocation(4, 24),
                 // (4,24): error CS0102: The type 'C' already contains a definition for 'P'
                 //     extern partial int P { get; set; }
-                Diagnostic(ErrorCode.ERR_DuplicateNameInClass, "P").WithArguments("C", "P").WithLocation(4, 24)
+                Diagnostic(ErrorCode.ERR_DuplicateNameInClass, "P").WithArguments("C", "P").WithLocation(4, 24),
+                // (4,28): warning CS0626: Method, operator, or accessor 'C.P.get' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+                //     extern partial int P { get; set; }
+                Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "get").WithArguments("C.P.get").WithLocation(4, 28),
+                // (4,33): warning CS0626: Method, operator, or accessor 'C.P.set' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+                //     extern partial int P { get; set; }
+                Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "set").WithArguments("C.P.set").WithLocation(4, 33)
                 );
 
             var members = comp.GetMembers("C.P").SelectAsArray(m => (SourcePropertySymbol)m);

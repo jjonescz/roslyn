@@ -11318,6 +11318,9 @@ public partial interface I1
                 // (11,25): error CS0759: No defining declaration found for implementing declaration of partial method 'I1.M8()'
                 //     static partial void M8() {}
                 Diagnostic(ErrorCode.ERR_PartialMethodMustHaveLatent, "M8").WithArguments("I1.M8()").WithLocation(11, 25),
+                // (13,25): warning CS0626: Method, operator, or accessor 'I1.M10()' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+                //     static partial void M10(); 
+                Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "M10").WithArguments("I1.M10()").WithLocation(13, 25),
                 // (18,17): error CS0111: Type 'I1' already defines a member called 'M6' with the same parameter types
                 //     static void M6() {}
                 Diagnostic(ErrorCode.ERR_MemberAlreadyExists, "M6").WithArguments("M6", "I1").WithLocation(18, 17),
@@ -11379,6 +11382,9 @@ public partial interface I1
                 // (11,25): error CS0759: No defining declaration found for implementing declaration of partial method 'I1.M8()'
                 //     static partial void M8() {}
                 Diagnostic(ErrorCode.ERR_PartialMethodMustHaveLatent, "M8").WithArguments("I1.M8()").WithLocation(11, 25),
+                // (13,25): warning CS0626: Method, operator, or accessor 'I1.M10()' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+                //     static partial void M10(); 
+                Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "M10").WithArguments("I1.M10()").WithLocation(13, 25),
                 // (18,17): error CS8701: Target runtime doesn't support default interface implementation.
                 //     static void M6() {}
                 Diagnostic(ErrorCode.ERR_RuntimeDoesNotSupportDefaultInterfaceImplementation, "M6").WithLocation(18, 17),

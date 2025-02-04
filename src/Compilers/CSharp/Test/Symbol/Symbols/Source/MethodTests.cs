@@ -2532,7 +2532,10 @@ public partial class C
 }
 ";
             var comp = CreateCompilation(source);
-            comp.VerifyDiagnostics();
+            comp.VerifyDiagnostics(
+                // (4,26): warning CS0626: Method, operator, or accessor 'C.M()' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+                //     private partial void M();
+                Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "M").WithArguments("C.M()").WithLocation(4, 26));
 
             var syntax = comp.SyntaxTrees[0];
             var model = comp.GetSemanticModel(syntax);

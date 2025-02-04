@@ -1499,7 +1499,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                 if (IsExtern
                     && !IsAbstract
-                    && !this.IsPartialMember()
                     && GetInMethodSyntaxNode() is null
                     && boundAttributes.IsEmpty
                     && !this.ContainingType.IsComImport)

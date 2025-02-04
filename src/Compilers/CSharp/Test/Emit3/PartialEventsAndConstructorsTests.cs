@@ -754,7 +754,16 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
                     Type load failed.
                     """,
             })
-            .VerifyDiagnostics();
+            .VerifyDiagnostics(
+                // (3,33): warning CS0626: Method, operator, or accessor 'C.E.remove' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+                //     partial event System.Action E;
+                Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "E").WithArguments("C.E.remove").WithLocation(3, 33),
+                // (3,33): warning CS0626: Method, operator, or accessor 'C.E.add' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+                //     partial event System.Action E;
+                Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "E").WithArguments("C.E.add").WithLocation(3, 33),
+                // (6,13): warning CS0824: Constructor 'C.C()' is marked external
+                //     partial C();
+                Diagnostic(ErrorCode.WRN_ExternCtorNoImplementation, "C").WithArguments("C.C()").WithLocation(6, 13));
 
         static void verifySource(ModuleSymbol module)
         {
@@ -855,6 +864,9 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (3,40): error CS9401: Partial member 'C.E' must have a definition part.
             //     extern partial event System.Action E;
             Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "E").WithArguments("C.E").WithLocation(3, 40),
+            // (3,40): warning CS0626: Method, operator, or accessor 'C.E.remove' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+            //     extern partial event System.Action E;
+            Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "E").WithArguments("C.E.remove").WithLocation(3, 40),
             // (4,33): error CS9403: Partial member 'C.E' may not have multiple implementing declarations.
             //     partial event System.Action E { add { } remove { } }
             Diagnostic(ErrorCode.ERR_PartialMemberDuplicateImplementation, "E").WithArguments("C.E").WithLocation(4, 33),
@@ -864,6 +876,9 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (6,20): error CS9401: Partial member 'C.C()' must have a definition part.
             //     extern partial C();
             Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "C").WithArguments("C.C()").WithLocation(6, 20),
+            // (6,20): warning CS0824: Constructor 'C.C()' is marked external
+            //     extern partial C();
+            Diagnostic(ErrorCode.WRN_ExternCtorNoImplementation, "C").WithArguments("C.C()").WithLocation(6, 20),
             // (7,13): error CS9403: Partial member 'C.C()' may not have multiple implementing declarations.
             //     partial C() { }
             Diagnostic(ErrorCode.ERR_PartialMemberDuplicateImplementation, "C").WithArguments("C.C()").WithLocation(7, 13),

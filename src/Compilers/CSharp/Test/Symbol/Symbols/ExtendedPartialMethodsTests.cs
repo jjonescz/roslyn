@@ -1068,6 +1068,9 @@ partial class C
                 // (6,41): error CS0759: No defining declaration found for implementing declaration of partial method 'C.M1()'
                 //     internal static extern partial void M1();
                 Diagnostic(ErrorCode.ERR_PartialMethodMustHaveLatent, "M1").WithArguments("C.M1()").WithLocation(6, 41),
+                // (6,41): warning CS0626: Method, operator, or accessor 'C.M1()' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+                //     internal static extern partial void M1();
+                Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "M1").WithArguments("C.M1()").WithLocation(6, 41),
                 // (9,41): error CS0757: A partial method may not have multiple implementing declarations
                 //     internal static extern partial void M1();
                 Diagnostic(ErrorCode.ERR_PartialMethodOnlyOneActual, "M1").WithLocation(9, 41),
@@ -1207,6 +1210,13 @@ public partial class C
   IL_0005:  ret
 }";
 
+            var expectedDiagnostics = new[]
+            {
+                // (4,32): warning CS0626: Method, operator, or accessor 'C.M1()' is marked external and has no attributes on it. Consider adding a DllImport attribute to specify the external implementation.
+                //     public static partial void M1();
+                Diagnostic(ErrorCode.WRN_ExternMethodNoImplementation, "M1").WithArguments("C.M1()").WithLocation(4, 32)
+            };
+
             var verifier = CompileAndVerify(
                 text1,
                 parseOptions: TestOptions.RegularWithExtendedPartialMethods,
@@ -1214,7 +1224,7 @@ public partial class C
                 symbolValidator: module => validator(module, isSource: false),
                 // PEVerify fails when extern methods lack an implementation
                 verify: Verification.Skipped);
-            verifier.VerifyDiagnostics();
+            verifier.VerifyDiagnostics(expectedDiagnostics);
             verifier.VerifyIL("C.M2", expectedIL);
 
             verifier = CompileAndVerify(
@@ -1224,7 +1234,7 @@ public partial class C
                 symbolValidator: module => validator(module, isSource: false),
                 // PEVerify fails when extern methods lack an implementation
                 verify: Verification.Skipped);
-            verifier.VerifyDiagnostics();
+            verifier.VerifyDiagnostics(expectedDiagnostics);
             verifier.VerifyIL("C.M2", expectedIL);
 
             static void validator(ModuleSymbol module, bool isSource)
