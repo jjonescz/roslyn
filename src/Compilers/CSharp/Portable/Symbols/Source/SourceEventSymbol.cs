@@ -58,11 +58,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             _modifiers = MakeModifiers(modifiers, isExplicitInterfaceImplementation, isFieldLike, _location, diagnostics, out _, out bool hasExplicitAccessModifier);
             _hasExplicitAccessModifier = hasExplicitAccessModifier;
             this.CheckAccessibility(_location, diagnostics, isExplicitInterfaceImplementation);
-
-            if (IsPartial)
-            {
-                ModifierUtils.CheckFeatureAvailabilityForPartialEventsAndConstructors(_location, diagnostics);
-            }
         }
 
         public Location Location
@@ -644,6 +639,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 diagnostics.Add(ErrorCode.ERR_NewVirtualInSealed, location, this, ContainingType);
             }
 
+            if (IsPartial)
+            {
+                ModifierUtils.CheckFeatureAvailabilityForPartialEventsAndConstructors(_location, diagnostics);
+            }
+
             diagnostics.Add(location, useSiteInfo);
         }
 
@@ -868,14 +868,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         internal bool IsPartial => (this.Modifiers & DeclarationModifiers.Partial) != 0;
 
         /// <summary>
-        /// <see langword="true"/> if this symbol corresponds to a semi-colon body declaration.
-        /// <see langword="false"/> if this symbol corresponds to a declaration with custom <see langword="add"/> and <see langword="remove"/> accessors.
+        /// <see langword="false"/> if this symbol corresponds to a semi-colon body declaration.
+        /// <see langword="true"/> if this symbol corresponds to a declaration with custom <see langword="add"/> and <see langword="remove"/> accessors.
         /// </summary>
-        protected abstract bool IsFieldLike { get; }
+        protected abstract bool AccessorsHaveImplementation { get; }
 
-        internal bool IsPartialDefinition => IsPartial && IsFieldLike && !HasExternModifier;
+        internal bool IsPartialDefinition => IsPartial && !AccessorsHaveImplementation && !HasExternModifier;
 
-        internal bool IsPartialImplementation => IsPartial && (!IsFieldLike || HasExternModifier);
+        internal bool IsPartialImplementation => IsPartial && (AccessorsHaveImplementation || HasExternModifier);
 
         internal SourceEventSymbol? OtherPartOfPartial => _otherPartOfPartial;
 
@@ -892,14 +892,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             Debug.Assert(definition.IsPartialDefinition);
             Debug.Assert(implementation.IsPartialImplementation);
 
-            Debug.Assert(definition._otherPartOfPartial is not { } alreadySetImplPart || alreadySetImplPart == implementation);
-            Debug.Assert(implementation._otherPartOfPartial is not { } alreadySetDefPart || alreadySetDefPart == definition);
+            Debug.Assert(definition._otherPartOfPartial is not { } alreadySetImplPart || ReferenceEquals(alreadySetImplPart, implementation));
+            Debug.Assert(implementation._otherPartOfPartial is not { } alreadySetDefPart || ReferenceEquals(alreadySetDefPart, definition));
 
             definition._otherPartOfPartial = implementation;
             implementation._otherPartOfPartial = definition;
 
-            Debug.Assert(definition._otherPartOfPartial == implementation);
-            Debug.Assert(implementation._otherPartOfPartial == definition);
+            Debug.Assert(ReferenceEquals(definition._otherPartOfPartial, implementation));
+            Debug.Assert(ReferenceEquals(implementation._otherPartOfPartial, definition));
         }
     }
 }
