@@ -1885,12 +1885,6 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (10,50): error CS8800: Both partial member declarations must have identical combinations of 'virtual', 'override', 'sealed', and 'new' modifiers.
             //     protected sealed partial event System.Action E { add { } remove { } }
             Diagnostic(ErrorCode.ERR_PartialMemberExtendedModDifference, "E").WithLocation(10, 50),
-            // (10,54): error CS0505: 'C2.E.add': cannot override because 'C1.E.add' is not a function
-            //     protected sealed partial event System.Action E { add { } remove { } }
-            Diagnostic(ErrorCode.ERR_CantOverrideNonFunction, "add").WithArguments("C2.E.add", "C1.E.add").WithLocation(10, 54),
-            // (10,62): error CS0505: 'C2.E.remove': cannot override because 'C1.E.remove' is not a function
-            //     protected sealed partial event System.Action E { add { } remove { } }
-            Diagnostic(ErrorCode.ERR_CantOverrideNonFunction, "remove").WithArguments("C2.E.remove", "C1.E.remove").WithLocation(10, 62),
             // (12,43): error CS8800: Both partial member declarations must have identical combinations of 'virtual', 'override', 'sealed', and 'new' modifiers.
             //     protected partial event System.Action F { add { } remove { } }
             Diagnostic(ErrorCode.ERR_PartialMemberExtendedModDifference, "F").WithLocation(12, 43));
