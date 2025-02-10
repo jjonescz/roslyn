@@ -2,6 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -2055,17 +2057,23 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
     [Theory]
     [InlineData("A(1)", "B(2)")]
     [InlineData("B(2)", "A(1)")]
+    [InlineData("A(1), B(1)", "A(2), B(2)")]
     public void Attributes(string declAttributes, string implAttributes)
     {
         var source1 = """
-            class A : System.Attribute { public A(int i) { } }
-            class B : System.Attribute { public B(int i) { } }
+            using System;
+
+            [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+            class A : Attribute { public A(int i) { } }
+
+            [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+            class B : Attribute { public B(int i) { } }
             """;
 
         var source2 = $$"""
             public partial class C
             {
-                [{{declAttributes}}] public partial C(int x);
+                [{{declAttributes}}] public partial C([{{declAttributes}}] int x);
                 [{{declAttributes}}] public partial event System.Action E;
             }
             """;
@@ -2073,7 +2081,7 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
         var source3 = $$"""
             public partial class C
             {
-                [{{implAttributes}}] public partial C(int x) { }
+                [{{implAttributes}}] public partial C([{{implAttributes}}] int x) { }
                 [{{implAttributes}}] public partial event System.Action E { add { } remove { } }
             }
             """;
@@ -2091,16 +2099,24 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
         void validate(ModuleSymbol module)
         {
             var ctor = module.GlobalNamespace.GetMember<MethodSymbol>("C..ctor");
-            AssertEx.Equal([declAttributes, implAttributes], ctor.GetAttributes().ToStrings());
+            assertEqual([declAttributes, implAttributes], ctor.GetAttributes());
+
+            var ctorParam = ctor.GetParameters().Single();
+            assertEqual([implAttributes, declAttributes], ctorParam.GetAttributes());
 
             var ev = module.GlobalNamespace.GetMember<EventSymbol>("C.E");
-            AssertEx.Equal([declAttributes, implAttributes], ev.GetAttributes().ToStrings());
+            assertEqual([declAttributes, implAttributes], ev.GetAttributes());
 
             if (module is SourceModuleSymbol)
             {
-                AssertEx.Equal([declAttributes, implAttributes], ((SourceConstructorSymbol)ctor).PartialImplementationPart!.GetAttributes().ToStrings());
-                AssertEx.Equal([declAttributes, implAttributes], ((SourceEventSymbol)ev).PartialImplementationPart!.GetAttributes().ToStrings());
+                assertEqual([declAttributes, implAttributes], ((SourceConstructorSymbol)ctor).PartialImplementationPart!.GetAttributes());
+                assertEqual([declAttributes, implAttributes], ((SourceEventSymbol)ev).PartialImplementationPart!.GetAttributes());
             }
+        }
+
+        static void assertEqual(IEnumerable<string> expected, ImmutableArray<CSharpAttributeData> actual)
+        {
+            AssertEx.Equal(string.Join(", ", expected), actual.ToStrings().Join(", "));
         }
     }
 }
