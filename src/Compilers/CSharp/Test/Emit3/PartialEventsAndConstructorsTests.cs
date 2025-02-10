@@ -952,7 +952,7 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             Diagnostic(ErrorCode.ERR_MemberAlreadyExists, "C").WithArguments("C", "C").WithLocation(7, 13));
     }
 
-    [Fact(Skip = "PROTOTYPE: needs attribute merging")]
+    [Fact]
     public void Extern_DllImport()
     {
         var source = """
@@ -1006,7 +1006,7 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
         }
     }
 
-    [Fact(Skip = "PROTOTYPE: needs attribute merging")]
+    [Fact]
     public void Extern_InternalCall()
     {
         var source = """
@@ -2050,5 +2050,57 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             // (10,13): error CS8988: The 'scoped' modifier of parameter 'x' doesn't match partial definition.
             //     partial C2(scoped ref int x) { }
             Diagnostic(ErrorCode.ERR_ScopedMismatchInParameterOfPartial, "C2").WithArguments("x").WithLocation(10, 13));
+    }
+
+    [Theory]
+    [InlineData("A(1)", "B(2)")]
+    [InlineData("B(2)", "A(1)")]
+    public void Attributes(string declAttributes, string implAttributes)
+    {
+        var source1 = """
+            class A : System.Attribute { public A(int i) { } }
+            class B : System.Attribute { public B(int i) { } }
+            """;
+
+        var source2 = $$"""
+            public partial class C
+            {
+                [{{declAttributes}}] public partial C(int x);
+                [{{declAttributes}}] public partial event System.Action E;
+            }
+            """;
+
+        var source3 = $$"""
+            public partial class C
+            {
+                [{{implAttributes}}] public partial C(int x) { }
+                [{{implAttributes}}] public partial event System.Action E { add { } remove { } }
+            }
+            """;
+
+        CompileAndVerify([source1, source2, source3],
+            symbolValidator: validate,
+            sourceSymbolValidator: validate)
+            .VerifyDiagnostics();
+
+        CompileAndVerify([source1, source3, source2],
+            symbolValidator: validate,
+            sourceSymbolValidator: validate)
+            .VerifyDiagnostics();
+
+        void validate(ModuleSymbol module)
+        {
+            var ctor = module.GlobalNamespace.GetMember<MethodSymbol>("C..ctor");
+            AssertEx.Equal([declAttributes, implAttributes], ctor.GetAttributes().ToStrings());
+
+            var ev = module.GlobalNamespace.GetMember<EventSymbol>("C.E");
+            AssertEx.Equal([declAttributes, implAttributes], ev.GetAttributes().ToStrings());
+
+            if (module is SourceModuleSymbol)
+            {
+                AssertEx.Equal([declAttributes, implAttributes], ((SourceConstructorSymbol)ctor).PartialImplementationPart!.GetAttributes().ToStrings());
+                AssertEx.Equal([declAttributes, implAttributes], ((SourceEventSymbol)ev).PartialImplementationPart!.GetAttributes().ToStrings());
+            }
+        }
     }
 }
