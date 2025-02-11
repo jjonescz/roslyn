@@ -2765,5 +2765,37 @@ public class Test1
 } // end of class Test1
 ".Replace("[netstandard]", ExecutionConditionUtil.IsDesktop ? "[mscorlib]" : "[netstandard]"));
         }
+
+        [Fact]
+        public void Extern_Attributes()
+        {
+            var source = """
+                using System;
+
+                [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+                public class A : Attribute { public A(int i) { } }
+
+                public class C
+                {
+                    [A(1)] [method: A(2)] [param: A(3)] public extern event Action E;
+                }
+                """;
+            CompileAndVerify(source,
+                symbolValidator: validate,
+                sourceSymbolValidator: validate)
+                .VerifyDiagnostics();
+
+            static void validate(ModuleSymbol module)
+            {
+                ReadOnlySpan<string> compiledGeneratedAttr = module is SourceModuleSymbol ? [] : ["System.Runtime.CompilerServices.CompilerGeneratedAttribute"];
+
+                var e = module.GlobalNamespace.GetMember<EventSymbol>("C.E");
+                AssertEx.Equal(["A(1)"], e.GetAttributes().ToStrings());
+                AssertEx.Equal([.. compiledGeneratedAttr, "A(2)"], e.AddMethod!.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(3)"], e.AddMethod.Parameters.Single().GetAttributes().ToStrings());
+                AssertEx.Equal([.. compiledGeneratedAttr, "A(2)"], e.RemoveMethod!.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(3)"], e.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+            }
+        }
     }
 }
