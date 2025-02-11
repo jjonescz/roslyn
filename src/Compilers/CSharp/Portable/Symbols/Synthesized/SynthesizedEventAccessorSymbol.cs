@@ -50,6 +50,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
+                Debug.Assert(PartialImplementationPart is null);
+
                 if (PartialDefinitionPart is { } definitionPart)
                 {
                     return (SourceMemberMethodSymbol)definitionPart;
