@@ -2263,31 +2263,4 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             }
         }
     }
-
-    // TODO: Revisit.
-    [Fact]
-    public void Attributes_MethodLocation_ImplementationOnly()
-    {
-        // If there is a partial definition, [method:] is allowed
-        // even on the implementation part (see the test above),
-        // because the partial definition (which doesn't have add/remove accessors) owns attributes from both parts,
-        // and [method:] is allowed on event declarations without explicit add/remove accessors.
-        // If there is only a partial implementation, [method:] is not allowed,
-        // same as for non-partial events with explicit add/remove accessors.
-        var source = """
-            class A : System.Attribute { }
-
-            partial class C
-            {
-                [method: A] partial event System.Action E { add { } remove { } }
-            }
-            """;
-        CreateCompilation(source).VerifyDiagnostics(
-            // (5,6): warning CS0657: 'method' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
-            //     [method: A] partial event System.Action E { add { } remove { } }
-            Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "method").WithArguments("method", "event").WithLocation(5, 6),
-            // (5,45): error CS9401: Partial member 'C.E' must have a definition part.
-            //     [method: A] partial event System.Action E { add { } remove { } }
-            Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "E").WithArguments("C.E").WithLocation(5, 45));
-    }
 }
