@@ -2214,21 +2214,18 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             symbolValidator: validate,
             sourceSymbolValidator: validate)
             .VerifyDiagnostics(
-                // (8,29): warning CS0657: 'param' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, event'. All attributes in this block will be ignored.
+                // (8,13): warning CS0657: 'method' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
                 //     [A(1)] [method: A(10)] [param: A(100)] public partial event Action E;
-                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "method, event").WithLocation(8, 29),
-                // (9,29): warning CS0657: 'param' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, event'. All attributes in this block will be ignored.
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "method").WithArguments("method", "event").WithLocation(8, 13),
+                // (8,29): warning CS0657: 'param' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
+                //     [A(1)] [method: A(10)] [param: A(100)] public partial event Action E;
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "event").WithLocation(8, 29),
+                // (9,13): warning CS0657: 'method' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
                 //     [A(2)] [method: A(20)] [param: A(200)] public partial event Action E
-                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "method, event").WithLocation(9, 29),
-                // (15,29): warning CS0657: 'param' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, event'. All attributes in this block will be ignored.
-                //     [A(1)] [method: A(10)] [param: A(100)] public partial event Action F;
-                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "method, event").WithLocation(15, 29),
-                // (16,29): warning CS0657: 'param' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, event'. All attributes in this block will be ignored.
-                //     [A(2)] [method: A(20)] [param: A(200)] public extern partial event Action F;
-                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "method, event").WithLocation(16, 29));
-
-        // TODO: 10, 20, 30, 40 on E should have warning
-        // TODO: no warnings on the extern event (it's a pre-existing issue though, not related to partial)
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "method").WithArguments("method", "event").WithLocation(9, 13),
+                // (9,29): warning CS0657: 'param' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
+                //     [A(2)] [method: A(20)] [param: A(200)] public partial event Action E
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "event").WithLocation(9, 29));
 
         static void validate(ModuleSymbol module)
         {
