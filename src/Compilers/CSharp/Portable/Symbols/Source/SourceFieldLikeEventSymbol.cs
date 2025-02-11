@@ -272,6 +272,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                             return AssociatedEvent;
 
                         case null:
+                            // Might happen in error scenarios.
+                            return this;
+
                         default:
                             Debug.Assert(false);
                             return this;
@@ -295,6 +298,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                             synthesizedImplementationPart.AssociatedEvent.AttributeDeclarationSyntaxList);
 
                     case null:
+                        // Might happen in error scenarios.
+                        return OneOrMany<SyntaxList<AttributeListSyntax>>.Empty;
+
                     default:
                         Debug.Assert(false);
                         return OneOrMany<SyntaxList<AttributeListSyntax>>.Empty;
