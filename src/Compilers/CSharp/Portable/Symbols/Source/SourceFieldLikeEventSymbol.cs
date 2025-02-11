@@ -256,6 +256,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return null;
             }
 
+            protected override SourceMemberMethodSymbol? BoundAttributesSource
+            {
+                get
+                {
+                    return IsExtern && this.MethodKind == MethodKind.EventAdd
+                        ? (SourceMemberMethodSymbol?)this.AssociatedEvent.RemoveMethod
+                        : null;
+                }
+            }
+
             protected override IAttributeTargetSymbol AttributeOwner
             {
                 get

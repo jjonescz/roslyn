@@ -77,6 +77,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
+#nullable enable
+        protected override SourceMemberMethodSymbol? BoundAttributesSource => (SourceMemberMethodSymbol?)PartialDefinitionPart;
+
         internal override OneOrMany<SyntaxList<AttributeListSyntax>> GetAttributeDeclarations()
         {
             Debug.Assert(PartialImplementationPart is null);

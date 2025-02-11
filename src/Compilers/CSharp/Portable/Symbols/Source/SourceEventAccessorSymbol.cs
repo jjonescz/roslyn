@@ -235,7 +235,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         }
 
 #nullable enable
-        protected override SourceMemberMethodSymbol? BoundAttributesSource => (SourceMemberMethodSymbol?)PartialDefinitionPart;
+        protected abstract override SourceMemberMethodSymbol? BoundAttributesSource { get; }
 
         public sealed override MethodSymbol? PartialImplementationPart => _event is { IsPartialDefinition: true, OtherPartOfPartial: { } other }
             ? (MethodKind == MethodKind.EventAdd ? other.AddMethod : other.RemoveMethod)
