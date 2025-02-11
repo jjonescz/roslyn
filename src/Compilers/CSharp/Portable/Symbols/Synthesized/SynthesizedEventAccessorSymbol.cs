@@ -50,6 +50,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
+                if (PartialDefinitionPart is { } definitionPart)
+                {
+                    return (SourceMemberMethodSymbol)definitionPart;
+                }
+
                 return this.MethodKind == MethodKind.EventAdd
                     ? (SourceMemberMethodSymbol)this.AssociatedEvent.RemoveMethod
                     : null;
@@ -67,7 +72,32 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal override OneOrMany<SyntaxList<AttributeListSyntax>> GetAttributeDeclarations()
         {
-            return OneOrMany.Create(this.AssociatedEvent.AttributeDeclarationSyntaxList);
+            // If we are asking this question on a partial implementation symbol,
+            // it must be from a context which prefers to order implementation attributes before definition attributes.
+            // For example, the 'value' parameter of an add or remove accessor.
+            if (PartialDefinitionPart is { } definitionPart)
+            {
+                return OneOrMany.Create(
+                    this.AttributeDeclarationList,
+                    ((SourceEventAccessorSymbol)definitionPart).AttributeDeclarationList);
+            }
+
+            if (PartialImplementationPart is { } implementationPart)
+            {
+                return OneOrMany.Create(
+                    this.AttributeDeclarationList,
+                    ((SourceEventAccessorSymbol)implementationPart).AttributeDeclarationList);
+            }
+
+            return OneOrMany.Create(this.AttributeDeclarationList);
+        }
+
+        internal override SyntaxList<AttributeListSyntax> AttributeDeclarationList
+        {
+            get
+            {
+                return this.AssociatedEvent.AttributeDeclarationSyntaxList;
+            }
         }
 
         internal override void AddSynthesizedAttributes(PEModuleBuilder moduleBuilder, ref ArrayBuilder<CSharpAttributeData> attributes)

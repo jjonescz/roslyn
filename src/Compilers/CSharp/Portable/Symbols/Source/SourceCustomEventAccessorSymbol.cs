@@ -79,7 +79,25 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal override OneOrMany<SyntaxList<AttributeListSyntax>> GetAttributeDeclarations()
         {
-            return OneOrMany.Create(GetSyntax().AttributeLists);
+            // If we are asking this question on a partial implementation symbol,
+            // it must be from a context which prefers to order implementation attributes before definition attributes.
+            // For example, the 'value' parameter of an add or remove accessor.
+            if (PartialDefinitionPart is { } definitionPart)
+            {
+                return OneOrMany.Create(
+                    this.AttributeDeclarationList,
+                    ((SourceEventAccessorSymbol)definitionPart).AttributeDeclarationList);
+            }
+
+            return OneOrMany.Create(this.AttributeDeclarationList);
+        }
+
+        internal override SyntaxList<AttributeListSyntax> AttributeDeclarationList
+        {
+            get
+            {
+                return this.GetSyntax().AttributeLists;
+            }
         }
 
         public override bool IsImplicitlyDeclared

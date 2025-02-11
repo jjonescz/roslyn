@@ -2187,4 +2187,101 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             AssertEx.Equal(string.Join(", ", expected), actual.ToStrings().Join(", "));
         }
     }
+
+    [Fact]
+    public void Attributes_Locations()
+    {
+        var source = """
+            using System;
+
+            [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+            public class A : Attribute { public A(int i) { } }
+
+            partial class C
+            {
+                [A(1)] [method: A(10)] [param: A(100)] public partial event Action E;
+                [A(2)] [method: A(20)] [param: A(200)] public partial event Action E
+                {
+                    [A(3)] [method: A(30)] [param: A(300)] add { }
+                    [A(4)] [method: A(40)] [param: A(400)] remove { }
+                }
+
+                [A(1)] [method: A(10)] [param: A(100)] public partial event Action F;
+                [A(2)] [method: A(20)] [param: A(200)] public extern partial event Action F;
+            }
+            """;
+        CompileAndVerify(source,
+            symbolValidator: validate,
+            sourceSymbolValidator: validate)
+            .VerifyDiagnostics(
+                // (9,29): warning CS0657: 'param' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, event'. All attributes in this block will be ignored.
+                //     [A(2)] [method: A(20)] [param: A(200)] public partial event Action E
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "method, event").WithLocation(9, 29));
+
+        // TODO: A(3), A(4) should be present
+        // TODO: A(20) should have warning
+
+        static void validate(ModuleSymbol module)
+        {
+            var e = module.GlobalNamespace.GetMember<EventSymbol>("C.E");
+            AssertEx.Equal(["A(1)", "A(2)"], e.GetAttributes().ToStrings());
+            AssertEx.Equal(["A(10)", "A(30)"], e.AddMethod!.GetAttributes().ToStrings());
+            AssertEx.Equal(["A(300)", "A(100)"], e.AddMethod.Parameters.Single().GetAttributes().ToStrings());
+            AssertEx.Equal(["A(10)", "A(40)"], e.RemoveMethod!.GetAttributes().ToStrings());
+            AssertEx.Equal(["A(400)", "A(100)"], e.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+
+            if (module is SourceModuleSymbol)
+            {
+                var eImpl = ((SourceEventSymbol)e).PartialImplementationPart!;
+                AssertEx.Equal(["A(1)", "A(2)"], eImpl.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(10)", "A(30)"], eImpl.AddMethod!.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(300)", "A(100)"], eImpl.AddMethod.Parameters.Single().GetAttributes().ToStrings());
+                AssertEx.Equal(["A(10)", "A(40)"], eImpl.RemoveMethod!.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(400)", "A(100)"], eImpl.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+            }
+
+            var f = module.GlobalNamespace.GetMember<EventSymbol>("C.F");
+            AssertEx.Equal(["A(1)", "A(2)"], f.GetAttributes().ToStrings());
+            AssertEx.Equal(["A(10)", "A(20)"], f.AddMethod!.GetAttributes().ToStrings());
+            AssertEx.Equal(["A(200)", "A(100)"], f.AddMethod.Parameters.Single().GetAttributes().ToStrings());
+            AssertEx.Equal(["A(10)", "A(20)"], f.RemoveMethod!.GetAttributes().ToStrings());
+            AssertEx.Equal(["A(200)", "A(100)"], f.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+            if (module is SourceModuleSymbol)
+            {
+                var fImpl = ((SourceEventSymbol)f).PartialImplementationPart!;
+                AssertEx.Equal(["A(1)", "A(2)"], fImpl.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(10)", "A(20)"], fImpl.AddMethod!.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(200)", "A(100)"], fImpl.AddMethod.Parameters.Single().GetAttributes().ToStrings());
+                AssertEx.Equal(["A(10)", "A(20)"], fImpl.RemoveMethod!.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(200)", "A(100)"], fImpl.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+            }
+        }
+    }
+
+    // TODO: Revisit.
+    [Fact]
+    public void Attributes_MethodLocation_ImplementationOnly()
+    {
+        // If there is a partial definition, [method:] is allowed
+        // even on the implementation part (see the test above),
+        // because the partial definition (which doesn't have add/remove accessors) owns attributes from both parts,
+        // and [method:] is allowed on event declarations without explicit add/remove accessors.
+        // If there is only a partial implementation, [method:] is not allowed,
+        // same as for non-partial events with explicit add/remove accessors.
+        var source = """
+            class A : System.Attribute { }
+
+            partial class C
+            {
+                [method: A] partial event System.Action E { add { } remove { } }
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (5,6): warning CS0657: 'method' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
+            //     [method: A] partial event System.Action E { add { } remove { } }
+            Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "method").WithArguments("method", "event").WithLocation(5, 6),
+            // (5,45): error CS9401: Partial member 'C.E' must have a definition part.
+            //     [method: A] partial event System.Action E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_PartialMemberMissingDefinition, "E").WithArguments("C.E").WithLocation(5, 45));
+    }
 }

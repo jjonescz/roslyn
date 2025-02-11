@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Threading;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp.Symbols
 {
@@ -238,6 +239,30 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             internal override ExecutableCodeBinder? TryGetBodyBinder(BinderFactory? binderFactoryOpt = null, bool ignoreAccessibility = false)
             {
                 return null;
+            }
+
+            protected override IAttributeTargetSymbol AttributeOwner => AssociatedEvent;
+
+            internal override OneOrMany<SyntaxList<AttributeListSyntax>> GetAttributeDeclarations()
+            {
+                Debug.Assert(PartialDefinitionPart is null);
+
+                if (PartialImplementationPart is { } implementationPart)
+                {
+                    return OneOrMany.Create(
+                        this.AttributeDeclarationList,
+                        ((SourceEventAccessorSymbol)implementationPart).AttributeDeclarationList);
+                }
+
+                return OneOrMany.Create(this.AttributeDeclarationList);
+            }
+
+            internal override SyntaxList<AttributeListSyntax> AttributeDeclarationList
+            {
+                get
+                {
+                    return this.AssociatedEvent.AttributeDeclarationSyntaxList;
+                }
             }
         }
     }
