@@ -4,7 +4,6 @@
 
 #nullable disable
 
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Immutable;
 using System.Diagnostics;
 
@@ -236,8 +235,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         }
 
 #nullable enable
-        internal abstract SyntaxList<AttributeListSyntax> AttributeDeclarationList { get; }
-
         protected override SourceMemberMethodSymbol? BoundAttributesSource => (SourceMemberMethodSymbol?)PartialDefinitionPart;
 
         public sealed override MethodSymbol? PartialImplementationPart => _event is { IsPartialDefinition: true, OtherPartOfPartial: { } other }

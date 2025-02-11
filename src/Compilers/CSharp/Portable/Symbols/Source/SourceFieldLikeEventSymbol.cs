@@ -241,27 +241,48 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return null;
             }
 
-            protected override IAttributeTargetSymbol AttributeOwner => AssociatedEvent;
+            protected override IAttributeTargetSymbol AttributeOwner
+            {
+                get
+                {
+                    Debug.Assert(PartialDefinitionPart is null);
+
+                    switch (PartialImplementationPart)
+                    {
+                        case SourceCustomEventAccessorSymbol:
+                            return this;
+
+                        case SynthesizedEventAccessorSymbol:
+                            Debug.Assert(IsExtern);
+                            return AssociatedEvent;
+
+                        case null:
+                        default:
+                            Debug.Assert(false);
+                            return this;
+                    }
+                }
+            }
 
             internal override OneOrMany<SyntaxList<AttributeListSyntax>> GetAttributeDeclarations()
             {
                 Debug.Assert(PartialDefinitionPart is null);
 
-                if (PartialImplementationPart is { } implementationPart)
+                switch (PartialImplementationPart)
                 {
-                    return OneOrMany.Create(
-                        this.AttributeDeclarationList,
-                        ((SourceEventAccessorSymbol)implementationPart).AttributeDeclarationList);
-                }
+                    case SourceCustomEventAccessorSymbol customImplementationPart:
+                        return OneOrMany.Create(customImplementationPart.GetSyntax().AttributeLists);
 
-                return OneOrMany.Create(this.AttributeDeclarationList);
-            }
+                    case SynthesizedEventAccessorSymbol synthesizedImplementationPart:
+                        Debug.Assert(IsExtern);
+                        return OneOrMany.Create(
+                            AssociatedEvent.AttributeDeclarationSyntaxList,
+                            synthesizedImplementationPart.AssociatedEvent.AttributeDeclarationSyntaxList);
 
-            internal override SyntaxList<AttributeListSyntax> AttributeDeclarationList
-            {
-                get
-                {
-                    return this.AssociatedEvent.AttributeDeclarationSyntaxList;
+                    case null:
+                    default:
+                        Debug.Assert(false);
+                        return OneOrMany<SyntaxList<AttributeListSyntax>>.Empty;
                 }
             }
         }

@@ -78,26 +78,18 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             if (PartialDefinitionPart is { } definitionPart)
             {
                 return OneOrMany.Create(
-                    this.AttributeDeclarationList,
-                    ((SourceEventAccessorSymbol)definitionPart).AttributeDeclarationList);
+                    this.AssociatedEvent.AttributeDeclarationSyntaxList,
+                    ((SourceEventAccessorSymbol)definitionPart).AssociatedEvent.AttributeDeclarationSyntaxList);
             }
 
             if (PartialImplementationPart is { } implementationPart)
             {
                 return OneOrMany.Create(
-                    this.AttributeDeclarationList,
-                    ((SourceEventAccessorSymbol)implementationPart).AttributeDeclarationList);
+                    this.AssociatedEvent.AttributeDeclarationSyntaxList,
+                    ((SourceEventAccessorSymbol)implementationPart).AssociatedEvent.AttributeDeclarationSyntaxList);
             }
 
-            return OneOrMany.Create(this.AttributeDeclarationList);
-        }
-
-        internal override SyntaxList<AttributeListSyntax> AttributeDeclarationList
-        {
-            get
-            {
-                return this.AssociatedEvent.AttributeDeclarationSyntaxList;
-            }
+            return OneOrMany.Create(this.AssociatedEvent.AttributeDeclarationSyntaxList);
         }
 
         internal override void AddSynthesizedAttributes(PEModuleBuilder moduleBuilder, ref ArrayBuilder<CSharpAttributeData> attributes)

@@ -2214,30 +2214,39 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             symbolValidator: validate,
             sourceSymbolValidator: validate)
             .VerifyDiagnostics(
+                // (8,29): warning CS0657: 'param' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, event'. All attributes in this block will be ignored.
+                //     [A(1)] [method: A(10)] [param: A(100)] public partial event Action E;
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "method, event").WithLocation(8, 29),
                 // (9,29): warning CS0657: 'param' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, event'. All attributes in this block will be ignored.
                 //     [A(2)] [method: A(20)] [param: A(200)] public partial event Action E
-                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "method, event").WithLocation(9, 29));
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "method, event").WithLocation(9, 29),
+                // (15,29): warning CS0657: 'param' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, event'. All attributes in this block will be ignored.
+                //     [A(1)] [method: A(10)] [param: A(100)] public partial event Action F;
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "method, event").WithLocation(15, 29),
+                // (16,29): warning CS0657: 'param' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, event'. All attributes in this block will be ignored.
+                //     [A(2)] [method: A(20)] [param: A(200)] public extern partial event Action F;
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "method, event").WithLocation(16, 29));
 
-        // TODO: A(3), A(4) should be present
-        // TODO: A(20) should have warning
+        // TODO: 10, 20, 30, 40 on E should have warning
+        // TODO: no warnings on the extern event (it's a pre-existing issue though, not related to partial)
 
         static void validate(ModuleSymbol module)
         {
             var e = module.GlobalNamespace.GetMember<EventSymbol>("C.E");
             AssertEx.Equal(["A(1)", "A(2)"], e.GetAttributes().ToStrings());
-            AssertEx.Equal(["A(10)", "A(30)"], e.AddMethod!.GetAttributes().ToStrings());
-            AssertEx.Equal(["A(300)", "A(100)"], e.AddMethod.Parameters.Single().GetAttributes().ToStrings());
-            AssertEx.Equal(["A(10)", "A(40)"], e.RemoveMethod!.GetAttributes().ToStrings());
-            AssertEx.Equal(["A(400)", "A(100)"], e.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+            AssertEx.Equal(["A(3)", "A(30)"], e.AddMethod!.GetAttributes().ToStrings());
+            AssertEx.Equal(["A(300)"], e.AddMethod.Parameters.Single().GetAttributes().ToStrings());
+            AssertEx.Equal(["A(4)", "A(40)"], e.RemoveMethod!.GetAttributes().ToStrings());
+            AssertEx.Equal(["A(400)"], e.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
 
             if (module is SourceModuleSymbol)
             {
                 var eImpl = ((SourceEventSymbol)e).PartialImplementationPart!;
                 AssertEx.Equal(["A(1)", "A(2)"], eImpl.GetAttributes().ToStrings());
-                AssertEx.Equal(["A(10)", "A(30)"], eImpl.AddMethod!.GetAttributes().ToStrings());
-                AssertEx.Equal(["A(300)", "A(100)"], eImpl.AddMethod.Parameters.Single().GetAttributes().ToStrings());
-                AssertEx.Equal(["A(10)", "A(40)"], eImpl.RemoveMethod!.GetAttributes().ToStrings());
-                AssertEx.Equal(["A(400)", "A(100)"], eImpl.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+                AssertEx.Equal(["A(3)", "A(30)"], eImpl.AddMethod!.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(300)"], eImpl.AddMethod.Parameters.Single().GetAttributes().ToStrings());
+                AssertEx.Equal(["A(4)", "A(40)"], eImpl.RemoveMethod!.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(400)"], eImpl.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
             }
 
             var f = module.GlobalNamespace.GetMember<EventSymbol>("C.F");
