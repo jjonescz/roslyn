@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -818,12 +819,18 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
                             class [mscorlib]System.Action 'value'
                         ) cil managed 
                     {
+                        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+                            01 00 00 00
+                        )
                     } // end of method C::add_E
                     .method private hidebysig specialname 
                         instance void remove_E (
                             class [mscorlib]System.Action 'value'
                         ) cil managed 
                     {
+                        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+                            01 00 00 00
+                        )
                     } // end of method C::remove_E
                     .method private hidebysig specialname rtspecialname 
                         instance void .ctor () cil managed 
@@ -2259,6 +2266,9 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
 
         static void validate(ModuleSymbol module)
         {
+            var isSource = module is SourceModuleSymbol;
+            ReadOnlySpan<string> compiledGeneratedAttr = isSource ? [] : ["System.Runtime.CompilerServices.CompilerGeneratedAttribute"];
+
             var e = module.GlobalNamespace.GetMember<EventSymbol>("C.E");
             AssertEx.Equal(["A(1)", "A(41)", "A(2)", "A(42)"], e.GetAttributes().ToStrings());
             AssertEx.Equal(["A(3)", "A(13)"], e.AddMethod!.GetAttributes().ToStrings());
@@ -2268,7 +2278,7 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             AssertEx.Equal(["A(24)"], e.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
             AssertEx.Equal(["A(34)"], e.RemoveMethod.GetReturnTypeAttributes().ToStrings());
 
-            if (module is SourceModuleSymbol)
+            if (isSource)
             {
                 var eImpl = ((SourceEventSymbol)e).PartialImplementationPart!;
                 AssertEx.Equal(["A(1)", "A(41)", "A(2)", "A(42)"], eImpl.GetAttributes().ToStrings());
@@ -2282,20 +2292,21 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
 
             var f = module.GlobalNamespace.GetMember<EventSymbol>("C.F");
             AssertEx.Equal(["A(1)", "A(41)", "A(2)", "A(42)"], f.GetAttributes().ToStrings());
-            AssertEx.Equal(["A(11)", "A(12)"], f.AddMethod!.GetAttributes().ToStrings());
+            AssertEx.Equal([.. compiledGeneratedAttr, "A(11)", "A(12)"], f.AddMethod!.GetAttributes().ToStrings());
             AssertEx.Equal(["A(22)", "A(21)"], f.AddMethod.Parameters.Single().GetAttributes().ToStrings());
             AssertEx.Equal(["A(31)", "A(32)"], f.AddMethod.GetReturnTypeAttributes().ToStrings());
-            AssertEx.Equal(["A(11)", "A(12)"], f.RemoveMethod!.GetAttributes().ToStrings());
+            AssertEx.Equal([.. compiledGeneratedAttr, "A(11)", "A(12)"], f.RemoveMethod!.GetAttributes().ToStrings());
             AssertEx.Equal(["A(22)", "A(21)"], f.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
             AssertEx.Equal(["A(31)", "A(32)"], f.RemoveMethod.GetReturnTypeAttributes().ToStrings());
-            if (module is SourceModuleSymbol)
+
+            if (isSource)
             {
                 var fImpl = ((SourceEventSymbol)f).PartialImplementationPart!;
                 AssertEx.Equal(["A(1)", "A(41)", "A(2)", "A(42)"], fImpl.GetAttributes().ToStrings());
-                AssertEx.Equal(["A(11)", "A(12)"], fImpl.AddMethod!.GetAttributes().ToStrings());
+                AssertEx.Equal([.. compiledGeneratedAttr, "A(11)", "A(12)"], fImpl.AddMethod!.GetAttributes().ToStrings());
                 AssertEx.Equal(["A(22)", "A(21)"], fImpl.AddMethod.Parameters.Single().GetAttributes().ToStrings());
                 AssertEx.Equal(["A(31)", "A(32)"], fImpl.AddMethod.GetReturnTypeAttributes().ToStrings());
-                AssertEx.Equal(["A(11)", "A(12)"], fImpl.RemoveMethod!.GetAttributes().ToStrings());
+                AssertEx.Equal([.. compiledGeneratedAttr, "A(11)", "A(12)"], fImpl.RemoveMethod!.GetAttributes().ToStrings());
                 AssertEx.Equal(["A(22)", "A(21)"], fImpl.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
                 AssertEx.Equal(["A(31)", "A(32)"], fImpl.RemoveMethod.GetReturnTypeAttributes().ToStrings());
             }

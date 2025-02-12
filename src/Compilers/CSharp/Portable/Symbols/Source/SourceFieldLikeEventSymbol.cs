@@ -5,8 +5,11 @@
 using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
+using Microsoft.CodeAnalysis.CSharp.Emit;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.PooledObjects;
 using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp.Symbols
@@ -309,6 +312,35 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     default:
                         Debug.Assert(false);
                         return OneOrMany<SyntaxList<AttributeListSyntax>>.Empty;
+                }
+            }
+
+            internal override void AddSynthesizedAttributes(PEModuleBuilder moduleBuilder, ref ArrayBuilder<CSharpAttributeData> attributes)
+            {
+                Debug.Assert(PartialDefinitionPart is null);
+
+                if (PartialImplementationPart is { } implementationPart)
+                {
+                    implementationPart.AddSynthesizedAttributes(moduleBuilder, ref attributes);
+                }
+                else
+                {
+                    base.AddSynthesizedAttributes(moduleBuilder, ref attributes);
+                }
+            }
+
+            internal override MethodImplAttributes ImplementationAttributes
+            {
+                get
+                {
+                    Debug.Assert(PartialDefinitionPart is null);
+
+                    if (PartialImplementationPart is { } implementationPart)
+                    {
+                        return implementationPart.ImplementationAttributes;
+                    }
+
+                    return base.ImplementationAttributes;
                 }
             }
         }
