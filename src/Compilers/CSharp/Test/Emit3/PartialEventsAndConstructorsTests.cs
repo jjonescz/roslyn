@@ -1001,6 +1001,7 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
         {
             Assert.True(accessor.GetPublicSymbol().IsExtern);
             Assert.Equal(expectedMetadataName, accessor.MetadataName);
+            Assert.False(accessor.ImplementationAttributes.HasFlag(MethodImplAttributes.Synchronized));
 
             var importData = accessor.GetDllImportData()!;
             Assert.Equal("something.dll", importData.ModuleName);
@@ -1052,9 +1053,11 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             Assert.True(ev.AddMethod!.GetPublicSymbol().IsExtern);
             Assert.Null(ev.AddMethod!.GetDllImportData());
             Assert.Equal(MethodImplAttributes.InternalCall, ev.AddMethod.ImplementationAttributes);
+            Assert.False(ev.AddMethod.ImplementationAttributes.HasFlag(MethodImplAttributes.Synchronized));
             Assert.True(ev.RemoveMethod!.GetPublicSymbol().IsExtern);
             Assert.Null(ev.RemoveMethod!.GetDllImportData());
             Assert.Equal(MethodImplAttributes.InternalCall, ev.RemoveMethod.ImplementationAttributes);
+            Assert.False(ev.RemoveMethod.ImplementationAttributes.HasFlag(MethodImplAttributes.Synchronized));
 
             var c = module.GlobalNamespace.GetMember<SourceConstructorSymbol>("C..ctor");
             Assert.True(c.GetPublicSymbol().IsExtern);
@@ -1069,14 +1072,42 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             Assert.False(ev.AddMethod!.GetPublicSymbol().IsExtern);
             Assert.Null(ev.AddMethod!.GetDllImportData());
             Assert.Equal(MethodImplAttributes.InternalCall, ev.AddMethod.ImplementationAttributes);
+            Assert.False(ev.AddMethod.ImplementationAttributes.HasFlag(MethodImplAttributes.Synchronized));
             Assert.False(ev.RemoveMethod!.GetPublicSymbol().IsExtern);
             Assert.Null(ev.RemoveMethod!.GetDllImportData());
             Assert.Equal(MethodImplAttributes.InternalCall, ev.RemoveMethod.ImplementationAttributes);
+            Assert.False(ev.RemoveMethod.ImplementationAttributes.HasFlag(MethodImplAttributes.Synchronized));
 
             var c = module.GlobalNamespace.GetMember<MethodSymbol>("C..ctor");
             Assert.False(c.GetPublicSymbol().IsExtern);
             Assert.Null(c.GetDllImportData());
             Assert.Equal(MethodImplAttributes.InternalCall, c.ImplementationAttributes);
+        }
+    }
+
+    [Fact]
+    public void Extern_MissingCompareExchange()
+    {
+        var source = """
+            using System;
+            partial class C
+            {
+                partial event Action E;
+                extern partial event Action E;
+            }
+            """;
+        var comp = CreateCompilation(source, options: TestOptions.ReleaseDll.WithMetadataImportOptions(MetadataImportOptions.All));
+        comp.MakeMemberMissing(WellKnownMember.System_Threading_Interlocked__CompareExchange_T);
+        CompileAndVerify(comp,
+            sourceSymbolValidator: validate,
+            symbolValidator: validate)
+            .VerifyDiagnostics();
+
+        static void validate(ModuleSymbol module)
+        {
+            var e = module.GlobalNamespace.GetMember<EventSymbol>("C.E");
+            Assert.True(e.AddMethod!.ImplementationAttributes.HasFlag(MethodImplAttributes.Synchronized));
+            Assert.True(e.RemoveMethod!.ImplementationAttributes.HasFlag(MethodImplAttributes.Synchronized));
         }
     }
 
