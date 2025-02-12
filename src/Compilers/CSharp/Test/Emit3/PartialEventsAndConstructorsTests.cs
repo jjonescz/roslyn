@@ -2450,4 +2450,95 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
                 """)
             .VerifyDiagnostics();
     }
+
+    [Fact]
+    public void Attributes_Nullable()
+    {
+        var source = """
+            #nullable enable
+            using System.Diagnostics.CodeAnalysis;
+
+            new C(default(I1)!, null);
+            new C(default(I2)!, null);
+            new C(default(I3)!, null);
+            new C(default(I4)!, null);
+            new C(default(I5)!, null);
+            new C(default(I6)!, null);
+            new C(default(I7)!, null);
+            new C(default(I8)!, null);
+
+            interface I1;
+            interface I2;
+            interface I3;
+            interface I4;
+            interface I5;
+            interface I6;
+            interface I7;
+            interface I8;
+
+            partial class C
+            {
+                public partial C(I1 i, [AllowNull] object x);
+                public partial C(I1 i, object x) { x.ToString(); }
+
+                public partial C(I2 i, object x);
+                public partial C(I2 i, [AllowNull] object x) { x.ToString(); }
+
+                public partial C(I3 i, [AllowNull] object x);
+                public partial C(I3 i, object? x) { x.ToString(); }
+
+                public partial C(I4 i, object? x);
+                public partial C(I4 i, [AllowNull] object x) { x.ToString(); }
+
+                public partial C(I5 i, [DisallowNull] object? x);
+                public partial C(I5 i, object? x) { x.ToString(); }
+
+                public partial C(I6 i, object? x);
+                public partial C(I6 i, [DisallowNull] object? x) { x.ToString(); }
+
+                public partial C(I7 i, [DisallowNull] object? x);
+                public partial C(I7 i, object x) { x.ToString(); }
+
+                public partial C(I8 i, object x);
+                public partial C(I8 i, [DisallowNull] object? x) { x.ToString(); }
+            }
+            """;
+        CreateCompilation([source, AllowNullAttributeDefinition, DisallowNullAttributeDefinition]).VerifyDiagnostics(
+            // (8,21): warning CS8625: Cannot convert null literal to non-nullable reference type.
+            // new C(default(I5)!, null);
+            Diagnostic(ErrorCode.WRN_NullAsNonNullable, "null").WithLocation(8, 21),
+            // (9,21): warning CS8625: Cannot convert null literal to non-nullable reference type.
+            // new C(default(I6)!, null);
+            Diagnostic(ErrorCode.WRN_NullAsNonNullable, "null").WithLocation(9, 21),
+            // (10,21): warning CS8625: Cannot convert null literal to non-nullable reference type.
+            // new C(default(I7)!, null);
+            Diagnostic(ErrorCode.WRN_NullAsNonNullable, "null").WithLocation(10, 21),
+            // (11,21): warning CS8625: Cannot convert null literal to non-nullable reference type.
+            // new C(default(I8)!, null);
+            Diagnostic(ErrorCode.WRN_NullAsNonNullable, "null").WithLocation(11, 21),
+            // (25,40): warning CS8602: Dereference of a possibly null reference.
+            //     public partial C(I1 i, object x) { x.ToString(); }
+            Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "x").WithLocation(25, 40),
+            // (28,52): warning CS8602: Dereference of a possibly null reference.
+            //     public partial C(I2 i, [AllowNull] object x) { x.ToString(); }
+            Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "x").WithLocation(28, 52),
+            // (31,20): warning CS9256: Partial member declarations 'C.C(I3 i, object x)' and 'C.C(I3 i, object? x)' have signature differences.
+            //     public partial C(I3 i, object? x) { x.ToString(); }
+            Diagnostic(ErrorCode.WRN_PartialMemberSignatureDifference, "C").WithArguments("C.C(I3 i, object x)", "C.C(I3 i, object? x)").WithLocation(31, 20),
+            // (31,41): warning CS8602: Dereference of a possibly null reference.
+            //     public partial C(I3 i, object? x) { x.ToString(); }
+            Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "x").WithLocation(31, 41),
+            // (34,20): warning CS9256: Partial member declarations 'C.C(I4 i, object? x)' and 'C.C(I4 i, object x)' have signature differences.
+            //     public partial C(I4 i, [AllowNull] object x) { x.ToString(); }
+            Diagnostic(ErrorCode.WRN_PartialMemberSignatureDifference, "C").WithArguments("C.C(I4 i, object? x)", "C.C(I4 i, object x)").WithLocation(34, 20),
+            // (34,52): warning CS8602: Dereference of a possibly null reference.
+            //     public partial C(I4 i, [AllowNull] object x) { x.ToString(); }
+            Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "x").WithLocation(34, 52),
+            // (43,20): warning CS9256: Partial member declarations 'C.C(I7 i, object? x)' and 'C.C(I7 i, object x)' have signature differences.
+            //     public partial C(I7 i, object x) { x.ToString(); }
+            Diagnostic(ErrorCode.WRN_PartialMemberSignatureDifference, "C").WithArguments("C.C(I7 i, object? x)", "C.C(I7 i, object x)").WithLocation(43, 20),
+            // (46,20): warning CS9256: Partial member declarations 'C.C(I8 i, object x)' and 'C.C(I8 i, object? x)' have signature differences.
+            //     public partial C(I8 i, [DisallowNull] object? x) { x.ToString(); }
+            Diagnostic(ErrorCode.WRN_PartialMemberSignatureDifference, "C").WithArguments("C.C(I8 i, object x)", "C.C(I8 i, object? x)").WithLocation(46, 20));
+    }
 }
