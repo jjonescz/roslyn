@@ -180,12 +180,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                 if (!IsPartial || IsExtern)
                 {
-                    result |= AttributeLocation.Method;
-                }
-
-                if (IsExtern)
-                {
-                    result |= AttributeLocation.Parameter;
+                    result |= AttributeLocation.Method | AttributeLocation.Parameter | AttributeLocation.Return;
                 }
 
                 if (AssociatedEventField is not null)

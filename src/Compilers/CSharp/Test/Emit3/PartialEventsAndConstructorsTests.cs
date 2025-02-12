@@ -2199,15 +2199,15 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
 
             partial class C
             {
-                [A(1)] [method: A(10)] [param: A(100)] public partial event Action E;
-                [A(2)] [method: A(20)] [param: A(200)] public partial event Action E
+                [A(1)] [method: A(11)] [param: A(21)] [return: A(31)] [event: A(41)] [field: A(51)] public partial event Action E;
+                [A(2)] [method: A(12)] [param: A(22)] [return: A(32)] [event: A(42)] [field: A(52)] public partial event Action E
                 {
-                    [A(3)] [method: A(30)] [param: A(300)] add { }
-                    [A(4)] [method: A(40)] [param: A(400)] remove { }
+                    [A(3)] [method: A(13)] [param: A(23)] [return: A(33)] [event: A(43)] [field: A(53)] add { }
+                    [A(4)] [method: A(14)] [param: A(24)] [return: A(34)] [event: A(44)] [field: A(54)] remove { }
                 }
 
-                [A(1)] [method: A(10)] [param: A(100)] public partial event Action F;
-                [A(2)] [method: A(20)] [param: A(200)] public extern partial event Action F;
+                [A(1)] [method: A(11)] [param: A(21)] [return: A(31)] [event: A(41)] [field: A(51)] public partial event Action F;
+                [A(2)] [method: A(12)] [param: A(22)] [return: A(32)] [event: A(42)] [field: A(52)] public extern partial event Action F;
             }
             """;
         CompileAndVerify(source,
@@ -2215,51 +2215,89 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             sourceSymbolValidator: validate)
             .VerifyDiagnostics(
                 // (8,13): warning CS0657: 'method' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
-                //     [A(1)] [method: A(10)] [param: A(100)] public partial event Action E;
+                //     [A(1)] [method: A(11)] [param: A(21)] [return: A(31)] [event: A(41)] [field: A(51)] public partial event Action E;
                 Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "method").WithArguments("method", "event").WithLocation(8, 13),
                 // (8,29): warning CS0657: 'param' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
-                //     [A(1)] [method: A(10)] [param: A(100)] public partial event Action E;
+                //     [A(1)] [method: A(11)] [param: A(21)] [return: A(31)] [event: A(41)] [field: A(51)] public partial event Action E;
                 Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "event").WithLocation(8, 29),
+                // (8,44): warning CS0657: 'return' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
+                //     [A(1)] [method: A(11)] [param: A(21)] [return: A(31)] [event: A(41)] [field: A(51)] public partial event Action E;
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "return").WithArguments("return", "event").WithLocation(8, 44),
+                // (8,75): warning CS0657: 'field' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
+                //     [A(1)] [method: A(11)] [param: A(21)] [return: A(31)] [event: A(41)] [field: A(51)] public partial event Action E;
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "field").WithArguments("field", "event").WithLocation(8, 75),
                 // (9,13): warning CS0657: 'method' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
-                //     [A(2)] [method: A(20)] [param: A(200)] public partial event Action E
+                //     [A(2)] [method: A(12)] [param: A(22)] [return: A(32)] [event: A(42)] [field: A(52)] public partial event Action E
                 Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "method").WithArguments("method", "event").WithLocation(9, 13),
                 // (9,29): warning CS0657: 'param' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
-                //     [A(2)] [method: A(20)] [param: A(200)] public partial event Action E
-                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "event").WithLocation(9, 29));
+                //     [A(2)] [method: A(12)] [param: A(22)] [return: A(32)] [event: A(42)] [field: A(52)] public partial event Action E
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "param").WithArguments("param", "event").WithLocation(9, 29),
+                // (9,44): warning CS0657: 'return' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
+                //     [A(2)] [method: A(12)] [param: A(22)] [return: A(32)] [event: A(42)] [field: A(52)] public partial event Action E
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "return").WithArguments("return", "event").WithLocation(9, 44),
+                // (9,75): warning CS0657: 'field' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
+                //     [A(2)] [method: A(12)] [param: A(22)] [return: A(32)] [event: A(42)] [field: A(52)] public partial event Action E
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "field").WithArguments("field", "event").WithLocation(9, 75),
+                // (11,64): warning CS0657: 'event' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, param, return'. All attributes in this block will be ignored.
+                //         [A(3)] [method: A(13)] [param: A(23)] [return: A(33)] [event: A(43)] [field: A(53)] add { }
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "event").WithArguments("event", "method, param, return").WithLocation(11, 64),
+                // (11,79): warning CS0657: 'field' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, param, return'. All attributes in this block will be ignored.
+                //         [A(3)] [method: A(13)] [param: A(23)] [return: A(33)] [event: A(43)] [field: A(53)] add { }
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "field").WithArguments("field", "method, param, return").WithLocation(11, 79),
+                // (12,64): warning CS0657: 'event' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, param, return'. All attributes in this block will be ignored.
+                //         [A(4)] [method: A(14)] [param: A(24)] [return: A(34)] [event: A(44)] [field: A(54)] remove { }
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "event").WithArguments("event", "method, param, return").WithLocation(12, 64),
+                // (12,79): warning CS0657: 'field' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, param, return'. All attributes in this block will be ignored.
+                //         [A(4)] [method: A(14)] [param: A(24)] [return: A(34)] [event: A(44)] [field: A(54)] remove { }
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "field").WithArguments("field", "method, param, return").WithLocation(12, 79),
+                // (15,75): warning CS0657: 'field' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, event, param, return'. All attributes in this block will be ignored.
+                //     [A(1)] [method: A(11)] [param: A(21)] [return: A(31)] [event: A(41)] [field: A(51)] public partial event Action F;
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "field").WithArguments("field", "method, event, param, return").WithLocation(15, 75),
+                // (16,75): warning CS0657: 'field' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'method, event, param, return'. All attributes in this block will be ignored.
+                //     [A(2)] [method: A(12)] [param: A(22)] [return: A(32)] [event: A(42)] [field: A(52)] public extern partial event Action F;
+                Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "field").WithArguments("field", "method, event, param, return").WithLocation(16, 75));
 
         static void validate(ModuleSymbol module)
         {
             var e = module.GlobalNamespace.GetMember<EventSymbol>("C.E");
-            AssertEx.Equal(["A(1)", "A(2)"], e.GetAttributes().ToStrings());
-            AssertEx.Equal(["A(3)", "A(30)"], e.AddMethod!.GetAttributes().ToStrings());
-            AssertEx.Equal(["A(300)"], e.AddMethod.Parameters.Single().GetAttributes().ToStrings());
-            AssertEx.Equal(["A(4)", "A(40)"], e.RemoveMethod!.GetAttributes().ToStrings());
-            AssertEx.Equal(["A(400)"], e.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+            AssertEx.Equal(["A(1)", "A(41)", "A(2)", "A(42)"], e.GetAttributes().ToStrings());
+            AssertEx.Equal(["A(3)", "A(13)"], e.AddMethod!.GetAttributes().ToStrings());
+            AssertEx.Equal(["A(23)"], e.AddMethod.Parameters.Single().GetAttributes().ToStrings());
+            AssertEx.Equal(["A(33)"], e.AddMethod.GetReturnTypeAttributes().ToStrings());
+            AssertEx.Equal(["A(4)", "A(14)"], e.RemoveMethod!.GetAttributes().ToStrings());
+            AssertEx.Equal(["A(24)"], e.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+            AssertEx.Equal(["A(34)"], e.RemoveMethod.GetReturnTypeAttributes().ToStrings());
 
             if (module is SourceModuleSymbol)
             {
                 var eImpl = ((SourceEventSymbol)e).PartialImplementationPart!;
-                AssertEx.Equal(["A(1)", "A(2)"], eImpl.GetAttributes().ToStrings());
-                AssertEx.Equal(["A(3)", "A(30)"], eImpl.AddMethod!.GetAttributes().ToStrings());
-                AssertEx.Equal(["A(300)"], eImpl.AddMethod.Parameters.Single().GetAttributes().ToStrings());
-                AssertEx.Equal(["A(4)", "A(40)"], eImpl.RemoveMethod!.GetAttributes().ToStrings());
-                AssertEx.Equal(["A(400)"], eImpl.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+                AssertEx.Equal(["A(1)", "A(41)", "A(2)", "A(42)"], eImpl.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(3)", "A(13)"], eImpl.AddMethod!.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(23)"], eImpl.AddMethod.Parameters.Single().GetAttributes().ToStrings());
+                AssertEx.Equal(["A(33)"], eImpl.AddMethod.GetReturnTypeAttributes().ToStrings());
+                AssertEx.Equal(["A(4)", "A(14)"], eImpl.RemoveMethod!.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(24)"], eImpl.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+                AssertEx.Equal(["A(34)"], eImpl.RemoveMethod.GetReturnTypeAttributes().ToStrings());
             }
 
             var f = module.GlobalNamespace.GetMember<EventSymbol>("C.F");
-            AssertEx.Equal(["A(1)", "A(2)"], f.GetAttributes().ToStrings());
-            AssertEx.Equal(["A(10)", "A(20)"], f.AddMethod!.GetAttributes().ToStrings());
-            AssertEx.Equal(["A(200)", "A(100)"], f.AddMethod.Parameters.Single().GetAttributes().ToStrings());
-            AssertEx.Equal(["A(10)", "A(20)"], f.RemoveMethod!.GetAttributes().ToStrings());
-            AssertEx.Equal(["A(200)", "A(100)"], f.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+            AssertEx.Equal(["A(1)", "A(41)", "A(2)", "A(42)"], f.GetAttributes().ToStrings());
+            AssertEx.Equal(["A(11)", "A(12)"], f.AddMethod!.GetAttributes().ToStrings());
+            AssertEx.Equal(["A(22)", "A(21)"], f.AddMethod.Parameters.Single().GetAttributes().ToStrings());
+            AssertEx.Equal(["A(31)", "A(32)"], f.AddMethod.GetReturnTypeAttributes().ToStrings());
+            AssertEx.Equal(["A(11)", "A(12)"], f.RemoveMethod!.GetAttributes().ToStrings());
+            AssertEx.Equal(["A(22)", "A(21)"], f.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+            AssertEx.Equal(["A(31)", "A(32)"], f.RemoveMethod.GetReturnTypeAttributes().ToStrings());
             if (module is SourceModuleSymbol)
             {
                 var fImpl = ((SourceEventSymbol)f).PartialImplementationPart!;
-                AssertEx.Equal(["A(1)", "A(2)"], fImpl.GetAttributes().ToStrings());
-                AssertEx.Equal(["A(10)", "A(20)"], fImpl.AddMethod!.GetAttributes().ToStrings());
-                AssertEx.Equal(["A(200)", "A(100)"], fImpl.AddMethod.Parameters.Single().GetAttributes().ToStrings());
-                AssertEx.Equal(["A(10)", "A(20)"], fImpl.RemoveMethod!.GetAttributes().ToStrings());
-                AssertEx.Equal(["A(200)", "A(100)"], fImpl.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+                AssertEx.Equal(["A(1)", "A(41)", "A(2)", "A(42)"], fImpl.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(11)", "A(12)"], fImpl.AddMethod!.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(22)", "A(21)"], fImpl.AddMethod.Parameters.Single().GetAttributes().ToStrings());
+                AssertEx.Equal(["A(31)", "A(32)"], fImpl.AddMethod.GetReturnTypeAttributes().ToStrings());
+                AssertEx.Equal(["A(11)", "A(12)"], fImpl.RemoveMethod!.GetAttributes().ToStrings());
+                AssertEx.Equal(["A(22)", "A(21)"], fImpl.RemoveMethod.Parameters.Single().GetAttributes().ToStrings());
+                AssertEx.Equal(["A(31)", "A(32)"], fImpl.RemoveMethod.GetReturnTypeAttributes().ToStrings());
             }
         }
     }
