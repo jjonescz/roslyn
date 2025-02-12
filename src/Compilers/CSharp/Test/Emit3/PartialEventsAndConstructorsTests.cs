@@ -2229,6 +2229,11 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
     [Fact]
     public void Attributes_Locations()
     {
+        // Note that [method:] is not allowed on partial events.
+        // Therefore users have no way to specify accessor attributes on the definition part.
+        // Ideally, this would be possible and we would join attributes from accessors with [method:] attributes from the event.
+        // However, current implementation of attribute matching is not strong enough to do that (there can be only one attribute owner symbol kind).
+
         var source = """
             using System;
 
