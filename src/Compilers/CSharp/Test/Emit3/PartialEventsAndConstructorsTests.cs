@@ -2583,4 +2583,79 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             //     public partial C(I8 i, [DisallowNull] object? x) { x.ToString(); }
             Diagnostic(ErrorCode.WRN_PartialMemberSignatureDifference, "C").WithArguments("C.C(I8 i, object x)", "C.C(I8 i, object? x)").WithLocation(46, 20));
     }
+
+    [Fact]
+    public void Attributes_Obsolete()
+    {
+        var source = """
+            using System;
+
+            var c = new C();
+            c = new C(2);
+            c.E += null;
+            c.E -= null;
+            c.F += null;
+            c.F -= null;
+            c.G += null;
+            c.G -= null;
+            c.H += null;
+            c.H -= null;
+
+            partial class C
+            {
+                [Obsolete] public partial C();
+                public partial C() { M(); }
+
+                public partial C(int x = X);
+                [Obsolete] public partial C(int x) { M(); }
+
+                [Obsolete] public partial event Action E;
+                public partial event Action E { add { M(); } remove { M(); } }
+
+                public partial event Action F;
+                public partial event Action F
+                {
+                    [Obsolete] add { M(); }
+                    remove { M(); }
+                }
+
+                [Obsolete] public partial event Action G;
+                public extern partial event Action G;
+
+                [method: Obsolete] public partial event Action H;
+                public extern partial event Action H;
+
+                [Obsolete] void M() { }
+                [Obsolete] const int X = 1;
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (3,9): warning CS0612: 'C.C()' is obsolete
+            // var c = new C();
+            Diagnostic(ErrorCode.WRN_DeprecatedSymbol, "new C()").WithArguments("C.C()").WithLocation(3, 9),
+            // (4,5): warning CS0612: 'C.C(int)' is obsolete
+            // c = new C(2);
+            Diagnostic(ErrorCode.WRN_DeprecatedSymbol, "new C(2)").WithArguments("C.C(int)").WithLocation(4, 5),
+            // (5,1): warning CS0612: 'C.E' is obsolete
+            // c.E += null;
+            Diagnostic(ErrorCode.WRN_DeprecatedSymbol, "c.E").WithArguments("C.E").WithLocation(5, 1),
+            // (6,1): warning CS0612: 'C.E' is obsolete
+            // c.E -= null;
+            Diagnostic(ErrorCode.WRN_DeprecatedSymbol, "c.E").WithArguments("C.E").WithLocation(6, 1),
+            // (9,1): warning CS0612: 'C.G' is obsolete
+            // c.G += null;
+            Diagnostic(ErrorCode.WRN_DeprecatedSymbol, "c.G").WithArguments("C.G").WithLocation(9, 1),
+            // (10,1): warning CS0612: 'C.G' is obsolete
+            // c.G -= null;
+            Diagnostic(ErrorCode.WRN_DeprecatedSymbol, "c.G").WithArguments("C.G").WithLocation(10, 1),
+            // (28,10): error CS8423: Attribute 'System.ObsoleteAttribute' is not valid on event accessors. It is only valid on 'class, struct, enum, constructor, method, property, indexer, field, event, interface, delegate' declarations.
+            //         [Obsolete] add { M(); }
+            Diagnostic(ErrorCode.ERR_AttributeNotOnEventAccessor, "Obsolete").WithArguments("System.ObsoleteAttribute", "class, struct, enum, constructor, method, property, indexer, field, event, interface, delegate").WithLocation(28, 10),
+            // (29,18): warning CS0612: 'C.M()' is obsolete
+            //         remove { M(); }
+            Diagnostic(ErrorCode.WRN_DeprecatedSymbol, "M()").WithArguments("C.M()").WithLocation(29, 18),
+            // (35,14): error CS8423: Attribute 'System.ObsoleteAttribute' is not valid on event accessors. It is only valid on 'class, struct, enum, constructor, method, property, indexer, field, event, interface, delegate' declarations.
+            //     [method: Obsolete] public partial event Action H;
+            Diagnostic(ErrorCode.ERR_AttributeNotOnEventAccessor, "Obsolete").WithArguments("System.ObsoleteAttribute", "class, struct, enum, constructor, method, property, indexer, field, event, interface, delegate").WithLocation(35, 14));
+    }
 }
