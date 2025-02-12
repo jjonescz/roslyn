@@ -2263,4 +2263,153 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             }
         }
     }
+
+    [Fact]
+    public void Attributes_Duplicates()
+    {
+        var source = """
+            using System;
+
+            class A1 : Attribute;
+            class A2 : Attribute;
+            class A3 : Attribute;
+
+            partial class C
+            {
+                [A1] [method: A2] partial C( // def
+                    [A1] [param: A2] int x);
+                [A1] [method: A2] partial C( // impl
+                    [A1] [param: A2] int x) { }
+
+                [A1] [method: A2] partial event Action E;
+                [A1] [method: A2] partial event Action E
+                {
+                    [A1] [method: A1] [param: A2] add { }
+                    [A1] [method: A1] [param: A2] remove { }
+                }
+            
+                [A1] [method: A2] [param: A3] partial event Action F;
+                [A1] [method: A2] [param: A3] extern partial event Action F;
+            }
+            """;
+        CreateCompilation(source).VerifyDiagnostics(
+            // (10,10): error CS0579: Duplicate 'A1' attribute
+            //         [A1] [param: A2] int x);
+            Diagnostic(ErrorCode.ERR_DuplicateAttribute, "A1").WithArguments("A1").WithLocation(10, 10),
+            // (10,22): error CS0579: Duplicate 'A2' attribute
+            //         [A1] [param: A2] int x);
+            Diagnostic(ErrorCode.ERR_DuplicateAttribute, "A2").WithArguments("A2").WithLocation(10, 22),
+            // (11,6): error CS0579: Duplicate 'A1' attribute
+            //     [A1] [method: A2] partial C( // impl
+            Diagnostic(ErrorCode.ERR_DuplicateAttribute, "A1").WithArguments("A1").WithLocation(11, 6),
+            // (11,19): error CS0579: Duplicate 'A2' attribute
+            //     [A1] [method: A2] partial C( // impl
+            Diagnostic(ErrorCode.ERR_DuplicateAttribute, "A2").WithArguments("A2").WithLocation(11, 19),
+            // (14,11): warning CS0657: 'method' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
+            //     [A1] [method: A2] partial event Action E;
+            Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "method").WithArguments("method", "event").WithLocation(14, 11),
+            // (15,6): error CS0579: Duplicate 'A1' attribute
+            //     [A1] [method: A2] partial event Action E
+            Diagnostic(ErrorCode.ERR_DuplicateAttribute, "A1").WithArguments("A1").WithLocation(15, 6),
+            // (15,11): warning CS0657: 'method' is not a valid attribute location for this declaration. Valid attribute locations for this declaration are 'event'. All attributes in this block will be ignored.
+            //     [A1] [method: A2] partial event Action E
+            Diagnostic(ErrorCode.WRN_AttributeLocationOnBadDeclaration, "method").WithArguments("method", "event").WithLocation(15, 11),
+            // (17,23): error CS0579: Duplicate 'A1' attribute
+            //         [A1] [method: A1] [param: A2] add { }
+            Diagnostic(ErrorCode.ERR_DuplicateAttribute, "A1").WithArguments("A1").WithLocation(17, 23),
+            // (18,23): error CS0579: Duplicate 'A1' attribute
+            //         [A1] [method: A1] [param: A2] remove { }
+            Diagnostic(ErrorCode.ERR_DuplicateAttribute, "A1").WithArguments("A1").WithLocation(18, 23),
+            // (21,31): error CS0579: Duplicate 'A3' attribute
+            //     [A1] [method: A2] [param: A3] partial event Action F;
+            Diagnostic(ErrorCode.ERR_DuplicateAttribute, "A3").WithArguments("A3").WithLocation(21, 31),
+            // (21,31): error CS0579: Duplicate 'A3' attribute
+            //     [A1] [method: A2] [param: A3] partial event Action F;
+            Diagnostic(ErrorCode.ERR_DuplicateAttribute, "A3").WithArguments("A3").WithLocation(21, 31),
+            // (22,6): error CS0579: Duplicate 'A1' attribute
+            //     [A1] [method: A2] [param: A3] extern partial event Action F;
+            Diagnostic(ErrorCode.ERR_DuplicateAttribute, "A1").WithArguments("A1").WithLocation(22, 6),
+            // (22,19): error CS0579: Duplicate 'A2' attribute
+            //     [A1] [method: A2] [param: A3] extern partial event Action F;
+            Diagnostic(ErrorCode.ERR_DuplicateAttribute, "A2").WithArguments("A2").WithLocation(22, 19));
+    }
+
+    [Fact]
+    public void Attributes_CallerInfo()
+    {
+        var source1 = """
+            using System;
+            using System.Runtime.CompilerServices;
+
+            public partial class C
+            {
+                public partial C(int x,
+                    [CallerLineNumber] int a = -1,
+                    [CallerFilePath] string b = "f",
+                    [CallerMemberName] string c = "m",
+                    [CallerArgumentExpression(nameof(x))] string d = "e");
+                public partial C(int x, int a, string b, string c, string d)
+                {
+                    Console.WriteLine($"x='{x}' a='{a}' b='{b}' c='{c}' d='{d}'");
+                }
+
+                public partial C(string x,
+                    int a = -1,
+                    string b = "f",
+                    string c = "m",
+                    string d = "e");
+                public partial C(string x,
+                    [CallerLineNumber] int a,
+                    [CallerFilePath] string b,
+                    [CallerMemberName] string c,
+                    [CallerArgumentExpression(nameof(x))] string d)
+                {
+                    Console.WriteLine($"x='{x}' a='{a}' b='{b}' c='{c}' d='{d}'");
+                }
+            }
+            """;
+
+        var source2 = ("""
+            var c1 = new C(40 + 2);
+            var c2 = new C("s");
+            """, "file.cs");
+
+        var expectedDiagnostics = new[]
+        {
+            // (22,10): warning CS4024: The CallerLineNumberAttribute applied to parameter 'a' will have no effect because it applies to a member that is used in contexts that do not allow optional arguments
+            //         [CallerLineNumber] int a,
+            Diagnostic(ErrorCode.WRN_CallerLineNumberParamForUnconsumedLocation, "CallerLineNumber").WithArguments("a").WithLocation(22, 10),
+            // (23,10): warning CS4025: The CallerFilePathAttribute applied to parameter 'b' will have no effect because it applies to a member that is used in contexts that do not allow optional arguments
+            //         [CallerFilePath] string b,
+            Diagnostic(ErrorCode.WRN_CallerFilePathParamForUnconsumedLocation, "CallerFilePath").WithArguments("b").WithLocation(23, 10),
+            // (24,10): warning CS4026: The CallerMemberNameAttribute applied to parameter 'c' will have no effect because it applies to a member that is used in contexts that do not allow optional arguments
+            //         [CallerMemberName] string c,
+            Diagnostic(ErrorCode.WRN_CallerMemberNameParamForUnconsumedLocation, "CallerMemberName").WithArguments("c").WithLocation(24, 10),
+            // (25,10): warning CS8966: The CallerArgumentExpressionAttribute applied to parameter 'd' will have no effect because it applies to a member that is used in contexts that do not allow optional arguments
+            //         [CallerArgumentExpression(nameof(x))] string d)
+            Diagnostic(ErrorCode.WRN_CallerArgumentExpressionParamForUnconsumedLocation, "CallerArgumentExpression").WithArguments("d").WithLocation(25, 10)
+        };
+
+        CompileAndVerify([source1, source2, CallerArgumentExpressionAttributeDefinition],
+            expectedOutput: """
+                x='42' a='1' b='file.cs' c='<Main>$' d='40 + 2'
+                x='s' a='-1' b='f' c='m' d='e'
+                """)
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        // Although caller info attributes on the implementation part have no effect in source,
+        // they are written to metadata as is demonstrated below.
+        // See https://github.com/dotnet/roslyn/issues/73482.
+
+        var lib = CreateCompilation([source1, CallerArgumentExpressionAttributeDefinition])
+            .VerifyDiagnostics(expectedDiagnostics)
+            .EmitToPortableExecutableReference();
+
+        CompileAndVerify(CreateCompilation(source2, references: [lib]),
+            expectedOutput: """
+                x='42' a='1' b='file.cs' c='<Main>$' d='40 + 2'
+                x='s' a='2' b='file.cs' c='<Main>$' d='"s"'
+                """)
+            .VerifyDiagnostics();
+    }
 }
