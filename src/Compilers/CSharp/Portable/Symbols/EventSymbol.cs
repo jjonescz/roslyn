@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Microsoft.CodeAnalysis.Symbols;
 using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp.Symbols
@@ -14,7 +15,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     /// <summary>
     /// Represents an event.
     /// </summary>
-    internal abstract partial class EventSymbol : Symbol
+    internal abstract partial class EventSymbol : Symbol, IEventSymbolInternal
     {
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // Changes to the public interface of this class should remain synchronized with the VB version.
@@ -230,6 +231,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal virtual EventSymbol? PartialImplementationPart => null;
         internal virtual EventSymbol? PartialDefinitionPart => null;
+
+        IEventSymbolInternal? IEventSymbolInternal.PartialImplementationPart => PartialImplementationPart;
+        IEventSymbolInternal? IEventSymbolInternal.PartialDefinitionPart => PartialDefinitionPart;
 
         /// <summary>
         /// Gets the kind of this symbol.

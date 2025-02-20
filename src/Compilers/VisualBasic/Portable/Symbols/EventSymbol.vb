@@ -7,6 +7,7 @@ Imports System.Collections.Immutable
 Imports System.Diagnostics
 Imports System.Runtime.InteropServices
 Imports Microsoft.CodeAnalysis
+Imports Microsoft.CodeAnalysis.Symbols
 Imports Microsoft.CodeAnalysis.Text
 Imports Microsoft.CodeAnalysis.VisualBasic.Symbols
 Imports Microsoft.CodeAnalysis.VisualBasic.Syntax
@@ -20,7 +21,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
     ''' </summary>
     Partial Friend MustInherit Class EventSymbol
         Inherits Symbol
-        Implements IEventSymbol
+        Implements IEventSymbol, IEventSymbolInternal
 
         ' !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ' Changes to the public interface of this class should remain synchronized with the C# version.
@@ -341,6 +342,20 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
             Get
                 ' Feature not supported in VB
                 Return False
+            End Get
+        End Property
+
+        Private ReadOnly Property IEventSymbolInternal_PartialImplementationPart As IEventSymbolInternal Implements IEventSymbolInternal.PartialImplementationPart
+            Get
+                ' Feature not supported in VB
+                Return Nothing
+            End Get
+        End Property
+
+        Private ReadOnly Property IEventSymbolInternal_PartialDefinitionPart As IEventSymbolInternal Implements IEventSymbolInternal.PartialDefinitionPart
+            Get
+                ' Feature not supported in VB
+                Return Nothing
             End Get
         End Property
 

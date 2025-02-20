@@ -1228,6 +1228,10 @@ internal sealed class CSharpEditAndContinueAnalyzer() : AbstractEditAndContinueA
                     // 1) Event declarations differ in readonly keyword.
                     // 2) Event signature changes
                     // 3) Event name changes
+                    //
+                    // Note: An update of a partial event definition can only affect its attributes. The partial definition does not have a body.
+                    // In that case we do not need to update/analyze the accessors since attribute update has no impact on them.
+                    //
 
                     result.Add((oldEventSymbol, newEventSymbol, editKind));
 

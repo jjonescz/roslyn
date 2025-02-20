@@ -21479,6 +21479,310 @@ class C
             ]);
     }
 
+    [Fact]
+    public void Event_Partial_DeleteInsert_DefinitionPart()
+    {
+        var srcA1 = "partial class C { partial event System.Action E; }";
+        var srcB1 = "partial class C { partial event System.Action E { add { } remove { } } }";
+        var srcC1 = "partial class C { }";
+
+        var srcA2 = "partial class C { }";
+        var srcB2 = "partial class C { partial event System.Action E { add { } remove { } } }";
+        var srcC2 = "partial class C { partial event System.Action E; }";
+
+        EditAndContinueValidation.VerifySemantics(
+            [GetTopEdits(srcA1, srcA2), GetTopEdits(srcB1, srcB2), GetTopEdits(srcC1, srcC2)],
+            [
+                DocumentResults(),
+                DocumentResults(),
+                DocumentResults(),
+            ]);
+    }
+
+    [Fact]
+    public void Event_Partial_DeleteInsert_ImplementationPart()
+    {
+        var srcA1 = "partial class C { partial event System.Action E; }";
+        var srcB1 = "partial class C { partial event System.Action E { add { } remove { } } }";
+        var srcC1 = "partial class C { }";
+
+        var srcA2 = "partial class C { partial event System.Action E; }";
+        var srcB2 = "partial class C { }";
+        var srcC2 = "partial class C { partial event System.Action E { add { } remove { } } }";
+
+        EditAndContinueValidation.VerifySemantics(
+            [GetTopEdits(srcA1, srcA2), GetTopEdits(srcB1, srcB2), GetTopEdits(srcC1, srcC2)],
+            [
+                DocumentResults(),
+                DocumentResults(),
+                DocumentResults(
+                    semanticEdits:
+                    [
+                        SemanticEdit(SemanticEditKind.Update, c => c.GetMember<IMethodSymbol>("C.add_E").PartialImplementationPart, partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Update, c => c.GetMember<IMethodSymbol>("C.remove_E").PartialImplementationPart, partialType: "C"),
+                    ]),
+            ]);
+    }
+
+    [Fact]
+    public void Event_Partial_Swap_ImplementationAndDefinitionParts()
+    {
+        var srcA1 = "partial class C { partial event System.Action E; }";
+        var srcB1 = "partial class C { partial event System.Action E { add { } remove { } } }";
+
+        var srcA2 = "partial class C { partial event System.Action E { add { } remove { } } }";
+        var srcB2 = "partial class C { partial event System.Action E; }";
+
+        EditAndContinueValidation.VerifySemantics(
+            [GetTopEdits(srcA1, srcA2), GetTopEdits(srcB1, srcB2)],
+            [
+                DocumentResults(
+                    semanticEdits:
+                    [
+                        SemanticEdit(SemanticEditKind.Update, c => c.GetMember<IMethodSymbol>("C.add_E").PartialImplementationPart, partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Update, c => c.GetMember<IMethodSymbol>("C.remove_E").PartialImplementationPart, partialType: "C"),
+                    ]),
+                DocumentResults(),
+            ]);
+    }
+
+    [Fact]
+    public void Event_Partial_DeleteBoth()
+    {
+        var srcA1 = "partial class C { partial event System.Action E; }";
+        var srcB1 = "partial class C { partial event System.Action E { add { } remove { } } }";
+
+        var srcA2 = "partial class C { }";
+        var srcB2 = "partial class C { }";
+
+        EditAndContinueValidation.VerifySemantics(
+            [GetTopEdits(srcA1, srcA2), GetTopEdits(srcB1, srcB2)],
+            [
+                DocumentResults(
+                    semanticEdits:
+                    [
+                        SemanticEdit(SemanticEditKind.Delete, c => c.GetMember<IEventSymbol>("C.E").PartialImplementationPart, deletedSymbolContainerProvider: c => c.GetMember("C"), partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Delete, c => c.GetMember<IMethodSymbol>("C.add_E").PartialImplementationPart, deletedSymbolContainerProvider: c => c.GetMember("C"), partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Delete, c => c.GetMember<IMethodSymbol>("C.remove_E").PartialImplementationPart, deletedSymbolContainerProvider: c => c.GetMember("C"), partialType: "C"),
+                    ]),
+                DocumentResults(
+                    semanticEdits:
+                    [
+                        SemanticEdit(SemanticEditKind.Delete, c => c.GetMember<IEventSymbol>("C.E").PartialImplementationPart, deletedSymbolContainerProvider: c => c.GetMember("C"), partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Delete, c => c.GetMember<IMethodSymbol>("C.add_E").PartialImplementationPart, deletedSymbolContainerProvider: c => c.GetMember("C"), partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Delete, c => c.GetMember<IMethodSymbol>("C.remove_E").PartialImplementationPart, deletedSymbolContainerProvider: c => c.GetMember("C"), partialType: "C"),
+                    ]),
+            ]);
+    }
+
+    [Fact]
+    public void Event_Partial_DeleteInsertBoth()
+    {
+        var srcA1 = "partial class C { partial event System.Action E; }";
+        var srcB1 = "partial class C { partial event System.Action E { add { } remove { } } }";
+        var srcC1 = "partial class C { }";
+        var srcD1 = "partial class C { }";
+
+        var srcA2 = "partial class C { }";
+        var srcB2 = "partial class C { }";
+        var srcC2 = "partial class C { partial event System.Action E; }";
+        var srcD2 = "partial class C { partial event System.Action E { add { } remove { } } }";
+
+        EditAndContinueValidation.VerifySemantics(
+            [GetTopEdits(srcA1, srcA2), GetTopEdits(srcB1, srcB2), GetTopEdits(srcC1, srcC2), GetTopEdits(srcD1, srcD2)],
+            [
+                DocumentResults(),
+                DocumentResults(),
+                DocumentResults(),
+                DocumentResults(
+                    semanticEdits:
+                    [
+                        SemanticEdit(SemanticEditKind.Update, c => c.GetMember<IMethodSymbol>("C.add_E").PartialImplementationPart, partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Update, c => c.GetMember<IMethodSymbol>("C.remove_E").PartialImplementationPart, partialType: "C"),
+                    ]),
+            ]);
+    }
+
+    [Fact]
+    public void Event_Partial_Insert()
+    {
+        var srcA1 = "partial class C { }";
+        var srcB1 = "partial class C { }";
+
+        var srcA2 = "partial class C { partial event System.Action E; }";
+        var srcB2 = "partial class C { partial event System.Action E { add { } remove { } } }";
+
+        EditAndContinueValidation.VerifySemantics(
+            [GetTopEdits(srcA1, srcA2), GetTopEdits(srcB1, srcB2)],
+            [
+                DocumentResults(),
+                DocumentResults(
+                    semanticEdits: [SemanticEdit(SemanticEditKind.Insert, c => c.GetMember<IEventSymbol>("C.E").PartialImplementationPart)]),
+            ],
+            capabilities: EditAndContinueCapabilities.AddMethodToExistingType);
+    }
+
+    [Fact]
+    public void Event_Partial_Insert_Reloadable()
+    {
+        var srcA1 = ReloadableAttributeSrc + "[CreateNewOnMetadataUpdate]partial class C { }";
+        var srcB1 = "partial class C { }";
+
+        var srcA2 = ReloadableAttributeSrc + "[CreateNewOnMetadataUpdate]partial class C { partial event System.Action E; }";
+        var srcB2 = "partial class C { partial event System.Action E { add { } remove { } } }";
+
+        EditAndContinueValidation.VerifySemantics(
+            [GetTopEdits(srcA1, srcA2), GetTopEdits(srcB1, srcB2)],
+            [
+                DocumentResults(
+                    semanticEdits: [SemanticEdit(SemanticEditKind.Replace, c => c.GetMember("C"), partialType: "C")]),
+                DocumentResults(
+                    semanticEdits: [SemanticEdit(SemanticEditKind.Replace, c => c.GetMember("C"), partialType: "C")]),
+            ],
+            capabilities: EditAndContinueCapabilities.NewTypeDefinition);
+    }
+
+    [Fact]
+    public void Event_Partial_Update_Attribute_Definition()
+    {
+        var attribute = """
+            public class A : System.Attribute { public A(int x) {} }
+            """;
+
+        var srcA1 = attribute + "partial class C { [A(1)]partial event System.Action E; }";
+        var srcB1 = "partial class C { partial event System.Action E { add { } remove { } } }";
+
+        var srcA2 = attribute + "partial class C { [A(2)]partial event System.Action E; }";
+        var srcB2 = "partial class C { partial event System.Action E { add { } remove { } } }";
+
+        EditAndContinueValidation.VerifySemantics(
+            [GetTopEdits(srcA1, srcA2), GetTopEdits(srcB1, srcB2)],
+            [
+                DocumentResults(
+                    semanticEdits: [SemanticEdit(SemanticEditKind.Update, c => c.GetMember<IEventSymbol>("C.E").PartialImplementationPart, partialType: "C")]),
+                DocumentResults(),
+            ],
+            capabilities: EditAndContinueCapabilities.ChangeCustomAttributes);
+    }
+
+    [Fact]
+    public void Event_Partial_Update_Attribute_Implementation()
+    {
+        var attribute = """
+            public class A : System.Attribute { public A(int x) {} }
+            """;
+
+        var srcA1 = attribute + "partial class C { partial event System.Action E; }";
+        var srcB1 = "partial class C { [A(1)]partial event System.Action E { add { } remove { } } }";
+
+        var srcA2 = attribute + "partial class C { partial event System.Action E; }";
+        var srcB2 = "partial class C { [A(2)]partial event System.Action E { add { } remove { } } }";
+
+        EditAndContinueValidation.VerifySemantics(
+            [GetTopEdits(srcA1, srcA2), GetTopEdits(srcB1, srcB2)],
+            [
+                DocumentResults(),
+                DocumentResults(
+                    semanticEdits: [SemanticEdit(SemanticEditKind.Update, c => c.GetMember<IEventSymbol>("C.E").PartialImplementationPart, partialType: "C")]),
+            ],
+            capabilities: EditAndContinueCapabilities.ChangeCustomAttributes);
+    }
+
+    [Fact]
+    public void Event_Partial_Update_Attribute_DefinitionAndImplementation()
+    {
+        var attribute = """
+            public class A : System.Attribute { public A(int x) {} }
+            """;
+
+        var srcA1 = attribute + "partial class C { [A(1)]partial event System.Action E; }";
+        var srcB1 = "partial class C { [A(1)]partial event System.Action E { add { } remove { } } }";
+
+        var srcA2 = attribute + "partial class C { [A(2)]partial event System.Action E; }";
+        var srcB2 = "partial class C { [A(2)]partial event System.Action E { add { } remove { } } }";
+
+        EditAndContinueValidation.VerifySemantics(
+            [GetTopEdits(srcA1, srcA2), GetTopEdits(srcB1, srcB2)],
+            [
+                DocumentResults(
+                    semanticEdits: [SemanticEdit(SemanticEditKind.Update, c => c.GetMember<IEventSymbol>("C.E").PartialImplementationPart, partialType: "C")]),
+                DocumentResults(
+                    semanticEdits: [SemanticEdit(SemanticEditKind.Update, c => c.GetMember<IEventSymbol>("C.E").PartialImplementationPart, partialType: "C")]),
+            ],
+            capabilities: EditAndContinueCapabilities.ChangeCustomAttributes);
+    }
+
+    [Fact]
+    public void Event_Partial_DeleteInsert_DefinitionWithAttributeChange()
+    {
+        var attribute = """
+            public class A : System.Attribute {}
+            """;
+
+        var srcA1 = attribute + "partial class C { [A]partial event System.Action E; }";
+        var srcB1 = "partial class C { partial event System.Action E { add { } remove { } } }";
+
+        var srcA2 = attribute + "partial class C { }";
+        var srcB2 = "partial class C { partial event System.Action E { add { } remove { } } partial event System.Action E; }";
+
+        EditAndContinueValidation.VerifySemantics(
+            [GetTopEdits(srcA1, srcA2), GetTopEdits(srcB1, srcB2)],
+            [
+                DocumentResults(),
+
+                DocumentResults(
+                    semanticEdits:
+                    [
+                        SemanticEdit(SemanticEditKind.Update, c => c.GetMember<IEventSymbol>("C.E").PartialImplementationPart, partialType: "C")
+                    ]),
+            ],
+            capabilities: EditAndContinueCapabilities.ChangeCustomAttributes);
+    }
+
+    [Fact]
+    public void Event_Partial_Parameter_TypeChange()
+    {
+        var srcA1 = "partial class C { partial event System.Action E; }";
+        var srcB1 = "partial class C { partial event System.Action E { add { } remove { } } }";
+
+        var srcA2 = "partial class C { partial event System.Func<int> E; }";
+        var srcB2 = "partial class C { partial event System.Func<int> E { add { } remove { } } }";
+
+        EditAndContinueValidation.VerifySemantics(
+            [GetTopEdits(srcA1, srcA2), GetTopEdits(srcB1, srcB2)],
+            [
+                DocumentResults(
+                    semanticEdits:
+                    [
+                        SemanticEdit(SemanticEditKind.Update, c => c.GetMember<IEventSymbol>("C.E").PartialImplementationPart, partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Delete, c => c.GetMember<IMethodSymbol>("C.add_E").PartialImplementationPart, deletedSymbolContainerProvider: c => c.GetMember("C"), partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Delete, c => c.GetMember<IMethodSymbol>("C.remove_E").PartialImplementationPart, deletedSymbolContainerProvider: c => c.GetMember("C"), partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Insert, c => c.GetMember<IMethodSymbol>("C.add_E").PartialImplementationPart, partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Insert, c => c.GetMember<IMethodSymbol>("C.remove_E").PartialImplementationPart, partialType: "C"),
+                    ]),
+                DocumentResults(
+                    semanticEdits:
+                    [
+                        SemanticEdit(SemanticEditKind.Update, c => c.GetMember<IEventSymbol>("C.E").PartialImplementationPart, partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Delete, c => c.GetMember<IMethodSymbol>("C.add_E").PartialImplementationPart, deletedSymbolContainerProvider: c => c.GetMember("C"), partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Delete, c => c.GetMember<IMethodSymbol>("C.remove_E").PartialImplementationPart, deletedSymbolContainerProvider: c => c.GetMember("C"), partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Insert, c => c.GetMember<IMethodSymbol>("C.add_E").PartialImplementationPart, partialType: "C"),
+                        SemanticEdit(SemanticEditKind.Insert, c => c.GetMember<IMethodSymbol>("C.remove_E").PartialImplementationPart, partialType: "C"),
+                    ]),
+            ],
+            capabilities: EditAndContinueCapabilities.AddMethodToExistingType);
+
+        EditAndContinueValidation.VerifySemantics(
+            [GetTopEdits(srcA1, srcA2), GetTopEdits(srcB1, srcB2)],
+            [
+                DocumentResults(
+                    diagnostics: [Diagnostic(RudeEditKind.ChangingSignatureNotSupportedByRuntime, "partial event System.Func<int> E", GetResource("event"))]),
+                DocumentResults(
+                    diagnostics: [Diagnostic(RudeEditKind.ChangingSignatureNotSupportedByRuntime, "partial event System.Func<int> E", GetResource("event"))]),
+            ],
+            capabilities: EditAndContinueCapabilities.Baseline);
+    }
+
     #endregion
 
     #region Parameter

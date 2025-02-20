@@ -657,14 +657,14 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
             End Get
         End Property
 
-        Public ReadOnly Property IPropertySymbolInternal_PartialImplementationPart As IPropertySymbolInternal Implements IPropertySymbolInternal.PartialImplementationPart
+        Private ReadOnly Property IPropertySymbolInternal_PartialImplementationPart As IPropertySymbolInternal Implements IPropertySymbolInternal.PartialImplementationPart
             Get
                 ' Feature not supported in VB
                 Return Nothing
             End Get
         End Property
 
-        Public ReadOnly Property IPropertySymbolInternal_PartialDefinitionPart As IPropertySymbolInternal Implements IPropertySymbolInternal.PartialDefinitionPart
+        Private ReadOnly Property IPropertySymbolInternal_PartialDefinitionPart As IPropertySymbolInternal Implements IPropertySymbolInternal.PartialDefinitionPart
             Get
                 ' Feature not supported in VB
                 Return Nothing

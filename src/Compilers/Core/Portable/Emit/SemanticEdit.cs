@@ -142,12 +142,12 @@ namespace Microsoft.CodeAnalysis.Emit
                 }
             }
 
-            if (oldSymbol is IMethodSymbol { PartialImplementationPart: not null } or IPropertySymbol { PartialImplementationPart: not null })
+            if (oldSymbol is IMethodSymbol { PartialImplementationPart: not null } or IPropertySymbol { PartialImplementationPart: not null } or IEventSymbol { PartialImplementationPart: not null })
             {
                 throw new ArgumentException("Partial member implementation required", nameof(oldSymbol));
             }
 
-            if (newSymbol is IMethodSymbol { PartialImplementationPart: not null } or IPropertySymbol { PartialImplementationPart: not null })
+            if (newSymbol is IMethodSymbol { PartialImplementationPart: not null } or IPropertySymbol { PartialImplementationPart: not null } or IEventSymbol { PartialImplementationPart: not null })
             {
                 throw new ArgumentException("Partial member implementation required", nameof(newSymbol));
             }

@@ -214,16 +214,21 @@ internal static partial class Extensions
         => PartialImplementationPart(symbol) ?? symbol;
 
     public static bool IsPartialDefinition(this ISymbol symbol)
-        => symbol is IMethodSymbol { IsPartialDefinition: true } or IPropertySymbol { IsPartialDefinition: true };
+        => symbol is IMethodSymbol { IsPartialDefinition: true }
+            or IPropertySymbol { IsPartialDefinition: true }
+            or IEventSymbol { IsPartialDefinition: true };
 
     public static bool IsPartialImplementation(this ISymbol symbol)
-        => symbol is IMethodSymbol { PartialDefinitionPart: not null } or IPropertySymbol { PartialDefinitionPart: not null };
+        => symbol is IMethodSymbol { PartialDefinitionPart: not null }
+            or IPropertySymbol { PartialDefinitionPart: not null }
+            or IEventSymbol { PartialDefinitionPart: not null };
 
     public static ISymbol? PartialDefinitionPart(this ISymbol symbol)
         => symbol switch
         {
             IMethodSymbol { PartialDefinitionPart: var def } => def,
             IPropertySymbol { PartialDefinitionPart: var def } => def,
+            IEventSymbol { PartialDefinitionPart: var def } => def,
             _ => null
         };
 
@@ -232,6 +237,7 @@ internal static partial class Extensions
         {
             IMethodSymbol { PartialImplementationPart: var impl } => impl,
             IPropertySymbol { PartialImplementationPart: var impl } => impl,
+            IEventSymbol { PartialImplementationPart: var impl } => impl,
             _ => null
         };
 

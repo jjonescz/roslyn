@@ -412,7 +412,7 @@ namespace Microsoft.CodeAnalysis.Emit
 
                 var newMember = GetRequiredInternalSymbol(edit.NewSymbol);
 
-                // Partial methods/properties/indexers are supplied as implementations but recorded
+                // Partial members are supplied as implementations but recorded
                 // internally as definitions since definitions are used in emit.
                 if (newMember.Kind == SymbolKind.Method)
                 {
@@ -446,6 +446,16 @@ namespace Microsoft.CodeAnalysis.Emit
                     Debug.Assert(edit.OldSymbol == null || ((IPropertySymbol)edit.OldSymbol).PartialImplementationPart == null);
 
                     newMember = newProperty.PartialDefinitionPart ?? newMember;
+                }
+                else if (newMember.Kind == SymbolKind.Event)
+                {
+                    var newEvent = (IEventSymbolInternal)newMember;
+
+                    // Partial events should be implementations, not definitions.
+                    Debug.Assert(newEvent.PartialImplementationPart == null);
+                    Debug.Assert(edit.OldSymbol == null || ((IEventSymbol)edit.OldSymbol).PartialImplementationPart == null);
+
+                    newMember = newEvent.PartialDefinitionPart ?? newMember;
                 }
 
                 AddContainingSymbolChanges(changesBuilder, newMember);

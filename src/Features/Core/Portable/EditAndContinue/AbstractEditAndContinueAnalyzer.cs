@@ -2720,7 +2720,7 @@ internal abstract class AbstractEditAndContinueAnalyzer : IEditAndContinueAnalyz
                                     break;
                                 }
 
-                                // If a partial method/property/indexer definition is deleted (and not moved to another partial type declaration, which is handled above)
+                                // If a partial member definition is deleted (and not moved to another partial type declaration, which is handled above)
                                 // so must be the implementation. An edit will be issued for the implementation change.
                                 if (newSymbol?.IsPartialDefinition() == true)
                                 {
@@ -2868,7 +2868,7 @@ internal abstract class AbstractEditAndContinueAnalyzer : IEditAndContinueAnalyz
                                     break;
                                 }
 
-                                // If a partial method definition is inserted (and not moved to another partial type declaration, which is handled above)
+                                // If a partial member definition is inserted (and not moved to another partial type declaration, which is handled above)
                                 // so must be the implementation. An edit will be issued for the implementation change.
                                 if (newSymbol.IsPartialDefinition())
                                 {
@@ -3647,7 +3647,8 @@ internal abstract class AbstractEditAndContinueAnalyzer : IEditAndContinueAnalyz
             IParameterSymbol or
             ITypeParameterSymbol or
             IPropertySymbol or
-            IEventSymbol { AddMethod.IsImplicitlyDeclared: false, RemoveMethod.IsImplicitlyDeclared: false };
+            IEventSymbol { AddMethod.IsImplicitlyDeclared: false, RemoveMethod.IsImplicitlyDeclared: false } or
+            IEventSymbol { IsPartialDefinition: true };
     }
 
     /// <summary>

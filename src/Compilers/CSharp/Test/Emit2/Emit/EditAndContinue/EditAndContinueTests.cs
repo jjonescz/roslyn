@@ -2878,6 +2878,104 @@ partial class C
         }
 
         [Fact]
+        public void PartialEvent()
+        {
+            using var _ = new EditAndContinueTest(options: TestOptions.DebugDll, parseOptions: TestOptions.RegularNext)
+               .AddBaseline(
+                   source: """
+                   partial class C
+                   {
+                       partial event System.Action E;
+                       partial event System.Action E { add { } remove { } }
+                   }
+                   """,
+                   validator: v =>
+                   {
+                       v.VerifyMethodDefNames(".ctor", ".ctor", "add_E", "remove_E", ".ctor");
+                   })
+                .AddGeneration(
+                    source: """
+                    partial class C
+                    {
+                        [System.Obsolete]partial event System.Action E;
+                        partial event System.Action E { add { } remove { } }
+                    }
+                    """,
+                    edits:
+                    [
+                        Edit(SemanticEditKind.Update, c => c.GetMember<IEventSymbol>("C.E").PartialImplementationPart),
+                    ],
+                    validator: v =>
+                    {
+                        v.VerifyMethodDefNames();
+
+                        v.VerifyEncLogDefinitions(
+                        [
+                            Row(1, TableIndex.Event, EditAndContinueOperation.Default),
+                            Row(10, TableIndex.CustomAttribute, EditAndContinueOperation.Default),
+                            Row(3, TableIndex.MethodSemantics, EditAndContinueOperation.Default),
+                            Row(4, TableIndex.MethodSemantics, EditAndContinueOperation.Default)
+                        ]);
+
+                        v.VerifyEncMapDefinitions(
+                        [
+                            Handle(10, TableIndex.CustomAttribute),
+                            Handle(1, TableIndex.Event),
+                            Handle(3, TableIndex.MethodSemantics),
+                            Handle(4, TableIndex.MethodSemantics)
+                        ]);
+                    })
+                .Verify();
+        }
+
+        [Fact]
+        public void PartialEvent_Accessor()
+        {
+            using var _ = new EditAndContinueTest(options: TestOptions.DebugDll, parseOptions: TestOptions.RegularNext)
+               .AddBaseline(
+                   source: """
+                   partial class C
+                   {
+                       partial event System.Action E;
+                       partial event System.Action E { add { System.Console.Write(1); } remove { } }
+                   }
+                   """,
+                   validator: v =>
+                   {
+                       v.VerifyMethodDefNames(".ctor", ".ctor", "add_E", "remove_E", ".ctor");
+                   })
+                .AddGeneration(
+                    source: """
+                    partial class C
+                    {
+                        partial event System.Action E;
+                        partial event System.Action E { add { System.Console.Write(2); } remove { } }
+                    }
+                    """,
+                    edits:
+                    [
+                        Edit(SemanticEditKind.Update, c => c.GetMember<IMethodSymbol>("C.add_E").PartialImplementationPart),
+                    ],
+                    validator: v =>
+                    {
+                        v.VerifyMethodDefNames("add_E");
+
+                        v.VerifyEncLogDefinitions(
+                        [
+                            Row(3, TableIndex.MethodDef, EditAndContinueOperation.Default),
+                            Row(1, TableIndex.Param, EditAndContinueOperation.Default)
+                        ]);
+
+                        v.VerifyEncMapDefinitions(
+                        [
+                            Handle(3, TableIndex.MethodDef),
+                            Handle(1, TableIndex.Param)
+                        ]);
+                    })
+                .Verify();
+        }
+
+        [Fact]
         public void Method_WithAttributes_Add()
         {
             var source0 =
