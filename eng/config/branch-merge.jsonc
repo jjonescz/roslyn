@@ -1,9 +1,9 @@
 // Used by .github/workflows/main-merge.yml
 {
     "merge-flow-configurations": {
-        // Merge any main changes to release/dev18.0.
+        // Merge any main changes to release/dev17.15.
         "main": {
-            "MergeToBranch": "release/dev18.0",
+            "MergeToBranch": "release/dev17.15",
             "ExtraSwitches": "-QuietComments"
         }
     }
