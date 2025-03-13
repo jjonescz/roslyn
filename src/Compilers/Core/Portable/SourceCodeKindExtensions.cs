@@ -16,6 +16,9 @@ namespace Microsoft.CodeAnalysis
 #pragma warning restore CS0618 // SourceCodeKind.Interactive is obsolete
                     return SourceCodeKind.Script;
 
+                case SourceCodeKind.FileBasedPrograms:
+                    return SourceCodeKind.FileBasedPrograms;
+
                 case SourceCodeKind.Regular:
                 default:
                     return SourceCodeKind.Regular;
@@ -24,7 +27,7 @@ namespace Microsoft.CodeAnalysis
 
         internal static bool IsValid(this SourceCodeKind value)
         {
-            return value >= SourceCodeKind.Regular && value <= SourceCodeKind.Script;
+            return value is SourceCodeKind.Regular or SourceCodeKind.Script or SourceCodeKind.FileBasedPrograms;
         }
     }
 }

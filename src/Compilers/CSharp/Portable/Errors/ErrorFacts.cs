@@ -2487,6 +2487,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 or ErrorCode.ERR_PartialMemberDuplicateImplementation
                 or ErrorCode.ERR_PartialEventInitializer
                 or ErrorCode.ERR_PartialConstructorInitializer
+                or ErrorCode.ERR_PPIgnoredFollowsToken
                     => false,
             };
 #pragma warning restore CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.

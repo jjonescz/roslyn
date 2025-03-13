@@ -108,9 +108,15 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                     break;
 
                 default:
-                    if (lexer.Options.Kind == SourceCodeKind.Script && contextualKind == SyntaxKind.ExclamationToken && hashPosition == 0 && !hash.HasTrailingTrivia)
+                    if (lexer.Options.Kind is SourceCodeKind.Script or SourceCodeKind.FileBasedPrograms &&
+                        contextualKind == SyntaxKind.ExclamationToken && hashPosition == 0 && !hash.HasTrailingTrivia)
                     {
                         result = this.ParseShebangDirective(hash, this.EatToken(SyntaxKind.ExclamationToken), isActive);
+                    }
+                    else if (lexer.Options.Kind is SourceCodeKind.FileBasedPrograms &&
+                        contextualKind == SyntaxKind.ColonToken && !hash.HasTrailingTrivia)
+                    {
+                        result = this.ParseIgnoredDirective(hash, this.EatToken(SyntaxKind.ColonToken), isActive, isFollowingToken);
                     }
                     else
                     {
@@ -679,6 +685,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             // (before all other directives), so they should always be active.
             Debug.Assert(isActive);
             return SyntaxFactory.ShebangDirectiveTrivia(hash, exclamation, this.ParseEndOfDirectiveWithOptionalPreprocessingMessage(), isActive);
+        }
+
+        private DirectiveTriviaSyntax ParseIgnoredDirective(SyntaxToken hash, SyntaxToken colon, bool isActive, bool isFollowingToken)
+        {
+            if (isFollowingToken)
+            {
+                colon = this.AddError(colon, ErrorCode.ERR_PPIgnoredFollowsToken);
+            }
+
+            Debug.Assert(isActive);
+            return SyntaxFactory.IgnoredDirectiveTrivia(hash, colon, this.ParseEndOfDirectiveWithOptionalPreprocessingMessage(), isActive);
         }
 
         private SyntaxToken ParseEndOfDirectiveWithOptionalPreprocessingMessage()

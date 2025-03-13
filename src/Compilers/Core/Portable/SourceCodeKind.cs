@@ -30,5 +30,13 @@ namespace Microsoft.CodeAnalysis
         [Obsolete("Use Script instead", error: false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
         Interactive = 2,
+
+        /// <summary>
+        /// Used for parsing .cs file-based programs.
+        /// </summary>
+        /// <remarks>
+        /// In this mode, ignored directives <c>#!</c> and <c>#:</c> are allowed.
+        /// </remarks>
+        FileBasedPrograms = 3,
     }
 }
