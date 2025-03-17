@@ -2887,6 +2887,7 @@ Microsoft.CodeAnalysis.SeparatedSyntaxList`1.op_Implicit(Microsoft.CodeAnalysis.
 Microsoft.CodeAnalysis.SeparatedSyntaxList`1.op_Implicit(Microsoft.CodeAnalysis.SeparatedSyntaxList{`0})~Microsoft.CodeAnalysis.SeparatedSyntaxList{Microsoft.CodeAnalysis.SyntaxNode}
 Microsoft.CodeAnalysis.SeparatedSyntaxList`1.op_Inequality(Microsoft.CodeAnalysis.SeparatedSyntaxList{`0},Microsoft.CodeAnalysis.SeparatedSyntaxList{`0})
 Microsoft.CodeAnalysis.SourceCodeKind
+Microsoft.CodeAnalysis.SourceCodeKind.FileBasedPrograms
 Microsoft.CodeAnalysis.SourceCodeKind.Interactive
 Microsoft.CodeAnalysis.SourceCodeKind.Regular
 Microsoft.CodeAnalysis.SourceCodeKind.Script
