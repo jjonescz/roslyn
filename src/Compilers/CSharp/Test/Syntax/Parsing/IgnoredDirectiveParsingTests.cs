@@ -20,9 +20,6 @@ public sealed class IgnoredDirectiveParsingTests(ITestOutputHelper output) : Par
 
         VerifyTrivia();
         UsingTree(source, TestOptions.Regular,
-            // (1,1): error CS1024: Preprocessor directive expected
-            // #!xyz
-            Diagnostic(ErrorCode.ERR_PPDirectiveExpected, "#").WithLocation(1, 1),
             // (2,2): error CS9501: '#:' directives can be only used in file-based programs
             // #:name value
             Diagnostic(ErrorCode.ERR_PPIgnoredNeedsFileBasedProgram, ":").WithLocation(2, 2));
@@ -31,17 +28,13 @@ public sealed class IgnoredDirectiveParsingTests(ITestOutputHelper output) : Par
         {
             N(SyntaxKind.EndOfFileToken);
             {
-                L(SyntaxKind.BadDirectiveTrivia);
+                L(SyntaxKind.ShebangDirectiveTrivia);
                 {
                     N(SyntaxKind.HashToken);
-                    M(SyntaxKind.IdentifierToken);
+                    N(SyntaxKind.ExclamationToken);
                     N(SyntaxKind.EndOfDirectiveToken);
                     {
-                        L(SyntaxKind.SkippedTokensTrivia);
-                        {
-                            N(SyntaxKind.ExclamationToken);
-                            N(SyntaxKind.IdentifierToken, "xyz");
-                        }
+                        L(SyntaxKind.PreprocessingMessageTrivia, "xyz");
                         T(SyntaxKind.EndOfLineTrivia, "\n");
                     }
                 }
