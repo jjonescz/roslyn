@@ -113,8 +113,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                     {
                         result = this.ParseShebangDirective(hash, this.EatToken(SyntaxKind.ExclamationToken), isActive);
                     }
-                    else if (lexer.Options.Kind is SourceCodeKind.FileBasedPrograms &&
-                        contextualKind == SyntaxKind.ColonToken && !hash.HasTrailingTrivia)
+                    else if (contextualKind == SyntaxKind.ColonToken && !hash.HasTrailingTrivia)
                     {
                         result = this.ParseIgnoredDirective(hash, this.EatToken(SyntaxKind.ColonToken), isActive, isFollowingToken);
                     }
@@ -689,6 +688,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
 
         private DirectiveTriviaSyntax ParseIgnoredDirective(SyntaxToken hash, SyntaxToken colon, bool isActive, bool isFollowingToken)
         {
+            if (lexer.Options.Kind is not SourceCodeKind.FileBasedPrograms)
+            {
+                colon = this.AddError(colon, ErrorCode.ERR_PPIgnoredNeedsFileBasedProgram);
+            }
+
             if (isFollowingToken)
             {
                 colon = this.AddError(colon, ErrorCode.ERR_PPIgnoredFollowsToken);

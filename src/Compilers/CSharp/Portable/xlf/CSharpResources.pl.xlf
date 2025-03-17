@@ -1642,6 +1642,11 @@
         <target state="new">'#:' directives cannot be after first token in file</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_PPIgnoredNeedsFileBasedProgram">
+        <source>'#:' directives can be only used in file-based programs</source>
+        <target state="new">'#:' directives can be only used in file-based programs</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_ParamsCollectionConstructorDoesntInitializeRequiredMember">
         <source>Constructor '{0}' leaves required member '{1}' uninitialized.</source>
         <target state="translated">Konstruktor „{0}” pozostawia wymaganą składową "{1}".</target>

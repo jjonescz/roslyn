@@ -23,9 +23,9 @@ public sealed class IgnoredDirectiveParsingTests(ITestOutputHelper output) : Par
             // (1,1): error CS1024: Preprocessor directive expected
             // #!xyz
             Diagnostic(ErrorCode.ERR_PPDirectiveExpected, "#").WithLocation(1, 1),
-            // (2,1): error CS1024: Preprocessor directive expected
+            // (2,2): error CS9501: '#:' directives can be only used in file-based programs
             // #:name value
-            Diagnostic(ErrorCode.ERR_PPDirectiveExpected, "#").WithLocation(2, 1));
+            Diagnostic(ErrorCode.ERR_PPIgnoredNeedsFileBasedProgram, ":").WithLocation(2, 2));
 
         N(SyntaxKind.CompilationUnit);
         {
@@ -45,21 +45,13 @@ public sealed class IgnoredDirectiveParsingTests(ITestOutputHelper output) : Par
                         T(SyntaxKind.EndOfLineTrivia, "\n");
                     }
                 }
-                L(SyntaxKind.BadDirectiveTrivia);
+                L(SyntaxKind.IgnoredDirectiveTrivia);
                 {
                     N(SyntaxKind.HashToken);
-                    M(SyntaxKind.IdentifierToken);
+                    N(SyntaxKind.ColonToken);
                     N(SyntaxKind.EndOfDirectiveToken);
                     {
-                        L(SyntaxKind.SkippedTokensTrivia);
-                        {
-                            N(SyntaxKind.ColonToken);
-                            N(SyntaxKind.IdentifierToken, "name");
-                            {
-                                T(SyntaxKind.WhitespaceTrivia, " ");
-                            }
-                            N(SyntaxKind.IdentifierToken, "value");
-                        }
+                        L(SyntaxKind.PreprocessingMessageTrivia, "name value");
                     }
                 }
             }
@@ -67,9 +59,9 @@ public sealed class IgnoredDirectiveParsingTests(ITestOutputHelper output) : Par
         EOF();
 
         UsingTree(source, TestOptions.Script,
-            // (2,1): error CS1024: Preprocessor directive expected
+            // (2,2): error CS9501: '#:' directives can be only used in file-based programs
             // #:name value
-            Diagnostic(ErrorCode.ERR_PPDirectiveExpected, "#").WithLocation(2, 1));
+            Diagnostic(ErrorCode.ERR_PPIgnoredNeedsFileBasedProgram, ":").WithLocation(2, 2));
 
         N(SyntaxKind.CompilationUnit);
         {
@@ -85,21 +77,13 @@ public sealed class IgnoredDirectiveParsingTests(ITestOutputHelper output) : Par
                         T(SyntaxKind.EndOfLineTrivia, "\n");
                     }
                 }
-                L(SyntaxKind.BadDirectiveTrivia);
+                L(SyntaxKind.IgnoredDirectiveTrivia);
                 {
                     N(SyntaxKind.HashToken);
-                    M(SyntaxKind.IdentifierToken);
+                    N(SyntaxKind.ColonToken);
                     N(SyntaxKind.EndOfDirectiveToken);
                     {
-                        L(SyntaxKind.SkippedTokensTrivia);
-                        {
-                            N(SyntaxKind.ColonToken);
-                            N(SyntaxKind.IdentifierToken, "name");
-                            {
-                                T(SyntaxKind.WhitespaceTrivia, " ");
-                            }
-                            N(SyntaxKind.IdentifierToken, "value");
-                        }
+                        L(SyntaxKind.PreprocessingMessageTrivia, "name value");
                     }
                 }
             }
