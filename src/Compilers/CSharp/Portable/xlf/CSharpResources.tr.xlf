@@ -1643,8 +1643,8 @@
         <note />
       </trans-unit>
       <trans-unit id="ERR_PPIgnoredNeedsFileBasedProgram">
-        <source>'#:' directives can be only used in file-based programs</source>
-        <target state="new">'#:' directives can be only used in file-based programs</target>
+        <source>'#:' directives can be only used in file-based programs ('/feature:FileBasedProgram')</source>
+        <target state="new">'#:' directives can be only used in file-based programs ('/feature:FileBasedProgram')</target>
         <note />
       </trans-unit>
       <trans-unit id="ERR_ParamsCollectionConstructorDoesntInitializeRequiredMember">
