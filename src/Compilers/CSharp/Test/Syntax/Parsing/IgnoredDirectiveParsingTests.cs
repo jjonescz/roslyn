@@ -2,6 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Linq;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Xunit;
 using Xunit.Abstractions;
@@ -96,6 +98,43 @@ public sealed class IgnoredDirectiveParsingTests(ITestOutputHelper output) : Par
         CompileAndVerify(source,
             parseOptions: TestOptions.Regular.WithFeature(FeatureName),
             expectedOutput: "123").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Api()
+    {
+        var source = """
+            #:abc
+            """;
+        var root = SyntaxFactory.ParseCompilationUnit(source, options: TestOptions.Regular.WithFeature(FeatureName));
+        var trivia = root.EndOfFileToken.GetLeadingTrivia().Single();
+        Assert.Equal(SyntaxKind.IgnoredDirectiveTrivia, trivia.Kind());
+        var structure = (IgnoredDirectiveTriviaSyntax)trivia.GetStructure()!;
+        var messageTrivia = structure.EndOfDirectiveToken.GetLeadingTrivia().Single();
+        Assert.Equal(SyntaxKind.PreprocessingMessageTrivia, messageTrivia.Kind());
+        Assert.Equal("abc", messageTrivia.ToString());
+        trivia.GetDiagnostics().Verify();
+    }
+
+    [Fact]
+    public void Api_Diagnostics()
+    {
+        var source = """
+            #if X
+            #endif
+            #:abc
+            """;
+        var root = SyntaxFactory.ParseCompilationUnit(source, options: TestOptions.Regular.WithFeature(FeatureName));
+        var trivia = root.EndOfFileToken.GetLeadingTrivia().Last();
+        Assert.Equal(SyntaxKind.IgnoredDirectiveTrivia, trivia.Kind());
+        var structure = (IgnoredDirectiveTriviaSyntax)trivia.GetStructure()!;
+        var messageTrivia = structure.EndOfDirectiveToken.GetLeadingTrivia().Single();
+        Assert.Equal(SyntaxKind.PreprocessingMessageTrivia, messageTrivia.Kind());
+        Assert.Equal("abc", messageTrivia.ToString());
+        trivia.GetDiagnostics().Verify(
+            // (3,2): error CS9283: '#:' directives cannot be after '#if'
+            // #:abc
+            Diagnostic(ErrorCode.ERR_PPIgnoredFollowsIf, ":").WithLocation(3, 2));
     }
 
     [Theory, CombinatorialData]
