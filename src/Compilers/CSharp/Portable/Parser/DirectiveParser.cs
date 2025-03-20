@@ -697,7 +697,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                 colon = this.AddError(colon, ErrorCode.ERR_PPIgnoredFollowsToken);
             }
 
-            Debug.Assert(isActive);
+            if (_context.SeenAnyIfs)
+            {
+                colon = this.AddError(colon, ErrorCode.ERR_PPIgnoredFollowsIf);
+            }
+
             return SyntaxFactory.IgnoredDirectiveTrivia(hash, colon, this.ParseEndOfDirectiveWithOptionalPreprocessingMessage(), isActive);
         }
 
