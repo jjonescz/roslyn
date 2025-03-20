@@ -24,7 +24,7 @@ public sealed class IgnoredDirectiveParsingTests(ITestOutputHelper output) : Par
 
         VerifyTrivia();
         UsingTree(source, options,
-            // (2,2): error CS9501: '#:' directives can be only used in file-based programs ('/feature:FileBasedProgram')
+            // (2,2): error CS9282: '#:' directives can be only used in file-based programs ('/feature:FileBasedProgram')
             // #:name value
             Diagnostic(ErrorCode.ERR_PPIgnoredNeedsFileBasedProgram, ":").WithLocation(2, 2));
 
@@ -152,7 +152,7 @@ public sealed class IgnoredDirectiveParsingTests(ITestOutputHelper output) : Par
 
         VerifyTrivia();
         UsingTree(source, TestOptions.Regular.WithFeature(FeatureName),
-            // (3,2): error CS9500: '#:' directives cannot be after first token in file
+            // (3,2): error CS9281: '#:' directives cannot be after first token in file
             // #:y
             Diagnostic(ErrorCode.ERR_PPIgnoredFollowsToken, ":").WithLocation(3, 2));
 
@@ -221,10 +221,10 @@ public sealed class IgnoredDirectiveParsingTests(ITestOutputHelper output) : Par
 
         VerifyTrivia();
         UsingTree(source, TestOptions.Regular.WithFeature(FeatureName),
-            // (3,2): error CS9502: '#:' directives cannot be after '#if'
+            // (3,2): error CS9283: '#:' directives cannot be after '#if'
             // #:y
             Diagnostic(ErrorCode.ERR_PPIgnoredFollowsIf, ":").WithLocation(3, 2),
-            // (5,2): error CS9502: '#:' directives cannot be after '#if'
+            // (5,2): error CS9283: '#:' directives cannot be after '#if'
             // #:z
             Diagnostic(ErrorCode.ERR_PPIgnoredFollowsIf, ":").WithLocation(5, 2));
 
