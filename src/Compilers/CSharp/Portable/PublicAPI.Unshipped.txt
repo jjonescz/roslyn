@@ -1,2 +1,2 @@
 abstract Microsoft.CodeAnalysis.CSharp.InterceptableLocation.Equals(Microsoft.CodeAnalysis.CSharp.InterceptableLocation? other) -> bool
-
+Microsoft.CodeAnalysis.CSharp.SyntaxKind.IgnoredDirectiveTrivia = 9079 -> Microsoft.CodeAnalysis.CSharp.SyntaxKind
