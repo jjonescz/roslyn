@@ -85,6 +85,19 @@ public sealed class IgnoredDirectiveParsingTests(ITestOutputHelper output) : Par
         EOF();
     }
 
+    [Fact]
+    public void Semantics()
+    {
+        var source = """
+            #!xyz
+            #:name value
+            System.Console.WriteLine(123);
+            """;
+        CompileAndVerify(source,
+            parseOptions: TestOptions.Regular.WithFeature(FeatureName),
+            expectedOutput: "123").VerifyDiagnostics();
+    }
+
     [Theory, CombinatorialData]
     public void ShebangNotFirst(bool script, bool featureFlag)
     {
@@ -272,6 +285,130 @@ public sealed class IgnoredDirectiveParsingTests(ITestOutputHelper output) : Par
                     {
                         L(SyntaxKind.PreprocessingMessageTrivia, "z");
                     }
+                }
+            }
+        }
+        EOF();
+    }
+
+    [Fact]
+    public void SpaceBeforeHash()
+    {
+        var source = """
+             #:x
+            """;
+
+        VerifyTrivia();
+        UsingTree(source, TestOptions.Regular.WithFeature(FeatureName));
+
+        N(SyntaxKind.CompilationUnit);
+        {
+            N(SyntaxKind.EndOfFileToken);
+            {
+                L(SyntaxKind.WhitespaceTrivia, " ");
+                L(SyntaxKind.IgnoredDirectiveTrivia);
+                {
+                    N(SyntaxKind.HashToken);
+                    N(SyntaxKind.ColonToken);
+                    N(SyntaxKind.EndOfDirectiveToken);
+                    {
+                        L(SyntaxKind.PreprocessingMessageTrivia, "x");
+                    }
+                }
+            }
+        }
+        EOF();
+    }
+
+    [Fact]
+    public void SpacesAfterHash()
+    {
+        var source = """
+             # : x
+            """;
+
+        VerifyTrivia();
+        UsingTree(source, TestOptions.Regular.WithFeature(FeatureName),
+            // (1,2): error CS1024: Preprocessor directive expected
+            //  # : x
+            Diagnostic(ErrorCode.ERR_PPDirectiveExpected, "#").WithLocation(1, 2));
+
+        N(SyntaxKind.CompilationUnit);
+        {
+            N(SyntaxKind.EndOfFileToken);
+            {
+                L(SyntaxKind.WhitespaceTrivia, " ");
+                L(SyntaxKind.BadDirectiveTrivia);
+                {
+                    N(SyntaxKind.HashToken);
+                    {
+                        T(SyntaxKind.WhitespaceTrivia, " ");
+                    }
+                    M(SyntaxKind.IdentifierToken);
+                    N(SyntaxKind.EndOfDirectiveToken);
+                    {
+                        L(SyntaxKind.SkippedTokensTrivia);
+                        {
+                            N(SyntaxKind.ColonToken);
+                            {
+                                T(SyntaxKind.WhitespaceTrivia, " ");
+                            }
+                            N(SyntaxKind.IdentifierToken, "x");
+                        }
+                    }
+                }
+            }
+        }
+        EOF();
+    }
+
+    [Fact]
+    public void NoMessage()
+    {
+        var source = """
+            #:
+            """;
+
+        VerifyTrivia();
+        UsingTree(source, TestOptions.Regular.WithFeature(FeatureName));
+
+        N(SyntaxKind.CompilationUnit);
+        {
+            N(SyntaxKind.EndOfFileToken);
+            {
+                L(SyntaxKind.IgnoredDirectiveTrivia);
+                {
+                    N(SyntaxKind.HashToken);
+                    N(SyntaxKind.ColonToken);
+                    N(SyntaxKind.EndOfDirectiveToken);
+                }
+            }
+        }
+        EOF();
+    }
+
+    [Fact]
+    public void NoColon()
+    {
+        var source = """
+            #
+            """;
+
+        VerifyTrivia();
+        UsingTree(source, TestOptions.Regular.WithFeature(FeatureName),
+            // (1,1): error CS1024: Preprocessor directive expected
+            // #
+            Diagnostic(ErrorCode.ERR_PPDirectiveExpected, "#").WithLocation(1, 1));
+
+        N(SyntaxKind.CompilationUnit);
+        {
+            N(SyntaxKind.EndOfFileToken);
+            {
+                L(SyntaxKind.BadDirectiveTrivia);
+                {
+                    N(SyntaxKind.HashToken);
+                    M(SyntaxKind.IdentifierToken);
+                    N(SyntaxKind.EndOfDirectiveToken);
                 }
             }
         }
