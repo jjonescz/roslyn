@@ -8,7 +8,6 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Microsoft.CodeAnalysis.PooledObjects;
 using Microsoft.CodeAnalysis;
 using Microsoft.VisualStudio.LanguageServices.Implementation.CodeModel.InternalElements;
 using Microsoft.VisualStudio.LanguageServices.Implementation.CodeModel.Interop;
@@ -58,12 +57,8 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.CodeModel.Colle
         {
             var node = LookupNode();
             var parentElement = (AbstractCodeElement)this.Parent;
-
-            var nodesBuilder = ArrayBuilder<SyntaxNode>.GetInstance();
-            nodesBuilder.AddRange(CodeModelService.GetLogicalSupportedMemberNodes(node));
-
             return new NodeSnapshot(this.State, _fileCodeModel, node, parentElement,
-                nodesBuilder.ToImmutableAndFree());
+                [.. CodeModelService.GetLogicalSupportedMemberNodes(node)]);
         }
 
         protected override bool TryGetItemByIndex(int index, out EnvDTE.CodeElement element)

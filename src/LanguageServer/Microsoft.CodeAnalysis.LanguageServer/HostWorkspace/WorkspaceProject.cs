@@ -7,7 +7,6 @@ using Microsoft.CodeAnalysis.LanguageServer.Handler.DebugConfiguration;
 using Microsoft.CodeAnalysis.Remote.ProjectSystem;
 using Microsoft.CodeAnalysis.Workspaces.ProjectSystem;
 using Microsoft.Extensions.Logging;
-using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.LanguageServer.HostWorkspace;
 
@@ -169,6 +168,7 @@ internal class WorkspaceProject : IWorkspaceProject
                     case "RunAnalyzersDuringLiveAnalysis": _project.RunAnalyzersDuringLiveAnalysis = bool.Parse(valueOrNull ?? bool.TrueString); break;
                     case "TargetPath": _project.OutputFilePath = GetFullyQualifiedPath(valueOrNull); break;
                     case "TargetRefPath": _project.OutputRefFilePath = GetFullyQualifiedPath(valueOrNull); break;
+                    case "CompilerGeneratedFilesOutputPath": _project.GeneratedFilesOutputDirectory = GetFullyQualifiedPath(valueOrNull); break;
                     case "TargetFrameworkIdentifier": _targetFrameworkManager.UpdateIdentifierForProject(_project.Id, valueOrNull); break;
                 }
             }

@@ -15,7 +15,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.DocumentationComments;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.LanguageService;
-using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Shared.Extensions;
 using Microsoft.CodeAnalysis.SignatureHelp;
 using Microsoft.CodeAnalysis.Text;
@@ -109,8 +108,8 @@ internal sealed partial class AttributeSignatureHelpProvider : AbstractCSharpSig
         var symbolInfo = semanticModel.GetSymbolInfo(attribute, cancellationToken);
         var selectedItem = TryGetSelectedIndex(accessibleConstructors, symbolInfo.Symbol);
 
-        return CreateSignatureHelpItems(accessibleConstructors.Select(c =>
-            Convert(c, within, attribute, semanticModel, structuralTypeDisplayService, documentationCommentFormatter, cancellationToken)).ToList(),
+        return CreateSignatureHelpItems([.. accessibleConstructors.Select(c =>
+            Convert(c, within, attribute, semanticModel, structuralTypeDisplayService, documentationCommentFormatter, cancellationToken))],
             textSpan, GetCurrentArgumentState(root, position, syntaxFacts, textSpan, cancellationToken), selectedItem, parameterIndexOverride: -1);
     }
 
@@ -204,7 +203,7 @@ internal sealed partial class AttributeSignatureHelpProvider : AbstractCSharpSig
         {
             return
             [
-                new SymbolDisplayPart(SymbolDisplayPartKind.Text, null, CSharpFeaturesResources.Properties),
+                new SymbolDisplayPart(SymbolDisplayPartKind.Text, null, FeaturesResources.Properties),
                 Punctuation(SyntaxKind.ColonToken),
                 Space()
             ];

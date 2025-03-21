@@ -5,7 +5,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeGeneration;
 using Microsoft.CodeAnalysis.FindSymbols;
@@ -65,22 +64,17 @@ internal abstract partial class AbstractGenerateTypeService<TService, TSimpleNam
         private State(Compilation compilation)
             => Compilation = compilation;
 
-        public static async Task<State?> GenerateAsync(
+        public static State? Generate(
             TService service,
             SemanticDocument document,
             SyntaxNode node,
             CancellationToken cancellationToken)
         {
             var state = new State(document.SemanticModel.Compilation);
-            if (!await state.TryInitializeAsync(service, document, node, cancellationToken).ConfigureAwait(false))
-            {
-                return null;
-            }
-
-            return state;
+            return state.TryInitialize(service, document, node, cancellationToken) ? state : (State?)null;
         }
 
-        private async Task<bool> TryInitializeAsync(
+        private bool TryInitialize(
             TService service,
             SemanticDocument semanticDocument,
             SyntaxNode node,
@@ -166,7 +160,7 @@ internal abstract partial class AbstractGenerateTypeService<TService, TSimpleNam
                 }
             }
 
-            await DetermineNamespaceOrTypeToGenerateInAsync(service, semanticDocument, cancellationToken).ConfigureAwait(false);
+            DetermineNamespaceOrTypeToGenerateIn(service, semanticDocument, cancellationToken);
 
             // Now, try to infer a possible base type for this new class/interface.
             InferBaseType(service, semanticDocument, cancellationToken);
@@ -280,7 +274,7 @@ internal abstract partial class AbstractGenerateTypeService<TService, TSimpleNam
             return service.IsInInterfaceList(NameOrMemberAccessExpression);
         }
 
-        private async Task DetermineNamespaceOrTypeToGenerateInAsync(
+        private void DetermineNamespaceOrTypeToGenerateIn(
             TService service,
             SemanticDocument document,
             CancellationToken cancellationToken)
@@ -297,7 +291,7 @@ internal abstract partial class AbstractGenerateTypeService<TService, TSimpleNam
                 }
                 else
                 {
-                    var symbol = await SymbolFinder.FindSourceDefinitionAsync(TypeToGenerateInOpt, document.Project.Solution, cancellationToken).ConfigureAwait(false);
+                    var symbol = SymbolFinder.FindSourceDefinition(TypeToGenerateInOpt, document.Project.Solution, cancellationToken);
                     if (symbol == null ||
                         !symbol.IsKind(SymbolKind.NamedType) ||
                         !symbol.Locations.Any(static loc => loc.IsInSource))

@@ -5,7 +5,6 @@
 #nullable disable
 
 using System.Collections.Immutable;
-using Roslyn.Utilities;
 
 #if CODE_STYLE
 using Microsoft.CodeAnalysis.Internal.Editing;
@@ -32,7 +31,7 @@ internal sealed class CodeGenerationOperatorSymbol(
          refKind: RefKind.None,
          explicitInterfaceImplementations: default,
          GetMetadataName(operatorKind),
-         typeParameters: ImmutableArray<ITypeParameterSymbol>.Empty,
+         typeParameters: [],
          parameters,
          returnTypeAttributes,
          documentationCommentXml)

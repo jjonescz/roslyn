@@ -8,10 +8,10 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Microsoft.CodeAnalysis.Editor.UnitTests.CodeActions;
 using Microsoft.CodeAnalysis.ExtractInterface;
 using Microsoft.CodeAnalysis.Notification;
-using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Shared.Extensions;
 using Microsoft.CodeAnalysis.Test.Utilities;
 using Microsoft.CodeAnalysis.Text;
@@ -38,10 +38,12 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.ExtractInterface
             ParseOptions parseOptions = null,
             OptionsCollection options = null)
         {
-            var workspace = languageName == LanguageNames.CSharp
-                ? EditorTestWorkspace.CreateCSharp(markup, composition: Composition, compilationOptions: compilationOptions, parseOptions: parseOptions)
-                : EditorTestWorkspace.CreateVisualBasic(markup, composition: Composition, compilationOptions: compilationOptions, parseOptions: parseOptions);
-
+            var workspace =
+                markup.Trim().StartsWith("<Workspace>")
+                    ? EditorTestWorkspace.CreateWorkspace(XElement.Parse(markup), composition: Composition)
+                    : languageName == LanguageNames.CSharp
+                        ? EditorTestWorkspace.CreateCSharp(markup, composition: Composition, compilationOptions: compilationOptions, parseOptions: parseOptions)
+                        : EditorTestWorkspace.CreateVisualBasic(markup, composition: Composition, compilationOptions: compilationOptions, parseOptions: parseOptions);
             workspace.SetAnalyzerFallbackAndGlobalOptions(options);
 
             return new ExtractInterfaceTestState(workspace);

@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -13,7 +12,6 @@ using Microsoft.VisualStudio.LanguageServices.Implementation.CodeModel.InternalE
 using Microsoft.VisualStudio.LanguageServices.Implementation.CodeModel.Interop;
 using Microsoft.VisualStudio.LanguageServices.Implementation.Interop;
 using Microsoft.VisualStudio.LanguageServices.Implementation.Utilities;
-using Roslyn.Utilities;
 
 namespace Microsoft.VisualStudio.LanguageServices.Implementation.CodeModel
 {
@@ -213,7 +211,7 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.CodeModel
                 access,
                 options,
                 baseType: baseTypeSymbol,
-                implementedInterfaces: implementedInterfaceSymbols.ToImmutableArray());
+                implementedInterfaces: [.. implementedInterfaceSymbols]);
 
             var insertionIndex = CodeModelService.PositionVariantToMemberInsertionIndex(position, containerNode, fileCodeModel: this);
 
@@ -358,7 +356,7 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.CodeModel
                 CodeModelService.GetUnescapedName(name),
                 access,
                 options,
-                implementedInterfaces: implementedInterfaceSymbols.ToImmutableArray());
+                implementedInterfaces: [.. implementedInterfaceSymbols]);
 
             var insertionIndex = CodeModelService.PositionVariantToMemberInsertionIndex(position, containerNode, fileCodeModel: this);
 
@@ -428,7 +426,7 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.CodeModel
                 CodeModelService.GetUnescapedName(name),
                 access,
                 options,
-                implementedInterfaces: implementedInterfaceSymbols.ToImmutableArray());
+                implementedInterfaces: [.. implementedInterfaceSymbols]);
 
             var insertionIndex = CodeModelService.PositionVariantToMemberInsertionIndex(position, containerNode, fileCodeModel: this);
 

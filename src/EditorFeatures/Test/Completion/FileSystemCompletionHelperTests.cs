@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -28,9 +27,9 @@ public class FileSystemCompletionHelperTests
     public void GetItems_Windows1()
     {
         var fsc = new TestFileSystemCompletionHelper(
-            searchPaths: ImmutableArray.Create(@"X:\A", @"X:\B"),
+            searchPaths: [@"X:\A", @"X:\B"],
             baseDirectoryOpt: @"Z:\C",
-            allowableExtensions: ImmutableArray.Create(".abc", ".def"),
+            allowableExtensions: [".abc", ".def"],
             drives: new[] { @"X:\", @"Z:\" },
             directories: new[]
             {
@@ -90,9 +89,9 @@ public class FileSystemCompletionHelperTests
     public void GetItems_Windows_NoBaseDirectory()
     {
         var fsc = new TestFileSystemCompletionHelper(
-            searchPaths: ImmutableArray.Create(@"X:\A", @"X:\B"),
+            searchPaths: [@"X:\A", @"X:\B"],
             baseDirectoryOpt: null,
-            allowableExtensions: ImmutableArray.Create(".abc", ".def"),
+            allowableExtensions: [".abc", ".def"],
             drives: new[] { @"X:\" },
             directories: new[]
             {
@@ -126,9 +125,9 @@ public class FileSystemCompletionHelperTests
     public void GetItems_Windows_NoSearchPaths()
     {
         var fsc = new TestFileSystemCompletionHelper(
-            searchPaths: ImmutableArray<string>.Empty,
+            searchPaths: [],
             baseDirectoryOpt: null,
-            allowableExtensions: ImmutableArray.Create(".abc", ".def"),
+            allowableExtensions: [".abc", ".def"],
             drives: new[] { @"X:\" },
             directories: new[]
             {
@@ -158,10 +157,10 @@ public class FileSystemCompletionHelperTests
     public void GetItems_Windows_Network()
     {
         var fsc = new TestFileSystemCompletionHelper(
-            searchPaths: ImmutableArray<string>.Empty,
+            searchPaths: [],
             baseDirectoryOpt: null,
-            allowableExtensions: ImmutableArray.Create(".cs"),
-            drives: Array.Empty<string>(),
+            allowableExtensions: [".cs"],
+            drives: [],
             directories: new[]
             {
                 @"\\server\share",
@@ -188,10 +187,10 @@ public class FileSystemCompletionHelperTests
     public void GetItems_Unix1()
     {
         var fsc = new TestFileSystemCompletionHelper(
-            searchPaths: ImmutableArray.Create(@"/A", @"/B"),
+            searchPaths: [@"/A", @"/B"],
             baseDirectoryOpt: @"/C",
-            allowableExtensions: ImmutableArray.Create(".abc", ".def"),
-            drives: Array.Empty<string>(),
+            allowableExtensions: [".abc", ".def"],
+            drives: [],
             directories: new[]
             {
                 @"/A",

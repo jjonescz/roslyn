@@ -2,12 +2,10 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CodeStyle;
 using Microsoft.CodeAnalysis.CSharp.CodeStyle;
 using Microsoft.CodeAnalysis.CSharp.NewLines.ArrowExpressionClausePlacement;
-using Microsoft.CodeAnalysis.CSharp.NewLines.ConstructorInitializerPlacement;
 using Microsoft.CodeAnalysis.Editor.UnitTests.CodeActions;
 using Xunit;
 
@@ -34,7 +32,6 @@ public class ArrowExpressionClausePlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInArrowExpressionClause, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -53,7 +50,6 @@ public class ArrowExpressionClausePlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInArrowExpressionClause, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -72,7 +68,6 @@ public class ArrowExpressionClausePlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInArrowExpressionClause, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -94,7 +89,6 @@ public class ArrowExpressionClausePlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInArrowExpressionClause, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -119,7 +113,6 @@ public class ArrowExpressionClausePlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInArrowExpressionClause, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -171,7 +164,6 @@ public class ArrowExpressionClausePlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInArrowExpressionClause, CodeStyleOption2.FalseWithSuggestionEnforcement } }
         }.RunAsync();
     }
@@ -255,7 +247,6 @@ public class ArrowExpressionClausePlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInArrowExpressionClause, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -275,7 +266,6 @@ public class ArrowExpressionClausePlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInArrowExpressionClause, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -295,7 +285,6 @@ public class ArrowExpressionClausePlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInArrowExpressionClause, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -317,7 +306,6 @@ public class ArrowExpressionClausePlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInArrowExpressionClause, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -339,7 +327,6 @@ public class ArrowExpressionClausePlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInArrowExpressionClause, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }

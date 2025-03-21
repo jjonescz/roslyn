@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -109,6 +108,10 @@ internal static class ParenthesizedExpressionSyntaxExtensions
 
         // ((x, y)) -> (x, y)
         if (expression.IsKind(SyntaxKind.TupleExpression))
+            return true;
+
+        // ([...]) -> [...]
+        if (expression.IsKind(SyntaxKind.CollectionExpression))
             return true;
 
         // int Prop => (x); -> int Prop => x;
@@ -255,7 +258,17 @@ internal static class ParenthesizedExpressionSyntaxExtensions
 
         // case x when (y): -> case x when y:
         if (nodeParent.IsKind(SyntaxKind.WhenClause))
+        {
+            // Subtle case, `when (x?[] ...):`.  Can't remove the parentheses here as it can the conditional access
+            // become a conditional expression.
+            for (var current = expression; current != null; current = current.ChildNodes().FirstOrDefault() as ExpressionSyntax)
+            {
+                if (current is ConditionalAccessExpressionSyntax)
+                    return false;
+            }
+
             return true;
+        }
 
         // #if (x)   ->   #if x
         if (nodeParent is DirectiveTriviaSyntax)
@@ -264,6 +277,13 @@ internal static class ParenthesizedExpressionSyntaxExtensions
         // Switch expression arm
         // x => (y)
         if (nodeParent is SwitchExpressionArmSyntax arm && arm.Expression == node)
+            return true;
+
+        // [.. (expr)]    ->    [.. expr]
+        //
+        // Note: There is no precedence with `..` it's always just part of the collection expr, with the expr being
+        // parsed independently of it.  That's why no parens are ever needed here.
+        if (nodeParent is SpreadElementSyntax)
             return true;
 
         // If we have: (X)(++x) or (X)(--x), we don't want to remove the parens. doing so can

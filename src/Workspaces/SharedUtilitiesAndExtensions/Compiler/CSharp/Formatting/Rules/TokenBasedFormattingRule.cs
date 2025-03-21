@@ -196,6 +196,13 @@ internal sealed class TokenBasedFormattingRule : BaseFormattingRule
             return AdjustNewLinesAfterSemicolonToken(previousToken, currentToken);
         }
 
+        if (currentToken.Kind() == SyntaxKind.SemicolonToken &&
+            currentToken.Parent is EmptyStatementSyntax &&
+            currentToken.GetPreviousToken().IsLastTokenOfNode<StatementSyntax>())
+        {
+            return CreateAdjustNewLinesOperation(1, AdjustNewLinesOption.ForceLinesIfOnSingleLine);
+        }
+
         // attribute case ] *
         // force to next line for top level attributes
         if (previousToken.Kind() == SyntaxKind.CloseBracketToken && previousToken.Parent is AttributeListSyntax)
@@ -261,15 +268,11 @@ internal sealed class TokenBasedFormattingRule : BaseFormattingRule
         {
             // ; ;
             if (previousToken.Kind() == SyntaxKind.SemicolonToken)
-            {
                 return CreateAdjustSpacesOperation(1, AdjustSpacesOption.ForceSpacesIfOnSingleLine);
-            }
 
             // ) ; with embedded statement case
             if (previousToken.Kind() == SyntaxKind.CloseParenToken && previousToken.Parent.IsEmbeddedStatementOwnerWithCloseParen())
-            {
                 return CreateAdjustSpacesOperation(1, AdjustSpacesOption.ForceSpacesIfOnSingleLine);
-            }
 
             // * ;
             return CreateAdjustSpacesOperation(0, AdjustSpacesOption.ForceSpacesIfOnSingleLine);

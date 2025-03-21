@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -242,7 +241,7 @@ public abstract class AbstractPdbSourceDocumentTests
         // to be available.
 
         return EditorTestCompositions.EditorFeatures
-            .WithExcludedPartTypes(ImmutableHashSet.Create(typeof(IMetadataAsSourceFileProvider)))
+            .WithExcludedPartTypes([typeof(IMetadataAsSourceFileProvider)])
             .AddParts(typeof(PdbSourceDocumentMetadataAsSourceFileProvider), typeof(NullResultMetadataAsSourceFileProvider));
     }
 

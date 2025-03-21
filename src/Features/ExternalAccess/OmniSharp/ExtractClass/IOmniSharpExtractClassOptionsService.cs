@@ -3,13 +3,12 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Immutable;
-using System.Threading.Tasks;
 
 namespace Microsoft.CodeAnalysis.ExternalAccess.OmniSharp.ExtractClass
 {
     internal interface IOmniSharpExtractClassOptionsService
     {
-        Task<OmniSharpExtractClassOptions?> GetExtractClassOptionsAsync(Document document, INamedTypeSymbol originalType, ImmutableArray<ISymbol> selectedMembers);
+        OmniSharpExtractClassOptions? GetExtractClassOptions(Document document, INamedTypeSymbol originalType, ImmutableArray<ISymbol> selectedMembers);
     }
 
     internal sealed class OmniSharpExtractClassOptions

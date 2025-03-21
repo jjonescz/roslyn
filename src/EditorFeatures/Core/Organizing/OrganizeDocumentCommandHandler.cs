@@ -12,7 +12,6 @@ using Microsoft.CodeAnalysis.Editor.Commanding.Commands;
 using Microsoft.CodeAnalysis.Editor.Shared.Extensions;
 using Microsoft.CodeAnalysis.Editor.Shared.Utilities;
 using Microsoft.CodeAnalysis.Formatting;
-using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.OrganizeImports;
 using Microsoft.CodeAnalysis.Organizing;
 using Microsoft.CodeAnalysis.RemoveUnnecessaryImports;
@@ -35,7 +34,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.Organizing;
 [Name(PredefinedCommandHandlerNames.OrganizeDocument)]
 [method: ImportingConstructor]
 [SuppressMessage("RoslynDiagnosticsReliability", "RS0033:Importing constructor should be [Obsolete]", Justification = "Used in test code: https://github.com/dotnet/roslyn/issues/42814")]
-internal class OrganizeDocumentCommandHandler(
+internal sealed class OrganizeDocumentCommandHandler(
     IThreadingContext threadingContext,
     IAsynchronousOperationListenerProvider listenerProvider) :
     ICommandHandler<OrganizeDocumentCommandArgs>,
@@ -125,7 +124,7 @@ internal class OrganizeDocumentCommandHandler(
         if (!subjectBuffer.TryGetWorkspace(out var workspace))
             return;
 
-        var snapshotSpan = textView.GetTextElementSpan(caretPoint.Value);
+        var snapshotSpan = textView.GetTextElementSpan(textView.Caret.Position.BufferPosition);
 
         var indicatorFactory = workspace.Services.GetRequiredService<IBackgroundWorkIndicatorFactory>();
         using var backgroundWorkContext = indicatorFactory.Create(
@@ -139,7 +138,7 @@ internal class OrganizeDocumentCommandHandler(
 
         await TaskScheduler.Default;
 
-        var currentDocument = await getCurrentDocumentAsync(snapshotSpan.Snapshot, backgroundWorkContext).ConfigureAwait(false);
+        var currentDocument = await getCurrentDocumentAsync(caretPoint.Value.Snapshot, backgroundWorkContext).ConfigureAwait(false);
         if (currentDocument is null)
             return;
 

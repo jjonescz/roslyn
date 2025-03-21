@@ -67,17 +67,23 @@ internal abstract partial class AbstractRenameCommandHandler : ICommandHandler<R
         // If there is already an active session, commit it first
         if (renameService.ActiveSession != null)
         {
-            // Is the caret within any of the rename fields in this buffer?
-            // If so, focus the dashboard
+            if (renameService.ActiveSession.IsCommitInProgress)
+            {
+                return;
+            }
+
             if (renameService.ActiveSession.TryGetContainingEditableSpan(caretPoint.Value, out _))
             {
+                // Is the caret within any of the rename fields in this buffer?
+                // If so, focus the dashboard
                 SetFocusToAdornment(args.TextView);
                 return;
             }
             else
             {
-                // Otherwise, commit the existing session and start a new one.
-                Commit(editorOperationContext);
+                // Otherwise, commit or cancel the existing session and start a new one.
+                // Set placeCaretAtTheEndOfIdentifier to false because a new rename session will be created based on caret's location.
+                CommitIfSynchronousOrCancelIfAsynchronous(args, editorOperationContext, placeCaretAtTheEndOfIdentifier: false);
             }
         }
 

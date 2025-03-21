@@ -4118,8 +4118,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
                 UsingDeclaration("public int I..operator +(int x) => x;", options: options.WithLanguageVersion(LanguageVersion.Preview),
                     // (1,14): error CS1001: Identifier expected
                     // public int I..operator +(int x) => x;
-                    Diagnostic(ErrorCode.ERR_IdentifierExpected, ".operato").WithLocation(1, 14)
-                    );
+                    Diagnostic(ErrorCode.ERR_IdentifierExpected, ".").WithLocation(1, 14));
 
                 N(SyntaxKind.OperatorDeclaration);
                 {
@@ -5964,8 +5963,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
                 UsingDeclaration("int I..operator +(int x) => x;", options: options.WithLanguageVersion(LanguageVersion.Preview),
                     // (1,7): error CS1001: Identifier expected
                     // int I..operator +(int x) => x;
-                    Diagnostic(ErrorCode.ERR_IdentifierExpected, ".operato").WithLocation(1, 7)
-                    );
+                    Diagnostic(ErrorCode.ERR_IdentifierExpected, ".").WithLocation(1, 7));
 
                 N(SyntaxKind.OperatorDeclaration);
                 {
@@ -6088,8 +6086,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
                 UsingDeclaration("int N.I..operator +(int x) => x;", options: options.WithLanguageVersion(LanguageVersion.Preview),
                     // (1,9): error CS1001: Identifier expected
                     // int N.I..operator +(int x) => x;
-                    Diagnostic(ErrorCode.ERR_IdentifierExpected, ".operato").WithLocation(1, 9)
-                    );
+                    Diagnostic(ErrorCode.ERR_IdentifierExpected, ".").WithLocation(1, 9));
 
                 N(SyntaxKind.OperatorDeclaration);
                 {
@@ -7819,8 +7816,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
                 UsingDeclaration("explicit I..operator int(int x) => x;", options: options.WithLanguageVersion(LanguageVersion.Preview),
                     // (1,12): error CS1001: Identifier expected
                     // explicit I..operator int(int x) => x;
-                    Diagnostic(ErrorCode.ERR_IdentifierExpected, ".operato").WithLocation(1, 12)
-                    );
+                    Diagnostic(ErrorCode.ERR_IdentifierExpected, ".").WithLocation(1, 12));
 
                 N(SyntaxKind.ConversionOperatorDeclaration);
                 {
@@ -8551,8 +8547,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
                 UsingDeclaration("explicit N.I..operator int(int x) => x;", options: options.WithLanguageVersion(LanguageVersion.Preview),
                     // (1,14): error CS1001: Identifier expected
                     // explicit N.I..operator int(int x) => x;
-                    Diagnostic(ErrorCode.ERR_IdentifierExpected, ".operato").WithLocation(1, 14)
-                    );
+                    Diagnostic(ErrorCode.ERR_IdentifierExpected, ".").WithLocation(1, 14));
 
                 N(SyntaxKind.ConversionOperatorDeclaration);
                 {
@@ -10125,7 +10120,7 @@ class C<T> where T : Type, /*comment*/ delegate /*comment*/ { }
         [Theory, WorkItem(60394, "https://github.com/dotnet/roslyn/issues/60394")]
         [InlineData("implicit", SyntaxKind.ImplicitKeyword)]
         [InlineData("explicit", SyntaxKind.ExplicitKeyword)]
-        public void UnheckedOperatorDeclaration_05(string op, SyntaxKind opToken)
+        public void UncheckedOperatorDeclaration_05(string op, SyntaxKind opToken)
         {
             UsingDeclaration(op + " operator unchecked D(C x) => x;", expectedErrors:
                 // (1,19): error CS9027: Unexpected keyword 'unchecked'

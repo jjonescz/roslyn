@@ -181,6 +181,12 @@ namespace Microsoft.CodeAnalysis.CSharp
         private readonly bool _useConstructorExitWarnings;
 
         /// <summary>
+        /// Non-null if we are performing the 'null-resilience' analysis of a getter which uses the 'field' keyword.
+        /// In this case, the inferred nullable annotation of the backing field must not be used, as we are currently in the process of inferring it.
+        /// </summary>
+        private readonly (SynthesizedBackingFieldSymbol field, NullableAnnotation assumedAnnotation)? _getterNullResilienceData;
+
+        /// <summary>
         /// If true, the parameter types and nullability from _delegateInvokeMethod is used for
         /// initial parameter state. If false, the signature of CurrentSymbol is used instead.
         /// </summary>
@@ -244,7 +250,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <summary>
         /// Map from a target-typed expression (such as a target-typed conditional, switch or new) to the delegate
         /// that completes analysis once the target type is known.
-        /// The delegate is invoked by <see cref="VisitConversion(BoundConversion, BoundExpression, Conversion, TypeWithAnnotations, TypeWithState, bool, bool, bool, AssignmentKind, ParameterSymbol, bool, bool, bool, Optional&lt;LocalState&gt;,bool, Location, ArrayBuilder&lt;VisitResult&gt;)"/>.
+        /// The delegate is invoked by <see cref="VisitConversion(BoundConversion, BoundExpression, Conversion, TypeWithAnnotations, TypeWithState, bool, bool, bool, AssignmentKind, ParameterSymbol, bool, bool, bool, bool, Optional&lt;LocalState&gt;,bool, Location, ArrayBuilder&lt;VisitResult&gt;)"/>.
         /// </summary>
         private PooledDictionary<BoundExpression, Func<TypeWithAnnotations, TypeWithState>> TargetTypedAnalysisCompletion
             => _targetTypedAnalysisCompletionOpt ??= PooledDictionary<BoundExpression, Func<TypeWithAnnotations, TypeWithState>>.GetInstance();
@@ -448,6 +454,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             CSharpCompilation compilation,
             Symbol? symbol,
             bool useConstructorExitWarnings,
+            (SynthesizedBackingFieldSymbol field, NullableAnnotation assumedAnnotation)? getterNullResilienceData,
             bool useDelegateInvokeParameterTypes,
             bool useDelegateInvokeReturnType,
             MethodSymbol? delegateInvokeMethodOpt,
@@ -462,6 +469,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             bool isSpeculative = false)
             : base(compilation, symbol, node, EmptyStructTypeCache.CreatePrecise(), trackUnassignments: true)
         {
+            Debug.Assert(!TrackingRegions);
             Debug.Assert(!useDelegateInvokeParameterTypes || delegateInvokeMethodOpt is object);
             Debug.Assert(baseOrThisInitializer is null or { MethodKind: MethodKind.Constructor });
 
@@ -469,6 +477,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             _binder = binder;
             _conversions = (Conversions)conversions.WithNullability(true);
             _useConstructorExitWarnings = useConstructorExitWarnings;
+            _getterNullResilienceData = getterNullResilienceData;
             _useDelegateInvokeParameterTypes = useDelegateInvokeParameterTypes;
             _useDelegateInvokeReturnType = useDelegateInvokeReturnType;
             _delegateInvokeMethod = delegateInvokeMethodOpt;
@@ -612,7 +621,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         EnforceParameterNotNullOnExit(returnStatement.Syntax, pendingReturn.State);
                         EnforceNotNullWhenForPendingReturn(pendingReturn, returnStatement);
-                        enforceMemberNotNullWhenForPendingReturn(pendingReturn, returnStatement);
+                        EnforceMemberNotNullWhenForPendingReturn(pendingReturn, returnStatement);
                     }
                 }
             }
@@ -690,7 +699,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         {
                             foreach (var memberName in method.NotNullMembers)
                             {
-                                enforceMemberNotNullOnMember(syntaxOpt, state, method, memberName);
+                                EnforceMemberNotNullOnMember(syntaxOpt, state, method, memberName);
                             }
 
                             method = method.OverriddenMethod;
@@ -723,7 +732,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 switch (member)
                 {
                     case FieldSymbol f:
-                        symbolType = f.TypeWithAnnotations;
+                        symbolType = GetTypeOrReturnTypeWithAnnotations(f);
                         field = f;
                         symbol = (Symbol?)(f.AssociatedSymbol as PropertySymbol) ?? f;
                         break;
@@ -791,113 +800,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            void enforceMemberNotNullOnMember(SyntaxNode? syntaxOpt, LocalState state, MethodSymbol method, string memberName)
-            {
-                foreach (var member in method.ContainingType.GetMembers(memberName))
-                {
-                    if (memberHasBadState(member, state))
-                    {
-                        // Member '{name}' must have a non-null value when exiting.
-                        Diagnostics.Add(ErrorCode.WRN_MemberNotNull, syntaxOpt?.GetLocation() ?? methodMainNode.Syntax.GetLastToken().GetLocation(), member.Name);
-                    }
-                }
-            }
-
-            void enforceMemberNotNullWhenForPendingReturn(PendingBranch pendingReturn, BoundReturnStatement returnStatement)
-            {
-                if (pendingReturn.IsConditionalState)
-                {
-                    if (returnStatement.ExpressionOpt is { ConstantValueOpt: { IsBoolean: true, BooleanValue: bool value } })
-                    {
-                        enforceMemberNotNullWhen(returnStatement.Syntax, sense: value, pendingReturn.State);
-                        return;
-                    }
-
-                    if (!pendingReturn.StateWhenTrue.Reachable || !pendingReturn.StateWhenFalse.Reachable)
-                    {
-                        return;
-                    }
-
-                    if (_symbol is MethodSymbol method)
-                    {
-                        foreach (var memberName in method.NotNullWhenTrueMembers)
-                        {
-                            enforceMemberNotNullWhenIfAffected(returnStatement.Syntax, sense: true, method.ContainingType.GetMembers(memberName), pendingReturn.StateWhenTrue, pendingReturn.StateWhenFalse);
-                        }
-
-                        foreach (var memberName in method.NotNullWhenFalseMembers)
-                        {
-                            enforceMemberNotNullWhenIfAffected(returnStatement.Syntax, sense: false, method.ContainingType.GetMembers(memberName), pendingReturn.StateWhenFalse, pendingReturn.StateWhenTrue);
-                        }
-                    }
-                }
-                else if (returnStatement.ExpressionOpt is { ConstantValueOpt: { IsBoolean: true, BooleanValue: bool value } })
-                {
-                    enforceMemberNotNullWhen(returnStatement.Syntax, sense: value, pendingReturn.State);
-                }
-            }
-
-            void enforceMemberNotNullWhenIfAffected(SyntaxNode? syntaxOpt, bool sense, ImmutableArray<Symbol> members, LocalState state, LocalState otherState)
-            {
-                foreach (var member in members)
-                {
-                    // For non-constant values, only complain if we were able to analyze a difference for this member between two branches
-                    if (memberHasBadState(member, state) != memberHasBadState(member, otherState))
-                    {
-                        reportMemberIfBadConditionalState(syntaxOpt, sense, member, state);
-                    }
-                }
-            }
-
-            void enforceMemberNotNullWhen(SyntaxNode? syntaxOpt, bool sense, LocalState state)
-            {
-                if (_symbol is MethodSymbol method)
-                {
-                    var notNullMembers = sense ? method.NotNullWhenTrueMembers : method.NotNullWhenFalseMembers;
-                    foreach (var memberName in notNullMembers)
-                    {
-                        foreach (var member in method.ContainingType.GetMembers(memberName))
-                        {
-                            reportMemberIfBadConditionalState(syntaxOpt, sense, member, state);
-                        }
-                    }
-                }
-            }
-
-            void reportMemberIfBadConditionalState(SyntaxNode? syntaxOpt, bool sense, Symbol member, LocalState state)
-            {
-                if (memberHasBadState(member, state))
-                {
-                    // Member '{name}' must have a non-null value when exiting with '{sense}'.
-                    Diagnostics.Add(ErrorCode.WRN_MemberNotNullWhen, syntaxOpt?.GetLocation() ?? methodMainNode.Syntax.GetLastToken().GetLocation(), member.Name, sense ? "true" : "false");
-                }
-            }
-
-            bool memberHasBadState(Symbol member, LocalState state)
-            {
-                switch (member.Kind)
-                {
-                    case SymbolKind.Field:
-                    case SymbolKind.Property:
-                        if (getSlotForFieldOrPropertyOrEvent(member) is int memberSlot &&
-                            memberSlot > 0)
-                        {
-                            var parameterState = GetState(ref state, memberSlot);
-                            return !parameterState.IsNotNull();
-                        }
-                        else
-                        {
-                            return false;
-                        }
-
-                    case SymbolKind.Event:
-                    case SymbolKind.Method:
-                        break;
-                }
-
-                return false;
-            }
-
             void makeNotNullMembersMaybeNull()
             {
                 if (_symbol is MethodSymbol method)
@@ -939,10 +841,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 default:
                                     break;
                             }
-                            var memberSlot = getSlotForFieldOrPropertyOrEvent(memberToInitialize);
+                            var memberSlot = GetSlotForMemberPostCondition(memberToInitialize);
                             if (memberSlot > 0)
                             {
-                                var type = memberToInitialize.GetTypeOrReturnType();
+                                var type = GetTypeOrReturnTypeWithAnnotations(memberToInitialize);
                                 if (!type.NullableAnnotation.IsOblivious())
                                 {
                                     SetState(ref this.State, memberSlot, type.Type.IsPossiblyNullableReferenceTypeTypeParameter() ? NullableFlowState.MaybeDefault : NullableFlowState.MaybeNull);
@@ -954,9 +856,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         do
                         {
-                            makeMembersMaybeNull(method, method.NotNullMembers);
-                            makeMembersMaybeNull(method, method.NotNullWhenTrueMembers);
-                            makeMembersMaybeNull(method, method.NotNullWhenFalseMembers);
+                            MakeMembersMaybeNull(method, method.NotNullMembers);
+                            MakeMembersMaybeNull(method, method.NotNullWhenTrueMembers);
+                            MakeMembersMaybeNull(method, method.NotNullWhenFalseMembers);
                             method = method.OverriddenMethod;
                         }
                         while (method != null);
@@ -1017,13 +919,28 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 => ImmutableArray<Symbol>.Empty,
 
                             (includeAllMembers: false, includeCurrentTypeRequiredMembers: true, includeBaseRequiredMembers: false)
-                                => containingType.GetMembersUnordered().SelectManyAsArray(predicate: SymbolExtensions.IsRequired, selector: getAllMembersToBeDefaulted),
+                                => containingType.GetMembersUnordered().SelectManyAsArray(
+                                    predicate: SymbolExtensions.IsRequired,
+                                    selector: symbol => getAllMembersToBeDefaulted(symbol, filterOverridingProperties: true)),
 
                             (includeAllMembers: false, includeCurrentTypeRequiredMembers: true, includeBaseRequiredMembers: true)
-                                => containingType.AllRequiredMembers.SelectManyAsArray(static kvp => getAllMembersToBeDefaulted(kvp.Value)),
+                                => containingType.AllRequiredMembers.SelectManyAsArray(static kvp => getAllMembersToBeDefaulted(kvp.Value, filterOverridingProperties: true)),
 
                             (includeAllMembers: true, includeCurrentTypeRequiredMembers: _, includeBaseRequiredMembers: false)
-                                => containingType.GetMembersUnordered().SelectAsArray(getFieldSymbolToBeInitialized),
+                                => containingType.GetMembersUnordered().SelectManyAsArray(
+                                    selector: symbol =>
+                                    {
+                                        var symbolToInitialize = getFieldSymbolToBeInitialized(symbol);
+                                        var prop = symbolToInitialize as PropertySymbol ?? (symbolToInitialize as FieldSymbol)?.AssociatedSymbol as PropertySymbol;
+                                        if (prop is not null && isFilterableOverrideOfAbstractProperty(prop))
+                                        {
+                                            return OneOrMany<Symbol>.Empty;
+                                        }
+                                        else
+                                        {
+                                            return OneOrMany.Create(symbolToInitialize);
+                                        }
+                                    }),
 
                             (includeAllMembers: true, includeCurrentTypeRequiredMembers: true, includeBaseRequiredMembers: true)
                                 => getAllTypeAndRequiredMembers(containingType),
@@ -1035,101 +952,264 @@ namespace Microsoft.CodeAnalysis.CSharp
                         static ImmutableArray<Symbol> getAllTypeAndRequiredMembers(TypeSymbol containingType)
                         {
                             var members = containingType.GetMembersUnordered();
-                            var requiredMembers = containingType.BaseTypeNoUseSiteDiagnostics?.AllRequiredMembers ?? ImmutableSegmentedDictionary<string, Symbol>.Empty;
+                            var baseRequiredMembers = containingType.BaseTypeNoUseSiteDiagnostics?.AllRequiredMembers ?? ImmutableSegmentedDictionary<string, Symbol>.Empty;
 
-                            if (requiredMembers.IsEmpty)
+                            if (baseRequiredMembers.IsEmpty)
                             {
                                 return members;
                             }
 
-                            var builder = ArrayBuilder<Symbol>.GetInstance(members.Length + requiredMembers.Count);
+                            var builder = ArrayBuilder<Symbol>.GetInstance(members.Length + baseRequiredMembers.Count);
                             builder.AddRange(members);
-                            foreach (var (_, requiredMember) in requiredMembers)
+                            foreach (var (_, requiredMember) in baseRequiredMembers)
                             {
                                 // We want to assume that all required members were _not_ set by the chained constructor
-                                builder.AddRange(getAllMembersToBeDefaulted(requiredMember));
+
+                                // We exclude any members that are abstract and have an implementation in the current type, when that implementation passes the same heuristics
+                                // we use in the other other cases (annotations match up across overrides). This is because the chained constructor, which as SetsRequiredMembers as well,
+                                // will have already set the abstract member to non-null, and there isn't a separate slot for that abstract member.
+                                if (requiredMember is PropertySymbol { IsAbstract: true } abstractProperty)
+                                {
+                                    if (members.FirstOrDefault(static (thisMember, baseMember) => thisMember.IsOverride && (object)thisMember.GetOverriddenMember() == baseMember, requiredMember) is { } overridingMember
+                                        && isFilterableOverrideOfAbstractProperty((PropertySymbol)overridingMember))
+                                    {
+                                        continue;
+                                    }
+                                }
+
+                                builder.AddRange(getAllMembersToBeDefaulted(requiredMember, filterOverridingProperties: false));
                             }
 
                             return builder.ToImmutableAndFree();
                         }
 
-                        static IEnumerable<Symbol> getAllMembersToBeDefaulted(Symbol requiredMember)
+                        static OneOrMany<Symbol> getAllMembersToBeDefaulted(Symbol requiredMember, bool filterOverridingProperties)
                         {
                             Debug.Assert(requiredMember.IsRequired());
 
                             if (requiredMember is FieldSymbol)
                             {
-                                yield return requiredMember;
+                                return OneOrMany.Create(requiredMember);
                             }
                             else
                             {
                                 var property = (PropertySymbol)requiredMember;
-                                yield return getFieldSymbolToBeInitialized(property);
+
+                                if (filterOverridingProperties && isFilterableOverrideOfAbstractProperty(property))
+                                {
+                                    return OneOrMany<Symbol>.Empty;
+                                }
+
+                                var @return = OneOrMany.Create(getFieldSymbolToBeInitialized(property));
 
                                 // If the set method is null (ie missing), that's an error, but we'll recover as best we can
                                 foreach (var notNullMemberName in (property.SetMethod?.NotNullMembers ?? property.NotNullMembers))
                                 {
                                     foreach (var member in property.ContainingType.GetMembers(notNullMemberName))
                                     {
-                                        yield return getFieldSymbolToBeInitialized(member);
+                                        @return = @return.Add(getFieldSymbolToBeInitialized(member));
                                     }
                                 }
+
+                                return @return;
                             }
                         }
 
                         static Symbol getFieldSymbolToBeInitialized(Symbol requiredMember)
-                            => requiredMember is SourcePropertySymbol { IsAutoProperty: true } prop ? prop.BackingField : requiredMember;
+                            => requiredMember is SourcePropertySymbolBase { BackingField: { } backingField } ? backingField : requiredMember;
+
+                        static bool isFilterableOverrideOfAbstractProperty(PropertySymbol property)
+                        {
+                            // If this is an override of an abstract property, and the overridden property has the same nullable
+                            // annotation as us, we can skip default-initializing the property because the chained constructor
+                            // will have done so
+                            if (property.OverriddenProperty is not { IsAbstract: true } overriddenProperty)
+                            {
+                                return false;
+                            }
+
+                            var symbolAnnotations = property is SourcePropertySymbolBase { UsesFieldKeyword: true, BackingField: { } field }
+                                ? field!.FlowAnalysisAnnotations
+                                : property.GetFlowAnalysisAnnotations();
+                            var symbolType = ApplyUnconditionalAnnotations(property.TypeWithAnnotations, symbolAnnotations);
+                            if (!symbolType.NullableAnnotation.IsNotAnnotated())
+                            {
+                                return false;
+                            }
+
+                            var overriddenAnnotations = overriddenProperty.GetFlowAnalysisAnnotations();
+                            var overriddenType = ApplyUnconditionalAnnotations(overriddenProperty.TypeWithAnnotations, overriddenAnnotations);
+                            return overriddenType.NullableAnnotation == symbolType.NullableAnnotation;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void EnforceMemberNotNullOnMember(SyntaxNode? syntaxOpt, LocalState state, MethodSymbol method, string memberName)
+        {
+            foreach (var member in method.ContainingType.GetMembers(memberName))
+            {
+                if (FailsMemberNotNullExpectation(member, state))
+                {
+                    SyntaxNodeOrToken syntax = syntaxOpt switch
+                    {
+                        BlockSyntax blockSyntax => blockSyntax.CloseBraceToken,
+                        LocalFunctionStatementSyntax localFunctionSyntax => localFunctionSyntax.GetLastToken(),
+                        _ => syntaxOpt ?? (SyntaxNodeOrToken)methodMainNode.Syntax.GetLastToken()
+                    };
+
+                    // Member '{name}' must have a non-null value when exiting.
+                    Diagnostics.Add(ErrorCode.WRN_MemberNotNull, syntax.GetLocation(), member.Name);
+                }
+            }
+        }
+
+        private void EnforceMemberNotNullWhenForPendingReturn(PendingBranch pendingReturn, BoundReturnStatement returnStatement)
+        {
+            if (pendingReturn.IsConditionalState)
+            {
+                if (returnStatement.ExpressionOpt is { ConstantValueOpt: { IsBoolean: true, BooleanValue: bool value } })
+                {
+                    enforceMemberNotNullWhen(returnStatement.Syntax, sense: value, pendingReturn.State);
+                    return;
+                }
+
+                if (!pendingReturn.StateWhenTrue.Reachable || !pendingReturn.StateWhenFalse.Reachable)
+                {
+                    return;
+                }
+
+                if (_symbol is MethodSymbol method)
+                {
+                    foreach (var memberName in method.NotNullWhenTrueMembers)
+                    {
+                        enforceMemberNotNullWhenIfAffected(returnStatement.Syntax, sense: true, members: method.ContainingType.GetMembers(memberName), state: pendingReturn.StateWhenTrue, otherState: pendingReturn.StateWhenFalse);
+                    }
+
+                    foreach (var memberName in method.NotNullWhenFalseMembers)
+                    {
+                        enforceMemberNotNullWhenIfAffected(returnStatement.Syntax, sense: false, members: method.ContainingType.GetMembers(memberName), state: pendingReturn.StateWhenFalse, otherState: pendingReturn.StateWhenTrue);
                     }
                 }
             }
 
-            void makeMembersMaybeNull(MethodSymbol method, ImmutableArray<string> members)
+            return;
+
+            void enforceMemberNotNullWhenIfAffected(SyntaxNode? syntaxOpt, bool sense, ImmutableArray<Symbol> members, LocalState state, LocalState otherState)
             {
-                foreach (var memberName in members)
+                foreach (var member in members)
                 {
-                    makeMemberMaybeNull(method, memberName);
+                    // For non-constant values, only complain if we were able to analyze a difference for this member between two branches
+                    if (FailsMemberNotNullExpectation(member, state) != FailsMemberNotNullExpectation(member, otherState))
+                    {
+                        ReportFailedMemberNotNullIfNeeded(syntaxOpt, sense, member, state);
+                    }
                 }
             }
+
+            void enforceMemberNotNullWhen(SyntaxNode? syntaxOpt, bool sense, LocalState state)
+            {
+                if (_symbol is MethodSymbol method)
+                {
+                    var notNullMembers = sense ? method.NotNullWhenTrueMembers : method.NotNullWhenFalseMembers;
+                    foreach (var memberName in notNullMembers)
+                    {
+                        foreach (var member in method.ContainingType.GetMembers(memberName))
+                        {
+                            ReportFailedMemberNotNullIfNeeded(syntaxOpt, sense, member, state);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void ReportFailedMemberNotNullIfNeeded(SyntaxNode? syntaxOpt, bool sense, Symbol member, LocalState state)
+        {
+            if (FailsMemberNotNullExpectation(member, state))
+            {
+                // Member '{name}' must have a non-null value when exiting with '{sense}'.
+                Diagnostics.Add(ErrorCode.WRN_MemberNotNullWhen, syntaxOpt?.GetLocation() ?? methodMainNode.Syntax.GetLastToken().GetLocation(), member.Name, sense ? "true" : "false");
+            }
+        }
+
+        private bool FailsMemberNotNullExpectation(Symbol member, LocalState state)
+        {
+            switch (member.Kind)
+            {
+                case SymbolKind.Field:
+                case SymbolKind.Property:
+                    if (GetSlotForMemberPostCondition(member) is int memberSlot &&
+                        memberSlot > 0)
+                    {
+                        var parameterState = GetState(ref state, memberSlot);
+                        return !parameterState.IsNotNull();
+                    }
+                    else
+                    {
+                        return false;
+                    }
+
+                case SymbolKind.Event:
+                case SymbolKind.Method:
+                    break;
+            }
+
+            return false;
+        }
+
+        private void MakeMembersMaybeNull(MethodSymbol method, ImmutableArray<string> members)
+        {
+            foreach (var memberName in members)
+            {
+                makeMemberMaybeNull(method, memberName);
+            }
+            return;
 
             void makeMemberMaybeNull(MethodSymbol method, string memberName)
             {
                 var type = method.ContainingType;
                 foreach (var member in type.GetMembers(memberName))
                 {
-                    if (getSlotForFieldOrPropertyOrEvent(member) is int memberSlot &&
+                    if (GetSlotForMemberPostCondition(member) is int memberSlot &&
                         memberSlot > 0)
                     {
                         SetState(ref this.State, memberSlot, NullableFlowState.MaybeNull);
                     }
                 }
             }
+        }
 
-            int getSlotForFieldOrPropertyOrEvent(Symbol member)
+        /// <summary>
+        /// Gets a slot for a static member, or a member of 'this', which is being referenced by a postcondition.
+        /// Used for "declaration-site" analysis of MemberNotNullAttributes.
+        /// </summary>
+        private int GetSlotForMemberPostCondition(Symbol member)
+        {
+            if (member.Kind != SymbolKind.Field &&
+                member.Kind != SymbolKind.Property &&
+                member.Kind != SymbolKind.Event)
             {
-                if (member.Kind != SymbolKind.Field &&
-                    member.Kind != SymbolKind.Property &&
-                    member.Kind != SymbolKind.Event)
+                return -1;
+            }
+
+            int containingSlot;
+            if (member.IsStatic)
+            {
+                containingSlot = 0;
+            }
+            else
+            {
+                containingSlot = GetReceiverSlotForMemberPostConditions(_symbol as MethodSymbol);
+                if (containingSlot <= 0)
                 {
+                    // Either trying to access an instance member from a static context,
+                    // or an invalid slot (-1) was returned
                     return -1;
                 }
-
-                int containingSlot = 0;
-                if (!member.IsStatic)
-                {
-                    if (MethodThisParameter is null)
-                    {
-                        return -1;
-                    }
-                    containingSlot = GetOrCreateSlot(MethodThisParameter);
-                    if (containingSlot < 0)
-                    {
-                        return -1;
-                    }
-                    Debug.Assert(containingSlot > 0);
-                }
-
-                return GetOrCreateSlot(member, containingSlot);
             }
+
+            return GetOrCreateSlot(member, containingSlot);
         }
 
         /// <summary>
@@ -1378,6 +1458,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 conversions,
                 diagnostics,
                 useConstructorExitWarnings,
+                getterNullResilienceData: null,
                 useDelegateInvokeParameterTypes: false,
                 useDelegateInvokeReturnType: false,
                 delegateInvokeMethodOpt: null,
@@ -1514,6 +1595,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 binder.Conversions,
                 diagnostics,
                 useConstructorExitWarnings: true,
+                getterNullResilienceData: null,
                 useDelegateInvokeParameterTypes: false,
                 useDelegateInvokeReturnType: false,
                 delegateInvokeMethodOpt: null,
@@ -1565,6 +1647,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 binder.Compilation,
                 symbol,
                 useConstructorExitWarnings: false,
+                getterNullResilienceData: null,
                 useDelegateInvokeParameterTypes: false,
                 useDelegateInvokeReturnType: false,
                 delegateInvokeMethodOpt: null,
@@ -1632,7 +1715,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             Binder binder,
             BoundNode node,
             SyntaxNode syntax,
-            DiagnosticBag diagnostics)
+            DiagnosticBag diagnostics,
+            (SourcePropertyAccessorSymbol getter, SynthesizedBackingFieldSymbol field, NullableAnnotation assumedNullableAnnotation)? getterNullResilienceData = null)
         {
             bool requiresAnalysis = true;
             var compilation = binder.Compilation;
@@ -1648,12 +1732,13 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             Analyze(
                 compilation,
-                symbol: null,
+                symbol: getterNullResilienceData?.getter,
                 node,
                 binder,
                 binder.Conversions,
                 diagnostics,
                 useConstructorExitWarnings: false,
+                getterNullResilienceData is var (_, field, annotation) ? (field, annotation) : null,
                 useDelegateInvokeParameterTypes: false,
                 useDelegateInvokeReturnType: false,
                 delegateInvokeMethodOpt: null,
@@ -1683,6 +1768,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 compilation,
                 symbol,
                 useConstructorExitWarnings: false,
+                getterNullResilienceData: null,
                 useDelegateInvokeParameterTypes: useDelegateInvokeParameterTypes,
                 useDelegateInvokeReturnType: useDelegateInvokeReturnType,
                 delegateInvokeMethodOpt: delegateInvokeMethodOpt,
@@ -1713,6 +1799,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Conversions conversions,
             DiagnosticBag diagnostics,
             bool useConstructorExitWarnings,
+            (SynthesizedBackingFieldSymbol field, NullableAnnotation assumedAnnotation)? getterNullResilienceData,
             bool useDelegateInvokeParameterTypes,
             bool useDelegateInvokeReturnType,
             MethodSymbol? delegateInvokeMethodOpt,
@@ -1726,9 +1813,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             bool requiresAnalysis = true)
         {
             Debug.Assert(diagnostics != null);
+            Debug.Assert(getterNullResilienceData is null || symbol is SourcePropertyAccessorSymbol { MethodKind: MethodKind.PropertyGet });
+            Debug.Assert(getterNullResilienceData is null || !useConstructorExitWarnings);
+
             var walker = new NullableWalker(compilation,
                                             symbol,
                                             useConstructorExitWarnings,
+                                            getterNullResilienceData,
                                             useDelegateInvokeParameterTypes,
                                             useDelegateInvokeReturnType,
                                             delegateInvokeMethodOpt,
@@ -2618,7 +2709,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (!IsSlotMember(targetContainerSlot, member))
                 return;
 
-            TypeWithAnnotations fieldOrPropertyType = member.GetTypeOrReturnType();
+            TypeWithAnnotations fieldOrPropertyType = GetTypeOrReturnTypeWithAnnotations(member);
 
             if (fieldOrPropertyType.Type.IsReferenceType ||
                 fieldOrPropertyType.TypeKind == TypeKind.TypeParameter ||
@@ -2666,7 +2757,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private TypeSymbol NominalSlotType(int slot)
         {
-            return _variables[slot].Symbol.GetTypeOrReturnType().Type;
+            return GetTypeOrReturnType(_variables[slot].Symbol);
         }
 
         /// <summary>
@@ -2701,7 +2792,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(targetSlot > 0);
 
 #if DEBUG
-            var actualType = _variables[targetSlot].Symbol.GetTypeOrReturnType().Type;
+            var actualType = GetTypeOrReturnType(_variables[targetSlot].Symbol);
             Debug.Assert(actualType is { });
 
             if (!actualType.ContainsErrorType() &&
@@ -2721,13 +2812,46 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 var symbol = AsMemberOfType(targetType, variable.Symbol);
                 SetStateAndTrackForFinally(ref this.State, slot, GetDefaultState(symbol));
-                InheritDefaultState(symbol.GetTypeOrReturnType().Type, slot);
+                InheritDefaultState(GetTypeOrReturnType(symbol), slot);
             }
             members.Free();
         }
 
+        private static TypeSymbol GetTypeOrReturnType(Symbol symbol) => symbol.GetTypeOrReturnType().Type;
+
+        /// <summary>Gets the TypeWithAnnotations of a symbol, possibly using the inferred nullable annotation for backing fields.</summary>
+        private TypeWithAnnotations GetTypeOrReturnTypeWithAnnotations(Symbol symbol)
+        {
+            var typeWithAnnotations = symbol.GetTypeOrReturnType();
+            if (symbol is SynthesizedBackingFieldSymbol { InfersNullableAnnotation: true } backingField)
+            {
+                NullableAnnotation nullableAnnotation;
+                if (_getterNullResilienceData is var (analyzedField, assumedNullableAnnotation))
+                {
+                    // If we find a usage of a different backing field, than the one we are currently doing a null resilience analysis on,
+                    // we should not proceed, in order to avoid cycles across inference of multiple fields.
+                    if ((object)analyzedField != backingField)
+                        throw ExceptionUtilities.UnexpectedValue(backingField);
+
+                    // Currently in the process of inferring the nullable annotation for 'backingField'.
+                    // Therefore don't try to access the inferred nullable annotation, use a temporary assumedNullableAnnotation instead.
+                    nullableAnnotation = assumedNullableAnnotation;
+                }
+                else
+                {
+                    nullableAnnotation = backingField.GetInferredNullableAnnotation();
+                }
+
+                typeWithAnnotations = TypeWithAnnotations.Create(typeWithAnnotations.Type, nullableAnnotation);
+            }
+
+            return typeWithAnnotations;
+        }
+
         private NullableFlowState GetDefaultState(Symbol symbol)
-            => ApplyUnconditionalAnnotations(symbol.GetTypeOrReturnType().ToTypeWithState(), GetRValueAnnotations(symbol)).State;
+        {
+            return ApplyUnconditionalAnnotations(GetTypeOrReturnTypeWithAnnotations(symbol).ToTypeWithState(), GetRValueAnnotations(symbol)).State;
+        }
 
         private void InheritNullableStateOfTrackableType(int targetSlot, int valueSlot, int skipSlot)
         {
@@ -3256,6 +3380,14 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 EnterParameters();
 
+                bool isLocalFunction = lambdaOrFunctionSymbol is LocalFunctionSymbol;
+                if (isLocalFunction)
+                {
+                    MakeMembersMaybeNull(lambdaOrFunctionSymbol, lambdaOrFunctionSymbol.NotNullMembers);
+                    MakeMembersMaybeNull(lambdaOrFunctionSymbol, lambdaOrFunctionSymbol.NotNullWhenTrueMembers);
+                    MakeMembersMaybeNull(lambdaOrFunctionSymbol, lambdaOrFunctionSymbol.NotNullWhenFalseMembers);
+                }
+
                 var oldPending2 = SavePending();
 
                 // If this is an iterator, there's an implicit branch before the first statement
@@ -3267,6 +3399,10 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 VisitAlways(lambdaOrFunction.Body);
                 EnforceDoesNotReturn(syntaxOpt: null);
+                if (isLocalFunction)
+                {
+                    enforceMemberNotNull(((LocalFunctionSymbol)lambdaOrFunctionSymbol).Syntax, this.State);
+                }
                 EnforceParameterNotNullOnExit(null, this.State);
 
                 RestorePending(oldPending2); // process any forward branches within the lambda body
@@ -3274,10 +3410,19 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ImmutableArray<PendingBranch> pendingReturns = RemoveReturns();
                 foreach (var pendingReturn in pendingReturns)
                 {
+                    if (isLocalFunction)
+                    {
+                        enforceMemberNotNull(syntax: pendingReturn.Branch?.Syntax, pendingReturn.State);
+                    }
+
                     if (pendingReturn.Branch is BoundReturnStatement returnStatement)
                     {
                         EnforceParameterNotNullOnExit(returnStatement.Syntax, pendingReturn.State);
                         EnforceNotNullWhenForPendingReturn(pendingReturn, returnStatement);
+                        if (isLocalFunction)
+                        {
+                            EnforceMemberNotNullWhenForPendingReturn(pendingReturn, returnStatement);
+                        }
                     }
                 }
 
@@ -3299,6 +3444,19 @@ namespace Microsoft.CodeAnalysis.CSharp
             _delegateInvokeMethod = oldDelegateInvokeMethod;
             this.CurrentSymbol = oldCurrentSymbol;
             this._symbol = oldSymbol;
+            return;
+
+            void enforceMemberNotNull(SyntaxNode? syntax, LocalState state)
+            {
+                if (!state.Reachable)
+                    return;
+
+                var method = (LocalFunctionSymbol)_symbol;
+                foreach (var memberName in method.NotNullMembers)
+                {
+                    EnforceMemberNotNullOnMember(syntax, state, method, memberName);
+                }
+            }
         }
 
         protected override void VisitLocalFunctionUse(
@@ -3646,7 +3804,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // When the target-typing conversion is processed, the completion continuation will be given a target-type and
             // we'll be able to process the element conversions and compute the final visit result.
 
-            var (collectionKind, elementType) = getCollectionDetails(node, node.Type);
+            var (collectionKind, targetElementType) = getCollectionDetails(node, node.Type);
 
             var resultBuilder = ArrayBuilder<VisitResult>.GetInstance(node.Elements.Length);
             var elementConversionCompletions = ArrayBuilder<Func<TypeWithAnnotations, TypeWithState>>.GetInstance();
@@ -3664,18 +3822,30 @@ namespace Microsoft.CodeAnalysis.CSharp
                         VisitRvalue(initializer.Arguments[0]);
                         break;
                     case BoundCollectionExpressionSpreadElement spread:
-                        // https://github.com/dotnet/roslyn/issues/68786: We should check the spread
                         Visit(spread);
+                        if (targetElementType.HasType &&
+                            spread.ElementPlaceholder is { } elementPlaceholder &&
+                            spread.IteratorBody is { })
+                        {
+                            var itemResult = spread.EnumeratorInfoOpt == null ? default : _visitResult;
+                            var iteratorBody = ((BoundExpressionStatement)spread.IteratorBody).Expression;
+                            AddPlaceholderReplacement(elementPlaceholder, expression: elementPlaceholder, itemResult);
+                            var completion = VisitOptionalImplicitConversion(iteratorBody, targetElementType,
+                                useLegacyWarnings: false, trackMembers: false, AssignmentKind.Assignment, delayCompletionForTargetType: true).completion;
+                            Debug.Assert(completion is not null);
+                            elementConversionCompletions.Add(completion);
+                            RemovePlaceholderReplacement(elementPlaceholder);
+                        }
                         break;
                     default:
                         var elementExpr = (BoundExpression)element;
-                        if (!elementType.HasType)
+                        if (!targetElementType.HasType)
                         {
                             VisitRvalueWithState(elementExpr);
                         }
                         else
                         {
-                            var completion = VisitOptionalImplicitConversion(elementExpr, elementType,
+                            var completion = VisitOptionalImplicitConversion(elementExpr, targetElementType,
                                 useLegacyWarnings: false, trackMembers: false, AssignmentKind.Assignment, delayCompletionForTargetType: true).completion;
 
                             Debug.Assert(completion is not null);
@@ -3767,6 +3937,34 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
+        public override BoundNode? VisitCollectionExpressionSpreadElement(BoundCollectionExpressionSpreadElement node)
+        {
+            VisitRvalue(node.Expression);
+
+            if (node.Conversion is BoundConversion { Conversion: var conversion })
+            {
+                Debug.Assert(node.ExpressionPlaceholder is { });
+                Debug.Assert(node.EnumeratorInfoOpt is { });
+                AddPlaceholderReplacement(node.ExpressionPlaceholder, node.Expression, _visitResult);
+                VisitForEachExpression(
+                    node,
+                    node.Conversion,
+                    conversion,
+                    node.ExpressionPlaceholder,
+                    node.EnumeratorInfoOpt,
+                    awaitOpt: null);
+                RemovePlaceholderReplacement(node.ExpressionPlaceholder);
+            }
+            else
+            {
+                Debug.Assert(node.HasErrors);
+                Debug.Assert(node.Conversion is null);
+                Debug.Assert(node.EnumeratorInfoOpt is null);
+            }
+
+            return null;
+        }
+
         private void VisitObjectCreationExpressionBase(BoundObjectCreationExpressionBase node)
         {
             Debug.Assert(!IsConditionalState);
@@ -3782,10 +3980,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(isTargetTyped == argumentsCompletion is not null);
 
             var type = node.Type;
-            (int slot, NullableFlowState resultState, Func<TypeSymbol, MethodSymbol?, int>? initialStateInferenceCompletion) = inferInitialObjectState(node, type, constructor, arguments, argumentResults, isTargetTyped);
+            var initializerOpt = node.InitializerExpressionOpt;
+            (int slot, NullableFlowState resultState, Func<TypeSymbol, MethodSymbol?, int>? initialStateInferenceCompletion) =
+                inferInitialObjectState(node, type, constructor, arguments, argumentResults, isTargetTyped, hasObjectInitializer: initializerOpt is { });
 
             Action<int, TypeSymbol>? initializerCompletion = null;
-            var initializerOpt = node.InitializerExpressionOpt;
             if (initializerOpt != null)
             {
                 initializerCompletion = VisitObjectCreationInitializer(slot, type, initializerOpt, delayCompletionForType: isTargetTyped);
@@ -3868,20 +4067,20 @@ namespace Microsoft.CodeAnalysis.CSharp
             (int slot, NullableFlowState resultState, Func<TypeSymbol, MethodSymbol?, int>? completion) inferInitialObjectState(
                 BoundExpression node, TypeSymbol type, MethodSymbol? constructor,
                 ImmutableArray<BoundExpression> arguments, ImmutableArray<VisitResult> argumentResults,
-                bool isTargetTyped)
+                bool isTargetTyped,
+                bool hasObjectInitializer)
             {
                 if (isTargetTyped)
                 {
-                    return (-1, NullableFlowState.NotNull, inferInitialObjectStateAsContinuation(node, arguments, argumentResults));
+                    return (-1, NullableFlowState.NotNull, inferInitialObjectStateAsContinuation(node, arguments, argumentResults, hasObjectInitializer));
                 }
 
                 Debug.Assert(node.Kind is BoundKind.ObjectCreationExpression or BoundKind.DynamicObjectCreationExpression or BoundKind.NewT or BoundKind.NoPiaObjectCreationExpression);
 
-                var argumentTypes = argumentResults.SelectAsArray(ar => ar.RValueType);
-
                 int slot = -1;
                 var resultState = NullableFlowState.NotNull;
-                if (type is object)
+                if (type is object &&
+                    (hasObjectInitializer || type.IsStructType()))
                 {
                     slot = GetOrCreatePlaceholderSlot(node);
                     if (slot > 0)
@@ -3894,6 +4093,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             if (containingType?.IsTupleType == true && !isDefaultValueTypeConstructor)
                             {
                                 // new System.ValueTuple<T1, ..., TN>(e1, ..., eN)
+                                var argumentTypes = argumentResults.SelectAsArray(ar => ar.RValueType);
                                 TrackNullableStateOfTupleElements(slot, containingType, arguments, argumentTypes, ((BoundObjectCreationExpression)node).ArgsToParamsOpt, useRestField: true);
                             }
                             else
@@ -3938,11 +4138,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             Func<TypeSymbol, MethodSymbol?, int> inferInitialObjectStateAsContinuation(
                 BoundExpression node,
                 ImmutableArray<BoundExpression> arguments,
-                ImmutableArray<VisitResult> argumentResults)
+                ImmutableArray<VisitResult> argumentResults,
+                bool hasObjectInitializer)
             {
                 return (TypeSymbol type, MethodSymbol? constructor) =>
                 {
-                    var (slot, resultState, completion) = inferInitialObjectState(node, type, constructor, arguments, argumentResults, isTargetTyped: false);
+                    var (slot, resultState, completion) = inferInitialObjectState(node, type, constructor, arguments, argumentResults, isTargetTyped: false, hasObjectInitializer);
                     Debug.Assert(completion is null);
                     Debug.Assert(resultState == NullableFlowState.NotNull);
                     return slot;
@@ -4110,7 +4311,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 if (symbol != null)
                 {
-                    Debug.Assert(TypeSymbol.Equals(objectInitializer.Type, symbol.GetTypeOrReturnType().Type, TypeCompareKind.IgnoreNullableModifiersForReferenceTypes));
+                    Debug.Assert(TypeSymbol.Equals(objectInitializer.Type, GetTypeOrReturnType(symbol), TypeCompareKind.IgnoreNullableModifiersForReferenceTypes));
                     symbol = AsMemberOfType(containingType, symbol);
                 }
 
@@ -4127,7 +4328,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 int slot = getOrCreateSlot(containingSlot, symbol);
                 Debug.Assert(!delayCompletionForType || slot == -1);
 
-                Action<int, TypeSymbol>? nestedCompletion = VisitObjectCreationInitializer(slot, symbol.GetTypeOrReturnType().Type, initializer, delayCompletionForType);
+                Action<int, TypeSymbol>? nestedCompletion = VisitObjectCreationInitializer(slot, GetTypeOrReturnType(symbol), initializer, delayCompletionForType);
 
                 return completeNestedInitializerAnalysis(symbol, initializer, slot, nestedCompletion, delayCompletionForType);
             }
@@ -4160,7 +4361,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     int slot = getOrCreateSlot(containingSlot, symbol);
                     completeNestedInitializerAnalysis(symbol, initializer, slot, nestedCompletion: null, delayCompletionForType: false);
-                    nestedCompletion?.Invoke(slot, symbol.GetTypeOrReturnType().Type);
+                    nestedCompletion?.Invoke(slot, GetTypeOrReturnType(symbol));
                 };
             }
 
@@ -4173,9 +4374,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                     TakeIncrementalSnapshot(node.Right);
                 }
 
-                Debug.Assert(symbol.GetTypeOrReturnType().HasType);
+                Debug.Assert(GetTypeOrReturnTypeWithAnnotations(symbol).HasType);
 
-                var type = ApplyLValueAnnotations(symbol.GetTypeOrReturnType(), GetObjectInitializerMemberLValueAnnotations(symbol));
+                var type = ApplyLValueAnnotations(GetTypeOrReturnTypeWithAnnotations(symbol), GetObjectInitializerMemberLValueAnnotations(symbol));
 
                 (TypeWithState resultType, conversionCompletion) =
                     conversionCompletion is not null ?
@@ -4622,6 +4823,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var walker = new NullableWalker(binder.Compilation,
                                             symbol: null,
                                             useConstructorExitWarnings: false,
+                                            getterNullResilienceData: null,
                                             useDelegateInvokeParameterTypes: false,
                                             useDelegateInvokeReturnType: false,
                                             delegateInvokeMethodOpt: null,
@@ -5401,7 +5603,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (childSlot > 0)
                     {
                         SetState(ref state, childSlot, NullableFlowState.NotNull);
-                        MarkDependentSlotsNotNull(childSlot, member.GetTypeOrReturnType().Type, ref state, depth - 1);
+                        MarkDependentSlotsNotNull(childSlot, GetTypeOrReturnType(member), ref state, depth - 1);
                     }
                 }
             }
@@ -6512,7 +6714,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var annotations = parameter.FlowAnalysisAnnotations;
 
             // Conditional annotations are ignored on parameters of non-boolean members.
-            if (parameter.ContainingSymbol.GetTypeOrReturnType().Type.SpecialType != SpecialType.System_Boolean)
+            if (GetTypeOrReturnType(parameter.ContainingSymbol).SpecialType != SpecialType.System_Boolean)
             {
                 // NotNull = NotNullWhenTrue + NotNullWhenFalse
                 bool hasNotNullWhenTrue = (annotations & FlowAnalysisAnnotations.NotNull) == FlowAnalysisAnnotations.NotNullWhenTrue;
@@ -6622,7 +6824,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return nameSyntax.Kind() != SyntaxKind.GenericName;
         }
 
-        protected override void VisitArguments(ImmutableArray<BoundExpression> arguments, ImmutableArray<RefKind> refKindsOpt, MethodSymbol method)
+        protected override void VisitArguments(ImmutableArray<BoundExpression> arguments, ImmutableArray<RefKind> refKindsOpt, MethodSymbol method, ImmutableArray<int> argsToParamsOpt, bool expanded)
         {
             // Callers should be using VisitArguments overload below.
             throw ExceptionUtilities.Unreachable();
@@ -7000,6 +7202,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
+        /// <summary>
+        /// Applies the member postconditions of <paramref name="method"/> to members of <paramref name="receiverOpt"/> or to the appropriate static members.
+        /// Used for the "use-site" analysis of MemberNotNullAttributes.
+        /// </summary>
         private void ApplyMemberPostConditions(BoundExpression? receiverOpt, MethodSymbol? method)
         {
             if (method is null)
@@ -7007,10 +7213,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return;
             }
 
-            int receiverSlot =
-                method.IsStatic ? 0 :
-                receiverOpt is null ? -1 :
-                MakeSlot(receiverOpt);
+            int receiverSlot = receiverOpt is not null && !method.IsStatic
+                ? MakeSlot(receiverOpt)
+                : GetReceiverSlotForMemberPostConditions(method);
 
             if (receiverSlot < 0)
             {
@@ -7018,6 +7223,41 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             ApplyMemberPostConditions(receiverSlot, method);
+        }
+
+        /// <summary>
+        /// Returns -1 when a null method is passed. In this case there are definitely no member postconditions to apply.
+        /// Returns the slot for the `this` parameter for an instance method, or a non-static local function in an instance method.
+        /// Otherwise, returns 0, because postconditions applying to static members of the containing type could be present.
+        /// </summary>
+        private int GetReceiverSlotForMemberPostConditions(MethodSymbol? method)
+        {
+            if (method is null)
+            {
+                return -1;
+            }
+
+            if (method.IsStatic)
+            {
+                return 0;
+            }
+
+            MethodSymbol? current = method;
+            while (current.ContainingSymbol is MethodSymbol container)
+            {
+                current = container;
+                if (container.IsStatic)
+                {
+                    return 0;
+                }
+            }
+
+            if (current.TryGetThisParameter(out var thisParameter) && thisParameter is not null)
+            {
+                return GetOrCreateSlot(thisParameter);
+            }
+
+            return 0;
         }
 
         private void ApplyMemberPostConditions(int receiverSlot, MethodSymbol method)
@@ -7071,7 +7311,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     if (member.IsStatic)
                     {
+                        // Trying to access a static member from a non-static context
                         receiverSlot = 0;
+                    }
+                    else if (receiverSlot == 0)
+                    {
+                        // Trying to access an instance member from a static context
+                        continue;
                     }
 
                     switch (member.Kind)
@@ -8392,7 +8638,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             int targetSlot = GetNullableOfTValueSlot(containingType, containingSlot, out Symbol? symbol);
             if (targetSlot > 0)
             {
-                TrackNullableStateForAssignment(value, symbol!.GetTypeOrReturnType(), targetSlot, valueType, valueSlot);
+                TrackNullableStateForAssignment(value, GetTypeOrReturnTypeWithAnnotations(symbol!), targetSlot, valueType, valueSlot);
             }
         }
 
@@ -8663,6 +8909,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ParameterSymbol? parameterOpt = null,
             bool reportTopLevelWarnings = true,
             bool reportRemainingWarnings = true,
+            bool isSuppressed = false,
             bool extensionMethodThisArgument = false,
             Optional<LocalState> stateForLambda = default,
             bool trackMembers = false,
@@ -8702,9 +8949,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             NullableFlowState resultState = NullableFlowState.NotNull;
             bool canConvertNestedNullability = true;
-            bool isSuppressed = false;
 
-            if (conversionOperand.IsSuppressed == true)
+            if (isSuppressed || conversionOperand.IsSuppressed)
             {
                 reportTopLevelWarnings = false;
                 reportRemainingWarnings = false;
@@ -9817,9 +10063,23 @@ namespace Microsoft.CodeAnalysis.CSharp
             // we may enter a conditional state for error scenarios on the LHS.
             Unsplit();
 
-            FlowAnalysisAnnotations leftAnnotations = GetLValueAnnotations(left);
-            TypeWithAnnotations declaredType = LvalueResultType;
-            TypeWithAnnotations leftLValueType = ApplyLValueAnnotations(declaredType, leftAnnotations);
+            // When a getter-only prop is assigned in a constructor, it is bound as
+            // an assignment of the property even though it is really an assignment of the backing field.
+            // When such a property also uses the field keyword, we want the field's annotations+attributes
+            // to decide the validity of the assignment and the ones on the property itself to be ignored.
+            TypeWithAnnotations leftLValueType;
+            FlowAnalysisAnnotations leftAnnotations;
+            if (left is BoundPropertyAccess { PropertySymbol: SourcePropertySymbolBase { SetMethod: null, UsesFieldKeyword: true } property })
+            {
+                var field = property.BackingField;
+                leftAnnotations = field.FlowAnalysisAnnotations;
+                leftLValueType = ApplyLValueAnnotations(GetTypeOrReturnTypeWithAnnotations(field), leftAnnotations);
+            }
+            else
+            {
+                leftAnnotations = GetLValueAnnotations(left);
+                leftLValueType = ApplyLValueAnnotations(LvalueResultType, leftAnnotations);
+            }
 
             if (left.Kind == BoundKind.EventAccess && ((BoundEventAccess)left).EventSymbol.IsWindowsRuntimeEvent)
             {
@@ -10612,6 +10872,18 @@ namespace Microsoft.CodeAnalysis.CSharp
             return null;
         }
 
+        public override BoundNode? VisitCollectionExpressionSpreadExpressionPlaceholder(BoundCollectionExpressionSpreadExpressionPlaceholder node)
+        {
+            VisitPlaceholderWithReplacement(node);
+            return null;
+        }
+
+        public override BoundNode? VisitValuePlaceholder(BoundValuePlaceholder node)
+        {
+            VisitPlaceholderWithReplacement(node);
+            return null;
+        }
+
         public override BoundNode? VisitEventAccess(BoundEventAccess node)
         {
             var updatedSymbol = VisitMemberAccess(node, node.ReceiverOpt, node.EventSymbol);
@@ -10636,7 +10908,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 _ = CheckPossibleNullReceiver(receiverOpt, checkNullableValueType: !skipReceiverNullCheck);
             }
 
-            var type = member.GetTypeOrReturnType();
+            var type = GetTypeOrReturnTypeWithAnnotations(member);
             var memberAnnotations = GetRValueAnnotations(member);
             var resultType = ApplyUnconditionalAnnotations(type.ToTypeWithState(), memberAnnotations);
 
@@ -10711,6 +10983,23 @@ namespace Microsoft.CodeAnalysis.CSharp
             var (expr, conversion) = RemoveConversion(node.Expression, includeExplicitConversions: false);
             SnapshotWalkerThroughConversionGroup(node.Expression, expr);
 
+            VisitForEachExpression(
+                node,
+                node.Expression,
+                conversion,
+                expr,
+                node.EnumeratorInfoOpt,
+                node.AwaitOpt);
+        }
+
+        private void VisitForEachExpression(
+            BoundNode node,
+            BoundExpression collectionExpression,
+            Conversion conversion,
+            BoundExpression expr,
+            ForEachEnumeratorInfo? enumeratorInfoOpt,
+            BoundAwaitableInfo? awaitOpt)
+        {
             // There are 7 ways that a foreach can be created:
             //    1. The collection type is an array type. For this, initial binding will generate an implicit reference conversion to
             //       IEnumerable, and we do not need to do any reinferring of enumerators here.
@@ -10744,7 +11033,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             MethodSymbol? reinferredGetEnumeratorMethod = null;
 
-            if (node.EnumeratorInfoOpt?.GetEnumeratorInfo is { Method: { IsExtensionMethod: true, Parameters: var parameters } } enumeratorMethodInfo)
+            if (enumeratorInfoOpt?.GetEnumeratorInfo is { Method: { IsExtensionMethod: true, Parameters: var parameters } } enumeratorMethodInfo)
             {
                 // this is case 7
                 // We do not need to do this same analysis for non-extension methods because they do not have generic parameters that
@@ -10772,13 +11061,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else if (conversion.IsImplicit)
             {
-                bool isAsync = node.AwaitOpt != null;
-                if (node.Expression.Type!.SpecialType == SpecialType.System_Collections_IEnumerable)
+                bool isAsync = awaitOpt != null;
+                if (collectionExpression.Type!.SpecialType == SpecialType.System_Collections_IEnumerable)
                 {
                     // If this is a conversion to IEnumerable (non-generic), nothing to do. This is cases 1, 2, and 5.
-                    targetTypeWithAnnotations = TypeWithAnnotations.Create(node.Expression.Type);
+                    targetTypeWithAnnotations = TypeWithAnnotations.Create(collectionExpression.Type);
                 }
-                else if (ForEachLoopBinder.IsIEnumerableT(node.Expression.Type.OriginalDefinition, isAsync, compilation))
+                else if (ForEachLoopBinder.IsIEnumerableT(collectionExpression.Type.OriginalDefinition, isAsync, compilation))
                 {
                     // This is case 4. We need to look for the IEnumerable<T> that this reinferred expression implements,
                     // so that we pick up any nested type substitutions that could have occurred.
@@ -10801,7 +11090,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var convertedResult = VisitConversion(
-                GetConversionIfApplicable(node.Expression, expr),
+                GetConversionIfApplicable(collectionExpression, expr),
                 expr,
                 conversion,
                 targetTypeWithAnnotations,
@@ -10811,15 +11100,15 @@ namespace Microsoft.CodeAnalysis.CSharp
                 useLegacyWarnings: false,
                 AssignmentKind.Assignment);
 
-            bool reportedDiagnostic = node.EnumeratorInfoOpt?.GetEnumeratorInfo.Method is { IsExtensionMethod: true }
+            bool reportedDiagnostic = enumeratorInfoOpt?.GetEnumeratorInfo.Method is { IsExtensionMethod: true }
                 ? false
                 : CheckPossibleNullReceiver(expr);
 
-            SetAnalyzedNullability(node.Expression, new VisitResult(convertedResult, convertedResult.ToTypeWithAnnotations(compilation)));
+            SetAnalyzedNullability(collectionExpression, new VisitResult(convertedResult, convertedResult.ToTypeWithAnnotations(compilation)));
 
             TypeWithState currentPropertyGetterTypeWithState;
 
-            if (node.EnumeratorInfoOpt is null)
+            if (enumeratorInfoOpt is null)
             {
                 currentPropertyGetterTypeWithState = default;
             }
@@ -10834,17 +11123,17 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // There are frameworks where System.String does not implement IEnumerable, but we still lower it to a for loop
                 // using the indexer over the individual characters anyway. So the type must be not annotated char.
                 currentPropertyGetterTypeWithState =
-                    TypeWithAnnotations.Create(node.EnumeratorInfoOpt.ElementType, NullableAnnotation.NotAnnotated).ToTypeWithState();
+                    TypeWithAnnotations.Create(enumeratorInfoOpt.ElementType, NullableAnnotation.NotAnnotated).ToTypeWithState();
             }
             else
             {
-                // Reinfer the return type of the node.Expression.GetEnumerator().Current property, so that if
+                // Reinfer the return type of the collectionExpression.GetEnumerator().Current property, so that if
                 // the collection changed nested generic types we pick up those changes.
                 if (reinferredGetEnumeratorMethod is null)
                 {
                     TypeSymbol? getEnumeratorType;
 
-                    if (node.EnumeratorInfoOpt is { InlineArraySpanType: not WellKnownType.Unknown and var wellKnownSpan })
+                    if (enumeratorInfoOpt is { InlineArraySpanType: not WellKnownType.Unknown and var wellKnownSpan })
                     {
                         Debug.Assert(wellKnownSpan is WellKnownType.System_Span_T or WellKnownType.System_ReadOnlySpan_T);
                         NamedTypeSymbol spanType = compilation.GetWellKnownType(wellKnownSpan);
@@ -10855,29 +11144,29 @@ namespace Microsoft.CodeAnalysis.CSharp
                         getEnumeratorType = convertedResult.Type;
                     }
 
-                    reinferredGetEnumeratorMethod = (MethodSymbol)AsMemberOfType(getEnumeratorType, node.EnumeratorInfoOpt.GetEnumeratorInfo.Method);
+                    reinferredGetEnumeratorMethod = (MethodSymbol)AsMemberOfType(getEnumeratorType, enumeratorInfoOpt.GetEnumeratorInfo.Method);
                 }
 
                 var enumeratorReturnType = GetReturnTypeWithState(reinferredGetEnumeratorMethod);
 
                 if (enumeratorReturnType.State != NullableFlowState.NotNull)
                 {
-                    if (!reportedDiagnostic && !(node.Expression is BoundConversion { Operand: { IsSuppressed: true } }))
+                    if (!reportedDiagnostic && !(collectionExpression is BoundConversion { Operand: { IsSuppressed: true } }))
                     {
                         ReportDiagnostic(ErrorCode.WRN_NullReferenceReceiver, expr.Syntax.GetLocation());
                     }
                 }
 
-                var currentPropertyGetter = (MethodSymbol)AsMemberOfType(enumeratorReturnType.Type, node.EnumeratorInfoOpt.CurrentPropertyGetter);
+                var currentPropertyGetter = (MethodSymbol)AsMemberOfType(enumeratorReturnType.Type, enumeratorInfoOpt.CurrentPropertyGetter);
 
                 currentPropertyGetterTypeWithState = ApplyUnconditionalAnnotations(
                     currentPropertyGetter.ReturnTypeWithAnnotations.ToTypeWithState(),
                     currentPropertyGetter.ReturnTypeFlowAnalysisAnnotations);
 
                 // Analyze `await MoveNextAsync()`
-                if (node.AwaitOpt is { AwaitableInstancePlaceholder: BoundAwaitableValuePlaceholder moveNextPlaceholder } awaitMoveNextInfo)
+                if (awaitOpt is { AwaitableInstancePlaceholder: BoundAwaitableValuePlaceholder moveNextPlaceholder } awaitMoveNextInfo)
                 {
-                    var moveNextAsyncMethod = (MethodSymbol)AsMemberOfType(reinferredGetEnumeratorMethod.ReturnType, node.EnumeratorInfoOpt.MoveNextInfo.Method);
+                    var moveNextAsyncMethod = (MethodSymbol)AsMemberOfType(reinferredGetEnumeratorMethod.ReturnType, enumeratorInfoOpt.MoveNextInfo.Method);
 
                     var result = new VisitResult(GetReturnTypeWithState(moveNextAsyncMethod), moveNextAsyncMethod.ReturnTypeWithAnnotations);
                     AddPlaceholderReplacement(moveNextPlaceholder, moveNextPlaceholder, result);
@@ -10886,11 +11175,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
 
                 // Analyze `await DisposeAsync()`
-                if (node.EnumeratorInfoOpt is { NeedsDisposal: true, DisposeAwaitableInfo: BoundAwaitableInfo awaitDisposalInfo })
+                if (enumeratorInfoOpt is { NeedsDisposal: true, DisposeAwaitableInfo: BoundAwaitableInfo awaitDisposalInfo })
                 {
                     var disposalPlaceholder = awaitDisposalInfo.AwaitableInstancePlaceholder;
                     bool addedPlaceholder = false;
-                    if (node.EnumeratorInfoOpt.PatternDisposeInfo is { Method: var originalDisposeMethod }) // no statically known Dispose method if doing a runtime check
+                    if (enumeratorInfoOpt.PatternDisposeInfo is { Method: var originalDisposeMethod }) // no statically known Dispose method if doing a runtime check
                     {
                         Debug.Assert(disposalPlaceholder is not null);
                         var disposeAsyncMethod = (MethodSymbol)AsMemberOfType(reinferredGetEnumeratorMethod.ReturnType, originalDisposeMethod);
@@ -10987,6 +11276,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 AssignmentKind.ForEachIterationVariable,
                                 reportTopLevelWarnings: true,
                                 reportRemainingWarnings: true,
+                                isSuppressed: node.Expression is BoundConversion { Operand.IsSuppressed: true },
                                 diagnosticLocation: variableLocation);
                         }
 

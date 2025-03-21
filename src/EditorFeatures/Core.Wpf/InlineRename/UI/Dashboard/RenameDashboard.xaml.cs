@@ -87,10 +87,10 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
             }
 
             ResolvableConflictBorder.StrokeThickness = RenameFixupTagDefinition.StrokeThickness;
-            ResolvableConflictBorder.StrokeDashArray = new DoubleCollection(RenameFixupTagDefinition.StrokeDashArray);
+            ResolvableConflictBorder.StrokeDashArray = [.. RenameFixupTagDefinition.StrokeDashArray];
 
             UnresolvableConflictBorder.StrokeThickness = RenameConflictTagDefinition.StrokeThickness;
-            UnresolvableConflictBorder.StrokeDashArray = new DoubleCollection(RenameConflictTagDefinition.StrokeDashArray);
+            UnresolvableConflictBorder.StrokeDashArray = [.. RenameConflictTagDefinition.StrokeDashArray];
 
             this.Focus();
             textView.Caret.IsHidden = false;
@@ -324,7 +324,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
         {
             try
             {
-                _model.Session.Commit();
+                _model.Session.InitiateCommit();
                 _textView.VisualElement.Focus();
             }
             catch (NotSupportedException ex)

@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis.DocumentationComments;
-using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.MetadataAsSource;
 
@@ -38,7 +37,7 @@ internal abstract partial class AbstractMetadataAsSourceService
                                         SymbolKind.Property
                                   select WrapMember(m, canImplementImplicitly, docCommentFormattingService);
 
-            _members = ImmutableArray.CreateRange(filteredMembers);
+            _members = [.. filteredMembers];
         }
 
         private static ISymbol WrapMember(ISymbol m, bool canImplementImplicitly, IDocumentationCommentFormattingService docCommentFormattingService)

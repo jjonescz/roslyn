@@ -18,7 +18,6 @@ using Microsoft.CodeAnalysis.PooledObjects;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
-using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.Editor.Implementation.Suggestions
 {
@@ -81,7 +80,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.Suggestions
                 // check if Copilot service is available using a relatively cheap, but async method call.
                 _nestedFlavors = await extensionManager.PerformFunctionAsync(
                     Provider, CreateAllFlavorsAsync,
-                    defaultValue: ImmutableArray<SuggestedActionSet>.Empty, cancellationToken).ConfigureAwait(false);
+                    defaultValue: [], cancellationToken).ConfigureAwait(false);
             }
 
             Contract.ThrowIfTrue(_nestedFlavors.IsDefault);

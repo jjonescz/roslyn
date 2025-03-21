@@ -9,12 +9,10 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.Editor.Implementation.InlineRename;
 using Microsoft.CodeAnalysis.Host;
 using Microsoft.CodeAnalysis.Rename;
 using Microsoft.CodeAnalysis.Rename.ConflictEngine;
 using Microsoft.CodeAnalysis.Text;
-using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.Editor;
 
@@ -271,7 +269,6 @@ internal interface IEditorInlineRenameService : ILanguageService
     /// <param name="inlineRenameInfo"></param>
     /// <param name="inlineRenameLocationSet"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
     Task<ImmutableDictionary<string, ImmutableArray<(string filePath, string content)>>> GetRenameContextAsync(
         IInlineRenameInfo inlineRenameInfo,
         IInlineRenameLocationSet inlineRenameLocationSet,

@@ -2,14 +2,13 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Collections.Immutable;
 using System.ComponentModel.Composition;
 using Microsoft.CodeAnalysis.Host.Mef;
+using Microsoft.CodeAnalysis.LanguageServer.Telemetry;
 using Microsoft.CodeAnalysis.Remote.ProjectSystem;
 using Microsoft.Extensions.Logging;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Shell.ServiceBroker;
-using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.LanguageServer.HostWorkspace;
 #pragma warning disable RS0030 // This is intentionally using System.ComponentModel.Composition for compatibility with MEF service broker.
@@ -44,7 +43,7 @@ internal class WorkspaceProjectFactoryService : IWorkspaceProjectFactoryService,
     public async Task<IWorkspaceProject> CreateAndAddProjectAsync(WorkspaceProjectCreationInfo creationInfo, CancellationToken _)
     {
         _logger.LogInformation(string.Format(LanguageServerResources.Project_0_loaded_by_CSharp_Dev_Kit, creationInfo.FilePath));
-
+        VSCodeRequestTelemetryLogger.ReportProjectLoadStarted();
         try
         {
             if (creationInfo.BuildSystemProperties.TryGetValue("SolutionPath", out var solutionPath))
@@ -74,7 +73,7 @@ internal class WorkspaceProjectFactoryService : IWorkspaceProjectFactoryService,
     public Task<IReadOnlyCollection<string>> GetSupportedBuildSystemPropertiesAsync(CancellationToken _)
     {
         // TODO: implement
-        return Task.FromResult((IReadOnlyCollection<string>)ImmutableArray<string>.Empty);
+        return Task.FromResult((IReadOnlyCollection<string>)[]);
     }
 }
 #pragma warning restore RS0030 // Do not used banned APIs

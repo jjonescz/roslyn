@@ -6,7 +6,6 @@
 
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Roslyn.Test.Utilities;
 
 namespace Microsoft.CodeAnalysis.EditAndContinue.UnitTests
@@ -28,7 +27,7 @@ namespace Microsoft.CodeAnalysis.EditAndContinue.UnitTests
             => Pairs = [];
 
         public MatchingPairs(IEnumerable<MatchingPair> pairs)
-            => Pairs = pairs.ToList();
+            => Pairs = [.. pairs];
 
         public void Add(string old, string @new)
             => Pairs.Add(new MatchingPair { Old = old, New = @new });

@@ -11,7 +11,6 @@ using System.Threading;
 using Microsoft.CodeAnalysis.CSharp.Extensions;
 using Microsoft.CodeAnalysis.CSharp.LanguageService;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.LanguageService;
 using Microsoft.CodeAnalysis.Shared.Extensions;
 using Microsoft.CodeAnalysis.Shared.Helpers.RemoveUnnecessaryImports;
 using Roslyn.Utilities;
@@ -189,7 +188,7 @@ internal partial class CSharpRemoveUnnecessaryImportsService
                 resultCompilationUnit = resultCompilationUnit.ReplaceToken(firstToken, newFirstToken);
             }
 
-            return resultCompilationUnit;
+            return resultCompilationUnit.WithAdditionalAnnotations(s_annotation);
         }
 
         public override SyntaxNode VisitFileScopedNamespaceDeclaration(FileScopedNamespaceDeclarationSyntax node)
@@ -241,7 +240,7 @@ internal partial class CSharpRemoveUnnecessaryImportsService
                 resultNamespace = resultNamespace.ReplaceToken(firstToken, newFirstToken);
             }
 
-            return resultNamespace;
+            return resultNamespace.WithAdditionalAnnotations(s_annotation);
         }
 
         public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node)

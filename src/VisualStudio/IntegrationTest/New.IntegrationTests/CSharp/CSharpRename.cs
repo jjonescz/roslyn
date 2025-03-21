@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -43,6 +42,7 @@ public class CSharpRename : AbstractEditorTest
         globalOptions.SetGlobalOption(InlineRenameSessionOptionsStorage.RenameOverloads, false);
         globalOptions.SetGlobalOption(InlineRenameSessionOptionsStorage.RenameFile, true);
         globalOptions.SetGlobalOption(InlineRenameSessionOptionsStorage.PreviewChanges, false);
+        globalOptions.SetGlobalOption(InlineRenameSessionOptionsStorage.CommitRenameAsynchronously, false);
     }
 
     [IdeFact]
@@ -737,7 +737,7 @@ public class Class2 { static void Main(string [] args) { } }$$", HangMitigatingC
         var selectedSpan = spans["selection"].Single();
         await TestServices.Editor.SetSelectionAsync(selectedSpan, HangMitigatingCancellationToken);
         await TestServices.Input.SendWithoutActivateAsync(
-            new InputKey(VirtualKeyCode.BACK, ImmutableArray<VirtualKeyCode>.Empty), HangMitigatingCancellationToken);
+            new InputKey(VirtualKeyCode.BACK, []), HangMitigatingCancellationToken);
         await TestServices.Input.SendWithoutActivateAsync(["Other", "Stuff"], HangMitigatingCancellationToken);
         await TestServices.EditorVerifier.TextEqualsAsync(
             """
@@ -804,5 +804,52 @@ public class Class2 { static void Main(string [] args) { } }$$", HangMitigatingC
             """, HangMitigatingCancellationToken);
         // Make sure the file is renamed. If the file is not found, this call would throw exception
         await TestServices.SolutionExplorer.GetProjectItemAsync(projectName, "MyTestClass.cs", HangMitigatingCancellationToken);
+    }
+
+    [CombinatorialData]
+    [IdeTheory]
+    public async Task VerifyAsyncRename(bool useInlineRename)
+    {
+        var globalOptions = await TestServices.Shell.GetComponentModelServiceAsync<IGlobalOptionService>(HangMitigatingCancellationToken);
+        globalOptions.SetGlobalOption(InlineRenameSessionOptionsStorage.CommitRenameAsynchronously, true);
+
+        if (!useInlineRename)
+            globalOptions.SetGlobalOption(InlineRenameUIOptionsStorage.UseInlineAdornment, false);
+
+        var markup = """
+            class Program
+            {
+                static void Main(string[] args)
+                {
+                    int x = 100;
+                    Te$$stMethod(x);
+                }
+
+                static void TestMethod(int y)
+                {
+
+                }
+            }
+            """;
+        await SetUpEditorAsync(markup, HangMitigatingCancellationToken);
+        await TestServices.InlineRename.InvokeAsync(HangMitigatingCancellationToken);
+        await TestServices.Input.SendWithoutActivateAsync(["AsyncRenameMethod", VirtualKeyCode.RETURN], HangMitigatingCancellationToken);
+        await TestServices.Workspace.WaitForRenameAsync(HangMitigatingCancellationToken);
+        await TestServices.EditorVerifier.TextEqualsAsync(
+            """
+            class Program
+            {
+                static void Main(string[] args)
+                {
+                    int x = 100;
+                    AsyncRenameMethod$$(x);
+                }
+
+                static void AsyncRenameMethod(int y)
+                {
+
+                }
+            }
+            """, HangMitigatingCancellationToken);
     }
 }

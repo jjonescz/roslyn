@@ -15,7 +15,6 @@ using Microsoft.CodeAnalysis.LanguageService;
 using Microsoft.CodeAnalysis.Shared.Collections;
 using Microsoft.CodeAnalysis.Shared.Extensions;
 using Microsoft.CodeAnalysis.Shared.Utilities;
-using Microsoft.CodeAnalysis.Utilities;
 using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.GenerateMember.GenerateConstructor;
@@ -30,12 +29,12 @@ internal abstract partial class AbstractGenerateConstructorService<TService, TEx
     protected abstract bool IsConstructorInitializerGeneration(SemanticDocument document, SyntaxNode node, CancellationToken cancellationToken);
     protected abstract bool IsImplicitObjectCreation(SemanticDocument document, SyntaxNode node, CancellationToken cancellationToken);
 
-    protected abstract bool TryInitializeImplicitObjectCreation(SemanticDocument document, SyntaxNode node, CancellationToken cancellationToken, out SyntaxToken token, out ImmutableArray<Argument> arguments, out INamedTypeSymbol typeToGenerateIn);
-    protected abstract bool TryInitializeSimpleNameGenerationState(SemanticDocument document, SyntaxNode simpleName, CancellationToken cancellationToken, out SyntaxToken token, out ImmutableArray<Argument> arguments, out INamedTypeSymbol typeToGenerateIn);
-    protected abstract bool TryInitializeConstructorInitializerGeneration(SemanticDocument document, SyntaxNode constructorInitializer, CancellationToken cancellationToken, out SyntaxToken token, out ImmutableArray<Argument> arguments, out INamedTypeSymbol typeToGenerateIn);
-    protected abstract bool TryInitializeSimpleAttributeNameGenerationState(SemanticDocument document, SyntaxNode simpleName, CancellationToken cancellationToken, out SyntaxToken token, out ImmutableArray<Argument> arguments, out INamedTypeSymbol typeToGenerateIn);
+    protected abstract bool TryInitializeImplicitObjectCreation(SemanticDocument document, SyntaxNode node, CancellationToken cancellationToken, out SyntaxToken token, out ImmutableArray<Argument<TExpressionSyntax>> arguments, out INamedTypeSymbol typeToGenerateIn);
+    protected abstract bool TryInitializeSimpleNameGenerationState(SemanticDocument document, SyntaxNode simpleName, CancellationToken cancellationToken, out SyntaxToken token, out ImmutableArray<Argument<TExpressionSyntax>> arguments, out INamedTypeSymbol typeToGenerateIn);
+    protected abstract bool TryInitializeConstructorInitializerGeneration(SemanticDocument document, SyntaxNode constructorInitializer, CancellationToken cancellationToken, out SyntaxToken token, out ImmutableArray<Argument<TExpressionSyntax>> arguments, out INamedTypeSymbol typeToGenerateIn);
+    protected abstract bool TryInitializeSimpleAttributeNameGenerationState(SemanticDocument document, SyntaxNode simpleName, CancellationToken cancellationToken, out SyntaxToken token, out ImmutableArray<Argument<TExpressionSyntax>> arguments, out INamedTypeSymbol typeToGenerateIn);
 
-    protected abstract ITypeSymbol GetArgumentType(SemanticModel semanticModel, Argument argument, CancellationToken cancellationToken);
+    protected abstract ITypeSymbol GetArgumentType(SemanticModel semanticModel, Argument<TExpressionSyntax> argument, CancellationToken cancellationToken);
     protected abstract string GenerateNameForExpression(SemanticModel semanticModel, TExpressionSyntax expression, CancellationToken cancellationToken);
 
     protected abstract bool IsConversionImplicit(Compilation compilation, ITypeSymbol sourceType, ITypeSymbol targetType);
@@ -126,12 +125,10 @@ internal abstract partial class AbstractGenerateConstructorService<TService, TEx
             return false;
         }
 
-        if (symbol.Kind == SymbolKind.Property)
+        if (symbol is IPropertySymbol property &&
+            !IsSymbolAccessible(property.SetMethod, document))
         {
-            if (!IsSymbolAccessible(((IPropertySymbol)symbol).SetMethod, document))
-            {
-                return false;
-            }
+            return false;
         }
 
         // Public and protected constructors are accessible.  Internal constructors are
@@ -154,7 +151,7 @@ internal abstract partial class AbstractGenerateConstructorService<TService, TEx
         }
     }
 
-    protected string GenerateNameForArgument(SemanticModel semanticModel, Argument argument, CancellationToken cancellationToken)
+    protected string GenerateNameForArgument(SemanticModel semanticModel, Argument<TExpressionSyntax> argument, CancellationToken cancellationToken)
     {
         // If it named argument then we use the name provided.
         if (argument.IsNamed)
@@ -168,7 +165,7 @@ internal abstract partial class AbstractGenerateConstructorService<TService, TEx
     }
 
     private ImmutableArray<ParameterName> GenerateParameterNames(
-        SemanticDocument document, IEnumerable<Argument> arguments, IList<string> reservedNames, NamingRule parameterNamingRule, CancellationToken cancellationToken)
+        SemanticDocument document, IEnumerable<Argument<TExpressionSyntax>> arguments, IList<string> reservedNames, NamingRule parameterNamingRule, CancellationToken cancellationToken)
     {
         reservedNames ??= SpecializedCollections.EmptyList<string>();
 
@@ -181,8 +178,8 @@ internal abstract partial class AbstractGenerateConstructorService<TService, TEx
 
         var syntaxFacts = document.Document.GetRequiredLanguageService<ISyntaxFactsService>();
         var comparer = syntaxFacts.StringComparer;
-        return NameGenerator.EnsureUniqueness(parameterNames, isFixed, canUse: s => !reservedNames.Any(n => comparer.Equals(s, n)))
+        return [.. NameGenerator.EnsureUniqueness(parameterNames, isFixed, canUse: s => !reservedNames.Any(n => comparer.Equals(s, n)))
             .Select((name, index) => new ParameterName(name, isFixed[index], parameterNamingRule))
-            .Skip(reservedNames.Count).ToImmutableArray();
+            .Skip(reservedNames.Count)];
     }
 }

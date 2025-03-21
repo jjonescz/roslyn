@@ -20,7 +20,6 @@ using Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Differencing;
-using Roslyn.Utilities;
 
 namespace Microsoft.VisualStudio.LanguageServices.Implementation.Preview;
 
@@ -135,7 +134,7 @@ internal class FileChange : AbstractChange
     {
         if (excerpt.Contains("\r\n"))
         {
-            var split = excerpt.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var split = excerpt.Split(["\r\n"], StringSplitOptions.RemoveEmptyEntries);
             if (split.Length > 1)
             {
                 return string.Format("{0} ... {1}", split[0].Trim(), split[^1].Trim());

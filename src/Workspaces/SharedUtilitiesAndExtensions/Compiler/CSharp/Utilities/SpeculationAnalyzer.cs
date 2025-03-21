@@ -9,7 +9,6 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using System.Xml.Serialization;
 using Microsoft.CodeAnalysis.CSharp.Extensions;
 using Microsoft.CodeAnalysis.CSharp.LanguageService;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -72,10 +71,22 @@ internal class SpeculationAnalyzer : AbstractSpeculationAnalyzer<
     {
         Debug.Assert(expression != null);
 
-        var parentNodeToSpeculate = expression
-            .AncestorsAndSelf(ascendOutOfTrivia: false)
-            .Where(CanSpeculateOnNode)
-            .LastOrDefault();
+        SyntaxNode previousNode = null;
+        SyntaxNode parentNodeToSpeculate = null;
+        foreach (var node in expression.AncestorsAndSelf(ascendOutOfTrivia: false))
+        {
+            if (CanSpeculateOnNode(node))
+            {
+                // Only speculate on PrimaryConstructorBaseTypeSyntax if we are inside the argument list
+                if (node.Kind() is not SyntaxKind.PrimaryConstructorBaseType ||
+                    previousNode.Kind() is SyntaxKind.ArgumentList)
+                {
+                    parentNodeToSpeculate = node;
+                }
+            }
+
+            previousNode = node;
+        }
 
         return parentNodeToSpeculate ?? expression;
     }

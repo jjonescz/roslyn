@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CodeStyle;
 using Microsoft.CodeAnalysis.CSharp.CodeStyle;
 using Microsoft.CodeAnalysis.CSharp.NewLines.ConditionalExpressionPlacement;
-using Microsoft.CodeAnalysis.CSharp.NewLines.ConstructorInitializerPlacement;
 using Microsoft.CodeAnalysis.Editor.UnitTests.CodeActions;
 using Xunit;
 
@@ -37,7 +36,6 @@ public class ConditionalExpressionPlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInConditionalExpression, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -98,7 +96,6 @@ public class ConditionalExpressionPlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInConditionalExpression, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -122,7 +119,6 @@ public class ConditionalExpressionPlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInConditionalExpression, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -146,7 +142,6 @@ public class ConditionalExpressionPlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInConditionalExpression, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -169,7 +164,6 @@ public class ConditionalExpressionPlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInConditionalExpression, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -192,7 +186,6 @@ public class ConditionalExpressionPlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInConditionalExpression, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -215,7 +208,6 @@ public class ConditionalExpressionPlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInConditionalExpression, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -241,7 +233,6 @@ public class ConditionalExpressionPlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInConditionalExpression, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -267,7 +258,6 @@ public class ConditionalExpressionPlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInConditionalExpression, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -293,7 +283,6 @@ public class ConditionalExpressionPlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInConditionalExpression, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -319,7 +308,6 @@ public class ConditionalExpressionPlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInConditionalExpression, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }
@@ -345,7 +333,6 @@ public class ConditionalExpressionPlacementTests
         await new Verify.Test
         {
             TestCode = code,
-            FixedCode = code,
             Options = { { CSharpCodeStyleOptions.AllowBlankLineAfterTokenInConditionalExpression, CodeStyleOption2.TrueWithSilentEnforcement } }
         }.RunAsync();
     }

@@ -3193,7 +3193,7 @@ GetA
 
             // Note, the collection is created after the lexically previous argument is evaluated, 
             // but before the lexically following argument is evaluated. This differs from params
-            // array case, which is created right before the target methos is invoked, after all
+            // array case, which is created right before the target method is invoked, after all
             // arguments are evaluated in their lexical order, which can be observed in a unit-test
             // Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen.CodeGenTests.NamedParamsOptimizationAndParams002​
             verifier.VerifyIL("Program.Main", @"
@@ -13876,18 +13876,9 @@ class Program
                 // (21,14): error CS9223: Creation of params collection 'MyCollection' results in an infinite chain of invocation of constructor 'MyCollection.MyCollection(params MyCollection)'.
                 //         Test([1]);
                 Diagnostic(ErrorCode.ERR_ParamsCollectionInfiniteChainOfConstructorCalls, "[1]").WithArguments("MyCollection", "MyCollection.MyCollection(params MyCollection)").WithLocation(21, 14),
-                // (21,15): error CS9223: Creation of params collection 'MyCollection' results in an infinite chain of invocation of constructor 'MyCollection.MyCollection(params MyCollection)'.
-                //         Test([1]);
-                Diagnostic(ErrorCode.ERR_ParamsCollectionInfiniteChainOfConstructorCalls, "1").WithArguments("MyCollection", "MyCollection.MyCollection(params MyCollection)").WithLocation(21, 15),
                 // (22,14): error CS9223: Creation of params collection 'MyCollection' results in an infinite chain of invocation of constructor 'MyCollection.MyCollection(params MyCollection)'.
                 //         Test([2, 3]);
-                Diagnostic(ErrorCode.ERR_ParamsCollectionInfiniteChainOfConstructorCalls, "[2, 3]").WithArguments("MyCollection", "MyCollection.MyCollection(params MyCollection)").WithLocation(22, 14),
-                // (22,15): error CS9223: Creation of params collection 'MyCollection' results in an infinite chain of invocation of constructor 'MyCollection.MyCollection(params MyCollection)'.
-                //         Test([2, 3]);
-                Diagnostic(ErrorCode.ERR_ParamsCollectionInfiniteChainOfConstructorCalls, "2").WithArguments("MyCollection", "MyCollection.MyCollection(params MyCollection)").WithLocation(22, 15),
-                // (22,18): error CS9223: Creation of params collection 'MyCollection' results in an infinite chain of invocation of constructor 'MyCollection.MyCollection(params MyCollection)'.
-                //         Test([2, 3]);
-                Diagnostic(ErrorCode.ERR_ParamsCollectionInfiniteChainOfConstructorCalls, "3").WithArguments("MyCollection", "MyCollection.MyCollection(params MyCollection)").WithLocation(22, 18)
+                Diagnostic(ErrorCode.ERR_ParamsCollectionInfiniteChainOfConstructorCalls, "[2, 3]").WithArguments("MyCollection", "MyCollection.MyCollection(params MyCollection)").WithLocation(22, 14)
                 );
         }
 
@@ -14195,15 +14186,15 @@ class Program
             var comp = CreateCompilation(src, options: TestOptions.ReleaseExe);
 
             comp.VerifyEmitDiagnostics(
-                // (44,9): error CS9223: Creation of params collection 'MyCollection3' results in an infinite chain of invocation of constructor 'MyCollection2.MyCollection2(params MyCollection1)'.
+                // (44,9): error CS9223: Creation of params collection 'MyCollection2' results in an infinite chain of invocation of constructor 'MyCollection2.MyCollection2(params MyCollection1)'.
                 //         Test();
-                Diagnostic(ErrorCode.ERR_ParamsCollectionInfiniteChainOfConstructorCalls, "Test()").WithArguments("MyCollection3", "MyCollection2.MyCollection2(params MyCollection1)").WithLocation(44, 9),
-                // (45,9): error CS9223: Creation of params collection 'MyCollection3' results in an infinite chain of invocation of constructor 'MyCollection2.MyCollection2(params MyCollection1)'.
+                Diagnostic(ErrorCode.ERR_ParamsCollectionInfiniteChainOfConstructorCalls, "Test()").WithArguments("MyCollection2", "MyCollection2.MyCollection2(params MyCollection1)").WithLocation(44, 9),
+                // (45,9): error CS9223: Creation of params collection 'MyCollection2' results in an infinite chain of invocation of constructor 'MyCollection2.MyCollection2(params MyCollection1)'.
                 //         Test(1);
-                Diagnostic(ErrorCode.ERR_ParamsCollectionInfiniteChainOfConstructorCalls, "Test(1)").WithArguments("MyCollection3", "MyCollection2.MyCollection2(params MyCollection1)").WithLocation(45, 9),
-                // (46,9): error CS9223: Creation of params collection 'MyCollection3' results in an infinite chain of invocation of constructor 'MyCollection2.MyCollection2(params MyCollection1)'.
+                Diagnostic(ErrorCode.ERR_ParamsCollectionInfiniteChainOfConstructorCalls, "Test(1)").WithArguments("MyCollection2", "MyCollection2.MyCollection2(params MyCollection1)").WithLocation(45, 9),
+                // (46,9): error CS9223: Creation of params collection 'MyCollection2' results in an infinite chain of invocation of constructor 'MyCollection2.MyCollection2(params MyCollection1)'.
                 //         Test(2, 3);
-                Diagnostic(ErrorCode.ERR_ParamsCollectionInfiniteChainOfConstructorCalls, "Test(2, 3)").WithArguments("MyCollection3", "MyCollection2.MyCollection2(params MyCollection1)").WithLocation(46, 9)
+                Diagnostic(ErrorCode.ERR_ParamsCollectionInfiniteChainOfConstructorCalls, "Test(2, 3)").WithArguments("MyCollection2", "MyCollection2.MyCollection2(params MyCollection1)").WithLocation(46, 9)
                 );
         }
 

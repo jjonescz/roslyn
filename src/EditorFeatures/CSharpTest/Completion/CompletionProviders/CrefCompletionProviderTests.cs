@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Completion;
@@ -15,7 +14,6 @@ using Microsoft.CodeAnalysis.Shared.Extensions;
 using Microsoft.CodeAnalysis.Test.Utilities;
 using Microsoft.VisualStudio.Language.Intellisense.AsyncCompletion.Data;
 using Roslyn.Test.Utilities;
-using Roslyn.Utilities;
 using Xunit;
 using RoslynTrigger = Microsoft.CodeAnalysis.Completion.CompletionTrigger;
 
@@ -447,7 +445,7 @@ public class CrefCompletionProviderTests : AbstractCSharpCompletionProviderTests
         var hostDocument = workspace.DocumentWithCursor;
         var document = workspace.CurrentSolution.GetRequiredDocument(hostDocument.Id);
         var service = GetCompletionService(document.Project);
-        var provider = Assert.IsType<CrefCompletionProvider>(service.GetTestAccessor().GetImportedAndBuiltInProviders(ImmutableHashSet<string>.Empty).Single());
+        var provider = Assert.IsType<CrefCompletionProvider>(service.GetTestAccessor().GetImportedAndBuiltInProviders([]).Single());
         provider.GetTestAccessor().SetSpeculativeNodeCallback(n =>
         {
             // asserts that we aren't be asked speculate on nodes inside documentation trivia.

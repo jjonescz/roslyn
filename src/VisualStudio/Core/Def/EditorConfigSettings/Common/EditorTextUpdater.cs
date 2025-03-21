@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis.Editor;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio.Editor;
@@ -32,6 +31,6 @@ internal class EditorTextUpdater
             return;
         }
 
-        TextEditApplication.UpdateText(changes.ToImmutableArray(), buffer, EditOptions.DefaultMinimalChange);
+        TextEditApplication.UpdateText([.. changes], buffer, EditOptions.DefaultMinimalChange);
     }
 }

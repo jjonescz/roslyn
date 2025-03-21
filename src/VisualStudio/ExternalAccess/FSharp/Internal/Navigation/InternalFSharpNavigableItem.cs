@@ -4,7 +4,6 @@
 
 #nullable disable
 
-using System;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation;
 using Microsoft.CodeAnalysis.Navigation;
@@ -41,6 +40,6 @@ namespace Microsoft.CodeAnalysis.ExternalAccess.FSharp.Internal.Navigation
 
         public bool IsStale => false;
 
-        public ImmutableArray<INavigableItem> ChildItems => ImmutableArray<INavigableItem>.Empty;
+        public ImmutableArray<INavigableItem> ChildItems => [];
     }
 }

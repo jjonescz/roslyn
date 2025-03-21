@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.GenerateType;
 using Microsoft.CodeAnalysis.Test.Utilities;
@@ -758,7 +757,7 @@ expected: @"namespace A.B
 accessibility: Accessibility.Public,
 typeKind: TypeKind.Interface,
 isNewFile: true,
-newFileFolderContainers: ImmutableArray<string>.Empty,
+newFileFolderContainers: [],
 newFileName: "Test2.cs");
     }
 
@@ -797,7 +796,7 @@ checkIfUsingsNotIncluded: true,
 accessibility: Accessibility.Public,
 typeKind: TypeKind.Interface,
 isNewFile: true,
-newFileFolderContainers: ImmutableArray.Create("outer", "inner"),
+newFileFolderContainers: ["outer", "inner"],
 newFileName: "Test2.cs");
     }
 
@@ -839,7 +838,7 @@ class Program
 accessibility: Accessibility.Public,
 typeKind: TypeKind.Interface,
 isNewFile: true,
-newFileFolderContainers: ImmutableArray.Create("outer", "inner"),
+newFileFolderContainers: ["outer", "inner"],
 newFileName: "Test2.cs");
     }
 
@@ -875,7 +874,7 @@ checkIfUsingsNotIncluded: true,
 accessibility: Accessibility.Public,
 typeKind: TypeKind.Interface,
 isNewFile: true,
-newFileFolderContainers: ImmutableArray.Create("outer", "inner"),
+newFileFolderContainers: ["outer", "inner"],
 newFileName: "Test2.cs");
     }
 
@@ -918,7 +917,7 @@ class Program
 accessibility: Accessibility.Public,
 typeKind: TypeKind.Interface,
 isNewFile: true,
-newFileFolderContainers: ImmutableArray.Create("outer", "inner"),
+newFileFolderContainers: ["outer", "inner"],
 newFileName: "Test2.cs");
     }
 
@@ -965,7 +964,7 @@ namespace ConsoleApplication.outer
 accessibility: Accessibility.Public,
 typeKind: TypeKind.Interface,
 isNewFile: true,
-newFileFolderContainers: ImmutableArray.Create("outer"),
+newFileFolderContainers: ["outer"],
 newFileName: "Test2.cs");
     }
 
@@ -1014,7 +1013,7 @@ namespace A.B
 accessibility: Accessibility.Public,
 typeKind: TypeKind.Interface,
 isNewFile: true,
-newFileFolderContainers: ImmutableArray.Create("outer"),
+newFileFolderContainers: ["outer"],
 newFileName: "Test2.cs");
     }
 
@@ -1070,7 +1069,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Interface,
 isNewFile: true,
 areFoldersValidIdentifiers: false,
-newFileFolderContainers: ImmutableArray.Create("123", "456"),
+newFileFolderContainers: ["123", "456"],
 newFileName: "Test2.cs");
     }
 
@@ -1262,7 +1261,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Interface,
 isNewFile: true,
 newFileName: "Test2.cs",
-newFileFolderContainers: ImmutableArray<string>.Empty,
+newFileFolderContainers: [],
 projectName: "Assembly2");
     }
 
@@ -1307,7 +1306,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Interface,
 isNewFile: true,
 newFileName: "Test2.cs",
-newFileFolderContainers: ImmutableArray.Create("outer", "inner"),
+newFileFolderContainers: ["outer", "inner"],
 projectName: "Assembly2");
     }
 
@@ -1346,7 +1345,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Interface,
 isNewFile: true,
 newFileName: "Test2.cs",
-newFileFolderContainers: ImmutableArray.Create("outer", "inner"),
+newFileFolderContainers: ["outer", "inner"],
 projectName: "Assembly2");
     }
 
@@ -1392,7 +1391,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Interface,
 isNewFile: true,
 newFileName: "Test2.cs",
-newFileFolderContainers: ImmutableArray.Create("outer", "inner"),
+newFileFolderContainers: ["outer", "inner"],
 projectName: "Assembly2");
     }
 
@@ -1432,7 +1431,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Interface,
 isNewFile: true,
 newFileName: "Test2.cs",
-newFileFolderContainers: ImmutableArray.Create("outer", "inner"),
+newFileFolderContainers: ["outer", "inner"],
 projectName: "Assembly2");
     }
     #endregion
@@ -1471,7 +1470,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Class,
 isNewFile: true,
 newFileName: "Test2.vb",
-newFileFolderContainers: ImmutableArray<string>.Empty,
+newFileFolderContainers: [],
 projectName: "Assembly2");
     }
 
@@ -1515,7 +1514,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Class,
 isNewFile: true,
 newFileName: "Test2.vb",
-newFileFolderContainers: ImmutableArray.Create("outer", "inner"),
+newFileFolderContainers: ["outer", "inner"],
 projectName: "Assembly2");
     }
 
@@ -1553,7 +1552,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Class,
 isNewFile: true,
 newFileName: "Test2.vb",
-newFileFolderContainers: ImmutableArray.Create("outer", "inner"),
+newFileFolderContainers: ["outer", "inner"],
 projectName: "Assembly2");
     }
 
@@ -1598,7 +1597,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Class,
 isNewFile: true,
 newFileName: "Test2.vb",
-newFileFolderContainers: ImmutableArray.Create("outer", "inner"),
+newFileFolderContainers: ["outer", "inner"],
 projectName: "Assembly2");
     }
 
@@ -1637,7 +1636,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Class,
 isNewFile: true,
 newFileName: "Test2.vb",
-newFileFolderContainers: ImmutableArray.Create("outer", "inner"),
+newFileFolderContainers: ["outer", "inner"],
 projectName: "Assembly2");
     }
 
@@ -1682,7 +1681,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Class,
 isNewFile: true,
 newFileName: "Test3.vb",
-newFileFolderContainers: ImmutableArray.Create("outer", "inner"),
+newFileFolderContainers: ["outer", "inner"],
 projectName: "Assembly2");
     }
 
@@ -1719,7 +1718,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Class,
 isNewFile: true,
 newFileName: "Test2.vb",
-newFileFolderContainers: ImmutableArray<string>.Empty,
+newFileFolderContainers: [],
 projectName: "Assembly2");
     }
 
@@ -1936,7 +1935,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Module,
 isNewFile: true,
 newFileName: "Test2.vb",
-newFileFolderContainers: ImmutableArray<string>.Empty,
+newFileFolderContainers: [],
 projectName: "Assembly2",
 assertGenerateTypeDialogOptions: new GenerateTypeDialogOptions(false, TypeKindOptions.Class | TypeKindOptions.Structure | TypeKindOptions.Module));
     }
@@ -2270,6 +2269,104 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Structure,
 isNewFile: false,
 assertGenerateTypeDialogOptions: new GenerateTypeDialogOptions(false, TypeKindOptions.Class | TypeKindOptions.Structure, false));
+    }
+
+    [Fact, WorkItem(63280, "https://github.com/dotnet/roslyn/issues/63280")]
+    public async Task GenerateType_GenericBaseList()
+    {
+        await TestWithMockedGenerateTypeDialog(
+initial: @"
+using System.Collections.Generic;
+
+struct C : IEnumerable<[|$$NewType|]>
+{
+}",
+languageName: LanguageNames.CSharp,
+typeName: "NewType",
+expected: @"
+using System.Collections.Generic;
+
+struct C : IEnumerable<NewType>
+{
+}
+
+public class NewType
+{
+}",
+accessibility: Accessibility.Public,
+typeKind: TypeKind.Class,
+isNewFile: false,
+assertGenerateTypeDialogOptions: new GenerateTypeDialogOptions(false, TypeKindOptions.AllOptions, false));
+    }
+
+    [Fact]
+    public async Task GenerateType_QualifiedBaseList()
+    {
+        await TestWithMockedGenerateTypeDialog(
+initial: @"
+using System.Collections.Generic;
+
+struct C : A.B.[|$$INewType|]
+{
+}
+
+namespace A.B
+{
+}",
+languageName: LanguageNames.CSharp,
+typeName: "INewType",
+expected: @"
+using System.Collections.Generic;
+
+struct C : A.B.INewType
+{
+}
+
+namespace A.B
+{
+    public interface INewType
+    {
+    }
+}",
+accessibility: Accessibility.Public,
+typeKind: TypeKind.Interface,
+isNewFile: false,
+assertGenerateTypeDialogOptions: new GenerateTypeDialogOptions(false, TypeKindOptions.Interface, false));
+    }
+
+    [Fact]
+    public async Task GenerateType_AliasQualifiedBaseList()
+    {
+        await TestWithMockedGenerateTypeDialog(
+initial: @"
+using System.Collections.Generic;
+
+struct C : global::A.B.[|$$INewType|]
+{
+}
+
+namespace A.B
+{
+}",
+languageName: LanguageNames.CSharp,
+typeName: "INewType",
+expected: @"
+using System.Collections.Generic;
+
+struct C : global::A.B.INewType
+{
+}
+
+namespace A.B
+{
+    public interface INewType
+    {
+    }
+}",
+accessibility: Accessibility.Public,
+typeKind: TypeKind.Interface,
+isNewFile: false,
+assertGenerateTypeDialogOptions: new GenerateTypeDialogOptions(false, TypeKindOptions.Interface, false));
     }
     #endregion
     #region Delegates
@@ -2952,7 +3049,7 @@ accessibility: Accessibility.Public,
 typeKind: TypeKind.Delegate,
 isNewFile: true,
 newFileName: "Test2.vb",
-newFileFolderContainers: ImmutableArray<string>.Empty,
+newFileFolderContainers: [],
 projectName: "Assembly2");
     }
 

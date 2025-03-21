@@ -11,7 +11,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
-using Microsoft.CodeAnalysis.CodeCleanup;
 using Microsoft.CodeAnalysis.CodeGeneration;
 using Microsoft.CodeAnalysis.CodeRefactorings;
 using Microsoft.CodeAnalysis.Diagnostics.Analyzers.NamingStyles;
@@ -718,7 +717,7 @@ internal abstract partial class AbstractConvertTupleToStructCodeRefactoringProvi
         => generator.SeparatedList<TArgumentSyntax>(ConvertArguments(generator, parameterNamingRule, isRecord, arguments.GetWithSeparators()));
 
     private SyntaxNodeOrTokenList ConvertArguments(SyntaxGenerator generator, NamingRule parameterNamingRule, bool isRecord, SyntaxNodeOrTokenList list)
-        => new(list.Select(v => ConvertArgumentOrToken(generator, parameterNamingRule, isRecord, v)));
+        => [.. list.Select(v => ConvertArgumentOrToken(generator, parameterNamingRule, isRecord, v))];
 
     private SyntaxNodeOrToken ConvertArgumentOrToken(SyntaxGenerator generator, NamingRule parameterNamingRule, bool isRecord, SyntaxNodeOrToken arg)
         => arg.IsToken

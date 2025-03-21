@@ -4,20 +4,15 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.GeneratedCodeRecognition;
 using Microsoft.CodeAnalysis.Host;
 using Microsoft.CodeAnalysis.SemanticModelReuse;
 using Microsoft.CodeAnalysis.Text;
 using Roslyn.Utilities;
-using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Options;
-using Microsoft.CodeAnalysis.Diagnostics.Analyzers.NamingStyles;
-using Microsoft.CodeAnalysis.CodeStyle;
 
 #if DEBUG
 using System.Collections.Immutable;
@@ -225,9 +220,12 @@ internal static partial class DocumentExtensions
     }
 
 #if CODE_STYLE
-    public static async ValueTask<IOptionsReader> GetAnalyzerConfigOptionsAsync(this Document document, CancellationToken cancellationToken)
+    public static async ValueTask<IOptionsReader> GetHostAnalyzerConfigOptionsAsync(this Document document, CancellationToken cancellationToken)
     {
         var syntaxTree = await document.GetRequiredSyntaxTreeAsync(cancellationToken).ConfigureAwait(false);
+
+        // Code style layer (which is always NuGet-installed) does not use host options, but we keep the method name to
+        // reduce the number of instances where code needs to be conditionally included.
         return document.Project.AnalyzerOptions.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree).GetOptionsReader();
     }
 #endif

@@ -9,7 +9,6 @@ using Microsoft.CodeAnalysis.Editor.UnitTests.CodeActions;
 using Microsoft.CodeAnalysis.Test.Utilities;
 using Microsoft.CodeAnalysis.Testing;
 using Roslyn.Test.Utilities;
-using Roslyn.Utilities;
 using Xunit;
 
 namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.CodeActions.ConvertIfToSwitch;
@@ -18,7 +17,7 @@ using VerifyCS = CSharpCodeRefactoringVerifier<CSharpConvertIfToSwitchCodeRefact
 
 [UseExportProvider]
 [Trait(Traits.Feature, Traits.Features.CodeActionsConvertIfToSwitch)]
-public class ConvertIfToSwitchTests
+public sealed class ConvertIfToSwitchTests
 {
     [Fact]
     public async Task TestUnreachableEndPoint()
@@ -2428,7 +2427,6 @@ public class ConvertIfToSwitchTests
         await new VerifyCS.Test
         {
             TestCode = source,
-            FixedCode = source,
             LanguageVersion = LanguageVersion.CSharp8,
         }.RunAsync();
     }
@@ -2498,7 +2496,6 @@ public class ConvertIfToSwitchTests
         await new VerifyCS.Test
         {
             TestCode = source,
-            FixedCode = source,
             LanguageVersion = LanguageVersion.CSharp8,
         }.RunAsync();
     }
@@ -2616,7 +2613,6 @@ public class ConvertIfToSwitchTests
         await new VerifyCS.Test
         {
             TestCode = source,
-            FixedCode = source,
             LanguageVersion = LanguageVersion.CSharp8,
         }.RunAsync();
     }
@@ -2886,7 +2882,6 @@ public class ConvertIfToSwitchTests
         await new VerifyCS.Test
         {
             TestCode = source,
-            FixedCode = source,
             LanguageVersion = LanguageVersion.CSharp9,
         }.RunAsync();
     }
@@ -2911,7 +2906,6 @@ public class ConvertIfToSwitchTests
         await new VerifyCS.Test
         {
             TestCode = source,
-            FixedCode = source,
             LanguageVersion = LanguageVersion.CSharp9,
         }.RunAsync();
     }
@@ -2934,7 +2928,6 @@ public class ConvertIfToSwitchTests
         await new VerifyCS.Test
         {
             TestCode = source,
-            FixedCode = source,
             LanguageVersion = LanguageVersion.CSharp9,
         }.RunAsync();
     }
@@ -2957,7 +2950,6 @@ public class ConvertIfToSwitchTests
         await new VerifyCS.Test
         {
             TestCode = source,
-            FixedCode = source,
             LanguageVersion = LanguageVersion.CSharp9,
         }.RunAsync();
     }
@@ -3115,6 +3107,61 @@ public class ConvertIfToSwitchTests
                         // other comment
                         default:
                             Console.WriteLine(14);
+                            break;
+                    }
+                }
+            }
+            """;
+
+        await new VerifyCS.Test
+        {
+            TestCode = source,
+            FixedCode = fixedSource,
+            CodeActionValidationMode = CodeActionValidationMode.None,
+        }.RunAsync();
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/71295")]
+    public async Task TestCodeAfterElseIf()
+    {
+        var source =
+            """
+            class C
+            {
+                void TestThing(int a, int b)
+                {
+                    $$if (a == 1 && b == 0)
+                    {
+                        TestThing(0, 1);
+                    }
+                    else
+                    {
+                        if (a == 2 && b == 1)
+                        {
+                            a = b; b = 0;
+                        }
+                        TestThing(a, b);
+                    }
+                }
+            }
+            """;
+        var fixedSource =
+            """
+            class C
+            {
+                void TestThing(int a, int b)
+                {
+                    switch (a)
+                    {
+                        case 1 when b == 0:
+                            TestThing(0, 1);
+                            break;
+                        default:
+                            if (a == 2 && b == 1)
+                            {
+                                a = b; b = 0;
+                            }
+                            TestThing(a, b);
                             break;
                     }
                 }

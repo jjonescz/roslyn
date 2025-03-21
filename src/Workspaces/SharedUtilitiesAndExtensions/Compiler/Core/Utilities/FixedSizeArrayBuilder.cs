@@ -6,8 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.PooledObjects;
-using Roslyn.Utilities;
 
 /// <summary>
 /// A bare-bones array builder, focused on the case of producing <see cref="ImmutableArray{T}"/>s where the final array
@@ -106,7 +106,7 @@ internal struct FixedSizeArrayBuilder<T>(int capacity)
     {
         Contract.ThrowIfTrue(_index != _values.Length);
         var result = _values;
-        _values = Array.Empty<T>();
+        _values = [];
         _index = 0;
         return result;
     }

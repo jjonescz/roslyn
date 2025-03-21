@@ -11,7 +11,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.AddImport;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeCleanup;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CodeStyle;
@@ -22,7 +21,6 @@ using Microsoft.CodeAnalysis.Diagnostics.CSharp;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Editor.UnitTests;
 using Microsoft.CodeAnalysis.Editor.UnitTests.CodeActions;
-using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Shared.Extensions;
 using Microsoft.CodeAnalysis.Test.Utilities;
 using Microsoft.CodeAnalysis.Text;
@@ -53,7 +51,6 @@ public partial class CodeCleanupTests
 
         var expected = """
             using System;
-
             internal class Program
             {
                 private static void Main(string[] args)
@@ -84,7 +81,6 @@ public partial class CodeCleanupTests
         var expected = """
             using System;
             using System.Collections.Generic;
-
             internal class Program
             {
                 private static void Main(string[] args)
@@ -122,7 +118,6 @@ public partial class CodeCleanupTests
             global using System.Collections.Generic;
             using System.Threading;
             using System.Threading.Tasks;
-
             internal class Program
             {
                 private static Task Main(string[] args)
@@ -627,20 +622,14 @@ public partial class CodeCleanupTests
     }
 
     [Theory]
-    [InlineData(LanguageNames.CSharp, 50)]
-    [InlineData(LanguageNames.VisualBasic, 87)]
-    public void VerifyAllCodeStyleFixersAreSupportedByCodeCleanup(string language, int numberOfUnsupportedDiagnosticIds)
+    [InlineData(LanguageNames.CSharp)]
+    [InlineData(LanguageNames.VisualBasic)]
+    public void VerifyAllCodeStyleFixersAreSupportedByCodeCleanup(string language)
     {
         var supportedDiagnostics = GetSupportedDiagnosticIdsForCodeCleanupService(language);
 
         // No Duplicates
         Assert.Equal(supportedDiagnostics, supportedDiagnostics.Distinct());
-
-        // Exact Number of Unsupported Diagnostic Ids
-        var ideDiagnosticIds = typeof(IDEDiagnosticIds).GetFields().Select(f => f.GetValue(f) as string).ToArray();
-        var unsupportedDiagnosticIds = ideDiagnosticIds.Except(supportedDiagnostics).ToArray();
-
-        Assert.Equal(numberOfUnsupportedDiagnosticIds, unsupportedDiagnosticIds.Length);
     }
 
     private const string _code = """

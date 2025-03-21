@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.PooledObjects;
@@ -19,7 +18,7 @@ namespace Microsoft.CodeAnalysis.Completion.Providers;
 internal sealed class GlobalAssemblyCacheCompletionHelper
 {
     private static readonly Lazy<List<string>> s_lazyAssemblySimpleNames =
-        new(() => GlobalAssemblyCache.Instance.GetAssemblySimpleNames().ToList());
+        new(() => [.. GlobalAssemblyCache.Instance.GetAssemblySimpleNames()]);
 
     private readonly CompletionItemRules _itemRules;
 

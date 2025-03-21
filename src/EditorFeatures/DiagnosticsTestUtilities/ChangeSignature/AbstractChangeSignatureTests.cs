@@ -13,7 +13,6 @@ using Microsoft.CodeAnalysis.ChangeSignature;
 using Microsoft.CodeAnalysis.Editor.UnitTests.CodeActions;
 using Microsoft.CodeAnalysis.Test.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities.ChangeSignature;
-using Microsoft.CodeAnalysis.Text;
 using Roslyn.Utilities;
 using Xunit;
 
@@ -54,10 +53,10 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.ChangeSignature
 
                 var refactoring = await GetCodeRefactoringAsync(workspace, testOptions);
                 await TestActionAsync(workspace, expectedCode, refactoring.CodeActions[index].action,
-                    conflictSpans: ImmutableArray<TextSpan>.Empty,
-                    renameSpans: ImmutableArray<TextSpan>.Empty,
-                    warningSpans: ImmutableArray<TextSpan>.Empty,
-                    navigationSpans: ImmutableArray<TextSpan>.Empty,
+                    conflictSpans: [],
+                    renameSpans: [],
+                    warningSpans: [],
+                    navigationSpans: [],
                     parameters: null);
             }
             else

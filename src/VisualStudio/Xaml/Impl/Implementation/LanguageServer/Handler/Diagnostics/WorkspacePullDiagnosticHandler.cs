@@ -14,7 +14,6 @@ using Roslyn.LanguageServer.Protocol;
 using Microsoft.VisualStudio.LanguageServices.Xaml.Features.Diagnostics;
 using Microsoft.VisualStudio.LanguageServices.Xaml.Implementation.LanguageServer.Extensions;
 using Microsoft.VisualStudio.LanguageServices.Xaml.LanguageServer;
-using Roslyn.Utilities;
 
 namespace Microsoft.VisualStudio.LanguageServices.Xaml.Implementation.LanguageServer.Handler.Diagnostics
 {
@@ -48,7 +47,7 @@ namespace Microsoft.VisualStudio.LanguageServices.Xaml.Implementation.LanguageSe
                 result.AddRange(project.Documents);
             }
 
-            return result.Distinct().ToImmutableArray();
+            return [.. result.Distinct()];
         }
 
         protected override VSInternalDiagnosticParams[]? GetPreviousResults(VSInternalWorkspaceDiagnosticsParams diagnosticsParams)

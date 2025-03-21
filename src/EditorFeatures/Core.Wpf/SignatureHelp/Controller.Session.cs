@@ -4,9 +4,7 @@
 
 #nullable disable
 
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Editor.Shared.Extensions;
-using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.SignatureHelp
 {
@@ -15,7 +13,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.SignatureHel
         internal partial class Session : Session<Controller, Model, ISignatureHelpPresenterSession>
         {
             public Session(Controller controller, ISignatureHelpPresenterSession presenterSession)
-                : base(controller, new ModelComputation<Model>(controller.ThreadingContext, controller, TaskScheduler.Default), presenterSession)
+                : base(controller, new ModelComputation<Model>(controller.ThreadingContext, controller), presenterSession)
             {
                 this.PresenterSession.ItemSelected += OnPresenterSessionItemSelected;
             }

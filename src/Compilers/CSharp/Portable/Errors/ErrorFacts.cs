@@ -210,6 +210,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             // docs/compilers/CSharp/Warnversion Warning Waves.md
             switch (code)
             {
+                case ErrorCode.WRN_UnassignedInternalRefField:
+                    // Warning level 10 is exclusively for warnings introduced in the compiler
+                    // shipped with dotnet 10 (C# 14) and that can be reported for pre-existing code.
+                    return 10;
+                case ErrorCode.WRN_InterceptsLocationAttributeUnsupportedSignature:
+                    // Warning level 9 is exclusively for warnings introduced in the compiler
+                    // shipped with dotnet 9 (C# 13) and that can be reported for pre-existing code.
+                    return 9;
                 case ErrorCode.WRN_AddressOfInAsync:
                 case ErrorCode.WRN_ByValArraySizeConstRequired:
                     // Warning level 8 is exclusively for warnings introduced in the compiler
@@ -554,12 +562,15 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ErrorCode.WRN_RefReadonlyParameterDefaultValue:
                 case ErrorCode.WRN_UseDefViolationRefField:
                 case ErrorCode.WRN_Experimental:
+                case ErrorCode.WRN_ExperimentalWithMessage:
                 case ErrorCode.WRN_CollectionExpressionRefStructMayAllocate:
                 case ErrorCode.WRN_CollectionExpressionRefStructSpreadMayAllocate:
                 case ErrorCode.WRN_ConvertingLock:
-                case ErrorCode.WRN_PartialPropertySignatureDifference:
+                case ErrorCode.WRN_PartialMemberSignatureDifference:
                 case ErrorCode.WRN_FieldIsAmbiguous:
                 case ErrorCode.WRN_UninitializedNonNullableBackingField:
+                case ErrorCode.WRN_AccessorDoesNotUseBackingField:
+                case ErrorCode.WRN_UnscopedRefAttributeOldRules:
                     return 1;
                 default:
                     return 0;
@@ -626,7 +637,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 or ErrorCode.ERR_PossibleAsyncIteratorWithoutYield
                 or ErrorCode.ERR_PossibleAsyncIteratorWithoutYieldOrAwait
                 or ErrorCode.ERR_RefLocalAcrossAwait
-                    // Update src\EditorFeatures\CSharp\LanguageServer\CSharpLspBuildOnlyDiagnostics.cs
+                or ErrorCode.ERR_DataSectionStringLiteralHashCollision
+                    // Update src\Features\CSharp\Portable\Diagnostics\LanguageServer\CSharpLspBuildOnlyDiagnostics.cs
+                    // and TestIsBuildOnlyDiagnostic in src\Compilers\CSharp\Test\Syntax\Diagnostics\DiagnosticTest.cs
                     // whenever new values are added here.
                     => true,
 
@@ -1836,6 +1849,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 or ErrorCode.ERR_RefReturnReadonlyNotField2
                 or ErrorCode.ERR_ExplicitReservedAttr
                 or ErrorCode.ERR_TypeReserved
+                or ErrorCode.ERR_EmbeddedAttributeMustFollowPattern
                 or ErrorCode.ERR_RefExtensionMustBeValueTypeOrConstrainedToOne
                 or ErrorCode.ERR_InExtensionMustBeValueType
                 or ErrorCode.ERR_FieldsInRoStruct
@@ -2405,6 +2419,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 or ErrorCode.ERR_FeatureNotAvailableInVersion12
                 or ErrorCode.ERR_CollectionExpressionEscape
                 or ErrorCode.WRN_Experimental
+                or ErrorCode.WRN_ExperimentalWithMessage
                 or ErrorCode.ERR_ExpectedInterpolatedString
                 or ErrorCode.ERR_InterceptorGlobalNamespace
                 or ErrorCode.WRN_CollectionExpressionRefStructMayAllocate
@@ -2449,8 +2464,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 or ErrorCode.ERR_PartialPropertyMissingAccessor
                 or ErrorCode.ERR_PartialPropertyUnexpectedAccessor
                 or ErrorCode.ERR_PartialPropertyInitMismatch
-                or ErrorCode.ERR_PartialPropertyTypeDifference
-                or ErrorCode.WRN_PartialPropertySignatureDifference
+                or ErrorCode.ERR_PartialMemberTypeDifference
+                or ErrorCode.WRN_PartialMemberSignatureDifference
                 or ErrorCode.ERR_PartialPropertyRequiredDifference
                 or ErrorCode.WRN_FieldIsAmbiguous
                 or ErrorCode.ERR_InlineArrayAttributeOnRecord
@@ -2459,6 +2474,19 @@ namespace Microsoft.CodeAnalysis.CSharp
                 or ErrorCode.ERR_CannotApplyOverloadResolutionPriorityToMember
                 or ErrorCode.ERR_PartialPropertyDuplicateInitializer
                 or ErrorCode.WRN_UninitializedNonNullableBackingField
+                or ErrorCode.WRN_UnassignedInternalRefField
+                or ErrorCode.WRN_AccessorDoesNotUseBackingField
+                or ErrorCode.ERR_IteratorRefLikeElementType
+                or ErrorCode.WRN_UnscopedRefAttributeOldRules
+                or ErrorCode.WRN_InterceptsLocationAttributeUnsupportedSignature
+                or ErrorCode.ERR_ImplicitlyTypedParamsParameter
+                or ErrorCode.ERR_VariableDeclarationNamedField
+                or ErrorCode.ERR_PartialMemberMissingImplementation
+                or ErrorCode.ERR_PartialMemberMissingDefinition
+                or ErrorCode.ERR_PartialMemberDuplicateDefinition
+                or ErrorCode.ERR_PartialMemberDuplicateImplementation
+                or ErrorCode.ERR_PartialEventInitializer
+                or ErrorCode.ERR_PartialConstructorInitializer
                     => false,
             };
 #pragma warning restore CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.

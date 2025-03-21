@@ -12,7 +12,6 @@ using Microsoft.CodeAnalysis.PickMembers;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.LanguageServices.Implementation.Utilities;
 using Microsoft.VisualStudio.LanguageServices.Utilities;
-using Roslyn.Utilities;
 
 namespace Microsoft.VisualStudio.LanguageServices.Implementation.PickMembers;
 
@@ -34,9 +33,9 @@ internal class PickMembersDialogViewModel : AbstractNotifyPropertyChanged
         ImmutableArray<PickMembersOption> options,
         bool selectAll)
     {
-        _allMembers = members.Select(m => new MemberSymbolViewModel(m, glyphService)).ToList();
+        _allMembers = [.. members.Select(m => new MemberSymbolViewModel(m, glyphService))];
         MemberContainers = _allMembers;
-        Options = options.Select(o => new OptionViewModel(o)).ToList();
+        Options = [.. options.Select(o => new OptionViewModel(o))];
 
         if (selectAll)
         {
@@ -53,7 +52,7 @@ internal class PickMembersDialogViewModel : AbstractNotifyPropertyChanged
         searchText = searchText.Trim();
         MemberContainers = searchText.Length == 0
             ? _allMembers
-            : _allMembers.Where(m => m.SymbolAutomationText.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+            : [.. _allMembers.Where(m => m.SymbolAutomationText.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0)];
         NotifyPropertyChanged(nameof(MemberContainers));
     }
 

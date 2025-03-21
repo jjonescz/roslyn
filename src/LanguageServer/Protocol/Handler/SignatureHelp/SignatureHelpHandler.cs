@@ -9,7 +9,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Host.Mef;
-using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.PooledObjects;
 using Microsoft.CodeAnalysis.SignatureHelp;
 using Microsoft.CodeAnalysis.Text;
@@ -69,11 +68,11 @@ namespace Microsoft.CodeAnalysis.LanguageServer.Handler
 
                 sigInfo.Label = GetSignatureText(item);
                 sigInfo.Documentation = new LSP.MarkupContent { Kind = LSP.MarkupKind.PlainText, Value = item.DocumentationFactory(cancellationToken).GetFullText() };
-                sigInfo.Parameters = item.Parameters.Select(p => new LSP.ParameterInformation
+                sigInfo.Parameters = [.. item.Parameters.Select(p => new LSP.ParameterInformation
                 {
                     Label = p.Name,
                     Documentation = new LSP.MarkupContent { Kind = LSP.MarkupKind.PlainText, Value = p.DocumentationFactory(cancellationToken).GetFullText() }
-                }).ToArray();
+                })];
                 sigInfos.Add(sigInfo);
             }
 

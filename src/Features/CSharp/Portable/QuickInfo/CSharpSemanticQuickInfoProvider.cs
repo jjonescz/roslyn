@@ -13,6 +13,7 @@ using Microsoft.CodeAnalysis.Copilot;
 using Microsoft.CodeAnalysis.CSharp.Extensions;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.GoToDefinition;
+using Microsoft.CodeAnalysis.Host;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Internal.Log;
 using Microsoft.CodeAnalysis.QuickInfo;
@@ -151,15 +152,19 @@ internal class CSharpSemanticQuickInfoProvider : CommonSemanticQuickInfoProvider
         {
             return null;
         }
-
-        var symbolService = document.GetRequiredLanguageService<IGoToDefinitionSymbolService>();
-        var (symbol, _, _) = await symbolService.GetSymbolProjectAndBoundSpanAsync(
-            document, position, cancellationToken).ConfigureAwait(false);
-
-        if (symbol is null)
+        if (document.IsRazorDocument())
         {
             return null;
         }
+
+        var symbolService = document.GetRequiredLanguageService<IGoToDefinitionSymbolService>();
+        var semanticModel = await document.GetRequiredSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        var (symbol, _, _) = await symbolService.GetSymbolProjectAndBoundSpanAsync(
+            document, semanticModel, position, cancellationToken).ConfigureAwait(false);
+
+        // Don't show on-the-fly-docs for namespace symbols.
+        if (symbol is null or INamespaceSymbol)
+            return null;
 
         if (symbol.MetadataToken != 0)
         {
@@ -188,14 +193,21 @@ internal class CSharpSemanticQuickInfoProvider : CommonSemanticQuickInfoProvider
             }
         }
 
-        var maxLength = 1000;
-        var symbolStrings = symbol.DeclaringSyntaxReferences.Select(reference =>
+        var solution = document.Project.Solution;
+        var declarationCode = symbol.DeclaringSyntaxReferences.Select(reference =>
         {
             var span = reference.Span;
-            var sourceText = reference.SyntaxTree.GetText(cancellationToken);
-            return sourceText.GetSubText(new Text.TextSpan(span.Start, Math.Min(maxLength, span.Length))).ToString();
+            var syntaxReferenceDocument = solution.GetDocument(reference.SyntaxTree);
+            if (syntaxReferenceDocument is not null)
+            {
+                return new OnTheFlyDocsRelevantFileInfo(syntaxReferenceDocument, span);
+            }
+
+            return null;
         }).ToImmutableArray();
 
-        return new OnTheFlyDocsInfo(symbol.ToDisplayString(), symbolStrings, symbol.Language, hasContentExcluded);
+        var additionalContext = OnTheFlyDocsUtilities.GetAdditionalOnTheFlyDocsContext(solution, symbol);
+
+        return new OnTheFlyDocsInfo(symbol.ToDisplayString(), declarationCode, symbol.Language, hasContentExcluded, additionalContext);
     }
 }

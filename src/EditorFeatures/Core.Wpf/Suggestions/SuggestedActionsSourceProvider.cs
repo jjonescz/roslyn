@@ -20,7 +20,6 @@ using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
-using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.Editor.Implementation.Suggestions
 {
@@ -80,7 +79,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.Suggestions
             UIThreadOperationExecutor = uiThreadOperationExecutor;
             OperationListener = listenerProvider.GetListener(FeatureAttribute.LightBulb);
 
-            ImageIdServices = ExtensionOrderer.Order(imageIdServices).ToImmutableArray();
+            ImageIdServices = [.. ExtensionOrderer.Order(imageIdServices)];
         }
 
         public ISuggestedActionsSource? CreateSuggestedActionsSource(ITextView textView, ITextBuffer textBuffer)

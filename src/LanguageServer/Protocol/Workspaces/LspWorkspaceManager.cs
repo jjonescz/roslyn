@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -328,10 +329,13 @@ internal sealed class LspWorkspaceManager : IDocumentChangeTracker, ILspService
     {
         // Ensure that the loose files workspace is searched last.
         var registeredWorkspaces = _lspWorkspaceRegistrationService.GetAllRegistrations();
-        registeredWorkspaces = registeredWorkspaces
-            .Where(workspace => workspace.Kind != WorkspaceKind.MiscellaneousFiles)
-            .Concat(registeredWorkspaces.Where(workspace => workspace.Kind == WorkspaceKind.MiscellaneousFiles))
-            .ToImmutableArray();
+        registeredWorkspaces =
+        [
+            .. registeredWorkspaces
+                        .Where(workspace => workspace.Kind != WorkspaceKind.MiscellaneousFiles)
+,
+            .. registeredWorkspaces.Where(workspace => workspace.Kind == WorkspaceKind.MiscellaneousFiles),
+        ];
 
         var solutions = new FixedSizeArrayBuilder<(Workspace, Solution, bool)>(registeredWorkspaces.Length);
         foreach (var workspace in registeredWorkspaces)
@@ -390,7 +394,7 @@ internal sealed class LspWorkspaceManager : IDocumentChangeTracker, ILspService
 
             // Step 3: Check to see if the LSP text matches the workspace text.
 
-            var documentsInWorkspace = GetDocumentsForUris(_trackedDocuments.Keys.ToImmutableArray(), workspaceCurrentSolution);
+            var documentsInWorkspace = GetDocumentsForUris([.. _trackedDocuments.Keys], workspaceCurrentSolution);
             var sourceGeneratedDocuments =
                 _trackedDocuments.Keys.Where(static uri => uri.Scheme == SourceGeneratedDocumentUri.Scheme)
                     .Select(uri => (identity: SourceGeneratedDocumentUri.DeserializeIdentity(workspaceCurrentSolution, uri), _trackedDocuments[uri].Text))
@@ -532,7 +536,7 @@ internal sealed class LspWorkspaceManager : IDocumentChangeTracker, ILspService
     /// <summary>
     /// Returns a Roslyn language name for the given URI.
     /// </summary>
-    internal string GetLanguageForUri(Uri uri)
+    internal bool TryGetLanguageForUri(Uri uri, [NotNullWhen(true)] out string? language)
     {
         string? languageId = null;
         if (_trackedDocuments.TryGetValue(uri, out var trackedDocument))
@@ -540,7 +544,14 @@ internal sealed class LspWorkspaceManager : IDocumentChangeTracker, ILspService
             languageId = trackedDocument.LanguageId;
         }
 
-        return _languageInfoProvider.GetLanguageInformation(uri, languageId).LanguageName;
+        if (_languageInfoProvider.TryGetLanguageInformation(uri, languageId, out var languageInfo))
+        {
+            language = languageInfo.LanguageName;
+            return true;
+        }
+
+        language = null;
+        return false;
     }
 
     /// <summary>

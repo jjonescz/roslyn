@@ -9,26 +9,18 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Utilities;
 using Microsoft.CodeAnalysis.OrganizeImports;
 using Microsoft.CodeAnalysis.Text;
-using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp.OrganizeImports;
 
 internal partial class CSharpOrganizeImportsService
 {
-    private sealed class Rewriter : CSharpSyntaxRewriter
+    private sealed class Rewriter(OrganizeImportsOptions options) : CSharpSyntaxRewriter
     {
-        private readonly bool _placeSystemNamespaceFirst;
-        private readonly bool _separateGroups;
-        private readonly SyntaxTrivia _newLineTrivia;
+        private readonly bool _placeSystemNamespaceFirst = options.PlaceSystemNamespaceFirst;
+        private readonly bool _separateGroups = options.SeparateImportDirectiveGroups;
+        private readonly SyntaxTrivia _fallbackTrivia = CSharpSyntaxGeneratorInternal.Instance.EndOfLine(options.NewLine);
 
         public readonly IList<TextChange> TextChanges = [];
-
-        public Rewriter(OrganizeImportsOptions options)
-        {
-            _placeSystemNamespaceFirst = options.PlaceSystemNamespaceFirst;
-            _separateGroups = options.SeparateImportDirectiveGroups;
-            _newLineTrivia = CSharpSyntaxGeneratorInternal.Instance.EndOfLine(options.NewLine);
-        }
 
         public override SyntaxNode VisitCompilationUnit(CompilationUnitSyntax node)
         {
@@ -36,7 +28,7 @@ internal partial class CSharpOrganizeImportsService
             UsingsAndExternAliasesOrganizer.Organize(
                 node.Externs, node.Usings,
                 _placeSystemNamespaceFirst, _separateGroups,
-                _newLineTrivia,
+                _fallbackTrivia,
                 out var organizedExternAliasList, out var organizedUsingList);
 
             var result = node.WithExterns(organizedExternAliasList).WithUsings(organizedUsingList);
@@ -61,7 +53,7 @@ internal partial class CSharpOrganizeImportsService
             UsingsAndExternAliasesOrganizer.Organize(
                 node.Externs, node.Usings,
                 _placeSystemNamespaceFirst, _separateGroups,
-                _newLineTrivia,
+                _fallbackTrivia,
                 out var organizedExternAliasList, out var organizedUsingList);
 
             var result = node.WithExterns(organizedExternAliasList).WithUsings(organizedUsingList);

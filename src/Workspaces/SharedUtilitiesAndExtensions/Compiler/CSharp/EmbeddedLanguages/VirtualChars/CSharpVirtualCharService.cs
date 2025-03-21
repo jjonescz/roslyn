@@ -14,7 +14,6 @@ using Microsoft.CodeAnalysis.LanguageService;
 using Microsoft.CodeAnalysis.PooledObjects;
 using Microsoft.CodeAnalysis.Shared.Extensions;
 using Microsoft.CodeAnalysis.Text;
-using Microsoft.CodeAnalysis.Utilities;
 using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp.EmbeddedLanguages.VirtualChars;
@@ -22,6 +21,8 @@ namespace Microsoft.CodeAnalysis.CSharp.EmbeddedLanguages.VirtualChars;
 internal class CSharpVirtualCharService : AbstractVirtualCharService
 {
     public static readonly IVirtualCharService Instance = new CSharpVirtualCharService();
+
+    private static readonly ObjectPool<ImmutableSegmentedList<VirtualChar>.Builder> s_pooledBuilders = new(() => ImmutableSegmentedList.CreateBuilder<VirtualChar>());
 
     protected CSharpVirtualCharService()
     {
@@ -285,11 +286,20 @@ internal class CSharpVirtualCharService : AbstractVirtualCharService
         string tokenText, int offset, int startIndexInclusive, int endIndexExclusive, ArrayBuilder<(char ch, TextSpan span)> charResults)
     {
         // Second pass.  Convert those characters to Runes.
-        var runeResults = ImmutableSegmentedList.CreateBuilder<VirtualChar>();
+        using var pooledRuneResults = s_pooledBuilders.GetPooledObject();
+        var runeResults = pooledRuneResults.Object;
 
-        ConvertCharactersToRunes(charResults, runeResults);
+        try
+        {
+            ConvertCharactersToRunes(charResults, runeResults);
 
-        return CreateVirtualCharSequence(tokenText, offset, startIndexInclusive, endIndexExclusive, runeResults);
+            return CreateVirtualCharSequence(tokenText, offset, startIndexInclusive, endIndexExclusive, runeResults);
+        }
+        finally
+        {
+            // Ensure the builder is cleared out before releasing back to the pool.
+            runeResults.Clear();
+        }
     }
 
     private static void ConvertCharactersToRunes(ArrayBuilder<(char ch, TextSpan span)> charResults, ImmutableSegmentedList<VirtualChar>.Builder runeResults)

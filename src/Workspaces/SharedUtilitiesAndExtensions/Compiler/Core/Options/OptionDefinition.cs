@@ -116,7 +116,7 @@ internal sealed class OptionDefinition<T>(
     bool isEditorConfigOption) : OptionDefinition(group, configName, defaultValue, storageMapping, isEditorConfigOption)
 {
     public new T DefaultValue { get; } = defaultValue;
-    public new EditorConfigValueSerializer<T> Serializer { get; } = serializer ?? EditorConfigValueSerializer.Default<T>();
+    public new EditorConfigValueSerializer<T> Serializer { get; } = serializer ?? EditorConfigValueSerializer.GetDefault<T>(isEditorConfigOption);
 
     public override Type Type
         => typeof(T);

@@ -55,6 +55,7 @@ internal sealed class RemoteDebuggingSessionProxy(SolutionServices services, IDi
 
     public async ValueTask<EmitSolutionUpdateResults.Data> EmitSolutionUpdateAsync(
         Solution solution,
+        IImmutableSet<ProjectId> runningProjects,
         ActiveStatementSpanProvider activeStatementSpanProvider,
         CancellationToken cancellationToken)
     {
@@ -63,12 +64,12 @@ internal sealed class RemoteDebuggingSessionProxy(SolutionServices services, IDi
             var client = await RemoteHostClient.TryGetClientAsync(services, cancellationToken).ConfigureAwait(false);
             if (client == null)
             {
-                return (await GetLocalService().EmitSolutionUpdateAsync(sessionId, solution, activeStatementSpanProvider, cancellationToken).ConfigureAwait(false)).Dehydrate();
+                return (await GetLocalService().EmitSolutionUpdateAsync(sessionId, solution, runningProjects, activeStatementSpanProvider, cancellationToken).ConfigureAwait(false)).Dehydrate();
             }
 
             var result = await client.TryInvokeAsync<IRemoteEditAndContinueService, EmitSolutionUpdateResults.Data>(
                 solution,
-                (service, solutionInfo, callbackId, cancellationToken) => service.EmitSolutionUpdateAsync(solutionInfo, callbackId, sessionId, cancellationToken),
+                (service, solutionInfo, callbackId, cancellationToken) => service.EmitSolutionUpdateAsync(solutionInfo, callbackId, sessionId, runningProjects, cancellationToken),
                 callbackTarget: new ActiveStatementSpanProviderCallback(activeStatementSpanProvider),
                 cancellationToken).ConfigureAwait(false);
 
@@ -78,6 +79,8 @@ internal sealed class RemoteDebuggingSessionProxy(SolutionServices services, IDi
                 Diagnostics = [],
                 RudeEdits = [],
                 SyntaxError = null,
+                ProjectsToRebuild = [],
+                ProjectsToRestart = [],
             };
         }
         catch (Exception e) when (FatalError.ReportAndCatchUnlessCanceled(e, cancellationToken))
@@ -88,6 +91,8 @@ internal sealed class RemoteDebuggingSessionProxy(SolutionServices services, IDi
                 Diagnostics = GetInternalErrorDiagnosticData(solution, e),
                 RudeEdits = [],
                 SyntaxError = null,
+                ProjectsToRebuild = [],
+                ProjectsToRestart = [],
             };
         }
     }
@@ -131,6 +136,22 @@ internal sealed class RemoteDebuggingSessionProxy(SolutionServices services, IDi
         await client.TryInvokeAsync<IRemoteEditAndContinueService>(
             (service, cancellationToken) => service.DiscardSolutionUpdateAsync(sessionId, cancellationToken),
             cancellationToken).ConfigureAwait(false);
+    }
+
+    public async ValueTask UpdateBaselinesAsync(Solution solution, ImmutableArray<ProjectId> rebuiltProjects, CancellationToken cancellationToken)
+    {
+        var client = await RemoteHostClient.TryGetClientAsync(services, cancellationToken).ConfigureAwait(false);
+        if (client == null)
+        {
+            GetLocalService().UpdateBaselines(sessionId, solution, rebuiltProjects);
+        }
+        else
+        {
+            var result = await client.TryInvokeAsync<IRemoteEditAndContinueService>(
+                solution,
+                (service, solutionInfo, cancellationToken) => service.UpdateBaselinesAsync(solutionInfo, sessionId, rebuiltProjects, cancellationToken),
+                cancellationToken).ConfigureAwait(false);
+        }
     }
 
     public async ValueTask<ImmutableArray<ImmutableArray<ActiveStatementSpan>>> GetBaseActiveStatementSpansAsync(Solution solution, ImmutableArray<DocumentId> documentIds, CancellationToken cancellationToken)

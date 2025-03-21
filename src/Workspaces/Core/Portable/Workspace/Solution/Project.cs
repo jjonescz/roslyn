@@ -147,7 +147,12 @@ public partial class Project
     /// <summary>
     /// The options used by analyzers for this project.
     /// </summary>
-    public AnalyzerOptions AnalyzerOptions => State.AnalyzerOptions;
+    public AnalyzerOptions AnalyzerOptions => State.ProjectAnalyzerOptions;
+
+    /// <summary>
+    /// The options used by analyzers for this project.
+    /// </summary>
+    public AnalyzerOptions HostAnalyzerOptions => State.HostAnalyzerOptions;
 
     /// <summary>
     /// The options used when building the compilation for this project.
@@ -540,34 +545,6 @@ public partial class Project
         => State.GetSemanticVersionAsync(cancellationToken);
 
     /// <summary>
-    /// Calculates a checksum that contains a project's checksum along with a checksum for each of the project's 
-    /// transitive dependencies.
-    /// </summary>
-    /// <remarks>
-    /// This checksum calculation can be used for cases where a feature needs to know if the semantics in this project
-    /// changed.  For example, for diagnostics or caching computed semantic data. The goal is to ensure that changes to
-    /// <list type="bullet">
-    ///    <item>Files inside the current project</item>
-    ///    <item>Project properties of the current project</item>
-    ///    <item>Visible files in referenced projects</item>
-    ///    <item>Project properties in referenced projects</item>
-    /// </list>
-    /// are reflected in the metadata we keep so that comparing solutions accurately tells us when we need to recompute
-    /// semantic work.   
-    /// 
-    /// <para>This method of checking for changes has a few important properties that differentiate it from other methods of determining project version.
-    /// <list type="bullet">
-    ///    <item>Changes to methods inside the current project will be reflected to compute updated diagnostics.
-    ///        <see cref="Project.GetDependentSemanticVersionAsync(CancellationToken)"/> does not change as it only returns top level changes.</item>
-    ///    <item>Reloading a project without making any changes will re-use cached diagnostics.
-    ///        <see cref="Project.GetDependentSemanticVersionAsync(CancellationToken)"/> changes as the project is removed, then added resulting in a version change.</item>
-    /// </list>   
-    /// </para>
-    /// </remarks>
-    internal Task<Checksum> GetDependentChecksumAsync(CancellationToken cancellationToken)
-        => Solution.CompilationState.GetDependentChecksumAsync(this.Id, cancellationToken);
-
-    /// <summary>
     /// Creates a new instance of this project updated to have the new assembly name.
     /// </summary>
     public Project WithAssemblyName(string assemblyName)
@@ -578,6 +555,15 @@ public partial class Project
     /// </summary>
     public Project WithDefaultNamespace(string defaultNamespace)
         => this.Solution.WithProjectDefaultNamespace(this.Id, defaultNamespace).GetRequiredProject(Id);
+
+    internal Project WithOutputFilePath(string? path)
+        => Solution.WithProjectOutputFilePath(Id, path).GetRequiredProject(Id);
+
+    internal Project WithOutputRefFilePath(string? path)
+        => Solution.WithProjectOutputRefFilePath(Id, path).GetRequiredProject(Id);
+
+    internal Project WithCompilationOutputInfo(in CompilationOutputInfo info)
+        => Solution.WithProjectCompilationOutputInfo(Id, info).GetRequiredProject(Id);
 
     /// <summary>
     /// Creates a new instance of this project updated to have the specified compilation options.
@@ -815,9 +801,6 @@ public partial class Project
 
     private string GetDebuggerDisplay()
         => this.Name;
-
-    internal SkippedHostAnalyzersInfo GetSkippedAnalyzersInfo(DiagnosticAnalyzerInfoCache infoCache)
-        => Solution.SolutionState.Analyzers.GetSkippedAnalyzersInfo(this, infoCache);
 
     internal async ValueTask<Document?> GetDocumentAsync(ImmutableArray<byte> contentHash, CancellationToken cancellationToken)
     {

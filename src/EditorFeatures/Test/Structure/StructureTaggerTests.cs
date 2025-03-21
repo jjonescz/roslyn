@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Editor.Implementation.Structure;
-using Microsoft.CodeAnalysis.Editor.Shared.Options;
 using Microsoft.CodeAnalysis.Editor.Shared.Utilities;
 using Microsoft.CodeAnalysis.Editor.Tagging;
 using Microsoft.CodeAnalysis.Structure;
@@ -356,6 +355,39 @@ End Module";
         {
             Assert.Equal("If str.Contains(\"foo\") Then", GetHeaderText(IfTag));
             Assert.Equal(3, GetCollapsedHintLineCount(IfTag));
+        });
+    }
+
+    [WpfFact, WorkItem("https://devdiv.visualstudio.com/DevDiv/_workitems/edit/2112145")]
+    public async Task LambdaShouldBeCollapsed()
+    {
+        var code = """
+            public class MyClass
+            {
+                public void MyMethod() => System.Linq.Enumerable.Range(10, 100).Any(x =>
+                {
+                    return x == 10;
+                });
+            }
+            """;
+
+        using var workspace = EditorTestWorkspace.CreateCSharp(code, composition: EditorTestCompositions.EditorFeaturesWpf);
+        var tags = await GetTagsFromWorkspaceAsync(workspace);
+
+        Assert.Collection(tags, programTag =>
+        {
+            Assert.Equal("public class MyClass", GetHeaderText(programTag));
+            Assert.Equal(7, GetCollapsedHintLineCount(programTag));
+        },
+        mainTag =>
+        {
+            Assert.Equal("public void MyMethod()", GetHeaderText(mainTag));
+            Assert.Equal(4, GetCollapsedHintLineCount(mainTag));
+        },
+        IfTag =>
+        {
+            Assert.Equal("x =>", GetHeaderText(IfTag));
+            Assert.Equal(4, GetCollapsedHintLineCount(IfTag));
         });
     }
 

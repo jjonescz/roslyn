@@ -353,6 +353,9 @@ namespace Microsoft.CodeAnalysis
         System_Linq_Expressions_ConditionalExpression,
         System_Linq_Expressions_InvocationExpression,
         System_Linq_Expressions_NewArrayExpression,
+        System_Linq_Expressions_DefaultExpression,
+
+        System_Text_Encoding,
 
         NextAvailable,
         // Remember to update the AllWellKnownTypes tests when making changes here
@@ -693,6 +696,9 @@ namespace Microsoft.CodeAnalysis
             "System.Linq.Expressions.ConditionalExpression",
             "System.Linq.Expressions.InvocationExpression",
             "System.Linq.Expressions.NewArrayExpression",
+            "System.Linq.Expressions.DefaultExpression",
+
+            "System.Text.Encoding",
         };
 
         private static readonly Dictionary<string, WellKnownType> s_nameToTypeIdMap = new Dictionary<string, WellKnownType>((int)Count);

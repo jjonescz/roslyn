@@ -27,9 +27,7 @@ namespace Microsoft.CodeAnalysis.LanguageServer
         public ExperimentalCapabilitiesProvider(
             [ImportMany] IEnumerable<Lazy<CompletionProvider, CompletionProviderMetadata>> completionProviders)
         {
-            _completionProviders = completionProviders
-                .Where(lz => lz.Metadata.Language is LanguageNames.CSharp or LanguageNames.VisualBasic)
-                .ToImmutableArray();
+            _completionProviders = [.. completionProviders.Where(lz => lz.Metadata.Language is LanguageNames.CSharp or LanguageNames.VisualBasic)];
         }
 
         public void Initialize()
@@ -53,6 +51,7 @@ namespace Microsoft.CodeAnalysis.LanguageServer
                 lz => CommonCompletionUtilities.GetTriggerCharacters(lz.Value)).Distinct().Select(c => c.ToString()).ToArray();
 
             capabilities.DefinitionProvider = true;
+            capabilities.TypeDefinitionProvider = true;
             capabilities.DocumentHighlightProvider = true;
             capabilities.RenameProvider = new RenameOptions
             {
@@ -91,10 +90,13 @@ namespace Microsoft.CodeAnalysis.LanguageServer
             // Using only range handling has shown to be more performant than using a combination of full/edits/range
             // handling, especially for larger files. With range handling, we only need to compute tokens for whatever
             // is in view, while with full/edits handling we need to compute tokens for the entire file and then
-            // potentially run a diff between the old and new tokens.
+            // potentially run a diff between the old and new tokens. Therefore, we only enable full handling if
+            // the client does not support ranges.
+            var rangeCapabilities = clientCapabilities.TextDocument?.SemanticTokens?.Requests?.Range;
+            var supportsSemanticTokensRange = rangeCapabilities?.Value is not (false or null);
             capabilities.SemanticTokensOptions = new SemanticTokensOptions
             {
-                Full = false,
+                Full = !supportsSemanticTokensRange,
                 Range = true,
                 Legend = new SemanticTokensLegend
                 {

@@ -272,6 +272,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
 
 
+
     internal abstract partial class BoundInitializer : BoundNode
     {
         protected BoundInitializer(BoundKind kind, SyntaxNode syntax, bool hasErrors)
@@ -496,7 +497,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
     internal sealed partial class BoundCapturedReceiverPlaceholder : BoundValuePlaceholderBase
     {
-        public BoundCapturedReceiverPlaceholder(SyntaxNode syntax, BoundExpression receiver, uint localScopeDepth, TypeSymbol? type, bool hasErrors = false)
+        public BoundCapturedReceiverPlaceholder(SyntaxNode syntax, BoundExpression receiver, SafeContext localScopeDepth, TypeSymbol? type, bool hasErrors = false)
             : base(BoundKind.CapturedReceiverPlaceholder, syntax, type, hasErrors || receiver.HasErrors())
         {
 
@@ -507,12 +508,12 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
         public BoundExpression Receiver { get; }
-        public uint LocalScopeDepth { get; }
+        public SafeContext LocalScopeDepth { get; }
 
         [DebuggerStepThrough]
         public override BoundNode? Accept(BoundTreeVisitor visitor) => visitor.VisitCapturedReceiverPlaceholder(this);
 
-        public BoundCapturedReceiverPlaceholder Update(BoundExpression receiver, uint localScopeDepth, TypeSymbol? type)
+        public BoundCapturedReceiverPlaceholder Update(BoundExpression receiver, SafeContext localScopeDepth, TypeSymbol? type)
         {
             if (receiver != this.Receiver || localScopeDepth != this.LocalScopeDepth || !TypeSymbol.Equals(type, this.Type, TypeCompareKind.ConsiderEverything))
             {
@@ -2948,7 +2949,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
     internal sealed partial class BoundConversion : BoundExpression
     {
-        public BoundConversion(SyntaxNode syntax, BoundExpression operand, Conversion conversion, bool isBaseConversion, bool @checked, bool explicitCastInCode, ConstantValue? constantValueOpt, ConversionGroup? conversionGroupOpt, ImmutableArray<MethodSymbol> originalUserDefinedConversionsOpt, TypeSymbol type, bool hasErrors = false)
+        public BoundConversion(SyntaxNode syntax, BoundExpression operand, Conversion conversion, bool isBaseConversion, bool @checked, bool explicitCastInCode, ConstantValue? constantValueOpt, ConversionGroup? conversionGroupOpt, TypeSymbol type, bool hasErrors = false)
             : base(BoundKind.Conversion, syntax, type, hasErrors || operand.HasErrors())
         {
 
@@ -2962,7 +2963,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             this.ExplicitCastInCode = explicitCastInCode;
             this.ConstantValueOpt = constantValueOpt;
             this.ConversionGroupOpt = conversionGroupOpt;
-            this.OriginalUserDefinedConversionsOpt = originalUserDefinedConversionsOpt;
         }
 
         public new TypeSymbol Type => base.Type!;
@@ -2973,16 +2973,15 @@ namespace Microsoft.CodeAnalysis.CSharp
         public bool ExplicitCastInCode { get; }
         public override ConstantValue? ConstantValueOpt { get; }
         public ConversionGroup? ConversionGroupOpt { get; }
-        public ImmutableArray<MethodSymbol> OriginalUserDefinedConversionsOpt { get; }
 
         [DebuggerStepThrough]
         public override BoundNode? Accept(BoundTreeVisitor visitor) => visitor.VisitConversion(this);
 
-        public BoundConversion Update(BoundExpression operand, Conversion conversion, bool isBaseConversion, bool @checked, bool explicitCastInCode, ConstantValue? constantValueOpt, ConversionGroup? conversionGroupOpt, ImmutableArray<MethodSymbol> originalUserDefinedConversionsOpt, TypeSymbol type)
+        public BoundConversion Update(BoundExpression operand, Conversion conversion, bool isBaseConversion, bool @checked, bool explicitCastInCode, ConstantValue? constantValueOpt, ConversionGroup? conversionGroupOpt, TypeSymbol type)
         {
-            if (operand != this.Operand || conversion != this.Conversion || isBaseConversion != this.IsBaseConversion || @checked != this.Checked || explicitCastInCode != this.ExplicitCastInCode || constantValueOpt != this.ConstantValueOpt || conversionGroupOpt != this.ConversionGroupOpt || originalUserDefinedConversionsOpt != this.OriginalUserDefinedConversionsOpt || !TypeSymbol.Equals(type, this.Type, TypeCompareKind.ConsiderEverything))
+            if (operand != this.Operand || conversion != this.Conversion || isBaseConversion != this.IsBaseConversion || @checked != this.Checked || explicitCastInCode != this.ExplicitCastInCode || constantValueOpt != this.ConstantValueOpt || conversionGroupOpt != this.ConversionGroupOpt || !TypeSymbol.Equals(type, this.Type, TypeCompareKind.ConsiderEverything))
             {
-                var result = new BoundConversion(this.Syntax, operand, conversion, isBaseConversion, @checked, explicitCastInCode, constantValueOpt, conversionGroupOpt, originalUserDefinedConversionsOpt, type, this.HasErrors);
+                var result = new BoundConversion(this.Syntax, operand, conversion, isBaseConversion, @checked, explicitCastInCode, constantValueOpt, conversionGroupOpt, type, this.HasErrors);
                 result.CopyAttributes(this);
                 return result;
             }
@@ -8025,7 +8024,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             this.Value = value;
             this.ConstantValue = constantValue;
+            Validate();
         }
+
+        [Conditional("DEBUG")]
+        private partial void Validate();
 
         public BoundExpression Value { get; }
         public ConstantValue ConstantValue { get; }
@@ -8054,7 +8057,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             RoslynDebug.Assert(inputType is object, "Field 'inputType' cannot be null (make the type nullable in BoundNodes.xml to remove this check)");
             RoslynDebug.Assert(narrowedType is object, "Field 'narrowedType' cannot be null (make the type nullable in BoundNodes.xml to remove this check)");
 
+            Validate();
         }
+
+        [Conditional("DEBUG")]
+        private partial void Validate();
 
         public BoundDiscardPattern(SyntaxNode syntax, TypeSymbol inputType, TypeSymbol narrowedType)
             : base(BoundKind.DiscardPattern, syntax, inputType, narrowedType)
@@ -8110,7 +8117,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             this.DeclaredType = declaredType;
             this.IsVar = isVar;
+            Validate();
         }
+
+        [Conditional("DEBUG")]
+        private partial void Validate();
 
         public BoundTypeExpression DeclaredType { get; }
         public bool IsVar { get; }
@@ -8144,7 +8155,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             this.Deconstruction = deconstruction;
             this.Properties = properties;
             this.IsExplicitNotNullTest = isExplicitNotNullTest;
+            Validate();
         }
+
+        [Conditional("DEBUG")]
+        private partial void Validate();
 
         public BoundTypeExpression? DeclaredType { get; }
         public MethodSymbol? DeconstructMethod { get; }
@@ -8265,7 +8280,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             this.GetLengthMethod = getLengthMethod;
             this.GetItemMethod = getItemMethod;
             this.Subpatterns = subpatterns;
+            Validate();
         }
+
+        [Conditional("DEBUG")]
+        private partial void Validate();
 
         public MethodSymbol GetLengthMethod { get; }
         public MethodSymbol GetItemMethod { get; }
@@ -8402,7 +8421,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             this.DeclaredType = declaredType;
             this.IsExplicitNotNullTest = isExplicitNotNullTest;
+            Validate();
         }
+
+        [Conditional("DEBUG")]
+        private partial void Validate();
 
         public BoundTypeExpression DeclaredType { get; }
         public bool IsExplicitNotNullTest { get; }
@@ -8436,7 +8459,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             this.Disjunction = disjunction;
             this.Left = left;
             this.Right = right;
+            Validate();
         }
+
+        [Conditional("DEBUG")]
+        private partial void Validate();
 
         public bool Disjunction { get; }
         public BoundPattern Left { get; }
@@ -8468,7 +8495,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             RoslynDebug.Assert(narrowedType is object, "Field 'narrowedType' cannot be null (make the type nullable in BoundNodes.xml to remove this check)");
 
             this.Negated = negated;
+            Validate();
         }
+
+        [Conditional("DEBUG")]
+        private partial void Validate();
 
         public BoundPattern Negated { get; }
 
@@ -8501,7 +8532,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             this.Relation = relation;
             this.Value = value;
             this.ConstantValue = constantValue;
+            Validate();
         }
+
+        [Conditional("DEBUG")]
+        private partial void Validate();
 
         public BinaryOperatorKind Relation { get; }
         public BoundExpression Value { get; }
@@ -11239,7 +11274,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             BoundExpression operand = (BoundExpression)this.Visit(node.Operand);
             TypeSymbol? type = this.VisitType(node.Type);
-            return node.Update(operand, node.Conversion, node.IsBaseConversion, node.Checked, node.ExplicitCastInCode, node.ConstantValueOpt, node.ConversionGroupOpt, node.OriginalUserDefinedConversionsOpt, type);
+            return node.Update(operand, node.Conversion, node.IsBaseConversion, node.Checked, node.ExplicitCastInCode, node.ConstantValueOpt, node.ConversionGroupOpt, type);
         }
         public override BoundNode? VisitReadOnlySpanFromArray(BoundReadOnlySpanFromArray node)
         {
@@ -13264,18 +13299,17 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override BoundNode? VisitConversion(BoundConversion node)
         {
-            ImmutableArray<MethodSymbol> originalUserDefinedConversionsOpt = GetUpdatedArray(node, node.OriginalUserDefinedConversionsOpt);
             BoundExpression operand = (BoundExpression)this.Visit(node.Operand);
             BoundConversion updatedNode;
 
             if (_updatedNullabilities.TryGetValue(node, out (NullabilityInfo Info, TypeSymbol? Type) infoAndType))
             {
-                updatedNode = node.Update(operand, node.Conversion, node.IsBaseConversion, node.Checked, node.ExplicitCastInCode, node.ConstantValueOpt, node.ConversionGroupOpt, node.OriginalUserDefinedConversionsOpt, infoAndType.Type!);
+                updatedNode = node.Update(operand, node.Conversion, node.IsBaseConversion, node.Checked, node.ExplicitCastInCode, node.ConstantValueOpt, node.ConversionGroupOpt, infoAndType.Type!);
                 updatedNode.TopLevelNullability = infoAndType.Info;
             }
             else
             {
-                updatedNode = node.Update(operand, node.Conversion, node.IsBaseConversion, node.Checked, node.ExplicitCastInCode, node.ConstantValueOpt, node.ConversionGroupOpt, node.OriginalUserDefinedConversionsOpt, node.Type);
+                updatedNode = node.Update(operand, node.Conversion, node.IsBaseConversion, node.Checked, node.ExplicitCastInCode, node.ConstantValueOpt, node.ConversionGroupOpt, node.Type);
             }
             return updatedNode;
         }
@@ -15629,7 +15663,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             new TreeDumperNode("explicitCastInCode", node.ExplicitCastInCode, null),
             new TreeDumperNode("constantValueOpt", node.ConstantValueOpt, null),
             new TreeDumperNode("conversionGroupOpt", node.ConversionGroupOpt, null),
-            new TreeDumperNode("originalUserDefinedConversionsOpt", node.OriginalUserDefinedConversionsOpt, null),
             new TreeDumperNode("type", node.Type, null),
             new TreeDumperNode("isSuppressed", node.IsSuppressed, null),
             new TreeDumperNode("hasErrors", node.HasErrors, null)
