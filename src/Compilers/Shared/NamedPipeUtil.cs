@@ -166,9 +166,9 @@ namespace Microsoft.CodeAnalysis
             return security;
         }
 
-#elif NETCOREAPP
+#elif NETCOREAPP || NETSTANDARD
 
-        private const PipeOptions CurrentUserOption = PipeOptions.CurrentUserOnly;
+        private const PipeOptions CurrentUserOption = (PipeOptions)0x20000000;
 
         // Validation is handled by CurrentUserOnly
 #pragma warning disable IDE0060 // Remove unused parameter
