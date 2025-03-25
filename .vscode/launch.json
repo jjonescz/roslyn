@@ -63,6 +63,51 @@
       "console": "internalConsole"
     },
     {
+      "name": "Launch Microsoft.Build.Tasks.CodeAnalysis.dll via MSBuild.exe (netfx)",
+      "type": "clr",
+      "request": "launch",
+      "preLaunchTask": "build tasks",
+      "program": "C:/Program Files/Microsoft Visual Studio/2022/Preview/MSBuild/Current/Bin/amd64/MSBuild.exe",
+      "args": [
+        "-restore",
+        "-p:RoslynTargetsPath=${workspaceFolder}/artifacts/packages/Debug/Shipping/Microsoft.Net.Compilers.Toolset/tasks/net472",
+      ],
+      // A simple project that can be used to debug the build tasks against.
+      "cwd": "${workspaceFolder}/src/Tools/Source/CompilerGeneratorTools/Source/BoundTreeGenerator",
+      "stopAtEntry": false,
+      "console": "internalConsole"
+    },
+    {
+      "name": "Launch Microsoft.Build.Tasks.CodeAnalysis.dll via MSBuild.exe (netcore)",
+      "type": "clr",
+      "request": "launch",
+      "preLaunchTask": "build tasks",
+      "program": "C:/Program Files/Microsoft Visual Studio/2022/Preview/MSBuild/Current/Bin/amd64/MSBuild.exe",
+      "args": [
+        "-restore",
+        "-p:RoslynTargetsPath=${workspaceFolder}/artifacts/packages/Debug/Shipping/Microsoft.Net.Compilers.Toolset/tasks/netcore",
+      ],
+      // A simple project that can be used to debug the build tasks against.
+      "cwd": "${workspaceFolder}/src/Tools/Source/CompilerGeneratorTools/Source/BoundTreeGenerator",
+      "stopAtEntry": false,
+      "console": "internalConsole"
+    },
+    {
+      "name": "Launch Microsoft.Build.Tasks.CodeAnalysis.dll via dotnet build",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build tasks",
+      "program": "dotnet",
+      "args": [
+        "build",
+        "-p:RoslynTargetsPath=${workspaceFolder}/artifacts/packages/Debug/Shipping/Microsoft.Net.Compilers.Toolset/tasks/netcore",
+      ],
+      // A simple project that can be used to debug the build tasks against.
+      "cwd": "${workspaceFolder}/src/Tools/Source/CompilerGeneratorTools/Source/BoundTreeGenerator",
+      "stopAtEntry": false,
+      "console": "internalConsole"
+    },
+    {
       "name": ".NET Core Launch (console)",
       "type": "coreclr",
       "request": "launch",

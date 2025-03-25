@@ -98,6 +98,18 @@
         "group": "build"
     },
     {
+        "label": "build tasks",
+        "type": "shell",
+        "command": "dotnet",
+        "args": [
+          "pwsh",
+          "-noprofile",
+          "${workspaceFolder}/scripts/build-tasks.ps1"
+        ],
+        "problemMatcher": "$msCompile",
+        "group": "build"
+    },
+    {
         "label": "msbuild current project",
         "type": "shell",
         "command": "echo 'Task not supported on this OS'",

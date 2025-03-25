@@ -541,6 +541,8 @@ namespace Microsoft.CodeAnalysis.CommandLine
         {
             // Prefix with username and elevation
             bool isAdmin = false;
+
+#if !NETSTANDARD
             if (PlatformInformation.IsWindows)
             {
 #pragma warning disable CA1416 // Validate platform compatibility
@@ -549,6 +551,7 @@ namespace Microsoft.CodeAnalysis.CommandLine
                 isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
 #pragma warning restore CA1416
             }
+#endif
 
             var userName = Environment.UserName;
             return GetPipeName(userName, isAdmin, clientDirectory);

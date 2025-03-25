@@ -94,9 +94,9 @@ namespace Microsoft.CodeAnalysis
                 PipeBufferSize);
         }
 
-#if NET472
-
         const int s_currentUserOnlyValue = 0x20000000;
+
+#if NET472
 
         /// <summary>
         /// Mono supports CurrentUserOnly even though it's not exposed on the reference assemblies for net472. This 
@@ -166,9 +166,9 @@ namespace Microsoft.CodeAnalysis
             return security;
         }
 
-#elif NETCOREAPP
+#elif NETCOREAPP || NETSTANDARD
 
-        private const PipeOptions CurrentUserOption = PipeOptions.CurrentUserOnly;
+        private const PipeOptions CurrentUserOption = (PipeOptions)s_currentUserOnlyValue;
 
         // Validation is handled by CurrentUserOnly
 #pragma warning disable IDE0060 // Remove unused parameter

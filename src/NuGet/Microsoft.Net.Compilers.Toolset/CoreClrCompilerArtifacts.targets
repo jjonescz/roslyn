@@ -2,11 +2,22 @@
 <!-- Licensed to the .NET Foundation under one or more agreements. The .NET Foundation licenses this file to you under the MIT license. See the LICENSE file in the project root for more information. -->
 <Project>
   <Target Name="InitializeCoreClrCompilerArtifacts">
+    <PropertyGroup>
+      <_RoslynBuildTasksTargetFramework>netstandard2.0</_RoslynBuildTasksTargetFramework>
+    </PropertyGroup>
+
     <ItemGroup>
-      <CoreClrCompilerToolsArtifact Include="$(ArtifactsBinDir)Microsoft.Build.Tasks.CodeAnalysis\$(Configuration)\$(TargetFramework)\publish\*.targets" />
-      <CoreClrCompilerToolsArtifact Include="$(ArtifactsBinDir)Microsoft.Build.Tasks.CodeAnalysis\$(Configuration)\$(TargetFramework)\publish\Microsoft.Build.Tasks.CodeAnalysis.dll" />
-      <CoreClrCompilerToolsArtifact Include="$(ArtifactsBinDir)Microsoft.Build.Tasks.CodeAnalysis\$(Configuration)\$(TargetFramework)\publish\Microsoft.Build.Tasks.CodeAnalysis.deps.json" />
-      <CoreClrCompilerToolsArtifact Include="$(ArtifactsBinDir)Microsoft.Build.Tasks.CodeAnalysis\$(Configuration)\$(TargetFramework)\publish\**\Microsoft.Build.Tasks.CodeAnalysis.resources.dll" />
+      <_RoslynBuildTasksExtraDll Include="System.IO.Pipes.AccessControl.dll" />
+      <_RoslynBuildTasksExtraDll Include="System.Security.AccessControl.dll" />
+      <_RoslynBuildTasksExtraDll Include="System.Security.Principal.Windows.dll" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <CoreClrCompilerToolsArtifact Include="$(ArtifactsBinDir)Microsoft.Build.Tasks.CodeAnalysis\$(Configuration)\$(_RoslynBuildTasksTargetFramework)\publish\*.targets" />
+      <CoreClrCompilerToolsArtifact Include="$(ArtifactsBinDir)Microsoft.Build.Tasks.CodeAnalysis\$(Configuration)\$(_RoslynBuildTasksTargetFramework)\publish\Microsoft.Build.Tasks.CodeAnalysis.dll" />
+      <CoreClrCompilerToolsArtifact Include="$(ArtifactsBinDir)Microsoft.Build.Tasks.CodeAnalysis\$(Configuration)\$(_RoslynBuildTasksTargetFramework)\publish\Microsoft.Build.Tasks.CodeAnalysis.deps.json" />
+      <CoreClrCompilerToolsArtifact Include="$(ArtifactsBinDir)Microsoft.Build.Tasks.CodeAnalysis\$(Configuration)\$(_RoslynBuildTasksTargetFramework)\publish\**\Microsoft.Build.Tasks.CodeAnalysis.resources.dll" />
+      <CoreClrCompilerToolsArtifact Include="$(ArtifactsBinDir)Microsoft.Build.Tasks.CodeAnalysis\$(Configuration)\$(_RoslynBuildTasksTargetFramework)\publish\%(_RoslynBuildTasksExtraDll.Identity)" />
 
       <CoreClrCompilerBinArtifact Include="$(ArtifactsBinDir)Microsoft.CodeAnalysis\$(Configuration)\$(TargetFramework)\Microsoft.CodeAnalysis.dll" />
       <CoreClrCompilerBinArtifact Include="$(ArtifactsBinDir)Microsoft.CodeAnalysis\$(Configuration)\$(TargetFramework)\**\Microsoft.CodeAnalysis.resources.dll" />
