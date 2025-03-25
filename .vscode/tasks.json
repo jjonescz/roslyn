@@ -98,13 +98,13 @@
         "group": "build"
     },
     {
-        "label": "build tasks",
+        "label": "build toolset",
         "type": "shell",
         "command": "dotnet",
         "args": [
-          "pwsh",
-          "-noprofile",
-          "${workspaceFolder}/scripts/build-tasks.ps1"
+          "build",
+          "-p:GenerateFullPaths=true",
+          "src/NuGet/Microsoft.Net.Compilers.Toolset/AnyCpu/Microsoft.Net.Compilers.Toolset.Package.csproj"
         ],
         "problemMatcher": "$msCompile",
         "group": "build"
