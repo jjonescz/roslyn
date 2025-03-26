@@ -55,6 +55,7 @@ namespace Microsoft.CodeAnalysis
 #if NET || NETSTANDARD
 
         private const string DotNetHostPathEnvironmentName = "DOTNET_HOST_PATH";
+        private const string DotNetExperimentalHostPathEnvironmentName = "DOTNET_EXPERIMENTAL_HOST_PATH";
 
         /// <summary>
         /// Get the path to the dotnet executable. In the case the .NET SDK did not provide this information
@@ -63,9 +64,14 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         internal static string GetDotNetPathOrDefault()
         {
-            if (Environment.GetEnvironmentVariable(DotNetHostPathEnvironmentName) is string pathToDotNet)
+            if (Environment.GetEnvironmentVariable(DotNetHostPathEnvironmentName) is { Length: > 0 } pathToDotNet)
             {
                 return pathToDotNet;
+            }
+
+            if (Environment.GetEnvironmentVariable(DotNetExperimentalHostPathEnvironmentName) is { Length: > 0 } pathToDotNetExperimental)
+            {
+                return pathToDotNetExperimental;
             }
 
             var (fileName, sep) = PlatformInformation.IsWindows
