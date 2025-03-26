@@ -542,20 +542,18 @@ namespace Microsoft.CodeAnalysis.CommandLine
             // Prefix with username and elevation
             bool isAdmin = false;
 
-#if !NETSTANDARD
             if (PlatformInformation.IsWindows)
             {
-#pragma warning disable CA1416 // Validate platform compatibility
-                var currentIdentity = WindowsIdentity.GetCurrent();
-                var principal = new WindowsPrincipal(currentIdentity);
-                isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
-#pragma warning restore CA1416
+                isAdmin = IsUserAnAdmin();
             }
-#endif
 
             var userName = Environment.UserName;
             return GetPipeName(userName, isAdmin, clientDirectory);
         }
+
+        [DllImport("shell32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool IsUserAnAdmin();
 
         internal static string GetPipeName(
             string userName,
