@@ -86,5 +86,9 @@ namespace Microsoft.CodeAnalysis.CommandLine
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         internal static extern IntPtr GetCommandLine();
+
+        [DllImport("shell32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool IsUserAnAdmin();
     }
 }

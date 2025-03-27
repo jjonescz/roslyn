@@ -551,10 +551,6 @@ namespace Microsoft.CodeAnalysis.CommandLine
             return GetPipeName(userName, isAdmin, clientDirectory);
         }
 
-        [DllImport("shell32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool IsUserAnAdmin();
-
         internal static string GetPipeName(
             string userName,
             bool isAdmin,
