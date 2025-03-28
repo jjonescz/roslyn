@@ -25,7 +25,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         internal static (string processFilePath, string commandLineArguments, string toolFilePath) GetProcessInfo(string toolFilePathWithoutExtension, string commandLineArguments)
         {
-#if NET || NETSTANDARD
+#if NET
             // First check for an app host file and return that if it's available.
             var appHostSuffix = PlatformInformation.IsWindows ? ".exe" : "";
             var appFilePath = $"{toolFilePathWithoutExtension}{appHostSuffix}";
@@ -45,14 +45,9 @@ namespace Microsoft.CodeAnalysis
 #endif
         }
 
-        internal static bool IsCoreClrRuntime =>
 #if NET
-            true;
-#else
-            false;
-#endif
 
-#if NET || NETSTANDARD
+        internal static bool IsCoreClrRuntime => true;
 
         private const string DotNetHostPathEnvironmentName = "DOTNET_HOST_PATH";
         private const string DotNetExperimentalHostPathEnvironmentName = "DOTNET_EXPERIMENTAL_HOST_PATH";
@@ -79,13 +74,8 @@ namespace Microsoft.CodeAnalysis
                 : ("dotnet", ':');
 
             var path = Environment.GetEnvironmentVariable("PATH") ?? "";
-            foreach (var item in path.Split(sep))
+            foreach (var item in path.Split(sep, StringSplitOptions.RemoveEmptyEntries))
             {
-                if (string.IsNullOrWhiteSpace(item))
-                {
-                    continue;
-                }
-
                 try
                 {
                     var filePath = Path.Combine(item, fileName);
@@ -102,6 +92,10 @@ namespace Microsoft.CodeAnalysis
 
             return fileName;
         }
+
+#else
+
+        internal static bool IsCoreClrRuntime => false;
 
 #endif
     }

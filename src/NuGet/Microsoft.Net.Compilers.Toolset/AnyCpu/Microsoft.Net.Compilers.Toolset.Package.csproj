@@ -24,15 +24,13 @@
 
     <_DependsOn Condition="'$(TargetFramework)' == 'net472'">InitializeDesktopCompilerArtifacts</_DependsOn>
     <_DependsOn Condition="'$(TargetFramework)' != 'net472'">InitializeCoreClrCompilerArtifacts</_DependsOn>
-
-    <_RoslynBuildTasksProjectPath>..\..\..\Compilers\Core\MSBuildTask\Microsoft.Build.Tasks.CodeAnalysis.csproj</_RoslynBuildTasksProjectPath>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Compilers\CSharp\csc\AnyCpu\csc.csproj" PrivateAssets="All"/>
     <ProjectReference Include="..\..\..\Compilers\VisualBasic\vbc\AnyCpu\vbc.csproj" PrivateAssets="All"/>
     <ProjectReference Include="..\..\..\Interactive\csi\csi.csproj" PrivateAssets="All"/>
-    <ProjectReference Include="$(_RoslynBuildTasksProjectPath)" PrivateAssets="All"/>
+    <ProjectReference Include="..\..\..\Compilers\Core\MSBuildTask\Microsoft.Build.Tasks.CodeAnalysis.csproj" PrivateAssets="All"/>
     <ProjectReference Include="..\..\..\Compilers\Server\VBCSCompiler\AnyCpu\VBCSCompiler.csproj" PrivateAssets="All"/>
 
     <ProjectReference Update="@(ProjectReference)"
@@ -41,10 +39,6 @@
                       SkipGetTargetFrameworkProperties="true"
                       Condition="'$(TargetFramework)' != 'net472'"
                       SetTargetFramework="TargetFramework=$(TargetFramework)" />
-
-    <ProjectReference Update="$(_RoslynBuildTasksProjectPath)"
-                      Condition="'$(TargetFramework)' != 'net472'"
-                      SetTargetFramework="TargetFramework=netstandard2.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -541,10 +541,11 @@ namespace Microsoft.CodeAnalysis.CommandLine
         {
             // Prefix with username and elevation
             bool isAdmin = false;
-
             if (PlatformInformation.IsWindows)
             {
-                isAdmin = IsUserAnAdmin();
+                var currentIdentity = WindowsIdentity.GetCurrent();
+                var principal = new WindowsPrincipal(currentIdentity);
+                isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
             }
 
             var userName = Environment.UserName;

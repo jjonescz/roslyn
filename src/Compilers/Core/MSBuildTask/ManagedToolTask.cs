@@ -15,13 +15,6 @@ namespace Microsoft.CodeAnalysis.BuildTasks
 {
     public abstract class ManagedToolTask : ToolTask
     {
-        private const bool UseCoreDll =
-#if NETSTANDARD
-            true;
-#else
-            false;
-#endif
-
         /// <summary>
         /// Is the standard tool being used here? When false the developer has specified a custom tool
         /// to be run by this task
@@ -35,7 +28,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         /// </remarks>
         protected bool IsManagedTool => string.IsNullOrEmpty(ToolPath) && ToolExe == ToolName;
 
-        internal string PathToManagedTool => Utilities.GenerateFullPathToTool(ToolName, UseCoreDll);
+        internal string PathToManagedTool => Utilities.GenerateFullPathToTool(ToolName);
 
         private string PathToManagedToolWithoutExtension
         {
@@ -132,7 +125,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         /// as the implementation of IsManagedTool calls this property. See the comment in
         /// <see cref="ManagedToolTask.IsManagedTool"/>.
         /// </remarks>
-        protected sealed override string ToolName => UseCoreDll
+        protected sealed override string ToolName => RuntimeHostInfo.IsCoreClrRuntime
             ? $"{ToolNameWithoutExtension}.dll"
             : $"{ToolNameWithoutExtension}.exe";
 

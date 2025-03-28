@@ -171,13 +171,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         /// <summary>
         /// Generate the full path to the tool that is deployed with our build tasks.
         /// </summary>
-        internal static string GenerateFullPathToTool(string toolFileName, bool useCoreDll)
+        internal static string GenerateFullPathToTool(string toolFileName)
         {
             var buildTask = typeof(Utilities).GetTypeInfo().Assembly;
             var assemblyPath = buildTask.Location;
             var assemblyDirectory = Path.GetDirectoryName(assemblyPath)!;
 
-            return !useCoreDll
+            return RuntimeHostInfo.IsDesktopRuntime
                 ? Path.Combine(assemblyDirectory, toolFileName)
                 : Path.Combine(assemblyDirectory, "bincore", toolFileName);
         }

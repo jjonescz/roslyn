@@ -55,7 +55,6 @@ namespace Microsoft.CodeAnalysis
         {
             if (PlatformInformation.IsWindows)
             {
-#pragma warning disable CA1416 // Validate platform compatibility
                 var serverIdentity = getIdentity();
 
                 (string name, bool admin) clientIdentity = default;
@@ -72,7 +71,6 @@ namespace Microsoft.CodeAnalysis
                     var elevatedToAdmin = currentPrincipal.IsInRole(WindowsBuiltInRole.Administrator);
                     return (currentIdentity.Name, elevatedToAdmin);
                 }
-#pragma warning restore CA1416 // Validate platform compatibility
             }
 
             return true;
@@ -94,9 +92,9 @@ namespace Microsoft.CodeAnalysis
                 PipeBufferSize);
         }
 
-        const int s_currentUserOnlyValue = 0x20000000;
-
 #if NET472
+
+        const int s_currentUserOnlyValue = 0x20000000;
 
         /// <summary>
         /// Mono supports CurrentUserOnly even though it's not exposed on the reference assemblies for net472. This 
@@ -166,9 +164,9 @@ namespace Microsoft.CodeAnalysis
             return security;
         }
 
-#elif NETCOREAPP || NETSTANDARD
+#elif NETCOREAPP
 
-        private const PipeOptions CurrentUserOption = (PipeOptions)s_currentUserOnlyValue;
+        private const PipeOptions CurrentUserOption = PipeOptions.CurrentUserOnly;
 
         // Validation is handled by CurrentUserOnly
 #pragma warning disable IDE0060 // Remove unused parameter
