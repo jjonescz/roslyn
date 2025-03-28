@@ -179,7 +179,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
 
             return RuntimeHostInfo.IsDesktopRuntime
                 ? Path.GetFileName(assemblyDirectory) is "binfx"
-                    ? Path.Combine(assemblyDirectory, "..", "bincore", toolFileName)
+                    ? Path.Combine(Path.GetDirectoryName(assemblyDirectory)!, "bincore", Path.ChangeExtension(toolFileName, ".dll"))
                     : Path.Combine(assemblyDirectory, toolFileName)
                 : Path.Combine(assemblyDirectory, "bincore", toolFileName);
         }
