@@ -487,14 +487,6 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             get { return _store.GetOrDefault(nameof(ReportIVTs), false); }
         }
 
-        public string? ToolsDirectory
-        {
-            set { _store[nameof(ToolsDirectory)] = value; }
-            get { return (string?)_store[nameof(ToolsDirectory)]; }
-        }
-
-        protected override string? GetToolsDirectory() => ToolsDirectory;
-
         #endregion
 
         /// <summary>
