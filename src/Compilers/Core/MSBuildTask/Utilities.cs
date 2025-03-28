@@ -178,7 +178,9 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             var assemblyDirectory = Path.GetDirectoryName(assemblyPath)!;
 
             return RuntimeHostInfo.IsDesktopRuntime
-                ? Path.Combine(assemblyDirectory, toolFileName)
+                ? Path.GetFileName(assemblyDirectory) is "binfx"
+                    ? Path.Combine(assemblyDirectory, "..", "bincore", toolFileName)
+                    : Path.Combine(assemblyDirectory, toolFileName)
                 : Path.Combine(assemblyDirectory, "bincore", toolFileName);
         }
     }
