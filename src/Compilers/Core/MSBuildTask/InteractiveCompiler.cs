@@ -184,6 +184,8 @@ namespace Microsoft.CodeAnalysis.BuildTasks
 
         #region Tool Members
 
+        protected override string? GetToolsDirectory() => null;
+
         protected override int ExecuteTool(string pathToTool, string responseFileCommands, string commandLineCommands)
         {
             if (ProvideCommandLineArgs)
