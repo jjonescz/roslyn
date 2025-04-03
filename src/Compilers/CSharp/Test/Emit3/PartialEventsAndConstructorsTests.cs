@@ -1091,8 +1091,18 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
 
     [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/77346")]
     public void InInterface_Sealed(
-        [CombinatorialValues("", "public")] string access)
+        [CombinatorialValues("", "public", "protected", "internal", "protected internal", "private protected")] string access)
     {
+        var expectedAccessibility = access switch
+        {
+            "" or "public" => Accessibility.Public,
+            "protected" => Accessibility.Protected,
+            "internal" => Accessibility.Internal,
+            "protected internal" => Accessibility.ProtectedOrInternal,
+            "private protected" => Accessibility.ProtectedAndFriend,
+            _ => throw ExceptionUtilities.UnexpectedValue(access)
+        };
+
         var source = $$"""
             partial interface I
             {
@@ -1100,13 +1110,15 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
                 {{access}} sealed partial event System.Action E { add { } remove { } }
             }
             """;
-        var comp = CreateCompilation(source, targetFramework: TargetFramework.Net60).VerifyDiagnostics();
+        var comp = CreateCompilation(source,
+            options: TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All),
+            targetFramework: TargetFramework.Net60).VerifyDiagnostics();
         CompileAndVerify(comp,
             sourceSymbolValidator: validate,
             symbolValidator: validate,
             verify: Verification.FailsPEVerify).VerifyDiagnostics();
 
-        static void validate(ModuleSymbol module)
+        void validate(ModuleSymbol module)
         {
             var e = module.GlobalNamespace.GetMember<EventSymbol>("I.E");
             validateEvent(e);
@@ -1117,7 +1129,7 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             }
         }
 
-        static void validateEvent(EventSymbol e)
+        void validateEvent(EventSymbol e)
         {
             Assert.False(e.IsAbstract);
             Assert.False(e.IsVirtual);
@@ -1125,13 +1137,13 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             Assert.False(e.IsStatic);
             Assert.False(e.IsExtern);
             Assert.False(e.IsOverride);
-            Assert.Equal(Accessibility.Public, e.DeclaredAccessibility);
+            Assert.Equal(expectedAccessibility, e.DeclaredAccessibility);
             Assert.True(e.ContainingModule is not SourceModuleSymbol || e.IsPartialMember());
             validateAccessor(e.AddMethod!);
             validateAccessor(e.RemoveMethod!);
         }
 
-        static void validateAccessor(MethodSymbol m)
+        void validateAccessor(MethodSymbol m)
         {
             Assert.False(m.IsAbstract);
             Assert.False(m.IsVirtual);
@@ -1141,7 +1153,7 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             Assert.False(m.IsStatic);
             Assert.False(m.IsExtern);
             Assert.False(m.IsOverride);
-            Assert.Equal(Accessibility.Public, m.DeclaredAccessibility);
+            Assert.Equal(expectedAccessibility, m.DeclaredAccessibility);
             Assert.True(m.ContainingModule is not SourceModuleSymbol || m.IsPartialMember());
         }
     }
@@ -1303,25 +1315,35 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
     }
 
     [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/77346")]
-    public void InInterface_StaticNonVirtual(
-        [CombinatorialValues("", "public")] string access,
-        [CombinatorialValues("", "sealed")] string modifier)
+    public void InInterface_StaticVirtual_OtherAccessibilityModifiers(
+        [CombinatorialValues("protected", "internal", "protected internal", "private protected")] string access)
     {
+        var expectedAccessibility = access switch
+        {
+            "protected" => Accessibility.Protected,
+            "internal" => Accessibility.Internal,
+            "protected internal" => Accessibility.ProtectedOrInternal,
+            "private protected" => Accessibility.ProtectedAndFriend,
+            _ => throw ExceptionUtilities.UnexpectedValue(access)
+        };
+
         var source = $$"""
             using System;
             partial interface I
             {
-                {{access}} {{modifier}} static partial event Action E;
-                {{access}} {{modifier}} static partial event Action E { add { } remove { } }
+                {{access}} virtual static partial event Action E;
+                {{access}} virtual static partial event Action E { add { } remove { } }
             }
             """;
-        var comp = CreateCompilation(source, targetFramework: TargetFramework.Net60).VerifyDiagnostics();
+        var comp = CreateCompilation(source,
+            options: TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All),
+            targetFramework: TargetFramework.Net60).VerifyDiagnostics();
         CompileAndVerify(comp,
             sourceSymbolValidator: validate,
             symbolValidator: validate,
             verify: Verification.FailsPEVerify).VerifyDiagnostics();
 
-        static void validate(ModuleSymbol module)
+        void validate(ModuleSymbol module)
         {
             var e = module.GlobalNamespace.GetMember<EventSymbol>("I.E");
             validateEvent(e);
@@ -1332,7 +1354,79 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             }
         }
 
-        static void validateEvent(EventSymbol e)
+        void validateEvent(EventSymbol e)
+        {
+            Assert.False(e.IsAbstract);
+            Assert.True(e.IsVirtual);
+            Assert.False(e.IsSealed);
+            Assert.True(e.IsStatic);
+            Assert.False(e.IsExtern);
+            Assert.False(e.IsOverride);
+            Assert.Equal(expectedAccessibility, e.DeclaredAccessibility);
+            Assert.True(e.ContainingModule is not SourceModuleSymbol || e.IsPartialMember());
+            validateAccessor(e.AddMethod!);
+            validateAccessor(e.RemoveMethod!);
+        }
+
+        void validateAccessor(MethodSymbol m)
+        {
+            Assert.False(m.IsAbstract);
+            Assert.True(m.IsVirtual);
+            Assert.True(m.IsMetadataVirtual());
+            Assert.False(m.IsMetadataNewSlot());
+            Assert.False(m.IsSealed);
+            Assert.True(m.IsStatic);
+            Assert.False(m.IsExtern);
+            Assert.False(m.IsOverride);
+            Assert.Equal(expectedAccessibility, m.DeclaredAccessibility);
+            Assert.True(m.ContainingModule is not SourceModuleSymbol || m.IsPartialMember());
+        }
+    }
+
+    [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/77346")]
+    public void InInterface_StaticNonVirtual(
+        [CombinatorialValues("", "public", "private", "protected", "internal", "protected internal", "private protected")] string access,
+        [CombinatorialValues("", "sealed")] string modifier)
+    {
+        var expectedAccessibility = access switch
+        {
+            "" or "public" => Accessibility.Public,
+            "private" => Accessibility.Private,
+            "protected" => Accessibility.Protected,
+            "internal" => Accessibility.Internal,
+            "protected internal" => Accessibility.ProtectedOrInternal,
+            "private protected" => Accessibility.ProtectedAndFriend,
+            _ => throw ExceptionUtilities.UnexpectedValue(access)
+        };
+
+        var source = $$"""
+            using System;
+            partial interface I
+            {
+                {{access}} {{modifier}} static partial event Action E;
+                {{access}} {{modifier}} static partial event Action E { add { } remove { } }
+            }
+            """;
+        var comp = CreateCompilation(source,
+            options: TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All),
+            targetFramework: TargetFramework.Net60).VerifyDiagnostics();
+        CompileAndVerify(comp,
+            sourceSymbolValidator: validate,
+            symbolValidator: validate,
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        void validate(ModuleSymbol module)
+        {
+            var e = module.GlobalNamespace.GetMember<EventSymbol>("I.E");
+            validateEvent(e);
+
+            if (module is SourceModuleSymbol)
+            {
+                validateEvent((EventSymbol)e.GetPartialImplementationPart()!);
+            }
+        }
+
+        void validateEvent(EventSymbol e)
         {
             Assert.False(e.IsAbstract);
             Assert.False(e.IsVirtual);
@@ -1340,13 +1434,13 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             Assert.True(e.IsStatic);
             Assert.False(e.IsExtern);
             Assert.False(e.IsOverride);
-            Assert.Equal(Accessibility.Public, e.DeclaredAccessibility);
+            Assert.Equal(expectedAccessibility, e.DeclaredAccessibility);
             Assert.True(e.ContainingModule is not SourceModuleSymbol || e.IsPartialMember());
             validateAccessor(e.AddMethod!);
             validateAccessor(e.RemoveMethod!);
         }
 
-        static void validateAccessor(MethodSymbol m)
+        void validateAccessor(MethodSymbol m)
         {
             Assert.False(m.IsAbstract);
             Assert.False(m.IsVirtual);
@@ -1356,7 +1450,7 @@ public sealed class PartialEventsAndConstructorsTests : CSharpTestBase
             Assert.True(m.IsStatic);
             Assert.False(m.IsExtern);
             Assert.False(m.IsOverride);
-            Assert.Equal(Accessibility.Public, m.DeclaredAccessibility);
+            Assert.Equal(expectedAccessibility, m.DeclaredAccessibility);
             Assert.True(m.ContainingModule is not SourceModuleSymbol || m.IsPartialMember());
         }
     }

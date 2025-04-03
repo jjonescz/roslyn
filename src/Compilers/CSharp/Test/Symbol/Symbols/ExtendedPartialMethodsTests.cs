@@ -2087,52 +2087,6 @@ partial class C : I
         }
 
         [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/77346")]
-        public void InInterface_NonVirtual_CSharp13_Private(
-            [CombinatorialValues("", "private")] string access)
-        {
-            var source = $$"""
-                partial interface I
-                {
-                    {{access}} partial void M();
-                    {{access}} partial void M() { }
-                }
-                """;
-            var comp = CreateCompilation(source,
-                parseOptions: TestOptions.Regular13,
-                options: TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All),
-                targetFramework: TargetFramework.Net60).VerifyDiagnostics();
-            CompileAndVerify(comp,
-                sourceSymbolValidator: validate,
-                symbolValidator: validate,
-                verify: Verification.FailsPEVerify).VerifyDiagnostics();
-
-            static void validate(ModuleSymbol module)
-            {
-                var m = module.GlobalNamespace.GetMember<MethodSymbol>("I.M");
-                validateMethod(m);
-
-                if (module is SourceModuleSymbol)
-                {
-                    validateMethod((MethodSymbol)m.GetPartialImplementationPart()!);
-                }
-            }
-
-            static void validateMethod(MethodSymbol m)
-            {
-                Assert.False(m.IsAbstract);
-                Assert.False(m.IsVirtual);
-                Assert.False(m.IsMetadataVirtual());
-                Assert.False(m.IsMetadataNewSlot());
-                Assert.False(m.IsSealed);
-                Assert.False(m.IsStatic);
-                Assert.False(m.IsExtern);
-                Assert.False(m.IsOverride);
-                Assert.Equal(Accessibility.Private, m.DeclaredAccessibility);
-                Assert.True(m.ContainingModule is not SourceModuleSymbol || m.IsPartialMember());
-            }
-        }
-
-        [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/77346")]
         public void InInterface_Private(
             [CombinatorialValues("", "private")] string access,
             [CombinatorialValues(LanguageVersion.CSharp13, LanguageVersion.Preview, LanguageVersionFacts.CSharpNext)] LanguageVersion langVersion)
@@ -2181,16 +2135,18 @@ partial class C : I
 
         [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/77346")]
         public void InInterface_Sealed(
+            [CombinatorialValues("public", "protected", "internal", "protected internal", "private protected")] string access,
             [CombinatorialValues(LanguageVersion.Preview, LanguageVersionFacts.CSharpNext)] LanguageVersion langVersion)
         {
-            var source = """
+            var source = $$"""
                 partial interface I
                 {
-                    public sealed partial int M();
-                    public sealed partial int M() => 0;
+                    {{access}} sealed partial int M();
+                    {{access}} sealed partial int M() => 0;
                 }
                 """;
             var comp = CreateCompilation(source,
+                options: TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All),
                 parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion),
                 targetFramework: TargetFramework.Net60).VerifyDiagnostics();
             CompileAndVerify(comp,
@@ -2198,7 +2154,7 @@ partial class C : I
                 symbolValidator: validate,
                 verify: Verification.FailsPEVerify).VerifyDiagnostics();
 
-            static void validate(ModuleSymbol module)
+            void validate(ModuleSymbol module)
             {
                 var m = module.GlobalNamespace.GetMember<MethodSymbol>("I.M");
                 validateMethod(m);
@@ -2209,8 +2165,18 @@ partial class C : I
                 }
             }
 
-            static void validateMethod(MethodSymbol m)
+            void validateMethod(MethodSymbol m)
             {
+                var expectedAccessibility = access switch
+                {
+                    "public" => Accessibility.Public,
+                    "protected" => Accessibility.Protected,
+                    "internal" => Accessibility.Internal,
+                    "protected internal" => Accessibility.ProtectedOrInternal,
+                    "private protected" => Accessibility.ProtectedAndFriend,
+                    _ => throw ExceptionUtilities.UnexpectedValue(access)
+                };
+
                 Assert.False(m.IsAbstract);
                 Assert.False(m.IsVirtual);
                 Assert.False(m.IsMetadataVirtual());
@@ -2219,22 +2185,24 @@ partial class C : I
                 Assert.False(m.IsStatic);
                 Assert.False(m.IsExtern);
                 Assert.False(m.IsOverride);
-                Assert.Equal(Accessibility.Public, m.DeclaredAccessibility);
+                Assert.Equal(expectedAccessibility, m.DeclaredAccessibility);
                 Assert.True(m.ContainingModule is not SourceModuleSymbol || m.IsPartialMember());
             }
         }
 
-        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/77346")]
-        public void InInterface_Sealed_CSharp13()
+        [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/77346")]
+        public void InInterface_Sealed_CSharp13(
+            [CombinatorialValues("public", "protected", "internal", "protected internal", "private protected")] string access)
         {
-            var source = """
+            var source = $$"""
                 partial interface I
                 {
-                    public sealed partial int M();
-                    public sealed partial int M() => 0;
+                    {{access}} sealed partial int M();
+                    {{access}} sealed partial int M() => 0;
                 }
                 """;
             var comp = CreateCompilation(source,
+                options: TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All),
                 parseOptions: TestOptions.Regular13,
                 targetFramework: TargetFramework.Net60)
                 .VerifyDiagnostics(
@@ -2249,8 +2217,18 @@ partial class C : I
             validateMethod(m);
             validateMethod(m.PartialImplementationPart!);
 
-            static void validateMethod(MethodSymbol m)
+            void validateMethod(MethodSymbol m)
             {
+                var expectedAccessibility = access switch
+                {
+                    "public" => Accessibility.Public,
+                    "protected" => Accessibility.Protected,
+                    "internal" => Accessibility.Internal,
+                    "protected internal" => Accessibility.ProtectedOrInternal,
+                    "private protected" => Accessibility.ProtectedAndFriend,
+                    _ => throw ExceptionUtilities.UnexpectedValue(access)
+                };
+
                 Assert.False(m.IsAbstract);
                 Assert.False(m.IsVirtual);
                 Assert.False(m.IsMetadataVirtual());
@@ -2259,7 +2237,7 @@ partial class C : I
                 Assert.False(m.IsStatic);
                 Assert.False(m.IsExtern);
                 Assert.False(m.IsOverride);
-                Assert.Equal(Accessibility.Public, m.DeclaredAccessibility);
+                Assert.Equal(expectedAccessibility, m.DeclaredAccessibility);
                 Assert.True(m.IsPartialMember());
             }
         }
@@ -2382,17 +2360,19 @@ partial class C : I
 
         [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/77346")]
         public void InInterface_StaticNonVirtual(
+            [CombinatorialValues("public", "private", "protected", "internal", "protected internal", "private protected")] string access,
             [CombinatorialValues("", "sealed")] string modifier,
             [CombinatorialValues(LanguageVersion.CSharp13, LanguageVersion.Preview, LanguageVersionFacts.CSharpNext)] LanguageVersion langVersion)
         {
             var source = $$"""
                 partial interface I
                 {
-                    public static {{modifier}} partial int M();
-                    public static {{modifier}} partial int M() => 1;
+                    {{access}} static {{modifier}} partial int M();
+                    {{access}} static {{modifier}} partial int M() => 1;
                 }
                 """;
             var comp = CreateCompilation(source,
+                options: TestOptions.DebugDll.WithMetadataImportOptions(MetadataImportOptions.All),
                 parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion),
                 targetFramework: TargetFramework.Net60).VerifyDiagnostics();
             CompileAndVerify(comp,
@@ -2400,7 +2380,7 @@ partial class C : I
                 symbolValidator: validate,
                 verify: Verification.FailsPEVerify).VerifyDiagnostics();
 
-            static void validate(ModuleSymbol module)
+            void validate(ModuleSymbol module)
             {
                 var m = module.GlobalNamespace.GetMember<MethodSymbol>("I.M");
                 validateMethod(m);
@@ -2410,6 +2390,57 @@ partial class C : I
                     validateMethod((MethodSymbol)m.GetPartialImplementationPart()!);
                 }
             }
+
+            void validateMethod(MethodSymbol m)
+            {
+                var expectedAccessibility = access switch
+                {
+                    "public" => Accessibility.Public,
+                    "private" => Accessibility.Private,
+                    "protected" => Accessibility.Protected,
+                    "internal" => Accessibility.Internal,
+                    "protected internal" => Accessibility.ProtectedOrInternal,
+                    "private protected" => Accessibility.ProtectedAndFriend,
+                    _ => throw ExceptionUtilities.UnexpectedValue(access)
+                };
+
+                Assert.False(m.IsAbstract);
+                Assert.False(m.IsVirtual);
+                Assert.False(m.IsMetadataVirtual());
+                Assert.False(m.IsMetadataNewSlot());
+                Assert.False(m.IsSealed);
+                Assert.True(m.IsStatic);
+                Assert.False(m.IsExtern);
+                Assert.False(m.IsOverride);
+                Assert.Equal(expectedAccessibility, m.DeclaredAccessibility);
+                Assert.True(m.ContainingModule is not SourceModuleSymbol || m.IsPartialMember());
+            }
+        }
+
+        [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/77346")]
+        public void InInterface_StaticNonVirtual_NoAccessibilityModifier(
+            [CombinatorialValues(LanguageVersion.CSharp13, LanguageVersion.Preview, LanguageVersionFacts.CSharpNext)] LanguageVersion langVersion)
+        {
+            var source = """
+                partial interface I
+                {
+                    static partial int M();
+                    static partial int M() => 1;
+                }
+                """;
+            var comp = CreateCompilation(source,
+                parseOptions: TestOptions.Regular.WithLanguageVersion(langVersion),
+                targetFramework: TargetFramework.Net60).VerifyDiagnostics(
+                // (3,24): error CS8796: Partial method 'I.M()' must have accessibility modifiers because it has a non-void return type.
+                //     static partial int M();
+                Diagnostic(ErrorCode.ERR_PartialMethodWithNonVoidReturnMustHaveAccessMods, "M").WithArguments("I.M()").WithLocation(3, 24),
+                // (4,24): error CS8796: Partial method 'I.M()' must have accessibility modifiers because it has a non-void return type.
+                //     static partial int M() => 1;
+                Diagnostic(ErrorCode.ERR_PartialMethodWithNonVoidReturnMustHaveAccessMods, "M").WithArguments("I.M()").WithLocation(4, 24));
+
+            var m = comp.GetMember<SourceMethodSymbol>("I.M");
+            validateMethod(m);
+            validateMethod(m.PartialImplementationPart!);
 
             static void validateMethod(MethodSymbol m)
             {
@@ -2421,8 +2452,8 @@ partial class C : I
                 Assert.True(m.IsStatic);
                 Assert.False(m.IsExtern);
                 Assert.False(m.IsOverride);
-                Assert.Equal(Accessibility.Public, m.DeclaredAccessibility);
-                Assert.True(m.ContainingModule is not SourceModuleSymbol || m.IsPartialMember());
+                Assert.Equal(Accessibility.Private, m.DeclaredAccessibility);
+                Assert.True(m.IsPartialMember());
             }
         }
 
