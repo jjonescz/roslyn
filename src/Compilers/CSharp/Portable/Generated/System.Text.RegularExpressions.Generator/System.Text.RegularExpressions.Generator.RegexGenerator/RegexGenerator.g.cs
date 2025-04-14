@@ -16,7 +16,7 @@ namespace Microsoft.CodeAnalysis.CSharp.FileBasedPrograms
         /// ○ Match a whitespace character atomically at least once.<br/>
         /// </code>
         /// </remarks>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Text.RegularExpressions.Generator", "9.0.12.16305")]
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Text.RegularExpressions.Generator", "9.0.12.11113")]
         public static partial global::System.Text.RegularExpressions.Regex Whitespace => global::System.Text.RegularExpressions.Generated.Whitespace_0.Instance;
     }
 }
@@ -34,7 +34,7 @@ namespace System.Text.RegularExpressions.Generated
     using System.Threading;
 
     /// <summary>Custom <see cref="Regex"/>-derived type for the Whitespace method.</summary>
-    [GeneratedCodeAttribute("System.Text.RegularExpressions.Generator", "9.0.12.16305")]
+    [GeneratedCodeAttribute("System.Text.RegularExpressions.Generator", "9.0.12.11113")]
     [SkipLocalsInit]
     file sealed class Whitespace_0 : Regex
     {
@@ -140,7 +140,7 @@ namespace System.Text.RegularExpressions.Generated
     }
     
     /// <summary>Helper methods used by generated <see cref="Regex"/>-derived implementations.</summary>
-    [GeneratedCodeAttribute("System.Text.RegularExpressions.Generator", "9.0.12.16305")]
+    [GeneratedCodeAttribute("System.Text.RegularExpressions.Generator", "9.0.12.11113")]
     file static class Utilities
     {
         /// <summary>Default timeout value set in <see cref="AppContext"/>, or <see cref="Regex.InfiniteMatchTimeout"/> if none was set.</summary>
