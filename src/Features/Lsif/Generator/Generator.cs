@@ -221,7 +221,7 @@ internal sealed class Generator
         var documentSymbols = new List<RangeBasedDocumentSymbol>();
         await GenerateDocumentRangesAndLinks(document, documentVertex, options, topLevelSymbolsResultSetTracker, lsifJsonWriter, idFactory, rangeVertices, documentSymbols, cancellationToken);
         lsifJsonWriter.Write(Edge.Create("contains", documentVertex.GetId(), rangeVertices, idFactory));
-        await GenerateDocumentFoldingRangesAsync(document, documentVertex, options, lsifJsonWriter, idFactory, cancellationToken).ConfigureAwait(false);
+        //await GenerateDocumentFoldingRangesAsync(document, documentVertex, options, lsifJsonWriter, idFactory, cancellationToken).ConfigureAwait(false);
         await GenerateSemanticTokensAsync(document, lsifJsonWriter, idFactory, documentVertex);
         GenerateDocumentSymbols(documentSymbols, lsifJsonWriter, idFactory, documentVertex);
 
@@ -400,17 +400,17 @@ internal sealed class Generator
                 // Write hover information for the symbol, if edge has not already been added.
                 // 'textDocument/hover' edge goes from the symbol ResultSet vertex to the hover result
                 // See https://github.com/Microsoft/language-server-protocol/blob/main/indexFormat/specification.md#resultset for an example.
-                if (symbolResultsTracker.ResultSetNeedsInformationalEdgeAdded(symbolForLinkedResultSet, Methods.TextDocumentHoverName))
-                {
-                    var hover = await HoverHandler.GetHoverAsync(
-                        document, syntaxToken.SpanStart, options.SymbolDescriptionOptions, LspClientCapabilities, cancellationToken);
-                    if (hover != null)
-                    {
-                        var hoverResult = new HoverResult(hover, idFactory);
-                        lsifJsonWriter.Write(hoverResult);
-                        lsifJsonWriter.Write(Edge.Create(Methods.TextDocumentHoverName, symbolForLinkedResultSetId, hoverResult.GetId(), idFactory));
-                    }
-                }
+                // if (symbolResultsTracker.ResultSetNeedsInformationalEdgeAdded(symbolForLinkedResultSet, Methods.TextDocumentHoverName))
+                // {
+                //     var hover = await HoverHandler.GetHoverAsync(
+                //         document, syntaxToken.SpanStart, options.SymbolDescriptionOptions, LspClientCapabilities, cancellationToken);
+                //     if (hover != null)
+                //     {
+                //         var hoverResult = new HoverResult(hover, idFactory);
+                //         lsifJsonWriter.Write(hoverResult);
+                //         lsifJsonWriter.Write(Edge.Create(Methods.TextDocumentHoverName, symbolForLinkedResultSetId, hoverResult.GetId(), idFactory));
+                //     }
+                // }
             }
         }
     }
