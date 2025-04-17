@@ -8,6 +8,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Collections;
@@ -95,6 +96,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return null;
             }
 
+            removeOtherFileBasedProgramEntryPoints(trees);
+
             var diagnostics = new List<DiagnosticInfo>();
             var uniqueFilePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < sourceFiles.Length; i++)
@@ -168,6 +171,65 @@ namespace Microsoft.CodeAnalysis.CSharp
                     .WithStrongNameProvider(Arguments.GetStrongNameProvider(loggingFileSystem))
                     .WithSourceReferenceResolver(sourceFileResolver)
                     .WithSyntaxTreeOptionsProvider(optionsProvider));
+
+            // Sets `trees[*] = null` for entry-point files that should be excluded for file-based programs.
+            // See CSharpParseOptions.FileBasedProgram for more details.
+            static void removeOtherFileBasedProgramEntryPoints(CSharpParseOptions parseOptions, SyntaxTree?[] trees, string?[] normalizedFilePaths)
+            {
+                if (!(parseOptions.FileBasedProgram is { } fileBasedProgram &&
+                    tryDecodeBase64Url(fileBasedProgram, out var bytes) &&
+                    tryDecodeUtf8String(bytes) is { } includedPath))
+                {
+                    return;
+                }
+
+                for (int i = 0; i < trees.Length; i++)
+                {
+                    ref SyntaxTree? tree = ref trees[i];
+                    string? normalizedFilePath = normalizedFilePaths[i];
+
+                    // TODO: Decode only once. Also ignore if it doesn't match any?
+                    if (normalizedFilePath != null &&
+                        tree != null &&
+                        tree.GetRoot().ChildNodes().OfType<GlobalStatementSyntax>().Any() &&
+                        includedPath != normalizedFilePath)
+                    {
+                        tree = null;
+                    }
+                }
+            }
+
+            static bool tryDecodeBase64Url(string input, out byte[] bytes)
+            {
+                // TODO: Should be enabled for all TFMs.
+#if NET9_0_OR_GREATER
+                try
+                {
+                    bytes = System.Buffers.Text.Base64Url.DecodeFromChars(input);
+                    return true;
+                }
+                catch (FormatException)
+                {
+                    // We ignore invalid feature flag values.
+                }
+#endif
+
+                bytes = [];
+                return false;
+            }
+
+            static string? tryDecodeUtf8String(byte[] bytes)
+            {
+                try
+                {
+                    return Encoding.UTF8.GetString(bytes);
+                }
+                catch
+                {
+                    // We ignore invalid feature flag values.
+                    return null;
+                }
+            }
         }
 
         private SyntaxTree? ParseFile(
