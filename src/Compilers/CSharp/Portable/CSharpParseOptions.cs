@@ -233,10 +233,22 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <summary>
         /// Used for parsing .cs file-based programs.
         /// </summary>
+        /// <returns>
+        /// <see langword="null"/> if the feature is disabled.
+        /// Otherwise, the value of the feature flag which is set by the SDK to Base64Url-encoded full path of the entry-point file.
+        /// </returns>
         /// <remarks>
         /// In this mode, ignored directives <c>#:</c> are allowed.
+        ///
+        /// Additionally, when invoked via the command line (not API)
+        /// and the feature flag can be Base64Url-decoded, normalized, and mapped to one of the C# sources:
+        /// <list type="bullet">
+        /// <item>other entry-point files than the one specified via this feature flag are ignored,</item>
+        /// <item>it is an error if the specified file does not contain top-level statements
+        /// (which is currently the only kind of supported entry point because it can be detected during parsing unlike Main methods).</item>
+        /// </list>
         /// </remarks>
-        internal bool FileBasedProgram => Features.ContainsKey("FileBasedProgram");
+        internal string? FileBasedProgram => Features.TryGetValue("FileBasedProgram", out var value) ? value : null;
 
         internal override void ValidateOptions(ArrayBuilder<Diagnostic> builder)
         {

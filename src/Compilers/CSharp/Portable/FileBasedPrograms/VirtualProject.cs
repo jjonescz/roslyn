@@ -5,6 +5,7 @@
 #if NET9_0_OR_GREATER
 
 using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -296,16 +297,6 @@ public sealed class VirtualProject(string entryPointFileFullPath)
               </PropertyGroup>
             """);
 
-        if (!convert)
-        {
-            csprojWriter.WriteLine("""
-
-                  <PropertyGroup>
-                    <EnableDefaultItems>false</EnableDefaultItems>
-                  </PropertyGroup>
-                """);
-        }
-
         if (propertyDirectives.Any())
         {
             csprojWriter.WriteLine("""
@@ -327,11 +318,15 @@ public sealed class VirtualProject(string entryPointFileFullPath)
 
         if (!convert)
         {
+            // Encode the path to avoid escaping issues, and send it to the compiler via a feature flag,
+            // so it knows which entry point should be used (and can ignore the rest).
+            string encodedEntryPointFileFullPath = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(EntryPointFileFullPath));
+
             // After `#:property` directives so they don't override this.
-            csprojWriter.WriteLine("""
+            csprojWriter.WriteLine($"""
 
                   <PropertyGroup>
-                    <Features>$(Features);FileBasedProgram</Features>
+                    <Features>$(Features);FileBasedProgram={encodedEntryPointFileFullPath}</Features>
                   </PropertyGroup>
                 """);
         }
@@ -368,14 +363,6 @@ public sealed class VirtualProject(string entryPointFileFullPath)
 
         if (!convert)
         {
-            csprojWriter.WriteLine($"""
-
-                  <ItemGroup>
-                    <Compile Include="{escapeValue(EntryPointFileFullPath)}" />
-                  </ItemGroup>
-
-                """);
-
             foreach (var sdk in sdkDirectives)
             {
                 csprojWriter.WriteLine($"""

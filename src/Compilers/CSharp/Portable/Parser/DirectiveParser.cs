@@ -687,7 +687,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
 
         private DirectiveTriviaSyntax ParseIgnoredDirective(SyntaxToken hash, SyntaxToken colon, bool isActive, bool isFollowingToken)
         {
-            if (!lexer.Options.FileBasedProgram)
+            if (lexer.Options.FileBasedProgram is null)
             {
                 colon = this.AddError(colon, ErrorCode.ERR_PPIgnoredNeedsFileBasedProgram);
             }

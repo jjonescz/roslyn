@@ -2,9 +2,16 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+#if !NET
+extern alias bcl;
+using Base64Url = bcl::System.Buffers.Text.Base64Url;
+#endif
+
+using System.Buffers.Text;
 using System.Collections.Immutable;
 using System.IO;
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities;
 using Microsoft.CodeAnalysis.Text;
 using Roslyn.Test.Utilities;
@@ -12,9 +19,10 @@ using Xunit;
 
 namespace Microsoft.CodeAnalysis.CSharp.UnitTests;
 
-public sealed class FileBasedProgramTests : TestBase
+public sealed class FileBasedProgramTests : CSharpTestBase
 {
     private const string CurrentTargetFramework = "net10.0";
+    private const string FeatureName = "FileBasedProgram";
 
     [Fact]
     public void Directives()
@@ -478,6 +486,67 @@ public sealed class FileBasedProgramTests : TestBase
                 """);
     }
 
+    [Fact]
+    public void EntryPoints_TopLevelStatements_Multiple()
+    {
+        CSharpTestSource source =
+        [
+            ("System.Console.Write(1);", "/app1.cs"),
+            ("System.Console.Write(2);", "/app2.cs"),
+        ];
+
+        CreateCompilation(
+            source,
+            parseOptions: TestOptions.Regular.WithFeature(FeatureName, "invalid"))
+            .VerifyEmitDiagnostics(
+                // /app2.cs(1,1): error CS8802: Only one compilation unit can have top-level statements.
+                // System.Console.Write(2);
+                Diagnostic(ErrorCode.ERR_SimpleProgramMultipleUnitsWithTopLevelStatements, "System").WithLocation(1, 1));
+
+        CompileAndVerify(
+            source,
+            parseOptions: TestOptions.Regular.WithFeature(FeatureName, EncodeFilePath("/app1.cs")),
+            expectedOutput: "1")
+            .VerifyDiagnostics();
+
+        CompileAndVerify(
+            source,
+            parseOptions: TestOptions.Regular.WithFeature(FeatureName, EncodeFilePath("/app2.cs")),
+            expectedOutput: "2")
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void EntryPoints_MainMethods_Multiple()
+    {
+        CSharpTestSource source =
+        [
+            ("class Program1 { static void Main() { System.Console.Write(1); } }", "/app1.cs"),
+            ("class Program2 { static void Main() { System.Console.Write(2); } }", "/app2.cs"),
+        ];
+
+        CreateCompilation(
+            source,
+            parseOptions: TestOptions.Regular.WithFeature(FeatureName, "invalid"),
+            options: TestOptions.DebugExe)
+            .VerifyEmitDiagnostics(
+                // /app1.cs(1,30): error CS0017: Program has more than one entry point defined. Compile with /main to specify the type that contains the entry point.
+                // class Program1 { static void Main() { System.Console.Write(1); } }
+                Diagnostic(ErrorCode.ERR_MultipleEntryPoints, "Main").WithLocation(1, 30));
+
+        CompileAndVerify(
+            source,
+            parseOptions: TestOptions.Regular.WithFeature(FeatureName, EncodeFilePath("/app1.cs")),
+            expectedOutput: "1")
+            .VerifyDiagnostics();
+
+        CompileAndVerify(
+            source,
+            parseOptions: TestOptions.Regular.WithFeature(FeatureName, EncodeFilePath("/app2.cs")),
+            expectedOutput: "2")
+            .VerifyDiagnostics();
+    }
+
     // Cannot put this `#if` around the whole test file currently due to https://github.com/dotnet/roslyn/issues/78157.
 #if NET9_0_OR_GREATER
     /// <param name="actualProject">
@@ -537,5 +606,10 @@ public sealed class FileBasedProgramTests : TestBase
         AssertEx.Equal(expectedCSharp, actualCSharp);
         actualDiagnostics.Verify(expectedDiagnostics);
 #endif
+    }
+
+    private static string EncodeFilePath(string path)
+    {
+        return Base64Url.EncodeToString(Encoding.UTF8.GetBytes(path));
     }
 }
