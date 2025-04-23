@@ -23,23 +23,16 @@ namespace Microsoft.CodeAnalysis.CSharp.FileBasedPrograms;
 /// <summary>
 /// Builder for <see cref="FileBasedProgramProject"/>.
 /// </summary>
-/// <param name="entryPointFileFullPath">See <see cref="EntryPointFileFullPath"/>.</param>
 /// <remarks>
 /// This class is not thread safe.
 /// </remarks>
 [Experimental(RoslynExperiments.FileBasedProgramProject, UrlFormat = RoslynExperiments.FileBasedProgramProject_Url)]
-public sealed class FileBasedProgramProjectBuilder(string entryPointFileFullPath)
+public sealed class FileBasedProgramProjectBuilder
 {
     /// <summary>
     /// Each list should be ordered by source location, <see cref="FileBasedProgramProject.ConvertSourceText"/> depends on that.
     /// </summary>
     private readonly SortedDictionary<string, (SourceText, List<FileBasedProgramDirective>)> _directives = new SortedDictionary<string, (SourceText, List<FileBasedProgramDirective>)>();
-
-    /// <summary>
-    /// Path to the entry-point file of the file-based program.
-    /// This is not accessed via I/O, it is only embedded as text into the project XML if necessary.
-    /// </summary>
-    public string EntryPointFileFullPath { get; } = entryPointFileFullPath;
 
     private bool _built;
 
@@ -197,11 +190,6 @@ public sealed class FileBasedProgramProject
     }
 
     /// <summary>
-    /// See <see cref="FileBasedProgramProjectBuilder.EntryPointFileFullPath"/>.
-    /// </summary>
-    public string EntryPointFileFullPath => _builder.EntryPointFileFullPath;
-
-    /// <summary>
     /// Generates project file text for a file-based program.
     /// </summary>
     /// <param name="artifactsPath">
@@ -209,14 +197,17 @@ public sealed class FileBasedProgramProject
     /// Use <see cref="GetArtifactsPath"/> for the default logic.
     /// This is not accessed via I/O, it is only embedded as text into the project XML.
     /// </param>
-    public void Emit(TextWriter csprojWriter, string artifactsPath)
+    /// <param name="excludeCompileItems">
+    /// Full paths that will be embedded into the virtual project XML file as <c><![CDATA[<Compile Remove="..." />]]></c> items.
+    /// </param>
+    public void Emit(TextWriter csprojWriter, string artifactsPath, ImmutableArray<string> excludeCompileItems)
     {
         if (string.IsNullOrWhiteSpace(artifactsPath))
         {
             throw new ArgumentException(nameof(artifactsPath));
         }
 
-        EmitImpl(csprojWriter, artifactsPath, convert: false);
+        EmitImpl(csprojWriter, artifactsPath, convert: false, excludeCompileItems: excludeCompileItems.NullToEmpty());
     }
 
     /// <summary>
@@ -224,7 +215,7 @@ public sealed class FileBasedProgramProject
     /// </summary>
     public void EmitConverted(TextWriter csprojWriter)
     {
-        EmitImpl(csprojWriter, artifactsPath: null, convert: true);
+        EmitImpl(csprojWriter, artifactsPath: null, convert: true, excludeCompileItems: default);
     }
 
     /// <summary>
@@ -260,7 +251,7 @@ public sealed class FileBasedProgramProject
     private IEnumerable<FileBasedProgramDirective> AllDirectives
         => _builder.Directives.Values.SelectMany(t => t.Item2);
 
-    private void EmitImpl(TextWriter csprojWriter, string? artifactsPath, bool convert)
+    private void EmitImpl(TextWriter csprojWriter, string? artifactsPath, bool convert, ImmutableArray<string> excludeCompileItems)
     {
         int processedDirectives = 0;
 
@@ -411,13 +402,25 @@ public sealed class FileBasedProgramProject
 
         if (!convert)
         {
-            csprojWriter.WriteLine($"""
+            if (excludeCompileItems.Length != 0)
+            {
+                csprojWriter.WriteLine("""
 
-                  <ItemGroup>
-                    <Compile Include="{escapeValue(_builder.EntryPointFileFullPath)}" />
-                  </ItemGroup>
+                      <ItemGroup>
+                    """);
 
-                """);
+                foreach (var excludeCompileItem in excludeCompileItems)
+                {
+                    csprojWriter.WriteLine($"""
+                            <Compile Remove="{escapeValue(excludeCompileItem)}" />
+                        """);
+                }
+
+                csprojWriter.WriteLine($"""
+                      </ItemGroup>
+
+                    """);
+            }
 
             foreach (var sdk in sdkDirectives)
             {
