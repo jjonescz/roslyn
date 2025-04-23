@@ -59,6 +59,100 @@ public sealed class FileBasedProgramTests : TestBase
     }
 
     [Fact]
+    public void Directives_Virtual()
+    {
+        VerifyConversion(
+            inputCSharp: """
+                #!/program
+                #:sdk Microsoft.NET.Sdk
+                #:sdk Aspire.Hosting.Sdk 9.1.0
+                #:property TargetFramework net11.0
+                #:package System.CommandLine 2.0.0-beta4.22272.1
+                #:property LangVersion preview
+                Console.WriteLine();
+                """,
+            inMemory: true,
+            excludeCompileItems: ["/test1", "/test2"],
+            expectedProject: $"""
+                <Project>
+
+                  <PropertyGroup>
+                    <IncludeProjectNameInArtifactsPaths>false</IncludeProjectNameInArtifactsPaths>
+                    <ArtifactsPath>/artifacts</ArtifactsPath>
+                  </PropertyGroup>
+
+                  <!-- We need to explicitly import Sdk props/targets so we can override the targets below. -->
+                  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+                  <Import Project="Sdk.props" Sdk="Aspire.Hosting.Sdk/9.1.0" />
+
+                  <PropertyGroup>
+                    <OutputType>Exe</OutputType>
+                    <TargetFramework>{CurrentTargetFramework}</TargetFramework>
+                    <ImplicitUsings>enable</ImplicitUsings>
+                    <Nullable>enable</Nullable>
+                  </PropertyGroup>
+
+                  <PropertyGroup>
+                    <EnableDefaultItems>false</EnableDefaultItems>
+                  </PropertyGroup>
+
+                  <PropertyGroup>
+                    <TargetFramework>net11.0</TargetFramework>
+                    <LangVersion>preview</LangVersion>
+                  </PropertyGroup>
+
+                  <PropertyGroup>
+                    <Features>$(Features);FileBasedProgram</Features>
+                  </PropertyGroup>
+
+                  <ItemGroup>
+                    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+                  </ItemGroup>
+
+                  <ItemGroup>
+                    <Compile Remove="/test1" />
+                    <Compile Remove="/test2" />
+                  </ItemGroup>
+
+                  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+                  <Import Project="Sdk.targets" Sdk="Aspire.Hosting.Sdk/9.1.0" />
+
+                  <!--
+                    Override targets which don't work with project files that are not present on disk.
+                    See https://github.com/NuGet/Home/issues/14148.
+                  -->
+
+                  <Target Name="_FilterRestoreGraphProjectInputItems"
+                          DependsOnTargets="_LoadRestoreGraphEntryPoints"
+                          Returns="@(FilteredRestoreGraphProjectInputItems)">
+                    <ItemGroup>
+                      <FilteredRestoreGraphProjectInputItems Include="@(RestoreGraphProjectInputItems)" />
+                    </ItemGroup>
+                  </Target>
+
+                  <Target Name="_GetAllRestoreProjectPathItems"
+                          DependsOnTargets="_FilterRestoreGraphProjectInputItems"
+                          Returns="@(_RestoreProjectPathItems)">
+                    <ItemGroup>
+                      <_RestoreProjectPathItems Include="@(FilteredRestoreGraphProjectInputItems)" />
+                    </ItemGroup>
+                  </Target>
+
+                  <Target Name="_GenerateRestoreGraph"
+                          DependsOnTargets="_FilterRestoreGraphProjectInputItems;_GetAllRestoreProjectPathItems;_GenerateRestoreGraphProjectEntry;_GenerateProjectRestoreGraph"
+                          Returns="@(_RestoreGraphEntry)">
+                    <!-- Output from dependency _GenerateRestoreGraphProjectEntry and _GenerateProjectRestoreGraph -->
+                  </Target>
+
+                </Project>
+
+                """,
+            expectedCSharp: """
+                Console.WriteLine();
+                """);
+    }
+
+    [Fact]
     public void Directives_Variable()
     {
         VerifyConversion(
@@ -488,7 +582,9 @@ public sealed class FileBasedProgramTests : TestBase
         out string? actualProject,
         out string? actualCSharp,
         out ImmutableArray<Diagnostic> actualDiagnostics,
-        bool force)
+        bool force,
+        bool inMemory,
+        ImmutableArray<string> excludeCompileItems)
     {
 #pragma warning disable RSEXPERIMENTAL006 // 'FileBasedProgramProject' is experimental
         var entryPointFileFullPath = "/app/Program.cs";
@@ -502,7 +598,16 @@ public sealed class FileBasedProgramTests : TestBase
             var virtualProject = virtualProjectBuilder.Build();
 
             var csprojWriter = new StringWriter();
-            virtualProject.EmitConverted(csprojWriter);
+
+            if (inMemory)
+            {
+                virtualProject.Emit(csprojWriter, "/artifacts", excludeCompileItems);
+            }
+            else
+            {
+                virtualProject.EmitConverted(csprojWriter);
+            }
+
             actualProject = csprojWriter.ToString();
 
             actualCSharp = virtualProject.ConvertSourceText(entryPointFileFullPath)?.ToString();
@@ -527,6 +632,8 @@ public sealed class FileBasedProgramTests : TestBase
         string? expectedProject,
         string? expectedCSharp,
         bool force = false,
+        bool inMemory = false,
+        ImmutableArray<string> excludeCompileItems = default,
         params DiagnosticDescription[] expectedDiagnostics)
     {
 #if NET9_0_OR_GREATER
@@ -535,7 +642,9 @@ public sealed class FileBasedProgramTests : TestBase
             out var actualProject,
             out var actualCSharp,
             out var actualDiagnostics,
-            force: force);
+            force: force,
+            inMemory: inMemory,
+            excludeCompileItems: excludeCompileItems);
         AssertEx.Equal(expectedProject, actualProject);
         AssertEx.Equal(expectedCSharp, actualCSharp);
         actualDiagnostics.Verify(expectedDiagnostics);
