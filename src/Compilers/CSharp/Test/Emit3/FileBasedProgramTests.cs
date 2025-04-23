@@ -14,7 +14,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests;
 
 public sealed class FileBasedProgramTests : TestBase
 {
-    private const string CurrentTargetFramework = "net10.0";
+    private const string TestTargetFramework = "net123.0";
 
     [Fact]
     public void Directives()
@@ -36,7 +36,7 @@ public sealed class FileBasedProgramTests : TestBase
 
                   <PropertyGroup>
                     <OutputType>Exe</OutputType>
-                    <TargetFramework>{CurrentTargetFramework}</TargetFramework>
+                    <TargetFramework>{TestTargetFramework}</TargetFramework>
                     <ImplicitUsings>enable</ImplicitUsings>
                     <Nullable>enable</Nullable>
                   </PropertyGroup>
@@ -87,7 +87,7 @@ public sealed class FileBasedProgramTests : TestBase
 
                   <PropertyGroup>
                     <OutputType>Exe</OutputType>
-                    <TargetFramework>{CurrentTargetFramework}</TargetFramework>
+                    <TargetFramework>{TestTargetFramework}</TargetFramework>
                     <ImplicitUsings>enable</ImplicitUsings>
                     <Nullable>enable</Nullable>
                   </PropertyGroup>
@@ -165,7 +165,7 @@ public sealed class FileBasedProgramTests : TestBase
 
                   <PropertyGroup>
                     <OutputType>Exe</OutputType>
-                    <TargetFramework>{CurrentTargetFramework}</TargetFramework>
+                    <TargetFramework>{TestTargetFramework}</TargetFramework>
                     <ImplicitUsings>enable</ImplicitUsings>
                     <Nullable>enable</Nullable>
                   </PropertyGroup>
@@ -205,7 +205,7 @@ public sealed class FileBasedProgramTests : TestBase
 
                   <PropertyGroup>
                     <OutputType>Exe</OutputType>
-                    <TargetFramework>{CurrentTargetFramework}</TargetFramework>
+                    <TargetFramework>{TestTargetFramework}</TargetFramework>
                     <ImplicitUsings>enable</ImplicitUsings>
                     <Nullable>enable</Nullable>
                   </PropertyGroup>
@@ -331,7 +331,7 @@ public sealed class FileBasedProgramTests : TestBase
 
                   <PropertyGroup>
                     <OutputType>Exe</OutputType>
-                    <TargetFramework>{CurrentTargetFramework}</TargetFramework>
+                    <TargetFramework>{TestTargetFramework}</TargetFramework>
                     <ImplicitUsings>enable</ImplicitUsings>
                     <Nullable>enable</Nullable>
                   </PropertyGroup>
@@ -367,7 +367,7 @@ public sealed class FileBasedProgramTests : TestBase
 
                   <PropertyGroup>
                     <OutputType>Exe</OutputType>
-                    <TargetFramework>{CurrentTargetFramework}</TargetFramework>
+                    <TargetFramework>{TestTargetFramework}</TargetFramework>
                     <ImplicitUsings>enable</ImplicitUsings>
                     <Nullable>enable</Nullable>
                   </PropertyGroup>
@@ -439,7 +439,7 @@ public sealed class FileBasedProgramTests : TestBase
 
                   <PropertyGroup>
                     <OutputType>Exe</OutputType>
-                    <TargetFramework>{CurrentTargetFramework}</TargetFramework>
+                    <TargetFramework>{TestTargetFramework}</TargetFramework>
                     <ImplicitUsings>enable</ImplicitUsings>
                     <Nullable>enable</Nullable>
                   </PropertyGroup>
@@ -500,7 +500,7 @@ public sealed class FileBasedProgramTests : TestBase
 
                   <PropertyGroup>
                     <OutputType>Exe</OutputType>
-                    <TargetFramework>{CurrentTargetFramework}</TargetFramework>
+                    <TargetFramework>{TestTargetFramework}</TargetFramework>
                     <ImplicitUsings>enable</ImplicitUsings>
                     <Nullable>enable</Nullable>
                   </PropertyGroup>
@@ -546,7 +546,7 @@ public sealed class FileBasedProgramTests : TestBase
 
                   <PropertyGroup>
                     <OutputType>Exe</OutputType>
-                    <TargetFramework>{CurrentTargetFramework}</TargetFramework>
+                    <TargetFramework>{TestTargetFramework}</TargetFramework>
                     <ImplicitUsings>enable</ImplicitUsings>
                     <Nullable>enable</Nullable>
                   </PropertyGroup>
@@ -601,11 +601,19 @@ public sealed class FileBasedProgramTests : TestBase
 
             if (inMemory)
             {
-                virtualProject.Emit(csprojWriter, "/artifacts", excludeCompileItems);
+                virtualProject.Emit(csprojWriter, new FileBasedPrograms.FileBasedProgramProjectOptions
+                {
+                    TargetFramework = TestTargetFramework,
+                    ArtifactsPath = "/artifacts",
+                    ExcludeCompileItems = excludeCompileItems,
+                });
             }
             else
             {
-                virtualProject.EmitConverted(csprojWriter);
+                virtualProject.EmitConverted(csprojWriter, new FileBasedPrograms.FileBasedProgramProjectOptions
+                {
+                    TargetFramework = TestTargetFramework,
+                });
             }
 
             actualProject = csprojWriter.ToString();

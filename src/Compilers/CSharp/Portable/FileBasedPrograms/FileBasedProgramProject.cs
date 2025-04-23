@@ -176,6 +176,35 @@ public sealed class FileBasedProgramProjectBuilder
     internal SortedDictionary<string, (SourceText, List<FileBasedProgramDirective>)> Directives => _directives;
 }
 
+[Experimental(RoslynExperiments.FileBasedProgramProject, UrlFormat = RoslynExperiments.FileBasedProgramProject_Url)]
+public sealed class FileBasedProgramProjectOptions
+{
+    /// <summary>
+    /// The value used for <c>TargetFramework</c> property in the project file.
+    /// </summary>
+    public required string TargetFramework { get; init; }
+
+    /// <summary>
+    /// Path to a directory where build artifacts should be placed.
+    /// Use <see cref="FileBasedProgramProject.GetArtifactsPath"/> for the default logic.
+    /// This is not accessed via I/O, it is only embedded as text into the project XML.
+    /// </summary>
+    /// <remarks>
+    /// Only used by the virtual project (<see cref="FileBasedProgramProject.Emit"/>),
+    /// not the converted project (<see cref="FileBasedProgramProject.EmitConverted"/>).
+    /// </remarks>
+    public string? ArtifactsPath { get; init; }
+
+    /// <summary>
+    /// Full paths that will be embedded into the virtual project XML file as <c><![CDATA[<Compile Remove="..." />]]></c> items.
+    /// </summary>
+    /// <remarks>
+    /// Only used by the virtual project (<see cref="FileBasedProgramProject.Emit"/>),
+    /// not the converted project (<see cref="FileBasedProgramProject.EmitConverted"/>).
+    /// </remarks>
+    public ImmutableArray<string> ExcludeCompileItems { get; init; }
+}
+
 /// <summary>
 /// Can generate project file XML (in <c>.csproj</c> format) for a file-based program.
 /// </summary>
@@ -192,30 +221,22 @@ public sealed class FileBasedProgramProject
     /// <summary>
     /// Generates project file text for a file-based program.
     /// </summary>
-    /// <param name="artifactsPath">
-    /// Path to a directory where build artifacts should be placed.
-    /// Use <see cref="GetArtifactsPath"/> for the default logic.
-    /// This is not accessed via I/O, it is only embedded as text into the project XML.
-    /// </param>
-    /// <param name="excludeCompileItems">
-    /// Full paths that will be embedded into the virtual project XML file as <c><![CDATA[<Compile Remove="..." />]]></c> items.
-    /// </param>
-    public void Emit(TextWriter csprojWriter, string artifactsPath, ImmutableArray<string> excludeCompileItems)
+    public void Emit(TextWriter csprojWriter, FileBasedProgramProjectOptions options)
     {
-        if (string.IsNullOrWhiteSpace(artifactsPath))
+        if (string.IsNullOrWhiteSpace(options.ArtifactsPath))
         {
-            throw new ArgumentException(nameof(artifactsPath));
+            throw new ArgumentException(nameof(options.ArtifactsPath));
         }
 
-        EmitImpl(csprojWriter, artifactsPath, convert: false, excludeCompileItems: excludeCompileItems.NullToEmpty());
+        EmitImpl(csprojWriter, options, convert: false);
     }
 
     /// <summary>
     /// Generates project file text for a file-based program converted to project-based program.
     /// </summary>
-    public void EmitConverted(TextWriter csprojWriter)
+    public void EmitConverted(TextWriter csprojWriter, FileBasedProgramProjectOptions options)
     {
-        EmitImpl(csprojWriter, artifactsPath: null, convert: true, excludeCompileItems: default);
+        EmitImpl(csprojWriter, options, convert: true);
     }
 
     /// <summary>
@@ -251,7 +272,7 @@ public sealed class FileBasedProgramProject
     private IEnumerable<FileBasedProgramDirective> AllDirectives
         => _builder.Directives.Values.SelectMany(t => t.Item2);
 
-    private void EmitImpl(TextWriter csprojWriter, string? artifactsPath, bool convert, ImmutableArray<string> excludeCompileItems)
+    private void EmitImpl(TextWriter csprojWriter, FileBasedProgramProjectOptions options, bool convert)
     {
         int processedDirectives = 0;
 
@@ -269,14 +290,14 @@ public sealed class FileBasedProgramProject
 
         if (!convert)
         {
-            Debug.Assert(!string.IsNullOrWhiteSpace(artifactsPath));
+            Debug.Assert(!string.IsNullOrWhiteSpace(options.ArtifactsPath));
 
             csprojWriter.WriteLine($"""
                 <Project>
 
                   <PropertyGroup>
                     <IncludeProjectNameInArtifactsPaths>false</IncludeProjectNameInArtifactsPaths>
-                    <ArtifactsPath>{escapeValue(artifactsPath)}</ArtifactsPath>
+                    <ArtifactsPath>{escapeValue(options.ArtifactsPath)}</ArtifactsPath>
                   </PropertyGroup>
 
                   <!-- We need to explicitly import Sdk props/targets so we can override the targets below. -->
@@ -324,7 +345,7 @@ public sealed class FileBasedProgramProject
         csprojWriter.WriteLine($"""
               <PropertyGroup>
                 <OutputType>Exe</OutputType>
-                <TargetFramework>net10.0</TargetFramework>
+                <TargetFramework>{escapeValue(options.TargetFramework)}</TargetFramework>
                 <ImplicitUsings>enable</ImplicitUsings>
                 <Nullable>enable</Nullable>
               </PropertyGroup>
@@ -402,14 +423,14 @@ public sealed class FileBasedProgramProject
 
         if (!convert)
         {
-            if (excludeCompileItems.Length != 0)
+            if (!options.ExcludeCompileItems.IsDefaultOrEmpty)
             {
                 csprojWriter.WriteLine("""
 
                       <ItemGroup>
                     """);
 
-                foreach (var excludeCompileItem in excludeCompileItems)
+                foreach (var excludeCompileItem in options.ExcludeCompileItems)
                 {
                     csprojWriter.WriteLine($"""
                             <Compile Remove="{escapeValue(excludeCompileItem)}" />

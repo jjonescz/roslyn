@@ -1,9 +1,17 @@
-[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProject.Emit(System.IO.TextWriter! csprojWriter, string! artifactsPath, System.Collections.Immutable.ImmutableArray<string!> excludeCompileItems) -> void
+[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProject.Emit(System.IO.TextWriter! csprojWriter, Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions! options) -> void
+[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProject.EmitConverted(System.IO.TextWriter! csprojWriter, Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions! options) -> void
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectBuilder
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectBuilder.Build() -> Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProject!
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectBuilder.FileBasedProgramProjectBuilder() -> void
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectBuilder.ParseDirectives(string! filePath, Microsoft.CodeAnalysis.Text.SourceText! text, bool reportAllErrors) -> System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.Diagnostic!>
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProject
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProject.ConvertSourceText(string! path) -> Microsoft.CodeAnalysis.Text.SourceText?
-[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProject.EmitConverted(System.IO.TextWriter! csprojWriter) -> void
+[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions
+[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions.ArtifactsPath.get -> string?
+[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions.ArtifactsPath.init -> void
+[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions.ExcludeCompileItems.get -> System.Collections.Immutable.ImmutableArray<string!>
+[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions.ExcludeCompileItems.init -> void
+[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions.FileBasedProgramProjectOptions() -> void
+[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions.TargetFramework.get -> string!
+[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions.TargetFramework.init -> void
 [RSEXPERIMENTAL006]static Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProject.GetArtifactsPath(string! entryPointFilePath) -> string!
