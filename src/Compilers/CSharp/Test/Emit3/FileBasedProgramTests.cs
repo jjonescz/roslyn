@@ -93,10 +93,6 @@ public sealed class FileBasedProgramTests : TestBase
                   </PropertyGroup>
 
                   <PropertyGroup>
-                    <EnableDefaultItems>false</EnableDefaultItems>
-                  </PropertyGroup>
-
-                  <PropertyGroup>
                     <TargetFramework>net11.0</TargetFramework>
                     <LangVersion>preview</LangVersion>
                   </PropertyGroup>
