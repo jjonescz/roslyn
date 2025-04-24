@@ -1,11 +1,13 @@
+[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramDirectiveParsingResult
+[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramDirectiveParsingResult.ConvertSourceText() -> Microsoft.CodeAnalysis.Text.SourceText?
+[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramDirectiveParsingResult.Diagnostics.get -> System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.Diagnostic!>
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProject.Emit(System.IO.TextWriter! csprojWriter, Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions! options) -> void
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProject.EmitConverted(System.IO.TextWriter! csprojWriter, Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions! options) -> void
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectBuilder
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectBuilder.Build() -> Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProject!
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectBuilder.FileBasedProgramProjectBuilder() -> void
-[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectBuilder.ParseDirectives(string! filePath, Microsoft.CodeAnalysis.Text.SourceText! text, bool reportAllErrors) -> System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.Diagnostic!>
+[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectBuilder.ParseDirectives(string! filePath, Microsoft.CodeAnalysis.Text.SourceText! text, bool reportAllErrors) -> Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramDirectiveParsingResult!
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProject
-[RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProject.ConvertSourceText(string! path) -> Microsoft.CodeAnalysis.Text.SourceText?
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions.ArtifactsPath.get -> string?
 [RSEXPERIMENTAL006]Microsoft.CodeAnalysis.CSharp.FileBasedPrograms.FileBasedProgramProjectOptions.ArtifactsPath.init -> void

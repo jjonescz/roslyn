@@ -16,6 +16,7 @@ using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.PooledObjects;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Microsoft.CodeAnalysis.CSharp.FileBasedPrograms;
@@ -29,10 +30,7 @@ namespace Microsoft.CodeAnalysis.CSharp.FileBasedPrograms;
 [Experimental(RoslynExperiments.FileBasedProgramProject, UrlFormat = RoslynExperiments.FileBasedProgramProject_Url)]
 public sealed class FileBasedProgramProjectBuilder
 {
-    /// <summary>
-    /// Each list should be ordered by source location, <see cref="FileBasedProgramProject.ConvertSourceText"/> depends on that.
-    /// </summary>
-    private readonly SortedDictionary<string, (SourceText, List<FileBasedProgramDirective>)> _directives = new SortedDictionary<string, (SourceText, List<FileBasedProgramDirective>)>();
+    private readonly List<ImmutableArray<FileBasedProgramDirective>> _directives = new List<ImmutableArray<FileBasedProgramDirective>>();
 
     private bool _built;
 
@@ -50,19 +48,13 @@ public sealed class FileBasedProgramProjectBuilder
     /// The latter is useful for <c>dotnet run file.cs</c> where if there are <see cref="IgnoredDirectiveTriviaSyntax"/> directives after the first token,
     /// compiler will report <see cref="ErrorCode.ERR_PPIgnoredFollowsToken"/> anyway, so we speed up success scenarios by not parsing the whole file up front in the SDK CLI.
     /// </param>
-    /// <returns>
-    /// Diagnostics about malformed <see cref="IgnoredDirectiveTriviaSyntax"/> directives.
-    /// These are not the errors compiler would report (like the directive being after a token, i.e., <see cref="ErrorCode.ERR_PPIgnoredFollowsToken"/>)
-    /// but rather errors from parsing directive content (like missing property value, i.e., <see cref="ErrorCode.ERR_PropertyDirectiveMissingParts"/>).
-    /// </returns>
-    public ImmutableArray<Diagnostic> ParseDirectives(string filePath, SourceText text, bool reportAllErrors)
+    public FileBasedProgramDirectiveParsingResult ParseDirectives(string filePath, SourceText text, bool reportAllErrors)
 #pragma warning disable RSEXPERIMENTAL003 // 'SyntaxTokenParser' is experimental
     {
         CheckNotBuilt();
 
         var file = new SourceFile(filePath, text);
-        var directives = new List<FileBasedProgramDirective>();
-        _directives.Add(filePath, (text, directives));
+        var directives = ArrayBuilder<FileBasedProgramDirective>.GetInstance();
         var diagnosticBag = DiagnosticBag.GetInstance();
         SyntaxTokenParser tokenizer = SyntaxFactory.CreateTokenParser(text,
             CSharpParseOptions.Default.WithFeatures([new("FileBasedProgram", "true")]));
@@ -136,7 +128,9 @@ public sealed class FileBasedProgramProjectBuilder
             while (!result.Token.IsKind(SyntaxKind.EndOfFileToken));
         }
 
-        return diagnosticBag.ToReadOnlyAndFree();
+        var directivesArray = directives.ToImmutableAndFree();
+        _directives.Add(directivesArray);
+        return new FileBasedProgramDirectiveParsingResult(text, directivesArray, diagnosticBag.ToReadOnlyAndFree());
 
         static TextSpan getFullSpan(TextSpan previousWhiteSpaceSpan, SyntaxTrivia trivia)
         {
@@ -173,7 +167,58 @@ public sealed class FileBasedProgramProjectBuilder
         }
     }
 
-    internal SortedDictionary<string, (SourceText, List<FileBasedProgramDirective>)> Directives => _directives;
+    internal IEnumerable<FileBasedProgramDirective> Directives => _directives.SelectMany(d => d);
+}
+
+[Experimental(RoslynExperiments.FileBasedProgramProject, UrlFormat = RoslynExperiments.FileBasedProgramProject_Url)]
+public sealed class FileBasedProgramDirectiveParsingResult
+{
+    private readonly SourceText _text;
+    private readonly ImmutableArray<FileBasedProgramDirective> _directives;
+
+    internal FileBasedProgramDirectiveParsingResult(
+        SourceText text,
+        ImmutableArray<FileBasedProgramDirective> directives,
+        ImmutableArray<Diagnostic> diagnostics)
+    {
+        Debug.Assert(directives.OrderBy(d => d.Span.Start).SequenceEqual(directives), "Directives should be ordered by source location.");
+
+        _text = text;
+        _directives = directives;
+        Diagnostics = diagnostics;
+    }
+
+    /// <summary>
+    /// Diagnostics about malformed <see cref="IgnoredDirectiveTriviaSyntax"/> directives.
+    /// These are not the errors compiler would report (like the directive being after a token, i.e., <see cref="ErrorCode.ERR_PPIgnoredFollowsToken"/>)
+    /// but rather errors from parsing directive content (like missing property value, i.e., <see cref="ErrorCode.ERR_PropertyDirectiveMissingParts"/>).
+    /// </summary>
+    public ImmutableArray<Diagnostic> Diagnostics { get; }
+
+    /// <summary>
+    /// Removes <see cref="IgnoredDirectiveTriviaSyntax"/> directives from C# file text
+    /// so it can be used after conversion to a project-based program.
+    /// </summary>
+    /// <returns>
+    /// File text with directives removed or <see langword="null"/> if no conversion is necessary.
+    /// </returns>
+    public SourceText? ConvertSourceText()
+    {
+        if (_directives.IsDefaultOrEmpty)
+        {
+            return null;
+        }
+
+        var text = _text;
+
+        for (int i = _directives.Length - 1; i >= 0; i--)
+        {
+            var directive = _directives[i];
+            text = text.Replace(directive.Span, string.Empty);
+        }
+
+        return text;
+    }
 }
 
 [Experimental(RoslynExperiments.FileBasedProgramProject, UrlFormat = RoslynExperiments.FileBasedProgramProject_Url)]
@@ -239,46 +284,13 @@ public sealed class FileBasedProgramProject
         EmitImpl(csprojWriter, options, convert: true);
     }
 
-    /// <summary>
-    /// Removes <see cref="IgnoredDirectiveTriviaSyntax"/> directives from C# file text
-    /// so it can be used after conversion to a project-based program.
-    /// </summary>
-    /// <param name="path">
-    /// Path to a file which <see cref="FileBasedProgramProjectBuilder.ParseDirectives"/> was previously called on.
-    /// </param>
-    /// <returns>
-    /// File text with directives removed or <see langword="null"/> if no conversion is necessary.
-    /// </returns>
-    public SourceText? ConvertSourceText(string path)
-    {
-        var (text, directives) = _builder.Directives[path];
-
-        if (directives.Count == 0)
-        {
-            return null;
-        }
-
-        Debug.Assert(directives.OrderBy(d => d.Span.Start).SequenceEqual(directives), "Directives should be ordered by source location.");
-
-        for (int i = directives.Count - 1; i >= 0; i--)
-        {
-            var directive = directives[i];
-            text = text.Replace(directive.Span, string.Empty);
-        }
-
-        return text;
-    }
-
-    private IEnumerable<FileBasedProgramDirective> AllDirectives
-        => _builder.Directives.Values.SelectMany(t => t.Item2);
-
     private void EmitImpl(TextWriter csprojWriter, FileBasedProgramProjectOptions options, bool convert)
     {
         int processedDirectives = 0;
 
-        var sdkDirectives = AllDirectives.OfType<FileBasedProgramDirective.Sdk>();
-        var propertyDirectives = AllDirectives.OfType<FileBasedProgramDirective.Property>();
-        var packageDirectives = AllDirectives.OfType<FileBasedProgramDirective.Package>();
+        var sdkDirectives = _builder.Directives.OfType<FileBasedProgramDirective.Sdk>();
+        var propertyDirectives = _builder.Directives.OfType<FileBasedProgramDirective.Property>();
+        var packageDirectives = _builder.Directives.OfType<FileBasedProgramDirective.Package>();
 
         string sdkValue = "Microsoft.NET.Sdk";
 
@@ -409,7 +421,7 @@ public sealed class FileBasedProgramProject
             csprojWriter.WriteLine("  </ItemGroup>");
         }
 
-        Debug.Assert(processedDirectives + AllDirectives.OfType<FileBasedProgramDirective.Shebang>().Count() == AllDirectives.Count());
+        Debug.Assert(processedDirectives + _builder.Directives.OfType<FileBasedProgramDirective.Shebang>().Count() == _builder.Directives.Count());
 
         if (!convert)
         {
