@@ -30,7 +30,10 @@ namespace Microsoft.CodeAnalysis.CSharp.FileBasedPrograms;
 [Experimental(RoslynExperiments.FileBasedProgramProject, UrlFormat = RoslynExperiments.FileBasedProgramProject_Url)]
 public sealed class FileBasedProgramProjectBuilder
 {
-    private readonly List<ImmutableArray<FileBasedProgramDirective>> _directives = new List<ImmutableArray<FileBasedProgramDirective>>();
+    /// <remarks>
+    /// Sorted by file path to get deterministic results.
+    /// </remarks>
+    private readonly SortedDictionary<string, ImmutableArray<FileBasedProgramDirective>> _directives = new SortedDictionary<string, ImmutableArray<FileBasedProgramDirective>>();
 
     private bool _built;
 
@@ -52,6 +55,11 @@ public sealed class FileBasedProgramProjectBuilder
 #pragma warning disable RSEXPERIMENTAL003 // 'SyntaxTokenParser' is experimental
     {
         CheckNotBuilt();
+
+        if (_directives.ContainsKey(filePath))
+        {
+            throw new ArgumentException($"Directives for '{filePath}' have already been parsed.", nameof(filePath));
+        }
 
         var file = new SourceFile(filePath, text);
         var directives = ArrayBuilder<FileBasedProgramDirective>.GetInstance();
@@ -129,7 +137,7 @@ public sealed class FileBasedProgramProjectBuilder
         }
 
         var directivesArray = directives.ToImmutableAndFree();
-        _directives.Add(directivesArray);
+        _directives.Add(filePath, directivesArray);
         return new FileBasedProgramDirectiveParsingResult(text, directivesArray, diagnosticBag.ToReadOnlyAndFree());
 
         static TextSpan getFullSpan(TextSpan previousWhiteSpaceSpan, SyntaxTrivia trivia)
@@ -167,7 +175,7 @@ public sealed class FileBasedProgramProjectBuilder
         }
     }
 
-    internal IEnumerable<FileBasedProgramDirective> Directives => _directives.SelectMany(d => d);
+    internal IEnumerable<FileBasedProgramDirective> Directives => _directives.Values.SelectMany(d => d);
 }
 
 [Experimental(RoslynExperiments.FileBasedProgramProject, UrlFormat = RoslynExperiments.FileBasedProgramProject_Url)]
