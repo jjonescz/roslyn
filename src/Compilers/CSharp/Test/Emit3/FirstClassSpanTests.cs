@@ -724,6 +724,43 @@ public class FirstClassSpanTests : CSharpTestBase
         CreateCompilationWithSpanAndMemoryExtensions(source).VerifyDiagnostics(expectedDiagnostics);
     }
 
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/78314")]
+    public void BreakingChange_OverloadResolution_UserDefinedConversionVsExactType()
+    {
+        var source = """
+            using System;
+
+            var b = new byte[0];
+            new C().M(b);
+
+            sealed class C : B
+            {
+                public override void M(byte[] b) => Console.Write(1);
+                public void M(X x) => Console.Write(2);
+            }
+
+            abstract class B
+            {
+                public virtual void M(byte[] b) => Console.Write(0);
+            }
+
+            sealed class X
+            {
+                public static implicit operator X(ReadOnlySpan<byte> s) => new X();
+            }
+            """;
+        var comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.Regular13);
+        CompileAndVerify(comp, expectedOutput: "1").VerifyDiagnostics();
+
+        var expectedOutput = "2";
+
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source, parseOptions: TestOptions.RegularNext);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        comp = CreateCompilationWithSpanAndMemoryExtensions(source);
+        CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+    }
+
     [Theory, CombinatorialData]
     public void Conversion_Array_Span_Implicit(
         [CombinatorialLangVersions] LanguageVersion langVersion,
