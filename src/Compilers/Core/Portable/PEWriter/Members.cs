@@ -548,8 +548,11 @@ namespace Microsoft.Cci
         bool IsAccessCheckedOnOverride { get; }
 
         /// <summary>
-        /// True if the method is a constructor.
+        /// True if the method is an instance constructor.
         /// </summary>
+        /// <remarks>
+        /// False for a static constructor.
+        /// </remarks>
         bool IsConstructor { get; }
 
         /// <summary>
