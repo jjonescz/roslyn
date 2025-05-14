@@ -2987,6 +2987,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 CheckAssemblyName(builder.DiagnosticBag);
                 builder.AddRange(Options.Errors);
+                ValidateDirectives(builder, cancellationToken);
 
                 if (Options.NullableContextOptions != NullableContextOptions.Disable && LanguageVersion < MessageID.IDS_FeatureNullableReferenceTypes.RequiredVersion() &&
                     _syntaxAndDeclarations.ExternalSyntaxTrees.Any())
@@ -3036,6 +3037,25 @@ namespace Microsoft.CodeAnalysis.CSharp
                         diagnostics = locationFilterOpt(diagnostics);
                     }
                     builder.AddRange(diagnostics);
+                }
+            }
+        }
+
+        private void ValidateDirectives(BindingDiagnosticBag diagnostics, CancellationToken cancellationToken)
+        {
+            foreach (var syntaxTree in this.SyntaxTrees)
+            {
+                if (!syntaxTree.HasCompilationUnitRoot)
+                {
+                    continue;
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var root = syntaxTree.GetCompilationUnitRoot(cancellationToken);
+                if (root.ContainsDirectives)
+                {
+
                 }
             }
         }
