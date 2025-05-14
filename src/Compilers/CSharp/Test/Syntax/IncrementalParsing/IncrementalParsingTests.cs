@@ -109,7 +109,7 @@ public class C {
                             SyntaxKind.IdentifierToken);
         }
 
-        private static void TestDiffsInOrder(ImmutableArray<SyntaxNodeOrToken> diffs, params SyntaxKind[] expectedKinds)
+        internal static void TestDiffsInOrder(ImmutableArray<SyntaxNodeOrToken> diffs, params SyntaxKind[] expectedKinds)
         {
             if (diffs.Length != expectedKinds.Length)
             {

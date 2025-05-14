@@ -99,6 +99,61 @@ public sealed class IgnoredDirectiveParsingTests(ITestOutputHelper output) : Par
     }
 
     [Fact]
+    public void IncrementalParsing()
+    {
+        var source = """
+            #!xyz
+            #:name value
+            Console.WriteLine(123);
+            Console.WriteLine(456);
+            """;
+
+        static SyntaxTree change(SyntaxTree tree) => tree.WithReplaceFirst("456", "789");
+
+        // with the feature flag
+        {
+            var tree1 = CSharpSyntaxTree.ParseText(source, options: TestOptions.Regular.WithFeature(FeatureName));
+            var tree2 = change(tree1);
+            var diffs = SyntaxDifferences.GetRebuiltNodes(tree1, tree2);
+            IncrementalParsingTests.TestDiffsInOrder(diffs,
+            [
+                SyntaxKind.CompilationUnit,
+                SyntaxKind.GlobalStatement,
+                SyntaxKind.ExpressionStatement,
+                SyntaxKind.InvocationExpression,
+                SyntaxKind.ArgumentList,
+                SyntaxKind.Argument,
+                SyntaxKind.NumericLiteralExpression,
+                SyntaxKind.NumericLiteralToken,
+            ]);
+        }
+
+        // without the feature flag
+        {
+            var tree1 = CSharpSyntaxTree.ParseText(source);
+            var tree2 = change(tree1);
+            var diffs = SyntaxDifferences.GetRebuiltNodes(tree1, tree2);
+            IncrementalParsingTests.TestDiffsInOrder(diffs,
+            [
+                SyntaxKind.CompilationUnit,
+                SyntaxKind.GlobalStatement,
+                SyntaxKind.ExpressionStatement,
+                SyntaxKind.InvocationExpression,
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxKind.IdentifierName,
+                SyntaxKind.IdentifierToken,
+                SyntaxKind.GlobalStatement,
+                SyntaxKind.ExpressionStatement,
+                SyntaxKind.InvocationExpression,
+                SyntaxKind.ArgumentList,
+                SyntaxKind.Argument,
+                SyntaxKind.NumericLiteralExpression,
+                SyntaxKind.NumericLiteralToken,
+            ]);
+        }
+    }
+
+    [Fact]
     public void Semantics()
     {
         var source = """
@@ -109,6 +164,14 @@ public sealed class IgnoredDirectiveParsingTests(ITestOutputHelper output) : Par
         CompileAndVerify(source,
             parseOptions: TestOptions.Regular.WithFeature(FeatureName),
             expectedOutput: "123").VerifyDiagnostics();
+
+        CreateCompilation(source).VerifyDiagnostics(
+            // (1,2): error CS9314: '#!' directives can be only used in scripts or file-based programs
+            // #!xyz
+            Diagnostic(ErrorCode.ERR_PPShebangInProjectBasedProgram, "!").WithLocation(1, 2),
+            // (2,2): error CS9298: '#:' directives can be only used in file-based programs ('-features:FileBasedProgram')
+            // #:name value
+            Diagnostic(ErrorCode.ERR_PPIgnoredNeedsFileBasedProgram, ":").WithLocation(2, 2));
     }
 
     [Fact]
