@@ -79,9 +79,9 @@ internal static class BuildServerUtility
 
     #endregion
 
-    #region Client side
-
 #if NET
+
+    #region Client side
 
     public static Task ShutdownServersAsync(Action<Process> onProcessShutdownBegin, Action<string> onError, string hostServerPath)
     {
@@ -124,9 +124,9 @@ internal static class BuildServerUtility
         }));
     }
 
-#endif
-
     #endregion
+
+#endif
 
     private static string? GetPipeFolder(string? hostServerPath)
     {
