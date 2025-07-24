@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
@@ -89,8 +90,7 @@ internal static class BuildServerUtility
         var pipeFolder = GetPipeFolder(hostServerPath)
             ?? throw new ArgumentException(message: "Host server path was not provided.", paramName: nameof(hostServerPath));
 
-        // Enumerate pipes.
-        return Task.WhenAll(Directory.EnumerateFiles(pipeFolder).Select(async file =>
+        return Task.WhenAll(EnumeratePipes(pipeFolder).Select(async file =>
         {
             try
             {
@@ -125,6 +125,20 @@ internal static class BuildServerUtility
         }));
     }
 
+    private static IEnumerable<string> EnumeratePipes(string pipeFolder)
+    {
+        // On Windows, we need to enumerate all pipes and then filter them.
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            Debug.Assert(pipeFolder.EndsWith('\\'));
+            return Directory.EnumerateFiles(WindowsPipePrefix)
+                .Where(path => path.StartsWith(pipeFolder, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // On Unix, we can directly enumerate the files in the pipe folder.
+        return Directory.EnumerateFiles(pipeFolder);
+    }
+
     #endregion
 
 #endif
@@ -138,7 +152,13 @@ internal static class BuildServerUtility
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            string normalized = hostServerPath.Replace('/', '\\').Trim('\\').ToLowerInvariant();
+            string normalized = hostServerPath.Replace('/', '\\').ToLowerInvariant();
+
+            if (!normalized.EndsWith("\\", StringComparison.Ordinal))
+            {
+                normalized += '\\';
+            }
+
             return $"{WindowsPipePrefix}{normalized}";
         }
 
@@ -146,7 +166,7 @@ internal static class BuildServerUtility
     }
 
     /// <summary>
-    /// Strips <c>\.\\pipe\</c> prefix on Windows which must not be passed
+    /// Removes <c>\.\\pipe\</c> prefix on Windows which must not be passed
     /// to <see cref="PipeStream"/> constructors (they would duplicate it).
     /// </summary>
     private static string NormalizePipeNameForStream(string pipeName)
