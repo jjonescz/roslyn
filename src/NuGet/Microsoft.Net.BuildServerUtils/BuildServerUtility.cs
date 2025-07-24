@@ -62,21 +62,9 @@ internal static class BuildServerUtility
     private static string GetPipePath()
     {
         var folder = Environment.GetEnvironmentVariable(DotNetHostServerPath);
-
-        if (string.IsNullOrEmpty(folder))
-        {
-            throw new InvalidOperationException($"Environment variable '{DotNetHostServerPath}' is not set.");
-        }
-
+        var pipeFolder = GetPipeFolder(folder) ?? throw new InvalidOperationException($"Environment variable '{DotNetHostServerPath}' is not set.");
         var pid = GetCurrentProcessId();
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            folder = folder.Replace('/', '\\').Trim('\\').ToLowerInvariant();
-            return $"""\\.\pipe\{folder}\{pid}""";
-        }
-
-        return Path.Combine(folder, $"{pid}.pipe");
+        return Path.Combine(pipeFolder, $"{pid}.pipe");
     }
 
     private static int GetCurrentProcessId()
@@ -96,8 +84,11 @@ internal static class BuildServerUtility
 
     public static Task ShutdownServersAsync(Action<Process> onProcessShutdownBegin, Action<string> onError, string hostServerPath)
     {
+        var pipeFolder = GetPipeFolder(hostServerPath)
+            ?? throw new ArgumentException(message: "Host server path was not provided.", paramName: nameof(hostServerPath));
+
         // Enumerate pipes.
-        return Task.WhenAll(Directory.EnumerateFiles(hostServerPath).Select(async file =>
+        return Task.WhenAll(Directory.EnumerateFiles(pipeFolder).Select(async file =>
         {
             try
             {
@@ -135,4 +126,20 @@ internal static class BuildServerUtility
 #endif
 
     #endregion
+
+    private static string? GetPipeFolder(string? hostServerPath)
+    {
+        if (string.IsNullOrWhiteSpace(hostServerPath))
+        {
+            return null;
+        }
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            string normalized = hostServerPath.Replace('/', '\\').Trim('\\').ToLowerInvariant();
+            return $"""\\.\pipe\{normalized}""";
+        }
+
+        return hostServerPath;
+    }
 }
