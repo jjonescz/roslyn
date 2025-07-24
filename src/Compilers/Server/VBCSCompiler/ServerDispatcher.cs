@@ -146,7 +146,12 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         {
             try
             {
-                await BuildServerUtility.WaitForShutdownAsync(cancellationToken).ConfigureAwait(false);
+                await BuildServerUtility.WaitForShutdownAsync(
+                    onStart: (pipePath) =>
+                    {
+                        _logger.Log($"Listening for unified shutdown on pipe: {pipePath}");
+                    },
+                    cancellationToken).ConfigureAwait(false);
                 return new CompletionData(CompletionReason.RequestCompleted, shutdownRequested: nameof(BuildServerUtility));
             }
             catch (Exception ex)

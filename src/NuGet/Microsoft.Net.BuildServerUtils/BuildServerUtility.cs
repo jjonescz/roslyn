@@ -22,13 +22,13 @@ internal static class BuildServerUtility
 
     #region Server side
 
-    public static void ListenForShutdown(Action onShutdown, Action<Exception> onError, CancellationToken cancellationToken)
+    public static void ListenForShutdown(Action<string> onStart, Action onShutdown, Action<Exception> onError, CancellationToken cancellationToken)
     {
         Task.Run(async () =>
         {
             try
             {
-                await WaitForShutdownAsync(cancellationToken).ConfigureAwait(false);
+                await WaitForShutdownAsync(onStart, cancellationToken).ConfigureAwait(false);
                 onShutdown();
             }
             catch (OperationCanceledException e) when (e.CancellationToken == cancellationToken)
@@ -43,9 +43,10 @@ internal static class BuildServerUtility
         cancellationToken);
     }
 
-    public static async Task WaitForShutdownAsync(CancellationToken cancellationToken)
+    public static async Task WaitForShutdownAsync(Action<string> onStart, CancellationToken cancellationToken)
     {
         var pipePath = GetPipePath();
+        onStart(pipePath);
 
         // Delete the pipe if it exists (can happen if a previous build server did not shut down gracefully and its PID is recycled).
         File.Delete(pipePath);
