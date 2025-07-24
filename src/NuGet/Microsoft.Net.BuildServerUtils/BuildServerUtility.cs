@@ -17,6 +17,7 @@ namespace Microsoft.Net.BuildServerUtils;
 
 internal static class BuildServerUtility
 {
+    private const string WindowsPipePrefix = """\\.\pipe\""";
     public const string DotNetHostServerPath = "DOTNET_HOST_SERVER_PATH";
 
     #region Server side
@@ -50,7 +51,7 @@ internal static class BuildServerUtility
         File.Delete(pipePath);
 
         // Wait for any input which means shutdown is requested.
-        using var server = new NamedPipeServerStream(pipePath);
+        using var server = new NamedPipeServerStream(NormalizePipeNameForStream(pipePath));
         await server.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
         await server.ReadAsync(new byte[1], 0, 1, cancellationToken).ConfigureAwait(false);
 
@@ -105,7 +106,7 @@ internal static class BuildServerUtility
                 onProcessShutdownBegin(process);
 
                 // Connect to each pipe.
-                var client = new NamedPipeClientStream(file);
+                var client = new NamedPipeClientStream(NormalizePipeNameForStream(file));
                 await using var _ = client.ConfigureAwait(false);
                 await client.ConnectAsync().ConfigureAwait(false);
 
@@ -137,9 +138,24 @@ internal static class BuildServerUtility
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             string normalized = hostServerPath.Replace('/', '\\').Trim('\\').ToLowerInvariant();
-            return $"""\\.\pipe\{normalized}""";
+            return $"{WindowsPipePrefix}{normalized}";
         }
 
         return hostServerPath;
+    }
+
+    /// <summary>
+    /// Strips <c>\.\\pipe\</c> prefix on Windows which must not be passed
+    /// to <see cref="PipeStream"/> constructors (they would duplicate it).
+    /// </summary>
+    private static string NormalizePipeNameForStream(string pipeName)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+            pipeName.StartsWith(WindowsPipePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return pipeName[WindowsPipePrefix.Length..];
+        }
+
+        return pipeName;
     }
 }
