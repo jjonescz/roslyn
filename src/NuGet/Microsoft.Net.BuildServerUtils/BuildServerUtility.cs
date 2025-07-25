@@ -5,11 +5,9 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,18 +16,16 @@ namespace Microsoft.Net.BuildServerUtils;
 
 internal static class BuildServerUtility
 {
-    private const string WindowsPipePrefix = """\\.\pipe\""";
+    public const string WindowsPipePrefix = """\\.\pipe\""";
     public const string DotNetHostServerPath = "DOTNET_HOST_SERVER_PATH";
 
-    #region Server side
-
-    public static void ListenForShutdown(Action<string> onStart, Action onShutdown, Action<Exception> onError, CancellationToken cancellationToken)
+    public static void ListenForShutdown(string label, Action<string> onStart, Action onShutdown, Action<Exception> onError, CancellationToken cancellationToken)
     {
         Task.Run(async () =>
         {
             try
             {
-                await WaitForShutdownAsync(onStart, cancellationToken).ConfigureAwait(false);
+                await WaitForShutdownAsync(label, onStart, cancellationToken).ConfigureAwait(false);
                 onShutdown();
             }
             catch (OperationCanceledException e) when (e.CancellationToken == cancellationToken)
@@ -44,9 +40,9 @@ internal static class BuildServerUtility
         cancellationToken);
     }
 
-    public static async Task WaitForShutdownAsync(Action<string> onStart, CancellationToken cancellationToken)
+    public static async Task WaitForShutdownAsync(string label, Action<string> onStart, CancellationToken cancellationToken)
     {
-        var pipePath = GetPipePath();
+        var pipePath = GetPipePath(label);
         onStart(pipePath);
 
         // Delete the pipe if it exists (can happen if a previous build server did not shut down gracefully and its PID is recycled).
@@ -62,13 +58,30 @@ internal static class BuildServerUtility
         File.Delete(pipePath);
     }
 
-    private static string GetPipePath()
+    private static string GetPipePath(string label)
     {
         var folder = Environment.GetEnvironmentVariable(DotNetHostServerPath);
         var pipeFolder = GetPipeFolder(folder) ?? throw new InvalidOperationException($"Environment variable '{DotNetHostServerPath}' is not set.");
         var pid = GetCurrentProcessId();
-        return Path.Combine(pipeFolder, $"{pid}.pipe");
+        return Path.Combine(pipeFolder, $"{pid}.{label}.pipe");
     }
+
+#if NET
+    public static bool TryParsePipePath(string path, out int pid, out ReadOnlySpan<char> label)
+    {
+        var fileName = Path.GetFileNameWithoutExtension(path);
+        var dotIndex = fileName.IndexOf('.');
+        if (dotIndex >= 0 && int.TryParse(fileName.AsSpan(0, dotIndex), out pid))
+        {
+            label = fileName.AsSpan(dotIndex + 1);
+            return true;
+        }
+
+        pid = 0;
+        label = default;
+        return false;
+    }
+#endif
 
     private static int GetCurrentProcessId()
     {
@@ -79,76 +92,14 @@ internal static class BuildServerUtility
 #endif
     }
 
-    #endregion
-
-#if NET
-
-    #region Client side
-
-    public static Task ShutdownServersAsync(Action<Process> onProcessShutdownBegin, Action<string> onError, string hostServerPath)
-    {
-        var pipeFolder = GetPipeFolder(hostServerPath)
-            ?? throw new ArgumentException(message: "Host server path was not provided.", paramName: nameof(hostServerPath));
-
-        return Task.WhenAll(EnumeratePipes(pipeFolder).Select(async file =>
-        {
-            try
-            {
-                // Try to parse PID from the file name.
-                var pid = Path.GetFileNameWithoutExtension(file);
-                if (!int.TryParse(pid, out var processId))
-                {
-                    onError($"Cannot parse pipe file name: {file}");
-                    return;
-                }
-
-                // Find the process.
-                using var process = Process.GetProcessById(processId);
-                onProcessShutdownBegin(process);
-
-                // Connect to each pipe.
-                var client = new NamedPipeClientStream(NormalizePipeNameForStream(file));
-                await using var _ = client.ConfigureAwait(false);
-                await client.ConnectAsync().ConfigureAwait(false);
-
-                // Send data to request shutdown.
-                byte[] data = [1];
-                await client.WriteAsync(data).ConfigureAwait(false);
-
-                // Wait for the process to exit.
-                await process.WaitForExitAsync().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                onError($"Error while shutting down server for pipe '{file}': {ex.Message}");
-            }
-        }));
-    }
-
-    private static IEnumerable<string> EnumeratePipes(string pipeFolder)
-    {
-        // On Windows, we need to enumerate all pipes and then filter them.
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            Debug.Assert(pipeFolder.EndsWith('\\'));
-            return Directory.EnumerateFiles(WindowsPipePrefix)
-                .Where(path => path.StartsWith(pipeFolder, StringComparison.OrdinalIgnoreCase));
-        }
-
-        // On Unix, we can directly enumerate the files in the pipe folder.
-        return Directory.EnumerateFiles(pipeFolder);
-    }
-
-    #endregion
-
-#endif
-
-    private static string? GetPipeFolder(string? hostServerPath)
+    public static string? GetPipeFolder(string? hostServerPath)
     {
         if (string.IsNullOrWhiteSpace(hostServerPath))
         {
             return null;
         }
+
+        hostServerPath = Path.GetFullPath(hostServerPath);
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -169,7 +120,7 @@ internal static class BuildServerUtility
     /// Removes <c>\.\\pipe\</c> prefix on Windows which must not be passed
     /// to <see cref="PipeStream"/> constructors (they would duplicate it).
     /// </summary>
-    private static string NormalizePipeNameForStream(string pipeName)
+    public static string NormalizePipeNameForStream(string pipeName)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
             pipeName.StartsWith(WindowsPipePrefix, StringComparison.OrdinalIgnoreCase))

@@ -147,6 +147,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             try
             {
                 await BuildServerUtility.WaitForShutdownAsync(
+                    label: nameof(VBCSCompiler),
                     onStart: (pipePath) =>
                     {
                         _logger.Log($"Listening for unified shutdown on pipe: {pipePath}");
