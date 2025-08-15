@@ -38778,7 +38778,7 @@ public static class E2
         comp = CreateCompilation(src, references: [libRef], parseOptions: TestOptions.Regular13);
         CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics(unnecessaryDirective);
 
-        if (!CompilationExtensions.EnableVerifyUsedAssemblies) // Tracked by https://github.com/dotnet/roslyn/issues/78968
+        //if (!CompilationExtensions.EnableVerifyUsedAssemblies) // Tracked by https://github.com/dotnet/roslyn/issues/78968
         {
             // Note: in older LangVer, we look at all scopes to determine the unique signature
             comp = CreateCompilation(src, references: [libRef], parseOptions: TestOptions.Regular12);
@@ -38815,6 +38815,54 @@ public static class E2
 
         comp = CreateCompilation(src, parseOptions: TestOptions.Regular12);
         CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void LangVer_06_Classic()
+    {
+        // Function type with a type argument violating constraint, in outer scope
+        var libSrc = """
+namespace N
+{
+    public static class E1
+    {
+        public static void M<T>(this object o) where T : class { }
+    }
+}
+""";
+        var libComp = CreateCompilation(libSrc, parseOptions: TestOptions.Regular14);
+        var libRef = libComp.EmitToImageReference(expectedWarnings: null);
+
+        var src = """
+using N;
+var x = new object().M<int>;
+x();
+
+public static class E2
+{
+    public static void M<T>(this object o) { System.Console.Write("ran"); }
+}
+""";
+
+        DiagnosticDescription[] unnecessaryDirective = [
+            // (1,1): hidden CS8019: Unnecessary using directive.
+            // using N;
+            Diagnostic(ErrorCode.HDN_UnusedUsingDirective, "using N;").WithLocation(1, 1)];
+
+        var comp = CreateCompilation(src, references: [libRef]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics(unnecessaryDirective);
+
+        comp = CreateCompilation(src, references: [libRef], parseOptions: TestOptions.Regular14);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics(unnecessaryDirective);
+
+        comp = CreateCompilation(src, references: [libRef], parseOptions: TestOptions.Regular13);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics(unnecessaryDirective);
+
+        // Note: in older LangVer, we look at all scopes to determine the unique signature
+        comp = CreateCompilation(src, references: [libRef], parseOptions: TestOptions.Regular12);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+        var used = comp.GetUsedAssemblyReferences();
+        Assert.Contains(libRef, used);
     }
 
     [Fact]

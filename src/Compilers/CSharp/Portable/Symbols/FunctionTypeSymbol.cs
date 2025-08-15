@@ -29,7 +29,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     /// to allow types and function signatures to be treated similarly in <see cref="ConversionsBase"/>,
     /// <see cref="BestTypeInferrer"/>, and <see cref="MethodTypeInferrer"/>. Instances of this type
     /// should only be used in those code paths and should not be exposed from the symbol model.
-    /// The actual delegate signature is calculated on demand in <see cref="GetInternalDelegateType()"/>.
+    /// The actual delegate signature is calculated on demand in <see cref="GetInternalDelegateType"/>.
     /// </summary>
     [DebuggerDisplay("{GetDebuggerDisplay(),nq}")]
     internal sealed class FunctionTypeSymbol : TypeSymbol
@@ -37,19 +37,22 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         private static readonly NamedTypeSymbol Uninitialized = new UnsupportedMetadataTypeSymbol();
 
         private readonly Binder? _binder;
-        private readonly Func<Binder, BoundExpression, NamedTypeSymbol?>? _calculateDelegate;
+        private readonly CalculateDelegate? _calculateDelegate;
 
         private BoundExpression? _expression;
         private NamedTypeSymbol? _lazyDelegateType;
+        private CompoundUseSiteInfo<AssemblySymbol> _lazyDelegateTypeUseSiteInfo;
 
-        internal static FunctionTypeSymbol? CreateIfFeatureEnabled(SyntaxNode syntax, Binder binder, Func<Binder, BoundExpression, NamedTypeSymbol?> calculateDelegate)
+        internal delegate NamedTypeSymbol? CalculateDelegate(Binder binder, BoundExpression expression, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo);
+
+        internal static FunctionTypeSymbol? CreateIfFeatureEnabled(SyntaxNode syntax, Binder binder, CalculateDelegate calculateDelegate)
         {
             return syntax.IsFeatureEnabled(MessageID.IDS_FeatureInferredDelegateType) ?
                 new FunctionTypeSymbol(binder, calculateDelegate) :
                 null;
         }
 
-        private FunctionTypeSymbol(Binder binder, Func<Binder, BoundExpression, NamedTypeSymbol?> calculateDelegate)
+        private FunctionTypeSymbol(Binder binder, CalculateDelegate calculateDelegate)
         {
             _binder = binder;
             _calculateDelegate = calculateDelegate;
@@ -70,11 +73,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             _expression = expression;
         }
 
+        internal NamedTypeSymbol? GetInternalDelegateTypeNoUseSiteInfo()
+        {
+            var discardedUseSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
+            return GetInternalDelegateType(ref discardedUseSiteInfo);
+        }
+
         /// <summary>
         /// Returns the inferred signature as a delegate type
         /// or null if the signature could not be inferred.
         /// </summary>
-        internal NamedTypeSymbol? GetInternalDelegateType()
+        internal NamedTypeSymbol? GetInternalDelegateType(ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
             if ((object?)_lazyDelegateType == Uninitialized)
             {
@@ -82,8 +91,15 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 Debug.Assert(_calculateDelegate is { });
                 Debug.Assert(_expression is { });
 
-                var delegateType = _calculateDelegate(_binder, _expression);
+                var delegateUseSiteInfo = new CompoundUseSiteInfo<AssemblySymbol>(useSiteInfo);
+
+                var delegateType = _calculateDelegate(_binder, _expression, ref delegateUseSiteInfo);
                 var result = Interlocked.CompareExchange(ref _lazyDelegateType, delegateType, Uninitialized);
+
+                if ((object?)result == Uninitialized)
+                {
+                    _lazyDelegateTypeUseSiteInfo = useSiteInfo;
+                }
 
                 if (_binder.Compilation.TestOnlyCompilationData is InferredDelegateTypeData data &&
                     (object?)result == Uninitialized)
@@ -91,6 +107,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     Interlocked.Increment(ref data.InferredDelegateCount);
                 }
             }
+
+            useSiteInfo.Merge(in _lazyDelegateTypeUseSiteInfo);
 
             return _lazyDelegateType;
         }
@@ -163,9 +181,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             Debug.Assert(this.Equals(other, TypeCompareKind.IgnoreDynamicAndTupleNames | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes));
 
-            var thisDelegateType = GetInternalDelegateType();
+            var thisDelegateType = GetInternalDelegateTypeNoUseSiteInfo();
             var otherType = (FunctionTypeSymbol)other;
-            var otherDelegateType = otherType.GetInternalDelegateType();
+            var otherDelegateType = otherType.GetInternalDelegateTypeNoUseSiteInfo();
 
             if (thisDelegateType is null || otherDelegateType is null)
             {
@@ -180,7 +198,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal override TypeSymbol SetNullabilityForReferenceTypes(Func<TypeWithAnnotations, TypeWithAnnotations> transform)
         {
-            var thisDelegateType = GetInternalDelegateType();
+            var thisDelegateType = GetInternalDelegateTypeNoUseSiteInfo();
             if (thisDelegateType is null)
             {
                 return this;
@@ -190,7 +208,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private FunctionTypeSymbol WithDelegateType(NamedTypeSymbol delegateType)
         {
-            var thisDelegateType = GetInternalDelegateType();
+            var thisDelegateType = GetInternalDelegateTypeNoUseSiteInfo();
             return (object?)thisDelegateType == delegateType ?
                 this :
                 new FunctionTypeSymbol(delegateType);
@@ -213,8 +231,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (t2 is FunctionTypeSymbol otherType)
             {
-                var thisDelegateType = GetInternalDelegateType();
-                var otherDelegateType = otherType.GetInternalDelegateType();
+                var thisDelegateType = GetInternalDelegateTypeNoUseSiteInfo();
+                var otherDelegateType = otherType.GetInternalDelegateTypeNoUseSiteInfo();
 
                 if (thisDelegateType is null || otherDelegateType is null)
                 {
@@ -229,12 +247,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         public override int GetHashCode()
         {
-            return GetInternalDelegateType()?.GetHashCode() ?? 0;
+            return GetInternalDelegateTypeNoUseSiteInfo()?.GetHashCode() ?? 0;
         }
 
         internal override string GetDebuggerDisplay()
         {
-            return $"FunctionTypeSymbol: {GetInternalDelegateType()?.GetDebuggerDisplay()}";
+            return $"FunctionTypeSymbol: {GetInternalDelegateTypeNoUseSiteInfo()?.GetDebuggerDisplay()}";
         }
     }
 }

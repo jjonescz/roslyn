@@ -839,7 +839,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         return null;
 
                     case TypeKindInternal.FunctionType:
-                        if (((FunctionTypeSymbol)current).GetInternalDelegateType() is not { } delegateType)
+                        if (((FunctionTypeSymbol)current).GetInternalDelegateTypeNoUseSiteInfo() is not { } delegateType)
                         {
                             return null;
                         }

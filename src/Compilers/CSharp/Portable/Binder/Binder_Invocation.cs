@@ -2106,7 +2106,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             if (unboundArgument.HasExplicitlyTypedParameterList &&
                                 unboundArgument.HasExplicitReturnType(out _, out _) &&
                                 unboundArgument.FunctionType is { } functionType &&
-                                functionType.GetInternalDelegateType() is { } delegateType)
+                                functionType.GetInternalDelegateTypeNoUseSiteInfo() is { } delegateType)
                             {
                                 // Just assume we're not in an expression tree for the purposes of error recovery.
                                 _ = unboundArgument.Bind(delegateType, isExpressionTree: false);

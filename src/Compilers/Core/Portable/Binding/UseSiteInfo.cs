@@ -385,6 +385,19 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
+        public void Merge(ref readonly CompoundUseSiteInfo<TAssemblySymbol> other)
+        {
+            if (AccumulatesDiagnostics && other.Diagnostics is { } diagnostics)
+            {
+                AddDiagnostics(diagnostics);
+            }
+
+            if (AccumulatesDependencies && other.Dependencies is { } dependencies)
+            {
+                AddDependencies(dependencies);
+            }
+        }
+
         public void MergeAndClear(ref CompoundUseSiteInfo<TAssemblySymbol> other)
         {
             Debug.Assert(other.AccumulatesDiagnostics);

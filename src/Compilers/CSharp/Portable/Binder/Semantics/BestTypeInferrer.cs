@@ -79,7 +79,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         if (type is FunctionTypeSymbol function)
                         {
                             inferredFromFunctionType = true;
-                            return function.GetInternalDelegateType();
+                            return function.GetInternalDelegateType(ref useSiteInfo);
                         }
                         else
                         {
@@ -100,7 +100,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (result is FunctionTypeSymbol functionType)
             {
-                result = functionType.GetInternalDelegateType();
+                result = functionType.GetInternalDelegateType(ref useSiteInfo);
                 inferredFromFunctionType = result is { };
                 return result;
             }
@@ -191,14 +191,14 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case 0:
                     return null;
                 case 1:
-                    return checkType(types[0]);
+                    return checkType(types[0], ref useSiteInfo);
             }
 
             TypeSymbol? best = null;
             int bestIndex = -1;
             for (int i = 0; i < types.Count; i++)
             {
-                TypeSymbol? type = checkType(types[i]);
+                TypeSymbol? type = checkType(types[i], ref useSiteInfo);
                 if (type is null)
                 {
                     continue;
@@ -233,7 +233,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // that every type *before* best was also worse.
             for (int i = 0; i < bestIndex; i++)
             {
-                TypeSymbol? type = checkType(types[i]);
+                TypeSymbol? type = checkType(types[i], ref useSiteInfo);
                 if (type is null)
                 {
                     continue;
@@ -247,8 +247,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             return best;
 
-            static TypeSymbol? checkType(TypeSymbol type) =>
-                type is FunctionTypeSymbol functionType && functionType.GetInternalDelegateType() is null ?
+            static TypeSymbol? checkType(TypeSymbol type, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo) =>
+                type is FunctionTypeSymbol functionType && functionType.GetInternalDelegateType(ref useSiteInfo) is null ?
                 null :
                 type;
         }

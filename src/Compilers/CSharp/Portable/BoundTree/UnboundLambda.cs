@@ -268,7 +268,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         var bestType = returns[0].expr.GetTypeOrFunctionType();
                         if (bestType is FunctionTypeSymbol functionType)
                         {
-                            bestType = functionType.GetInternalDelegateType();
+                            bestType = functionType.GetInternalDelegateType(ref useSiteInfo);
                             inferredFromFunctionType = bestType is { };
                         }
                         else
@@ -408,7 +408,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(syntax.IsAnonymousFunction());
             bool hasErrors = !types.IsDefault && types.Any(static t => t.Type?.Kind == SymbolKind.ErrorType);
 
-            var functionType = FunctionTypeSymbol.CreateIfFeatureEnabled(syntax, binder, static (binder, expr) => ((UnboundLambda)expr).Data.InferDelegateType());
+            var functionType = FunctionTypeSymbol.CreateIfFeatureEnabled(syntax, binder, static (binder, expr, ref _) => ((UnboundLambda)expr).Data.InferDelegateType());
             var data = new PlainUnboundLambdaState(binder, returnRefKind, returnType, parameterAttributes, names, discardsOpt, types, refKinds, declaredScopes, defaultValues, syntaxList, isAsync: isAsync, isStatic: isStatic, includeCache: true);
             var lambda = new UnboundLambda(syntax, data, functionType, withDependencies, hasErrors: hasErrors);
             data.SetUnboundLambda(lambda);

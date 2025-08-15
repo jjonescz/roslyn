@@ -10790,9 +10790,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
 #nullable enable
-        internal NamedTypeSymbol? GetMethodGroupDelegateType(BoundMethodGroup node)
+        internal NamedTypeSymbol? GetMethodGroupDelegateType(BoundMethodGroup node, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
-            var method = GetUniqueSignatureFromMethodGroup(node, out bool useParams);
+            var method = GetUniqueSignatureFromMethodGroup(node, ref useSiteInfo, out bool useParams);
             if (method is null)
             {
                 return null;
@@ -10809,7 +10809,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <param name="useParams">
         /// Whether the last parameter of the signature should have the <see langword="params"/> modifier.
         /// </param>
-        private MethodSymbol? GetUniqueSignatureFromMethodGroup_CSharp10(BoundMethodGroup node, out bool useParams)
+        private MethodSymbol? GetUniqueSignatureFromMethodGroup_CSharp12(BoundMethodGroup node, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo, out bool useParams)
         {
             MethodSymbol? method = null;
             var methods = ArrayBuilder<MethodSymbol>.GetInstance(capacity: node.Methods.Length);
@@ -10857,13 +10857,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                 int arity = typeArguments.IsDefaultOrEmpty ? 0 : typeArguments.Length;
                 LookupOptions options = arity == 0 ? LookupOptions.AllMethodsOnArityZero : LookupOptions.Default;
                 var singleLookupResults = ArrayBuilder<SingleLookupResult>.GetInstance();
-                CompoundUseSiteInfo<AssemblySymbol> discardedUseSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
 
                 foreach (var scope in new ExtensionScopes(this))
                 {
                     methods.Clear();
                     singleLookupResults.Clear();
-                    scope.Binder.EnumerateAllExtensionMembersInSingleBinder(singleLookupResults, node.Name, arity, options, originalBinder: this, ref discardedUseSiteInfo, ref discardedUseSiteInfo);
+                    scope.Binder.EnumerateAllExtensionMembersInSingleBinder(singleLookupResults, node.Name, arity, options, originalBinder: this, ref useSiteInfo, ref useSiteInfo);
 
                     foreach (SingleLookupResult singleLookupResult in singleLookupResults)
                     {
@@ -10986,14 +10985,18 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// in the nearest scope, have the same signature ignoring parameter names and custom modifiers.
         /// The particular method returned is not important since the caller is interested in the signature only.
         /// </summary>
+        /// <param name="useSiteInfo">
+        /// Only used in <see cref="GetUniqueSignatureFromMethodGroup_CSharp12"/> because that one looks at methods from all scopes
+        /// to determine the unique signature, hence we need to mark them as used.
+        /// </param>
         /// <param name="useParams">
         /// Whether the last parameter of the signature should have the <see langword="params"/> modifier.
         /// </param>
-        private MethodSymbol? GetUniqueSignatureFromMethodGroup(BoundMethodGroup node, out bool useParams)
+        private MethodSymbol? GetUniqueSignatureFromMethodGroup(BoundMethodGroup node, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo, out bool useParams)
         {
             if (Compilation.LanguageVersion < LanguageVersion.CSharp13)
             {
-                return GetUniqueSignatureFromMethodGroup_CSharp10(node, out useParams);
+                return GetUniqueSignatureFromMethodGroup_CSharp12(node, ref useSiteInfo, out useParams);
             }
 
             useParams = false;

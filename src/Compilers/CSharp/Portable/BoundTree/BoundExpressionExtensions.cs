@@ -136,7 +136,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert(expr.Kind is BoundKind.MethodGroup or BoundKind.UnboundLambda);
 
-            var delegateType = expr.GetFunctionType()?.GetInternalDelegateType();
+            var delegateType = expr.GetFunctionType()?.GetInternalDelegateType(ref useSiteInfo);
             delegateType?.AddUseSiteInfo(ref useSiteInfo);
             return delegateType;
         }

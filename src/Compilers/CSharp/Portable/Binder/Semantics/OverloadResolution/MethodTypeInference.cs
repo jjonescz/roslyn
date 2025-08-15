@@ -2891,7 +2891,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             else
             {
                 // Remove any function types with no delegate type.
-                lowerPredicate = static type => !isFunctionType(type, out var functionType) || functionType.GetInternalDelegateType() is not null;
+                lowerPredicate = static type => !isFunctionType(type, out var functionType) || functionType.GetInternalDelegateTypeNoUseSiteInfo() is not null;
             }
 
             // Optimization: if we have one exact bound then we need not add any
@@ -2986,7 +2986,7 @@ OuterBreak:
             {
                 // Realize the type as TDelegate, or Expression<TDelegate> if the type parameter
                 // is constrained to System.Linq.Expressions.Expression.
-                var resultType = functionType.GetInternalDelegateType();
+                var resultType = functionType.GetInternalDelegateTypeNoUseSiteInfo();
                 if (hasExpressionTypeConstraint(typeParameter))
                 {
                     var expressionOfTType = compilation.GetWellKnownType(WellKnownType.System_Linq_Expressions_Expression_T);

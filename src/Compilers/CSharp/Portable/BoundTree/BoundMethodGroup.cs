@@ -27,7 +27,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private static FunctionTypeSymbol? GetFunctionType(Binder binder, SyntaxNode syntax)
         {
-            return FunctionTypeSymbol.CreateIfFeatureEnabled(syntax, binder, static (binder, expr) => binder.GetMethodGroupDelegateType((BoundMethodGroup)expr));
+            return FunctionTypeSymbol.CreateIfFeatureEnabled(syntax, binder, static (binder, expr, ref useSiteInfo) => binder.GetMethodGroupDelegateType((BoundMethodGroup)expr, ref useSiteInfo));
         }
 
         public MemberAccessExpressionSyntax? MemberAccessExpressionSyntax
