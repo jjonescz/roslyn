@@ -18,6 +18,10 @@ namespace Microsoft.Net.BuildServerUtils;
 internal static class BuildServerUtility
 {
     public const string WindowsPipePrefix = """\\.\pipe\""";
+
+    /// <summary>
+    /// Note that this is not a real path on Windows, it's just a name.
+    /// </summary>
     public const string DotNetHostServerPath = "DOTNET_HOST_SERVER_PATH";
 
     public static void ListenForShutdown(string label, Action<string> onStart, Action onShutdown, Action<Exception> onError, CancellationToken cancellationToken)
@@ -107,8 +111,6 @@ internal static class BuildServerUtility
             return null;
         }
 
-        hostServerPath = Path.GetFullPath(hostServerPath);
-
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             string normalized = hostServerPath.Replace('/', '\\').ToLowerInvariant();
@@ -121,7 +123,7 @@ internal static class BuildServerUtility
             return $"{WindowsPipePrefix}{normalized}";
         }
 
-        return hostServerPath;
+        return Path.GetFullPath(hostServerPath);
     }
 
     /// <summary>
