@@ -13,11 +13,13 @@ using Microsoft.CodeAnalysis.Internal.Log;
 using Microsoft.CodeAnalysis.Remote.Diagnostics;
 using Microsoft.CodeAnalysis.Shared.Extensions;
 using Microsoft.CodeAnalysis.Telemetry;
+using Microsoft.CodeAnalysis.Text;
 using RoslynLogger = Microsoft.CodeAnalysis.Internal.Log.Logger;
 
 namespace Microsoft.CodeAnalysis.Remote;
 
-internal sealed class RemoteDiagnosticAnalyzerService : BrokeredServiceBase, IRemoteDiagnosticAnalyzerService
+internal sealed class RemoteDiagnosticAnalyzerService(in BrokeredServiceBase.ServiceConstructionArguments arguments)
+    : BrokeredServiceBase(arguments), IRemoteDiagnosticAnalyzerService
 {
     internal sealed class Factory : FactoryBase<IRemoteDiagnosticAnalyzerService>
     {
@@ -26,11 +28,6 @@ internal sealed class RemoteDiagnosticAnalyzerService : BrokeredServiceBase, IRe
     }
 
     private readonly DiagnosticAnalyzerInfoCache _analyzerInfoCache = new();
-
-    public RemoteDiagnosticAnalyzerService(in ServiceConstructionArguments arguments)
-        : base(arguments)
-    {
-    }
 
     /// <summary>
     /// Calculate diagnostics. this works differently than other ones such as todo comments or designer attribute scanner
@@ -79,9 +76,52 @@ internal sealed class RemoteDiagnosticAnalyzerService : BrokeredServiceBase, IRe
         }
     }
 
-    public async ValueTask<ImmutableArray<DiagnosticData>> GetSourceGeneratorDiagnosticsAsync(Checksum solutionChecksum, ProjectId projectId, CancellationToken cancellationToken)
+    public ValueTask<ImmutableArray<DiagnosticData>> ProduceProjectDiagnosticsAsync(
+        Checksum solutionChecksum, ProjectId projectId,
+        ImmutableHashSet<string> analyzerIds,
+        ImmutableHashSet<string>? diagnosticIds,
+        ImmutableArray<DocumentId> documentIds,
+        bool includeLocalDocumentDiagnostics,
+        bool includeNonLocalDocumentDiagnostics,
+        bool includeProjectNonLocalResult,
+        CancellationToken cancellationToken)
     {
-        return await RunWithSolutionAsync(
+        return RunWithSolutionAsync(
+            solutionChecksum,
+            async solution =>
+            {
+                var project = solution.GetRequiredProject(projectId);
+                var service = (DiagnosticAnalyzerService)solution.Services.GetRequiredService<IDiagnosticAnalyzerService>();
+
+                var allProjectAnalyzers = await service.GetProjectAnalyzersAsync(project, cancellationToken).ConfigureAwait(false);
+
+                return await service.ProduceProjectDiagnosticsAsync(
+                    project, allProjectAnalyzers.FilterAnalyzers(analyzerIds), diagnosticIds, documentIds,
+                    includeLocalDocumentDiagnostics, includeNonLocalDocumentDiagnostics, includeProjectNonLocalResult,
+                    cancellationToken).ConfigureAwait(false);
+            },
+            cancellationToken);
+    }
+
+    public ValueTask<ImmutableArray<DiagnosticData>> ForceAnalyzeProjectAsync(
+        Checksum solutionChecksum,
+        ProjectId projectId,
+        CancellationToken cancellationToken)
+    {
+        return RunWithSolutionAsync(
+            solutionChecksum,
+            async solution =>
+            {
+                var project = solution.GetRequiredProject(projectId);
+                var service = solution.Services.GetRequiredService<IDiagnosticAnalyzerService>();
+                return await service.ForceAnalyzeProjectAsync(project, cancellationToken).ConfigureAwait(false);
+            },
+            cancellationToken);
+    }
+
+    public ValueTask<ImmutableArray<DiagnosticData>> GetSourceGeneratorDiagnosticsAsync(Checksum solutionChecksum, ProjectId projectId, CancellationToken cancellationToken)
+    {
+        return RunWithSolutionAsync(
             solutionChecksum,
             async solution =>
             {
@@ -98,7 +138,7 @@ internal sealed class RemoteDiagnosticAnalyzerService : BrokeredServiceBase, IRe
                 }
 
                 return builder.ToImmutableAndClear();
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
     }
 
     public ValueTask ReportAnalyzerPerformanceAsync(ImmutableArray<AnalyzerPerformanceInfo> snapshot, int unitCount, bool forSpanAnalysis, CancellationToken cancellationToken)
@@ -120,5 +160,177 @@ internal sealed class RemoteDiagnosticAnalyzerService : BrokeredServiceBase, IRe
 
             return default;
         }, cancellationToken);
+    }
+
+    public ValueTask<ImmutableArray<DiagnosticDescriptorData>> GetDiagnosticDescriptorsAsync(Checksum solutionChecksum, ProjectId projectId, string analyzerReferenceFullPath, CancellationToken cancellationToken)
+    {
+        return RunWithSolutionAsync(
+            solutionChecksum,
+            async solution =>
+            {
+                var project = solution.GetRequiredProject(projectId);
+                var analyzerReference = project.AnalyzerReferences
+                    .First(r => r.FullPath == analyzerReferenceFullPath);
+
+                var descriptors = await project.GetDiagnosticDescriptorsAsync(analyzerReference, cancellationToken).ConfigureAwait(false);
+                var descriptorData = descriptors.SelectAsArray(DiagnosticDescriptorData.Create);
+
+                return descriptorData;
+            },
+            cancellationToken);
+    }
+
+    public ValueTask<ImmutableArray<DiagnosticDescriptorData>> GetDiagnosticDescriptorsAsync(
+        Checksum solutionChecksum,
+        ProjectId projectId,
+        string analyzerReferenceFullPath,
+        string language,
+        CancellationToken cancellationToken)
+    {
+        return RunWithSolutionAsync(
+            solutionChecksum,
+            async solution =>
+            {
+                var service = solution.Services.GetRequiredService<IDiagnosticAnalyzerService>();
+                var project = solution.GetRequiredProject(projectId);
+                var analyzerReference = project.AnalyzerReferences
+                    .First(r => r.FullPath == analyzerReferenceFullPath);
+
+                var descriptors = await service.GetDiagnosticDescriptorsAsync(
+                    solution, projectId, analyzerReference, language, cancellationToken).ConfigureAwait(false);
+                return descriptors.SelectAsArray(DiagnosticDescriptorData.Create);
+            },
+            cancellationToken);
+    }
+
+    public ValueTask<ImmutableDictionary<ImmutableArray<string>, ImmutableArray<DiagnosticDescriptorData>>> GetLanguageKeyedDiagnosticDescriptorsAsync(
+        Checksum solutionChecksum,
+        ProjectId projectId,
+        string analyzerReferenceFullPath,
+        CancellationToken cancellationToken)
+    {
+        return RunWithSolutionAsync(
+            solutionChecksum,
+            async solution =>
+            {
+                var service = solution.Services.GetRequiredService<IDiagnosticAnalyzerService>();
+                var project = solution.GetRequiredProject(projectId);
+                var analyzerReference = project.AnalyzerReferences
+                    .First(r => r.FullPath == analyzerReferenceFullPath);
+
+                var map = await service.GetLanguageKeyedDiagnosticDescriptorsAsync(
+                    solution, projectId, analyzerReference, cancellationToken).ConfigureAwait(false);
+                return map.ToImmutableDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.SelectAsArray(DiagnosticDescriptorData.Create));
+            },
+            cancellationToken);
+    }
+
+    public ValueTask<ImmutableDictionary<string, DiagnosticDescriptorData>> TryGetDiagnosticDescriptorsAsync(
+        Checksum solutionChecksum,
+        ImmutableArray<string> diagnosticIds,
+        CancellationToken cancellationToken)
+    {
+        return RunWithSolutionAsync(
+            solutionChecksum,
+            async solution =>
+            {
+                var service = solution.Services.GetRequiredService<IDiagnosticAnalyzerService>();
+                var map = await service.TryGetDiagnosticDescriptorsAsync(solution, diagnosticIds, cancellationToken).ConfigureAwait(false);
+                return map.ToImmutableDictionary(
+                    kvp => kvp.Key,
+                    kvp => DiagnosticDescriptorData.Create(kvp.Value));
+            },
+            cancellationToken);
+    }
+
+    public ValueTask<ImmutableDictionary<string, ImmutableArray<DiagnosticDescriptorData>>> GetDiagnosticDescriptorsPerReferenceAsync(
+        Checksum solutionChecksum,
+        CancellationToken cancellationToken)
+    {
+        return RunWithSolutionAsync(
+            solutionChecksum,
+            async solution =>
+            {
+                var service = solution.Services.GetRequiredService<IDiagnosticAnalyzerService>();
+                var map = await service.GetDiagnosticDescriptorsPerReferenceAsync(solution, cancellationToken).ConfigureAwait(false);
+                return map.ToImmutableDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.SelectAsArray(DiagnosticDescriptorData.Create));
+
+            },
+            cancellationToken);
+    }
+
+    public ValueTask<ImmutableDictionary<string, ImmutableArray<DiagnosticDescriptorData>>> GetDiagnosticDescriptorsPerReferenceAsync(
+        Checksum solutionChecksum,
+        ProjectId projectId,
+        CancellationToken cancellationToken)
+    {
+        return RunWithSolutionAsync(
+            solutionChecksum,
+            async solution =>
+            {
+                var project = solution.GetRequiredProject(projectId);
+                var service = solution.Services.GetRequiredService<IDiagnosticAnalyzerService>();
+                var map = await service.GetDiagnosticDescriptorsPerReferenceAsync(project, cancellationToken).ConfigureAwait(false);
+                return map.ToImmutableDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.SelectAsArray(DiagnosticDescriptorData.Create));
+
+            },
+            cancellationToken);
+    }
+
+    public ValueTask<ImmutableHashSet<string>> GetDeprioritizationCandidatesAsync(
+        Checksum solutionChecksum, ProjectId projectId, ImmutableHashSet<string> analyzerIds, CancellationToken cancellationToken)
+    {
+        return RunWithSolutionAsync(
+            solutionChecksum,
+            async solution =>
+            {
+                var project = solution.GetRequiredProject(projectId);
+                var service = (DiagnosticAnalyzerService)solution.Services.GetRequiredService<IDiagnosticAnalyzerService>();
+
+                var allProjectAnalyzers = await service.GetProjectAnalyzersAsync(project, cancellationToken).ConfigureAwait(false);
+
+                var candidates = await service.GetDeprioritizationCandidatesAsync(
+                    project, allProjectAnalyzers.FilterAnalyzers(analyzerIds), cancellationToken).ConfigureAwait(false);
+
+                return candidates.Select(c => c.GetAnalyzerId()).ToImmutableHashSet();
+            },
+            cancellationToken);
+    }
+
+    public ValueTask<ImmutableArray<DiagnosticData>> ComputeDiagnosticsAsync(
+        Checksum solutionChecksum, DocumentId documentId, TextSpan? range,
+        ImmutableHashSet<string> allAnalyzerIds,
+        ImmutableHashSet<string> syntaxAnalyzersIds,
+        ImmutableHashSet<string> semanticSpanAnalyzersIds,
+        ImmutableHashSet<string> semanticDocumentAnalyzersIds,
+        bool incrementalAnalysis,
+        bool logPerformanceInfo,
+        CancellationToken cancellationToken)
+    {
+        return RunWithSolutionAsync(
+            solutionChecksum,
+            async solution =>
+            {
+                var document = solution.GetRequiredTextDocument(documentId);
+                var service = (DiagnosticAnalyzerService)solution.Services.GetRequiredService<IDiagnosticAnalyzerService>();
+
+                var allProjectAnalyzers = await service.GetProjectAnalyzersAsync(document.Project, cancellationToken).ConfigureAwait(false);
+
+                var allAnalyzers = allProjectAnalyzers.FilterAnalyzers(allAnalyzerIds);
+                var syntaxAnalyzers = allProjectAnalyzers.FilterAnalyzers(syntaxAnalyzersIds);
+                var semanticSpanAnalyzers = allProjectAnalyzers.FilterAnalyzers(semanticSpanAnalyzersIds);
+                var semanticDocumentAnalyzers = allProjectAnalyzers.FilterAnalyzers(semanticDocumentAnalyzersIds);
+
+                return await service.ComputeDiagnosticsAsync(
+                    document, range, allAnalyzers, syntaxAnalyzers, semanticSpanAnalyzers, semanticDocumentAnalyzers,
+                    incrementalAnalysis, logPerformanceInfo, cancellationToken).ConfigureAwait(false);
+            },
+            cancellationToken);
     }
 }
