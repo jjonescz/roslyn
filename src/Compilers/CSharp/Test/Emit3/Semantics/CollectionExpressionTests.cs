@@ -22741,6 +22741,94 @@ partial class Program
                 Diagnostic(ErrorCode.ERR_CollectionExpressionEscape, "[x, y, z]").WithArguments("MyCollection<T>").WithLocation(12, 60));
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/80107")]
+        public void RefSafety_BlockScope()
+        {
+            var source = """
+                using System;
+                class C
+                {
+                    void M1()
+                    {
+                        scoped ReadOnlySpan<int> a;
+                        for (int i = 0; i < 2; i++)
+                        {
+                            ReadOnlySpan<int> b = [i, i + 1];
+                            a = b; // 1
+                            a = new(in b[0]); // 2
+                            a = [i, i + 1]; // 3
+                        }
+                    }
+
+                    void M2()
+                    {
+                        scoped ref readonly int a = ref R(1);
+                        for (int i = 0; i < 2; i++)
+                        {
+                            scoped ref readonly int b = ref R(i);
+                            a = ref b; // 4
+                        }
+
+                        static ref readonly int R(in int x) => ref x;
+                    }
+
+                    void M3()
+                    {
+                        scoped ReadOnlySpan<int> a;
+                        for (int i = 0; i < 2; i++)
+                        {
+                            ReadOnlySpan<int> b = S(i);
+                            a = b; // 5
+                        }
+
+                        static ReadOnlySpan<int> S(in int x) => new(in x);
+                    }
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (10,17): error CS8352: Cannot use variable 'b' in this context because it may expose referenced variables outside of their declaration scope
+                //             a = b; // 1
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "b").WithArguments("b").WithLocation(10, 17),
+                // (11,17): error CS8347: Cannot use a result of 'ReadOnlySpan<int>.ReadOnlySpan(in int)' in this context because it may expose variables referenced by parameter 'reference' outside of their declaration scope
+                //             a = new(in b[0]); // 2
+                Diagnostic(ErrorCode.ERR_EscapeCall, "new(in b[0])").WithArguments("System.ReadOnlySpan<int>.ReadOnlySpan(in int)", "reference").WithLocation(11, 17),
+                // (11,24): error CS8352: Cannot use variable 'b' in this context because it may expose referenced variables outside of their declaration scope
+                //             a = new(in b[0]); // 2
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "b").WithArguments("b").WithLocation(11, 24),
+                // (12,17): error CS9203: A collection expression of type 'ReadOnlySpan<int>' cannot be used in this context because it may be exposed outside of the current scope.
+                //             a = [i, i + 1]; // 3
+                Diagnostic(ErrorCode.ERR_CollectionExpressionEscape, "[i, i + 1]").WithArguments("System.ReadOnlySpan<int>").WithLocation(12, 17),
+                // (22,13): error CS8374: Cannot ref-assign 'b' to 'a' because 'b' has a narrower escape scope than 'a'.
+                //             a = ref b; // 4
+                Diagnostic(ErrorCode.ERR_RefAssignNarrower, "a = ref b").WithArguments("a", "b").WithLocation(22, 13),
+                // (34,17): error CS8352: Cannot use variable 'b' in this context because it may expose referenced variables outside of their declaration scope
+                //             a = b; // 5
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "b").WithArguments("b").WithLocation(34, 17));
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/80107")]
+        public void RefSafety_BlockScope_Constants()
+        {
+            var source = """
+                using System;
+                class C
+                {
+                    void M1()
+                    {
+                        scoped ReadOnlySpan<int> a;
+                        for (int i = 0; i < 2; i++)
+                        {
+                            ReadOnlySpan<int> b = [1, 2, 3];
+                            a = b;
+                            a = new(in b[0]);
+                            a = [4, 5, 6];
+                        }
+                    }
+                }
+                """;
+            CreateCompilation(source, targetFramework: TargetFramework.Net70).VerifyEmitDiagnostics();
+        }
+
         [Fact]
         public void Span_SingleElement()
         {
