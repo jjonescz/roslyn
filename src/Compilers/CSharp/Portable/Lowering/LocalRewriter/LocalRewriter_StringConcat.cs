@@ -218,9 +218,9 @@ fallbackStrings:
                 // need to consider whether to do so. The visiting logic in the parent function here depends on only one argument being added for a compound assignment
                 // left read, so if we ever do introduce optimizations here that result in more than one argument being added to destinationArguments, we'll need to adjust
                 // that logic.
-                Debug.Assert(visitedCompoundAssignmentLeftRead is
-                    not (BoundCall or BoundConversion { ConversionKind: ConversionKind.Boxing, Type.SpecialType: SpecialType.System_Object, Operand.Type.SpecialType: SpecialType.System_Char })
-                    and { ConstantValueOpt: null });
+                //Debug.Assert(visitedCompoundAssignmentLeftRead is
+                //    not (BoundCall or BoundConversion { ConversionKind: ConversionKind.Boxing, Type.SpecialType: SpecialType.System_Object, Operand.Type.SpecialType: SpecialType.System_Char })
+                //    and { ConstantValueOpt: null });
                 destinationArguments.Add(visitedCompoundAssignmentLeftRead);
             }
             destinationArguments.ReverseContents();

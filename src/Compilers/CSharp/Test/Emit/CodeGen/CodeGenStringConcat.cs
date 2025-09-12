@@ -2197,5 +2197,21 @@ class Test
                 }
                 """);
         }
+
+        [Fact]
+        public void CompoundAssignment()
+        {
+            var source = """
+                var c = new C();
+                c.P += "a" + c.P;
+                System.Console.WriteLine(c.P);
+
+                class C
+                {
+                    public string P { get; set; } = "x";
+                }
+                """;
+            CompileAndVerify(source, expectedOutput: "xax").VerifyDiagnostics();
+        }
     }
 }
