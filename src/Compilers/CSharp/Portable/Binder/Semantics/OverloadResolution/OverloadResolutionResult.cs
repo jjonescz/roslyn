@@ -1464,6 +1464,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return false;
             }
 
+            Debug.Fail("unreachable");
+
             // error CS0121: The call is ambiguous between the following methods or properties:
             // 'P.Ambiguous(object, string)' and 'P.Ambiguous(string, object)'
             diagnostics.Add(
