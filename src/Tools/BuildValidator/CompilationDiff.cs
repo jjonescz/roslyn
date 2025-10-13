@@ -51,6 +51,7 @@ namespace BuildValidator
         private readonly byte[]? _rebuildPortableExecutableBytes;
         private readonly MetadataReader? _rebuildPdbReader;
         private readonly Compilation? _rebuildCompilation;
+        private readonly string? _rebuildKey;
         private readonly ImmutableArray<MetadataReferenceInfo> _references;
         private readonly LocalReferenceResolver? _localReferenceResolver;
         private readonly string? _message;
@@ -88,6 +89,7 @@ namespace BuildValidator
             byte[]? rebuildPortableExecutableBytes = null,
             MetadataReader? rebuildPdbReader = null,
             Compilation? rebuildCompilation = null,
+            string? rebuildKey = null,
             LocalReferenceResolver? localReferenceResolver = null,
             ImmutableArray<MetadataReferenceInfo> references = default,
             string? message = null)
@@ -100,6 +102,7 @@ namespace BuildValidator
             _rebuildPortableExecutableBytes = rebuildPortableExecutableBytes;
             _rebuildPdbReader = rebuildPdbReader;
             _rebuildCompilation = rebuildCompilation;
+            _rebuildKey = rebuildKey;
             _references = references;
             _localReferenceResolver = localReferenceResolver;
             _message = message;
@@ -169,7 +172,8 @@ namespace BuildValidator
                         originalPdbReader: compilationFactory.OptionsReader.PdbReader,
                         rebuildPortableExecutableBytes: rebuildBytes,
                         rebuildPdbReader: getRebuildPdbReader(),
-                        rebuildCompilation: rebuildCompilation);
+                        rebuildCompilation: rebuildCompilation,
+                        rebuildKey: rebuildCompilation.GetDeterministicKey());
                 }
 
                 MetadataReader getRebuildPdbReader()
@@ -260,6 +264,9 @@ namespace BuildValidator
                 Debug.Assert(_rebuildPortableExecutableBytes is object);
                 Debug.Assert(_rebuildPdbReader is object);
                 Debug.Assert(_rebuildCompilation is object);
+                Debug.Assert(_rebuildKey is object);
+
+                File.WriteAllText(path: Path.Combine(debugPath, "rebuild.key"), contents: _rebuildKey);
 
                 var originalPeReader = new PEReader(_originalPortableExecutableBytes.ToImmutableArray());
                 var rebuildPeReader = new PEReader(_rebuildPortableExecutableBytes.ToImmutableArray());

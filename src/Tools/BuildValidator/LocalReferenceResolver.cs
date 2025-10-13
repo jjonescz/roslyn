@@ -163,7 +163,7 @@ namespace BuildValidator
 
                 if (peInfo.IsReadyToRun)
                 {
-                    _logger.LogInformation($@"Skipping ReadyToRun image ""{filePath}""");
+                    _logger.LogTrace($@"Skipping ReadyToRun image ""{filePath}""");
                     continue;
                 }
 
