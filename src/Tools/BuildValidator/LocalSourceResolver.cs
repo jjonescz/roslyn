@@ -49,7 +49,7 @@ namespace BuildValidator
             var sourceText = SourceText.From(fileStream, encoding: sourceTextInfo.SourceTextEncoding, checksumAlgorithm: sourceTextInfo.HashAlgorithm, canBeEmbedded: false);
             if (!sourceText.GetChecksum().SequenceEqual(sourceTextInfo.Hash))
             {
-                throw new Exception($@"File ""{onDiskPath}"" has incorrect hash");
+                throw new Exception($"""File "{onDiskPath}" has incorrect hash (expected: {BitConverter.ToString(sourceTextInfo.Hash.ToArray()).Replace("-", "")}, actual: {BitConverter.ToString(sourceText.GetChecksum().ToArray()).Replace("-", "")}, encoding: {sourceTextInfo.SourceTextEncoding.EncodingName}, algorithm: {sourceTextInfo.HashAlgorithm}).""");
             }
 
             return sourceText;

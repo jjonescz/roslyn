@@ -27,7 +27,7 @@ namespace BuildValidator
         {
             if (!ReferenceResolver.TryResolveReferences(metadataReferenceInfo, out var metadataReference))
             {
-                throw new InvalidOperationException($"Could not resolve reference: {metadataReferenceInfo.FileName}");
+                throw new InvalidOperationException($"Could not resolve reference: {metadataReferenceInfo.FileName} ({metadataReferenceInfo.ModuleVersionId})");
             }
 
             return metadataReference;
