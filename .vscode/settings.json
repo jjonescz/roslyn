@@ -42,6 +42,7 @@
         "NETCOREAPP",
         "Unregistration",
         "Unregistrations",
-        "Xunit"
+        "Xunit",
+        "random-change-1-here"
     ]
 }
