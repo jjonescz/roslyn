@@ -2335,6 +2335,16 @@ namespace Microsoft.CodeAnalysis.CSharp
                     out Tests whenFalse,
                     ref bool foundExplicitNullTest)
                 {
+                    try
+                    {
+                        System.Runtime.CompilerServices.RuntimeHelpers.EnsureSufficientExecutionStack();
+                    }
+                    catch (InsufficientExecutionStackException)
+                    {
+                        Debugger.Launch();
+                        throw;
+                    }
+
                     var trueBuilder = ArrayBuilder<Tests>.GetInstance(RemainingTests.Length);
                     var falseBuilder = ArrayBuilder<Tests>.GetInstance(RemainingTests.Length);
                     foreach (var other in RemainingTests)
