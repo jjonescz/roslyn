@@ -4,7 +4,7 @@
 
 <h1 align="center">The .NET Compiler Platform</h1>
 
-test change
+test change 2
 
 <p align="center"><a href="http://aka.ms/discord-csharp-roslyn" rel="nofollow"><img title="Chat on Discord" src="docs/img/discord-mark-white.png" /></a></p>
 
