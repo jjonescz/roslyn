@@ -1,4 +1,9 @@
 {
+  "branchInfo": {
+    "vsBranch": "rel/d18.3",
+    "insertionCreateDraftPR": false,
+    "insertionTitlePrefix": "[d18.3]"
+  },
   "feeds": {
     "vssdk": "https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk/nuget/v3/index.json",
     "vs-impl": "https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json",
@@ -89,14 +94,5 @@
     "Microsoft.CodeAnalysis.RulesetToEditorconfigConverter": "arcade",
     "Roslyn.Diagnostics.Analyzers": "arcade",
     "Text.Analyzers": "arcade"
-  },
-  "branchInfo": {
-    "nugetKind": [
-      "Shipping",
-      "NonShipping"
-    ],
-    "vsBranch": "main",
-    "insertionCreateDraftPR": false,
-    "insertionTitlePrefix": "[InsidersVNext]"
   }
 }
