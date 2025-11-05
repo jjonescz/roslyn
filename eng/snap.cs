@@ -377,8 +377,7 @@ var lastPr = lastMergedPullRequests.FirstOrDefault(pr => pr.Number == lastPrNumb
         "--json", PullRequest.JsonFields])
     .ExecuteBufferedAsync())
     .StandardOutput
-    .ParseJsonList<PullRequest>()
-    ?.FirstOrDefault()
+    .ParseJson<PullRequest>()
     ?? throw new InvalidOperationException($"Cannot find PR #{lastPrNumber}");
 
 var lastPrCommitDetails = (await Cli.Wrap("gh")
@@ -859,14 +858,13 @@ file sealed class PublishData(
 
         Debug.Assert(original is null || (original.RepoOwnerAndName == RepoOwnerAndName && original.BranchName == BranchName));
 
-        if (this.Equals(original))
+        if (data?.Equals(original?.Data) == true)
         {
             console.MarkupLineInterpolated($"[green]No change needed:[/] [teal]{BranchName}[/] {FileName} already up to date");
             return;
         }
 
         Debug.Assert(data != null);
-        Debug.Assert(!data.Equals(original?.Data));
 
         gitHub.PushOrOpenPrToUpdateFile(
             actions,
