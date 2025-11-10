@@ -8,6 +8,10 @@ using System.Collections.Immutable;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.Editor.Shared.Utilities;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Workspaces.AnalyzerRedirecting;
 using Microsoft.VisualStudio.Shell;
@@ -27,16 +31,21 @@ namespace Microsoft.VisualStudio.LanguageServices.ProjectSystem;
 [Export(typeof(IAnalyzerAssemblyRedirector))]
 [method: ImportingConstructor]
 [method: Obsolete(MefConstruction.ImportingConstructorMessage, error: true)]
-internal sealed class SdkAnalyzerAssemblyRedirector(SVsServiceProvider serviceProvider) : SdkAnalyzerAssemblyRedirectorCore(
-    Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"CommonExtensions\Microsoft\DotNet")),
-    serviceProvider.GetServiceOnMainThread<SVsActivityLog, IVsActivityLog>());
+internal sealed class SdkAnalyzerAssemblyRedirector(
+    SVsServiceProvider serviceProvider,
+    IThreadingContext threadingContext)
+    : SdkAnalyzerAssemblyRedirectorCore(
+        Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"CommonExtensions\Microsoft\DotNet")),
+        () => serviceProvider.GetService<SVsActivityLog, IVsActivityLog>(threadingContext.JoinableTaskFactory));
 
 /// <summary>
 /// Core functionality of <see cref="SdkAnalyzerAssemblyRedirector"/> extracted for testing.
 /// </summary>
 internal class SdkAnalyzerAssemblyRedirectorCore : IAnalyzerAssemblyRedirector
 {
-    private readonly IVsActivityLog? _log;
+    private readonly Func<IVsActivityLog>? _logFactory;
+
+    private Channel<string>? _logChannel;
 
     private readonly bool _enabled;
 
@@ -47,9 +56,9 @@ internal class SdkAnalyzerAssemblyRedirectorCore : IAnalyzerAssemblyRedirector
     /// </summary>
     private readonly ImmutableDictionary<string, List<AnalyzerInfo>> _analyzerMap;
 
-    public SdkAnalyzerAssemblyRedirectorCore(string? insertedAnalyzersDirectory, IVsActivityLog? log = null)
+    public SdkAnalyzerAssemblyRedirectorCore(string? insertedAnalyzersDirectory, Func<IVsActivityLog>? logFactory = null)
     {
-        _log = log;
+        _logFactory = logFactory;
         var enable = Environment.GetEnvironmentVariable("DOTNET_ANALYZER_REDIRECTING");
         _enabled = !"0".Equals(enable, StringComparison.OrdinalIgnoreCase) && !"false".Equals(enable, StringComparison.OrdinalIgnoreCase);
         _insertedAnalyzersDirectory = insertedAnalyzersDirectory;
@@ -182,9 +191,27 @@ internal class SdkAnalyzerAssemblyRedirectorCore : IAnalyzerAssemblyRedirector
 
     private void Log(string message)
     {
-        _log?.LogEntry(
-            (uint)__ACTIVITYLOG_ENTRYTYPE.ALE_INFORMATION,
-            "Roslyn" + nameof(SdkAnalyzerAssemblyRedirector),
-            message);
+        if (_logFactory is null)
+        {
+            return;
+        }
+
+        if (Interlocked.CompareExchange(ref _logChannel, Channel.CreateUnbounded<string>(), null) == null)
+        {
+            Task.Run(async () =>
+            {
+                var log = _logFactory();
+                while (true)
+                {
+                    var message = await _logChannel.Reader.ReadAsync().ConfigureAwait(false);
+                    log.LogEntry(
+                        (uint)__ACTIVITYLOG_ENTRYTYPE.ALE_INFORMATION,
+                        "Roslyn" + nameof(SdkAnalyzerAssemblyRedirector),
+                        message);
+                }
+            });
+        }
+
+        _ = _logChannel.Writer.WriteAsync(message).AsTask();
     }
 }
