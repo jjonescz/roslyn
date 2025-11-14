@@ -575,7 +575,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private void CheckContextForPointerTypes(ExpressionSyntax node, BindingDiagnosticBag diagnostics, BoundExpression expr)
         {
-            if (!expr.HasAnyErrors && !IsInsideNameof)
+            if (!expr.HasAnyErrors)
             {
                 TypeSymbol exprType = expr.Type;
                 if ((object)exprType != null && exprType.ContainsPointerOrFunctionPointer())
