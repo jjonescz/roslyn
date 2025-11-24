@@ -24,6 +24,12 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
             _customModifiers = customModifiers.NullToEmpty()
         End Sub
 
+        Friend ReadOnly Property PointedAtType As TypeSymbol
+            Get
+                Return _pointedAtType
+            End Get
+        End Property
+
         Friend Overrides ReadOnly Property MangleName As Boolean
             Get
                 Return False
