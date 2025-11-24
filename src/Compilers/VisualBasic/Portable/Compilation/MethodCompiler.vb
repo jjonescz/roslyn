@@ -884,6 +884,10 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
             Dim compilationState As New TypeCompilationState(_compilation, _moduleBeingBuiltOpt, initializeComponentOpt:=Nothing)
             For Each methodDef In privateImplClass.GetMethods(Nothing)
                 Dim method = DirectCast(methodDef.GetInternalSymbol(), MethodSymbol)
+                If method Is Nothing Then
+                    Continue For
+                End If
+
                 Dim diagnosticsThisMethod = BindingDiagnosticBag.GetInstance(_diagnostics)
 
                 Dim boundBody = method.GetBoundMethodBody(compilationState, diagnosticsThisMethod)
