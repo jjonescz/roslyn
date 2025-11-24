@@ -2,16 +2,15 @@
 
 This opt-in **experimental** Roslyn feature allows changing how string literals in C# programs are emitted into PE files (`.dll`/`.exe`).
 By default, string literals are emitted to the UserString heap which is limited to [2^24 bytes](https://github.com/dotnet/roslyn/issues/9852).
-When the limit is reached, the following compiler error is reported by Roslyn:
+When the limit is reached, one the following compiler errors is reported by Roslyn:
 
 ```
 error CS8103: Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string literals.
+error BC37255: Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string or XML literals.
 ```
 
 By turning on [the feature flag](#configuration), string literals ([where possible](#eligible-string-literals)) are instead emitted as UTF-8 data into a different section of the PE file
 which does not have the same limit. The emit format is similar to [explicit u8 string literals][u8-literals].
-
-The feature is currently implemented only for C#, not VB.
 
 > [!WARNING]
 > This feature is currently experimental and can be changed or removed at any time.
@@ -129,7 +128,7 @@ and the synthesized types used by this feature are only emitted lazily as part o
 
 ## Diagnostics
 
-The error CS8103 (Combined length of user strings used by the program exceeds allowed limit) is updated to suggest the feature flag,
+The errors CS8103 and BC37255 (Combined length of user strings used by the program exceeds allowed limit) are updated to suggest the feature flag,
 albeit with a disclaimer during the experimental phase of the feature.
 
 ## Runtime
