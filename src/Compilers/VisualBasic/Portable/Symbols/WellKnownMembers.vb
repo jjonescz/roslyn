@@ -627,7 +627,11 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
             End Function
 
             Protected Overrides Function GetPointedToType(type As TypeSymbol) As TypeSymbol
-                Return Nothing ' Do not support pointers
+                Dim pointer = TryCast(type, PointerTypeSymbol)
+                If pointer IsNot Nothing Then
+                    Return pointer.PointedAtType
+                End If
+                Return Nothing
             End Function
 
             Protected Overrides Function GetReturnType(method As MethodSymbol) As TypeSymbol
