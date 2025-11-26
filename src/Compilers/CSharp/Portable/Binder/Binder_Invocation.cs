@@ -1329,6 +1329,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                 gotError = ReportUnsafeIfNotAllowed(node, diagnostics) || gotError;
             }
 
+            if (!gotError && method.IsCallerUnsafe)
+            {
+                gotError = ReportUnsafeIfNotAllowed(node, diagnostics, disallowedUnder: MemorySafetyRules.Updated,
+                    customErrorCode: ErrorCode.ERR_UnsafeMemberOperation,
+                    customArgs: [method]);
+            }
+
             bool hasBaseReceiver = receiver != null && receiver.Kind == BoundKind.BaseReference;
 
             ReportDiagnosticsIfObsolete(diagnostics, method, node, hasBaseReceiver);

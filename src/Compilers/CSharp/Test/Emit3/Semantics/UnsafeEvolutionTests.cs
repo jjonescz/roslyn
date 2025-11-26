@@ -6,7 +6,6 @@ using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities;
-using Roslyn.Test.Utilities;
 using Roslyn.Utilities;
 using Xunit;
 
@@ -15,6 +14,34 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.Semantics;
 [CompilerTrait(CompilerFeature.Unsafe)]
 public sealed class UnsafeEvolutionTests : CompilingTestBase
 {
+    private static CSharpCompilation? CreateCompilation(
+        CSharpTestSource api,
+        CSharpTestSource caller,
+        bool? compilationReference,
+        CSharpCompilationOptions? options = null,
+        CSharpParseOptions? parseOptions = null,
+        DiagnosticDescription[]? expectedApiDiagnostics = null,
+        DiagnosticDescription[]? expectedCallerDiagnostics = null)
+    {
+        if (compilationReference is { } b)
+        {
+            var comp1 = CreateCompilation(api, options: options?.WithOutputKind(OutputKind.DynamicallyLinkedLibrary), parseOptions: parseOptions)
+                .VerifyDiagnostics(expectedApiDiagnostics ?? []);
+
+            if (comp1.GetDiagnostics().HasAnyErrors())
+            {
+                return null;
+            }
+
+            var reference = AsReference(comp1, b);
+            return CreateCompilation(caller, [reference], options: options, parseOptions: parseOptions)
+                .VerifyDiagnostics(expectedCallerDiagnostics ?? []);
+        }
+
+        return CreateCompilation([api, caller], options: options, parseOptions: parseOptions)
+            .VerifyDiagnostics([.. expectedApiDiagnostics ?? [], .. expectedCallerDiagnostics ?? []]);
+    }
+
     private static void VerifyMemorySafetyRulesAttribute(ModuleSymbol module, bool includesAttributeDefinition, bool includesAttributeUse, bool publicDefinition)
     {
         const string name = "MemorySafetyRulesAttribute";
@@ -2132,5 +2159,57 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             // (3,26): error CS9501: stackalloc expression without an initializer inside SkipLocalsInit may only be used in an unsafe context
             //     System.Span<int> a = stackalloc int[5];
             Diagnostic(ErrorCode.ERR_UnsafeUninitializedStackAlloc, "stackalloc int[5]").WithLocation(3, 26));
+    }
+
+    [Theory, CombinatorialData]
+    public void Member_Method_Invocation_Instance(/*bool apiUpdatedRules, bool callerUpdatedRules,*/ bool? compilationReference)
+    {
+        var api = """
+            public class C
+            {
+                public unsafe void M() => System.Console.Write(111);
+            }
+            """;
+
+        var caller = """
+            var c = new C();
+            c.M();
+            """;
+
+        var expectedOutput = "111";
+
+        var expectedApiDiagnostics = new[]
+        {
+            // (3,24): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            //     public unsafe void M() => System.Console.Write(111);
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "M").WithLocation(3, 24),
+        };
+
+        var expectedCallerDiagnostics = new[]
+        {
+            // (2,1): error CS9502: Using 'C.M()' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
+            // c.M();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.M()").WithArguments("C.M()").WithLocation(2, 1),
+        };
+
+        CreateCompilation(api, caller, compilationReference, expectedApiDiagnostics: expectedApiDiagnostics);
+
+        CompileAndVerify(CreateCompilation(api, caller, compilationReference, TestOptions.UnsafeReleaseExe)!, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        CreateCompilation(api, caller, compilationReference, TestOptions.ReleaseExe.WithUpdatedMemorySafetyRules(),
+            expectedApiDiagnostics: expectedApiDiagnostics,
+            expectedCallerDiagnostics: expectedCallerDiagnostics);
+
+        CreateCompilation(api, caller, compilationReference, TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+            expectedCallerDiagnostics: expectedCallerDiagnostics);
+
+        caller = """
+            var c = new C();
+            unsafe { c.M(); }
+            """;
+
+        CompileAndVerify(CreateCompilation(api, caller, compilationReference,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())!,
+            expectedOutput: expectedOutput).VerifyDiagnostics();
     }
 }

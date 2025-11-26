@@ -684,6 +684,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
+        /// <summary>
+        /// Whether the method has the <see langword="unsafe"/> keyword in its signature.
+        /// Do not confuse with <see cref="IsCallerUnsafe"/>.
+        /// </summary>
         internal bool IsUnsafe
         {
             get
@@ -1082,6 +1086,8 @@ done:
 
         public sealed override RefKind RefKind => this.flags.RefKind;
         public sealed override bool IsVararg => this.flags.IsVararg;
+
+        internal sealed override bool IsCallerUnsafe => ContainingModule.UseUpdatedMemorySafetyRules && IsUnsafe;
 
         internal override int CalculateLocalSyntaxOffset(int localPosition, SyntaxTree localTree)
         {

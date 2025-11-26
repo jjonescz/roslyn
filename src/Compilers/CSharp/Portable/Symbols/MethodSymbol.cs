@@ -601,6 +601,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         internal abstract bool UseUpdatedEscapeRules { get; }
 
         /// <summary>
+        /// <see langword="true"/> if the method was compiled under updated memory safety rules
+        /// (<see cref="ModuleSymbol.UseUpdatedMemorySafetyRules"/>) and marked as <see langword="unsafe"/>.
+        /// </summary>
+        internal virtual bool IsCallerUnsafe => false; // PROTOTYPE: should be abstract
+
+        /// <summary>
         /// Some method kinds do not participate in overriding/hiding (e.g. constructors).
         /// </summary>
         internal static bool CanOverrideOrHide(MethodKind kind)
