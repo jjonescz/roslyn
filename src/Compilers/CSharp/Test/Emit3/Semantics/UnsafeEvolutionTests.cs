@@ -2137,16 +2137,17 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Theory, CombinatorialData]
     public void Member_Method_Invocation_Instance(
         bool apiUpdatedRules,
+        bool apiUnsafe,
         [CombinatorialValues(LanguageVersion.CSharp14, LanguageVersionFacts.CSharpNext, LanguageVersion.Preview)] LanguageVersion callerLangVersion,
         bool callerAllowUnsafe,
         bool callerUpdatedRules,
         bool callerUnsafeBlock,
         bool? compilationReference)
     {
-        var api = """
+        var api = $$"""
             public class C
             {
-                public unsafe void M() => System.Console.Write(111);
+                public {{(apiUnsafe ? "unsafe" : "")}} void M() => System.Console.Write(111);
             }
             """;
 
@@ -2181,7 +2182,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 parseOptions: TestOptions.Regular.WithLanguageVersion(callerLangVersion),
                 options: TestOptions.ReleaseExe.WithAllowUnsafe(callerAllowUnsafe).WithUpdatedMemorySafetyRules(callerUpdatedRules));
 
-            if (!callerAllowUnsafe)
+            if (!callerAllowUnsafe && apiUnsafe)
             {
                 expectedDiagnostics.Add(
                     // (3,24): error CS0227: Unsafe code may only appear if compiling with /unsafe
@@ -2198,7 +2199,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 Diagnostic(ErrorCode.ERR_IllegalUnsafe, "unsafe").WithLocation(2, 1));
         }
 
-        if (apiUpdatedRules && callerUpdatedRules && !callerUnsafeBlock)
+        if (apiUnsafe && apiUpdatedRules && callerUpdatedRules && !callerUnsafeBlock)
         {
             if (callerLangVersion >= LanguageVersionFacts.CSharpNext)
             {
