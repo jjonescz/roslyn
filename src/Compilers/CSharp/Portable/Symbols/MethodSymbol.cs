@@ -600,6 +600,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal abstract bool UseUpdatedEscapeRules { get; }
 
+        // PROTOTYPE: add a public API for this
         /// <summary>
         /// <see langword="true"/> if the method was compiled under updated memory safety rules
         /// (<see cref="ModuleSymbol.UseUpdatedMemorySafetyRules"/>) and marked as <see langword="unsafe"/>.
