@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
@@ -14,34 +15,6 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.Semantics;
 [CompilerTrait(CompilerFeature.Unsafe)]
 public sealed class UnsafeEvolutionTests : CompilingTestBase
 {
-    private static CSharpCompilation? CreateCompilation(
-        CSharpTestSource api,
-        CSharpTestSource caller,
-        bool? compilationReference,
-        CSharpCompilationOptions? options = null,
-        CSharpParseOptions? parseOptions = null,
-        DiagnosticDescription[]? expectedApiDiagnostics = null,
-        DiagnosticDescription[]? expectedCallerDiagnostics = null)
-    {
-        if (compilationReference is { } b)
-        {
-            var comp1 = CreateCompilation(api, options: options?.WithOutputKind(OutputKind.DynamicallyLinkedLibrary), parseOptions: parseOptions)
-                .VerifyDiagnostics(expectedApiDiagnostics ?? []);
-
-            if (comp1.GetDiagnostics().HasAnyErrors())
-            {
-                return null;
-            }
-
-            var reference = AsReference(comp1, b);
-            return CreateCompilation(caller, [reference], options: options, parseOptions: parseOptions)
-                .VerifyDiagnostics(expectedCallerDiagnostics ?? []);
-        }
-
-        return CreateCompilation([api, caller], options: options, parseOptions: parseOptions)
-            .VerifyDiagnostics([.. expectedApiDiagnostics ?? [], .. expectedCallerDiagnostics ?? []]);
-    }
-
     private static void VerifyMemorySafetyRulesAttribute(ModuleSymbol module, bool includesAttributeDefinition, bool includesAttributeUse, bool publicDefinition)
     {
         const string name = "MemorySafetyRulesAttribute";
@@ -2162,7 +2135,13 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Theory, CombinatorialData]
-    public void Member_Method_Invocation_Instance(/*bool apiUpdatedRules, bool callerUpdatedRules,*/ bool? compilationReference)
+    public void Member_Method_Invocation_Instance(
+        bool apiUpdatedRules,
+        [CombinatorialValues(LanguageVersion.CSharp14, LanguageVersionFacts.CSharpNext, LanguageVersion.Preview)] LanguageVersion callerLangVersion,
+        bool callerAllowUnsafe,
+        bool callerUpdatedRules,
+        bool callerUnsafeBlock,
+        bool? compilationReference)
     {
         var api = """
             public class C
@@ -2171,45 +2150,77 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             }
             """;
 
-        var caller = """
+        var caller = $"""
             var c = new C();
-            c.M();
+            {(callerUnsafeBlock ? "unsafe { c.M(); }" : "c.M();")}
             """;
 
         var expectedOutput = "111";
 
-        var expectedApiDiagnostics = new[]
+        CSharpCompilation comp;
+        List<DiagnosticDescription> expectedDiagnostics = [];
+
+        if (compilationReference is { } useCompilationReference)
         {
-            // (3,24): error CS0227: Unsafe code may only appear if compiling with /unsafe
-            //     public unsafe void M() => System.Console.Write(111);
-            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "M").WithLocation(3, 24),
-        };
-
-        var expectedCallerDiagnostics = new[]
+            var apiCompilation = CreateCompilation(api,
+                options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules(apiUpdatedRules))
+                .VerifyDiagnostics();
+            var apiReference = AsReference(apiCompilation, useCompilationReference);
+            comp = CreateCompilation(caller, [apiReference],
+                parseOptions: TestOptions.Regular.WithLanguageVersion(callerLangVersion),
+                options: TestOptions.ReleaseExe.WithAllowUnsafe(callerAllowUnsafe).WithUpdatedMemorySafetyRules(callerUpdatedRules));
+        }
+        else
         {
-            // (2,1): error CS9502: Using 'C.M()' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
-            // c.M();
-            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.M()").WithArguments("C.M()").WithLocation(2, 1),
-        };
+            if (apiUpdatedRules != callerUpdatedRules)
+            {
+                return;
+            }
 
-        CreateCompilation(api, caller, compilationReference, expectedApiDiagnostics: expectedApiDiagnostics);
+            comp = CreateCompilation([api, caller],
+                parseOptions: TestOptions.Regular.WithLanguageVersion(callerLangVersion),
+                options: TestOptions.ReleaseExe.WithAllowUnsafe(callerAllowUnsafe).WithUpdatedMemorySafetyRules(callerUpdatedRules));
 
-        CompileAndVerify(CreateCompilation(api, caller, compilationReference, TestOptions.UnsafeReleaseExe)!, expectedOutput: expectedOutput).VerifyDiagnostics();
+            if (!callerAllowUnsafe)
+            {
+                expectedDiagnostics.Add(
+                    // (3,24): error CS0227: Unsafe code may only appear if compiling with /unsafe
+                    //     public unsafe void M() => System.Console.Write(111);
+                    Diagnostic(ErrorCode.ERR_IllegalUnsafe, "M").WithLocation(3, 24));
+            }
+        }
 
-        CreateCompilation(api, caller, compilationReference, TestOptions.ReleaseExe.WithUpdatedMemorySafetyRules(),
-            expectedApiDiagnostics: expectedApiDiagnostics,
-            expectedCallerDiagnostics: expectedCallerDiagnostics);
+        if (!callerAllowUnsafe && callerUnsafeBlock)
+        {
+            expectedDiagnostics.Add(
+                // (2,1): error CS0227: Unsafe code may only appear if compiling with /unsafe
+                // unsafe { c.M(); }
+                Diagnostic(ErrorCode.ERR_IllegalUnsafe, "unsafe").WithLocation(2, 1));
+        }
 
-        CreateCompilation(api, caller, compilationReference, TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
-            expectedCallerDiagnostics: expectedCallerDiagnostics);
+        if (apiUpdatedRules && callerUpdatedRules && !callerUnsafeBlock)
+        {
+            if (callerLangVersion >= LanguageVersionFacts.CSharpNext)
+            {
+                expectedDiagnostics.Add(
+                    // (2,1): error CS9502: Using 'C.M()' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
+                    // c.M();
+                    Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.M()").WithArguments("C.M()").WithLocation(2, 1));
+            }
+            else
+            {
+                expectedDiagnostics.Add(
+                    // (2,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                    // c.M();
+                    Diagnostic(ErrorCode.ERR_FeatureInPreview, "c.M()").WithArguments("updated memory safety rules").WithLocation(2, 1));
+            }
+        }
 
-        caller = """
-            var c = new C();
-            unsafe { c.M(); }
-            """;
+        comp.VerifyDiagnostics([.. expectedDiagnostics]);
 
-        CompileAndVerify(CreateCompilation(api, caller, compilationReference,
-            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())!,
-            expectedOutput: expectedOutput).VerifyDiagnostics();
+        if (!comp.GetDiagnostics().HasAnyErrors())
+        {
+            CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+        }
     }
 }
