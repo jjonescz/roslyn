@@ -92,7 +92,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (this.Compilation.Options.UseUpdatedMemorySafetyRules)
                 {
                     return MessageID.IDS_FeatureUnsafeEvolution.GetFeatureAvailabilityDiagnosticInfo(this.Compilation)
-                        ?? new CSDiagnosticInfo(customErrorCode ?? ErrorCode.ERR_UnsafeOperation, customArgs);
+                        ?? new CSDiagnosticInfo(customErrorCode ?? ErrorCode.ERR_UnsafeOperation, customArgs ?? []);
                 }
 
                 // This location is disallowed only under updated memory safety rules which are not enabled.
