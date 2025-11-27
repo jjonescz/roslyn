@@ -679,6 +679,7 @@ namespace System.Runtime.CompilerServices
         protected static MetadataReference RefSafetyRulesAttributeLib =>
             CreateCompilation(RefSafetyRulesAttributeDefinition).EmitToImageReference();
 
+        // PROTOTYPE: Confirm the attribute shape in BCL API review.
         protected static readonly string MemorySafetyRulesAttributeDefinition = """
             namespace System.Runtime.CompilerServices
             {
@@ -687,6 +688,14 @@ namespace System.Runtime.CompilerServices
                     public MemorySafetyRulesAttribute(int version) { Version = version; }
                     public int Version;
                 }
+            }
+            """;
+
+        // PROTOTYPE: Confirm the attribute shape in BCL API review.
+        protected static readonly string RequiresUnsafeAttributeDefinition = """
+            namespace System.Runtime.CompilerServices
+            {
+                public sealed class RequiresUnsafeAttribute : Attribute { }
             }
             """;
 

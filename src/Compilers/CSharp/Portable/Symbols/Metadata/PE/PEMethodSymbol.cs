@@ -47,7 +47,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
         {
             // We currently pack everything into a 32-bit int with the following layout:
             //
-            // |y|x|w|v|u|t|s|r|q|p|ooo|n|m|l|k|j|i|h|g|f|e|d|c|b|aaaaa|
+            // |z|y|x|w|v|u|t|s|r|q|p|ooo|n|m|l|k|j|i|h|g|f|e|d|c|b|aaaaa|
             // 
             // a = method kind. 5 bits.
             // b = method kind populated. 1 bit.
@@ -77,7 +77,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             // x = IsUnscopedRef. 1 bit.
             // y = IsUnscopedRefPopulated. 1 bit.
             // z = OverloadResolutionPriorityPopulated. 1 bit.
-            // 1 bits remain for future purposes.
 
             private const int MethodKindOffset = 0;
             private const int MethodKindMask = 0x1F;
@@ -315,6 +314,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             public ImmutableArray<string> _lazyNotNullMembersWhenFalse;
             public MethodSymbol _lazyExplicitClassOverride;
             public int _lazyOverloadResolutionPriority;
+
+            /// <summary>
+            /// Initialized if <see cref="PackedFlags.IsCustomAttributesPopulated"/> is <see langword="true"/>.
+            /// </summary>
+            public bool _lazyRequiresUnsafe;
         }
 
         private UncommonFields AccessUncommonFields()
@@ -1013,6 +1017,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                      ? _packedFlags.IsReadOnly
                      : IsValidReadOnlyTarget;
 
+                bool checkForRequiresUnsafe = IsValidRequiresUnsafeTarget;
+
                 bool checkForRequiredMembers = this.ShouldCheckRequiredMembers() && this.ContainingType.HasAnyRequiredMembers;
                 bool isInstanceIncrementDecrementOrCompoundAssignmentOperator = SourceMethodSymbol.IsInstanceIncrementDecrementOrCompoundAssignmentOperator(this);
 
@@ -1020,7 +1026,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
                 bool isExtensionMethod = false;
                 bool isReadOnly = false;
-                if (checkForExtension || checkForIsReadOnly || checkForRequiredMembers || isInstanceIncrementDecrementOrCompoundAssignmentOperator || isNewExtensionMember)
+                bool requiresUnsafe = false;
+                if (checkForExtension || checkForIsReadOnly || checkForRequiredMembers || isInstanceIncrementDecrementOrCompoundAssignmentOperator || isNewExtensionMember || checkForRequiresUnsafe)
                 {
                     attributeData = containingPEModuleSymbol.GetCustomAttributesForToken(_handle,
                         filteredOutAttribute1: out CustomAttributeHandle extensionAttribute,
@@ -1033,11 +1040,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                         filterOut4: (checkForRequiredMembers && ObsoleteAttributeData is null) ? AttributeDescription.ObsoleteAttribute : default,
                         filteredOutAttribute5: out _,
                         filterOut5: AttributeDescription.ExtensionMarkerAttribute,
-                        filteredOutAttribute6: out _,
-                        filterOut6: default);
+                        filteredOutAttribute6: out CustomAttributeHandle requiresUnsafeAttribute,
+                        filterOut6: AttributeDescription.RequiresUnsafeAttribute);
 
                     isExtensionMethod = !extensionAttribute.IsNil;
                     isReadOnly = !isReadOnlyAttribute.IsNil;
+                    requiresUnsafe = !requiresUnsafeAttribute.IsNil;
                 }
                 else
                 {
@@ -1053,6 +1061,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 if (!isReadOnlyAlreadySet)
                 {
                     _packedFlags.InitializeIsReadOnly(isReadOnly);
+                }
+
+                if (requiresUnsafe)
+                {
+                    AccessUncommonFields()._lazyRequiresUnsafe = true;
                 }
 
                 // Store the result in uncommon fields only if it's not empty.
@@ -1456,6 +1469,21 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             }
         }
 
+        private bool IsValidRequiresUnsafeTarget => true; // PROTOTYPE: Can `unsafe` be applied to any method?
+
+        private bool IsDeclaredRequiresUnsafe
+        {
+            get
+            {
+                if (!_packedFlags.IsCustomAttributesPopulated)
+                {
+                    _ = GetAttributes();
+                    Debug.Assert(_packedFlags.IsCustomAttributesPopulated);
+                }
+                return _uncommonFields?._lazyRequiresUnsafe == true;
+            }
+        }
+
         internal override bool IsInitOnly
         {
             get
@@ -1777,7 +1805,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
         internal sealed override bool UseUpdatedEscapeRules => ContainingModule.UseUpdatedEscapeRules;
 
-        internal sealed override bool IsCallerUnsafe => ContainingModule.UseUpdatedMemorySafetyRules; // PROTOTYPE: Check for RequiresUnsafeAttribute
+        internal sealed override bool IsCallerUnsafe => ContainingModule.UseUpdatedMemorySafetyRules && IsValidRequiresUnsafeTarget && IsDeclaredRequiresUnsafe;
 
         internal override bool HasAsyncMethodBuilderAttribute(out TypeSymbol builderArgument)
         {

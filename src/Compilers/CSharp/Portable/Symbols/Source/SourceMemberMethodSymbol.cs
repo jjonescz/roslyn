@@ -986,6 +986,11 @@ done:
                 compilation.EnsureIsReadOnlyAttributeExists(diagnostics, _location, modifyCompilation: true);
             }
 
+            if (IsCallerUnsafe)
+            {
+                compilation.EnsureRequiresUnsafeAttributeExists(diagnostics, _location, modifyCompilation: true);
+            }
+
             if (compilation.ShouldEmitNullableAttributes(this) &&
                 ShouldEmitNullableContextValue(out _))
             {
