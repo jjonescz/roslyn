@@ -2249,7 +2249,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Theory, CombinatorialData]
-    public void Member_Method_Invocation_Instance(
+    public void Member_Method_Invocation(
         bool apiUpdatedRules,
         bool apiUnsafe,
         [CombinatorialValues(LanguageVersion.CSharp14, LanguageVersionFacts.CSharpNext, LanguageVersion.Preview)] LanguageVersion callerLangVersion,
@@ -2337,6 +2337,43 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         {
             CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
         }
+    }
+
+    [Fact]
+    public void Member_Method_ConvertToFunctionPointer()
+    {
+        var source = """
+            unsafe
+            {
+                delegate*<void> p = &C.M;
+            }
+
+            public static class C
+            {
+                public static unsafe void M() { }
+            }
+            """;
+        CreateCompilation(source,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyEmitDiagnostics();
+    }
+
+    // PROTOTYPE: Test also lambdas and delegates.
+    [Fact]
+    public void Member_LocalFunction()
+    {
+        var source = """
+            M1();
+            M2();
+            static unsafe void M1() { }
+            static void M2() { }
+            """;
+        CreateCompilation(source,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (1,1): error CS9502: Using 'M1()' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
+            // M1();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M1()").WithArguments("M1()").WithLocation(1, 1));
     }
 
     [Fact]
