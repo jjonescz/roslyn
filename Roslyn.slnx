@@ -1,4 +1,10 @@
 <Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Debug-netcore" />
+    <BuildType Name="Debug-netfx" />
+    <BuildType Name="Release" />
+  </Configurations>
   <Folder Name="/Analyzers/" />
   <Folder Name="/Analyzers/BannedApiAnalyzers/">
     <Project Path="src/RoslynAnalyzers/Microsoft.CodeAnalysis.BannedApiAnalyzers/Core/Microsoft.CodeAnalysis.BannedApiAnalyzers.csproj" />
