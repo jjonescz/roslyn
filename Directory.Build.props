@@ -1,6 +1,17 @@
 <!-- Licensed to the .NET Foundation under one or more agreements. The .NET Foundation licenses this file to you under the MIT license. See the LICENSE file in the project root for more information. -->
 <Project>
+  <PropertyGroup>
+    <Configurations>Debug;Debug-netcore;Debug-netfx;Release</Configurations>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug-netcore'">
+    <TfmFromConfiguration>netcore</TfmFromConfiguration>
+    <InitialDefineConstants>DEBUG</InitialDefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug-netfx'">
+    <TfmFromConfiguration>netfx</TfmFromConfiguration>
+    <InitialDefineConstants>DEBUG</InitialDefineConstants>
+  </PropertyGroup>
+
   <Import Project="Sdk.props" Sdk="Microsoft.DotNet.Arcade.Sdk" />
   <Import Project="eng\targets\Settings.props" />
 </Project>
-

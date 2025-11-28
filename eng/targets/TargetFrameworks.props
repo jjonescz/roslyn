@@ -19,6 +19,8 @@
     <NetVSShared>net8.0</NetVSShared>
     <NetRoslynBuildHostNetCoreVersion>net8.0</NetRoslynBuildHostNetCoreVersion>
     <NetRoslynNext>net10.0</NetRoslynNext>
+    <NetRoslynStandard>netstandard2.0</NetRoslynStandard>
+    <NetRoslynFramework>net472</NetRoslynFramework>
   </PropertyGroup>
 
   <!--
@@ -57,6 +59,30 @@
         <NetRoslynAll>$(NetCurrent)</NetRoslynAll>
         <NetRoslynBuildHostNetCoreVersion>$(NetCurrent)</NetRoslynBuildHostNetCoreVersion>
         <NetRoslynNext>$(NetCurrent)</NetRoslynNext>
+      </PropertyGroup>
+    </When>
+
+    <!-- TODO: document -->
+    <When Condition="'$(TfmFromConfiguration)' == 'netcore'">
+      <PropertyGroup>
+        <NetRoslynAll>$(NetRoslyn)</NetRoslynAll>
+        <NetRoslynSourceBuild>$(NetRoslynAll)</NetRoslynSourceBuild>
+        <NetRoslynStandard>$(NetRoslyn)</NetRoslynStandard>
+        <NetRoslynFramework></NetRoslynFramework>
+      </PropertyGroup>
+    </When>
+
+    <!-- TODO: document -->
+    <When Condition="'$(TfmFromConfiguration)' == 'netfx'">
+      <PropertyGroup>
+        <NetRoslyn></NetRoslyn>
+        <NetRoslynAll></NetRoslynAll>
+        <NetRoslynSourceBuild></NetRoslynSourceBuild>
+        <NetVS></NetVS>
+        <NetVSCode></NetVSCode>
+        <NetVSShared></NetVSShared>
+        <NetRoslynBuildHostNetCoreVersion></NetRoslynBuildHostNetCoreVersion>
+        <NetRoslynNext></NetRoslynNext>
       </PropertyGroup>
     </When>
 
