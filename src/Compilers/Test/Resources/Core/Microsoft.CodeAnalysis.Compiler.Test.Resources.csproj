@@ -3,7 +3,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>$(NetRoslynStandard)</TargetFrameworks>
+    <TargetFrameworks>$(NetRoslyn);$(NetRoslynStandard)</TargetFrameworks>
     <RootNamespace></RootNamespace>
     <EnableDefaultItems>false</EnableDefaultItems>
     <IsShipping>false</IsShipping>

@@ -67,7 +67,7 @@
       <PropertyGroup>
         <NetRoslynAll>$(NetRoslyn)</NetRoslynAll>
         <NetRoslynSourceBuild>$(NetRoslynAll)</NetRoslynSourceBuild>
-        <NetRoslynStandard>$(NetRoslyn)</NetRoslynStandard>
+        <NetRoslynStandard></NetRoslynStandard>
         <NetRoslynFramework></NetRoslynFramework>
       </PropertyGroup>
     </When>
