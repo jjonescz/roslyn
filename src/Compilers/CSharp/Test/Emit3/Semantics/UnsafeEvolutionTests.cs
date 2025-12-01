@@ -16,6 +16,31 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.Semantics;
 [CompilerTrait(CompilerFeature.Unsafe)]
 public sealed class UnsafeEvolutionTests : CompilingTestBase
 {
+    private static void CompileAndVerify(string lib, string caller, params DiagnosticDescription[] expectedDiagnostics)
+    {
+        CreateCompilation([lib, caller],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        var libUpdated = CreateCompilation(lib,
+            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics()
+            .EmitToImageReference();
+
+        CreateCompilation(caller, [libUpdated],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        var libLegacy = CreateCompilation(lib,
+            options: TestOptions.UnsafeReleaseDll)
+            .VerifyDiagnostics()
+            .EmitToImageReference();
+
+        CreateCompilation(caller, [libLegacy],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyEmitDiagnostics();
+    }
+
     private static void VerifyMemorySafetyRulesAttribute(ModuleSymbol module, bool includesAttributeDefinition, bool includesAttributeUse, bool publicDefinition)
     {
         const string name = "MemorySafetyRulesAttribute";
@@ -103,7 +128,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             var attribute = symbol.GetAttributes().SingleOrDefault(a => a.AttributeClass?.Name == name);
             Assert.True(attribute is null, $"Attribute should not be exposed by '{symbolName}'");
 
-            Assert.True(shouldBeUnsafe == symbol is MethodSymbol { IsCallerUnsafe: true }, $"Expected '{symbolName}' to be unsafe");
+            Assert.True(shouldBeUnsafe == symbol.IsCallerUnsafe, $"Expected '{symbolName}' to be unsafe");
         }
     }
 
@@ -2345,6 +2370,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var source = """
             C.M(1);
             C.M("s");
+            _ = nameof(C.M);
 
             class C
             {
@@ -2361,56 +2387,49 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Fact]
-    public void Member_Method_Extension()
+    public void Member_Method_NameOf()
     {
-        var lib = """
-            public static class E
-            {
-                public static unsafe void M1(this int x) { }
+        var source = """
+            _ = nameof(C.M);
 
-                extension(int x)
-                {
-                    public unsafe void M2() { }
-                }
+            class C
+            {
+                public static unsafe void M() { }
             }
             """;
-
-        var caller = """
-            123.M1();
-            123.M2();
-            """;
-
-        var expectedDiagnostics = new[]
-        {
-            // (1,1): error CS9502: Using 'E.M1(int)' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
-            // 123.M1();
-            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "123.M1()").WithArguments("E.M1(int)").WithLocation(1, 1),
-            // (2,1): error CS9502: Using 'E.extension(int).M2()' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
-            // 123.M2();
-            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "123.M2()").WithArguments("E.extension(int).M2()").WithLocation(2, 1),
-        };
-
-        CreateCompilation([lib, caller],
-            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
-            .VerifyDiagnostics(expectedDiagnostics);
-
-        var libUpdated = CreateCompilation(lib,
-            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
-            .VerifyDiagnostics()
-            .EmitToImageReference();
-
-        CreateCompilation(caller, [libUpdated],
-            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
-            .VerifyDiagnostics(expectedDiagnostics);
-
-        var libLegacy = CreateCompilation(lib,
-            options: TestOptions.UnsafeReleaseDll)
-            .VerifyDiagnostics()
-            .EmitToImageReference();
-
-        CreateCompilation(caller, [libLegacy],
+        CreateCompilation(source,
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics();
+    }
+
+    [Fact]
+    public void Member_Method_Extension()
+    {
+        CompileAndVerify(
+            lib: """
+                public static class E
+                {
+                    public static unsafe void M1(this int x) { }
+
+                    extension(int x)
+                    {
+                        public unsafe void M2() { }
+                    }
+                }
+                """,
+            caller: """
+                123.M1();
+                123.M2();
+                """,
+            expectedDiagnostics:
+            [
+                // (1,1): error CS9502: Using 'E.M1(int)' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
+                // 123.M1();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "123.M1()").WithArguments("E.M1(int)").WithLocation(1, 1),
+                // (2,1): error CS9502: Using 'E.extension(int).M2()' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
+                // 123.M2();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "123.M2()").WithArguments("E.extension(int).M2()").WithLocation(2, 1),
+            ]);
     }
 
     [Fact]
@@ -2448,6 +2467,33 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             // (1,1): error CS9502: Using 'M1()' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
             // M1();
             Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M1()").WithArguments("M1()").WithLocation(1, 1));
+    }
+
+    [Fact]
+    public void Member_Property()
+    {
+        CompileAndVerify(
+            lib: """
+                public class C
+                {
+                    public int P1 { get; set; }
+                    public unsafe int P2 { get; set; }
+                }
+                """,
+            caller: """
+                var c = new C();
+                c.P1 = c.P1 + 123;
+                c.P2 = c.P2 + 123;
+                """,
+            expectedDiagnostics:
+            [
+                // (3,1): error CS9502: Using 'C.P2' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
+                // c.P2 = c.P2 + 123;
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.P2").WithArguments("C.P2").WithLocation(3, 1),
+                // (3,8): error CS9502: Using 'C.P2' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
+                // c.P2 = c.P2 + 123;
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.P2").WithArguments("C.P2").WithLocation(3, 8),
+            ]);
     }
 
     [Fact]
@@ -2653,6 +2699,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             [RequiresUnsafeAttribute] class C
             {
                 [RequiresUnsafeAttribute] void M() { }
+                [RequiresUnsafeAttribute] int P { get; set; }
             }
             """;
 
@@ -2660,6 +2707,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         comp.VerifyDiagnostics(
             // (4,6): error CS8335: Do not use 'System.Runtime.CompilerServices.RequiresUnsafeAttribute'. This is reserved for compiler usage.
             //     [RequiresUnsafeAttribute] void M() { }
-            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 6));
+            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 6),
+            // (5,6): error CS8335: Do not use 'System.Runtime.CompilerServices.RequiresUnsafeAttribute'. This is reserved for compiler usage.
+            //     [RequiresUnsafeAttribute] int P { get; set; }
+            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(5, 6));
     }
 }

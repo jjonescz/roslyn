@@ -619,6 +619,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             get { return false; }
         }
 
+        // PROTOTYPE: add a public API for this
+        /// <summary>
+        /// <see langword="true"/> if the method was compiled under updated memory safety rules
+        /// (<see cref="ModuleSymbol.UseUpdatedMemorySafetyRules"/>) and marked as <see langword="unsafe"/>.
+        /// </summary>
+        internal virtual bool IsCallerUnsafe => false; // PROTOTYPE: should be abstract
+
         /// <summary>
         /// Returns true if this symbol can be referenced by its name in code. Examples of symbols
         /// that cannot be referenced by name are:

@@ -21,6 +21,16 @@ namespace Microsoft.CodeAnalysis.CSharp
             get { return this.Flags.Includes(BinderFlags.UnsafeRegion); }
         }
 
+        private void ReportDiagnosticsIfUnsafeMemberAccess(BindingDiagnosticBag diagnostics, Symbol symbol, SyntaxNode node)
+        {
+            if (symbol.IsCallerUnsafe)
+            {
+                ReportUnsafeIfNotAllowed(node, diagnostics, disallowedUnder: MemorySafetyRules.Updated,
+                    customErrorCode: ErrorCode.ERR_UnsafeMemberOperation,
+                    customArgs: [symbol]);
+            }
+        }
+
         /// <param name="disallowedUnder">
         /// Memory safety rules which the current location is disallowed under.
         /// PROTOTYPE: Consider removing the default parameter value.
