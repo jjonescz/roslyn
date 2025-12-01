@@ -2340,6 +2340,80 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Fact]
+    public void Member_Method_OverloadResolution()
+    {
+        var source = """
+            C.M(1);
+            C.M("s");
+
+            class C
+            {
+                public static void M(int x) { }
+                public static unsafe void M(string s) { }
+            }
+            """;
+        CreateCompilation(source,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (2,1): error CS9502: Using 'C.M(string)' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
+            // C.M("s");
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, @"C.M(""s"")").WithArguments("C.M(string)").WithLocation(2, 1));
+    }
+
+    [Fact]
+    public void Member_Method_Extension()
+    {
+        var lib = """
+            public static class E
+            {
+                public static unsafe void M1(this int x) { }
+
+                extension(int x)
+                {
+                    public unsafe void M2() { }
+                }
+            }
+            """;
+
+        var caller = """
+            123.M1();
+            123.M2();
+            """;
+
+        var expectedDiagnostics = new[]
+        {
+            // (1,1): error CS9502: Using 'E.M1(int)' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
+            // 123.M1();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "123.M1()").WithArguments("E.M1(int)").WithLocation(1, 1),
+            // (2,1): error CS9502: Using 'E.extension(int).M2()' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
+            // 123.M2();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "123.M2()").WithArguments("E.extension(int).M2()").WithLocation(2, 1),
+        };
+
+        CreateCompilation([lib, caller],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        var libUpdated = CreateCompilation(lib,
+            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics()
+            .EmitToImageReference();
+
+        CreateCompilation(caller, [libUpdated],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        var libLegacy = CreateCompilation(lib,
+            options: TestOptions.UnsafeReleaseDll)
+            .VerifyDiagnostics()
+            .EmitToImageReference();
+
+        CreateCompilation(caller, [libLegacy],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyEmitDiagnostics();
+    }
+
+    [Fact]
     public void Member_Method_ConvertToFunctionPointer()
     {
         var source = """
