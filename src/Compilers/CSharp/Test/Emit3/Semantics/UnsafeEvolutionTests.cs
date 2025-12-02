@@ -16,16 +16,26 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.Semantics;
 [CompilerTrait(CompilerFeature.Unsafe)]
 public sealed class UnsafeEvolutionTests : CompilingTestBase
 {
-    private static void CompileAndVerify(string lib, string caller, params DiagnosticDescription[] expectedDiagnostics)
+    private void CompileAndVerify(
+        string lib,
+        string caller,
+        string[] unsafeSymbols,
+        string[] safeSymbols,
+        params DiagnosticDescription[] expectedDiagnostics)
     {
         CreateCompilation([lib, caller],
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(expectedDiagnostics);
 
-        var libUpdated = CreateCompilation(lib,
-            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+        var libUpdated = CompileAndVerify(lib,
+            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules(),
+            symbolValidator: module =>
+            {
+                VerifyMemorySafetyRulesAttribute(module, includesAttributeDefinition: true, includesAttributeUse: true, publicDefinition: false);
+                VerifyRequiresUnsafeAttribute(module, includesAttributeDefinition: true, publicDefinition: false, unsafeSymbols: unsafeSymbols, safeSymbols: safeSymbols);
+            })
             .VerifyDiagnostics()
-            .EmitToImageReference();
+            .GetImageReference();
 
         CreateCompilation(caller, [libUpdated],
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
@@ -73,11 +83,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             Assert.Equal(type, attribute.AttributeClass);
             Assert.Equal([2], attribute.ConstructorArguments.Select(a => a.Value));
             Assert.Equal([], attribute.NamedArguments);
-
-            var otherModuleAttributes = module.GetAttributes()
-                .Except([attribute])
-                .Select(a => a.AttributeClass.ToTestDisplayString());
-            Assert.Equal(["System.Runtime.CompilerServices.RefSafetyRulesAttribute"], otherModuleAttributes);
         }
         else
         {
@@ -2421,6 +2426,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 123.M1();
                 123.M2();
                 """,
+            unsafeSymbols: ["E.M1", "E.M2"],
+            safeSymbols: [],
             expectedDiagnostics:
             [
                 // (1,1): error CS9502: Using 'E.M1(int)' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
@@ -2485,6 +2492,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 c.P1 = c.P1 + 123;
                 c.P2 = c.P2 + 123;
                 """,
+            unsafeSymbols: ["C.P2"],
+            safeSymbols: ["C.P1"],
             expectedDiagnostics:
             [
                 // (3,1): error CS9502: Using 'C.P2' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
