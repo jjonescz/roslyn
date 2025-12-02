@@ -19,8 +19,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     private void CompileAndVerify(
         string lib,
         string caller,
-        string[] unsafeSymbols,
-        string[] safeSymbols,
+        object[] unsafeSymbols,
+        object[] safeSymbols,
         params DiagnosticDescription[] expectedDiagnostics)
     {
         CreateCompilation([lib, caller],
@@ -49,6 +49,17 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation(caller, [libLegacy],
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics();
+    }
+
+    private static Func<ModuleSymbol, Symbol> ExtensionMember(string containerName, string memberName)
+    {
+        return module => module.GlobalNamespace
+            .GetMember<NamedTypeSymbol>(containerName)
+            .GetMembers("")
+            .Cast<NamedTypeSymbol>()
+            .SelectMany(block => block.GetMembers(memberName))
+            .SingleOrDefault()
+            ?? throw new InvalidOperationException($"Cannot find '{containerName}.{memberName}'.");
     }
 
     private static void VerifyMemorySafetyRulesAttribute(ModuleSymbol module, bool includesAttributeDefinition, bool includesAttributeUse, bool publicDefinition)
@@ -94,8 +105,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         ModuleSymbol module,
         bool includesAttributeDefinition,
         bool publicDefinition,
-        ReadOnlySpan<string> unsafeSymbols,
-        ReadOnlySpan<string> safeSymbols)
+        ReadOnlySpan<object> unsafeSymbols,
+        ReadOnlySpan<object> safeSymbols)
     {
         const string name = "RequiresUnsafeAttribute";
         const string fullName = $"System.Runtime.CompilerServices.{name}";
@@ -115,25 +126,34 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             Assert.Equal(publicDefinition ? Accessibility.Public : Accessibility.Internal, type.DeclaredAccessibility);
         }
 
-        foreach (var symbolName in unsafeSymbols)
+        var seenSymbols = new HashSet<Symbol>();
+
+        foreach (var symbol in unsafeSymbols)
         {
-            verifySymbol(symbolName, shouldBeUnsafe: true);
+            verifySymbol(symbol, shouldBeUnsafe: true);
         }
 
-        foreach (var symbolName in safeSymbols)
+        foreach (var symbol in safeSymbols)
         {
-            verifySymbol(symbolName, shouldBeUnsafe: false);
+            verifySymbol(symbol, shouldBeUnsafe: false);
         }
 
-        void verifySymbol(string symbolName, bool shouldBeUnsafe)
+        void verifySymbol(object symbolGetter, bool shouldBeUnsafe)
         {
-            var symbol = module.GlobalNamespace.GetMember(symbolName);
-            Assert.False(symbol is null, $"Cannot find symbol '{symbolName}'");
+            var symbol = symbolGetter switch
+            {
+                string symbolName => module.GlobalNamespace.GetMember(symbolName),
+                Func<ModuleSymbol, Symbol> func => func(module),
+                _ => throw ExceptionUtilities.UnexpectedValue(symbolGetter),
+            };
+            Assert.False(symbol is null, $"Cannot find symbol '{symbolGetter}'");
 
             var attribute = symbol.GetAttributes().SingleOrDefault(a => a.AttributeClass?.Name == name);
-            Assert.True(attribute is null, $"Attribute should not be exposed by '{symbolName}'");
+            Assert.True(attribute is null, $"Attribute should not be exposed by '{symbol.ToTestDisplayString()}'");
 
-            Assert.True(shouldBeUnsafe == symbol.IsCallerUnsafe, $"Expected '{symbolName}' to be unsafe");
+            Assert.True(shouldBeUnsafe == symbol.IsCallerUnsafe, $"Expected '{symbol.ToTestDisplayString()}' to be unsafe");
+
+            Assert.True(seenSymbols.Add(symbol), $"Symbol '{symbol.ToTestDisplayString()}' specified multiple times.");
         }
     }
 
@@ -2426,7 +2446,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 123.M1();
                 123.M2();
                 """,
-            unsafeSymbols: ["E.M1", "E.M2"],
+            unsafeSymbols: ["E.M1", "E.M2", ExtensionMember("E", "M2")],
             safeSymbols: [],
             expectedDiagnostics:
             [
@@ -2436,6 +2456,39 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (2,1): error CS9502: Using 'E.extension(int).M2()' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
                 // 123.M2();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "123.M2()").WithArguments("E.extension(int).M2()").WithLocation(2, 1),
+            ]);
+    }
+
+    [Fact]
+    public void Member_Method_InUnsafeClass()
+    {
+        // PROTOTYPE: unsafe modifier on a class should result in a warning
+        CompileAndVerify(
+            lib: """
+                using System.Collections.Generic;
+                public unsafe class C
+                {
+                    public void M1() { }
+                    public IEnumerable<int> M2()
+                    {
+                        yield return 1;
+                    }
+                    public unsafe void M3() { }
+                }
+                """,
+            caller: """
+                var c = new C();
+                c.M1();
+                c.M2();
+                c.M3();
+                """,
+            unsafeSymbols: ["C.M3"],
+            safeSymbols: ["C.M1", "C.M2"],
+            expectedDiagnostics:
+            [
+                // (4,1): error CS9502: Using 'C.M3()' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
+                // c.M3();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.M3()").WithArguments("C.M3()").WithLocation(4, 1),
             ]);
     }
 
@@ -2492,8 +2545,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 c.P1 = c.P1 + 123;
                 c.P2 = c.P2 + 123;
                 """,
-            unsafeSymbols: ["C.P2"],
-            safeSymbols: ["C.P1"],
+            unsafeSymbols: ["C.P2", "C.get_P2", "C.set_P2"],
+            safeSymbols: ["C.P1", "C.get_P1", "C.set_P1"],
             expectedDiagnostics:
             [
                 // (3,1): error CS9502: Using 'C.P2' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
@@ -2502,6 +2555,38 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (3,8): error CS9502: Using 'C.P2' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
                 // c.P2 = c.P2 + 123;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.P2").WithArguments("C.P2").WithLocation(3, 8),
+            ]);
+    }
+
+    [Fact]
+    public void Member_Property_Extension()
+    {
+        CompileAndVerify(
+            lib: """
+                public static class E
+                {
+                    extension(int x)
+                    {
+                        public int P1 { get => x; set { } }
+                        public unsafe int P2 { get => x; set { } }
+                    }
+                }
+                """,
+            caller: """
+                var x = 111;
+                x.P1 = x.P1 + 222;
+                x.P2 = x.P2 + 333;
+                """,
+            unsafeSymbols: [ExtensionMember("E", "P2"), "E.get_P2", ExtensionMember("E", "get_P2"), "E.set_P2", ExtensionMember("E", "set_P2")],
+            safeSymbols: [ExtensionMember("E", "P1"), "E.get_P1", ExtensionMember("E", "get_P1"), "E.set_P1", ExtensionMember("E", "set_P1")],
+            expectedDiagnostics:
+            [
+                // (3,1): error CS9502: Using 'E.extension(int).P2' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
+                // x.P2 = x.P2 + 333;
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "x.P2").WithArguments("E.extension(int).P2").WithLocation(3, 1),
+                // (3,8): error CS9502: Using 'E.extension(int).P2' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
+                // x.P2 = x.P2 + 333;
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "x.P2").WithArguments("E.extension(int).P2").WithLocation(3, 8),
             ]);
     }
 
