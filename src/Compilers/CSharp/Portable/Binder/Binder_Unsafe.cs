@@ -86,7 +86,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     Debug.Assert(customErrorCode is null && customArgs is null);
 
-                    if (this.Compilation.Options.UseUpdatedMemorySafetyRules)
+                    if (this.Compilation.SourceModule.UseUpdatedMemorySafetyRules)
                     {
                         return MessageID.IDS_FeatureUnsafeEvolution.GetFeatureAvailabilityDiagnosticInfo(this.Compilation);
                     }
@@ -99,7 +99,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 Debug.Assert(disallowedUnder is MemorySafetyRules.Updated);
 
-                if (this.Compilation.Options.UseUpdatedMemorySafetyRules)
+                if (this.Compilation.SourceModule.UseUpdatedMemorySafetyRules)
                 {
                     return MessageID.IDS_FeatureUnsafeEvolution.GetFeatureAvailabilityDiagnosticInfo(this.Compilation)
                         ?? new CSDiagnosticInfo(customErrorCode ?? ErrorCode.ERR_UnsafeOperation, customArgs ?? []);
