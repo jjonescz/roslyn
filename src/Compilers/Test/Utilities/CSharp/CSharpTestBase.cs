@@ -679,7 +679,6 @@ namespace System.Runtime.CompilerServices
         protected static MetadataReference RefSafetyRulesAttributeLib =>
             CreateCompilation(RefSafetyRulesAttributeDefinition).EmitToImageReference();
 
-        // PROTOTYPE: Confirm the attribute shape in BCL API review.
         protected static readonly string MemorySafetyRulesAttributeDefinition = """
             namespace System.Runtime.CompilerServices
             {

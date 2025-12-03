@@ -8,6 +8,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities;
+using Roslyn.Utilities;
 using Xunit;
 
 namespace Microsoft.CodeAnalysis.CSharp.UnitTests.Semantics;
@@ -124,24 +125,35 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         bool includesAttributeDefinition,
         bool publicDefinition,
         ReadOnlySpan<object> unsafeSymbols,
-        ReadOnlySpan<object> safeSymbols)
+        ReadOnlySpan<object> safeSymbols,
+        bool customAttributeDefinition = false)
     {
-        const string name = "RequiresUnsafeAttribute";
-        const string fullName = $"System.Runtime.CompilerServices.{name}";
-        var type = (NamedTypeSymbol)module.GlobalNamespace.GetMember(fullName);
+        const string Name = "RequiresUnsafeAttribute";
+        const string FullName = $"System.Runtime.CompilerServices.{Name}";
+        var type = (NamedTypeSymbol)module.GlobalNamespace.GetMember(FullName);
 
         if (includesAttributeDefinition)
         {
             Assert.NotNull(type);
+
+            Assert.Equal(publicDefinition ? Accessibility.Public : Accessibility.Internal, type.DeclaredAccessibility);
+
+            if (!customAttributeDefinition)
+            {
+                var attributeAttributes = type.GetAttributes()
+                    .Select(a => a.AttributeClass.ToTestDisplayString())
+                    .OrderBy(StringComparer.Ordinal);
+                Assert.Equal(
+                    [
+                        "Microsoft.CodeAnalysis.EmbeddedAttribute",
+                        "System.Runtime.CompilerServices.CompilerGeneratedAttribute",
+                    ],
+                    attributeAttributes);
+            }
         }
         else
         {
             Assert.Null(type);
-        }
-
-        if (type is { })
-        {
-            Assert.Equal(publicDefinition ? Accessibility.Public : Accessibility.Internal, type.DeclaredAccessibility);
         }
 
         var seenSymbols = new HashSet<Symbol>();
@@ -166,7 +178,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             };
             Assert.False(symbol is null, $"Cannot find symbol '{symbolGetter}'");
 
-            var attribute = symbol.GetAttributes().SingleOrDefault(a => a.AttributeClass?.Name == name);
+            var attribute = symbol.GetAttributes().SingleOrDefault(a => a.AttributeClass?.Name == Name);
             Assert.True(attribute is null, $"Attribute should not be exposed by '{symbol.ToTestDisplayString()}'");
 
             Assert.True(shouldBeUnsafe == symbol.IsCallerUnsafe, $"Expected '{symbol.ToTestDisplayString()}' to be unsafe");
@@ -2761,14 +2773,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
         CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll,
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(m, includesAttributeDefinition: true, publicDefinition: true,
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(m, includesAttributeDefinition: true, publicDefinition: true, customAttributeDefinition: true,
                 unsafeSymbols: [],
                 safeSymbols: ["C", "C.M"]))
             .VerifyDiagnostics();
 
         CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules(),
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(m, includesAttributeDefinition: true, publicDefinition: true,
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(m, includesAttributeDefinition: true, publicDefinition: true, customAttributeDefinition: true,
                 unsafeSymbols: ["C.M"],
                 safeSymbols: ["C"]))
             .VerifyDiagnostics();
@@ -2779,7 +2791,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     {
         var comp = CreateCompilation(RequiresUnsafeAttributeDefinition);
         CompileAndVerify(comp,
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(m, includesAttributeDefinition: true, publicDefinition: true,
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(m, includesAttributeDefinition: true, publicDefinition: true, customAttributeDefinition: true,
                 unsafeSymbols: [],
                 safeSymbols: [AttributeDescription.RequiresUnsafeAttribute.FullName]))
             .VerifyDiagnostics();
