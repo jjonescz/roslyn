@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>$(NetRoslyn);net472</TargetFrameworks>
+    <TargetFrameworks>$(NetRoslyn);$(NetRoslynFramework)</TargetFrameworks>
     <Nullable>enable</Nullable>
     <SignAssembly>false</SignAssembly>
   </PropertyGroup>

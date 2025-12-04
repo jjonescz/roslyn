@@ -4,7 +4,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Microsoft.CodeAnalysis.ExternalAccess.Copilot</RootNamespace>
-    <TargetFrameworks>net472</TargetFrameworks>
+    <TargetFrameworks>$(NetRoslynFramework)</TargetFrameworks>
     <UseWpf>true</UseWpf>
 
     <!-- NuGet -->

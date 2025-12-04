@@ -4,7 +4,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Roslyn.VisualStudio.Next.UnitTests</RootNamespace>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>$(NetRoslynFramework)</TargetFramework>
     <DefineConstants>$(DefineConstants);TESTS</DefineConstants>
   </PropertyGroup>
   <ItemGroup Label="Project References">

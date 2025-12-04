@@ -4,7 +4,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Microsoft.CodeAnalysis.MSBuild</RootNamespace>
-    <TargetFrameworks>$(NetRoslynSourceBuild);net472</TargetFrameworks>
+    <TargetFrameworks>$(NetRoslynSourceBuild);$(NetRoslynFramework)</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- NuGet -->
     <IsPackable>true</IsPackable>
@@ -97,7 +97,7 @@
     <!-- If we're not doing source build, we will include a net472 version for the broadest compatibility -->
     <ItemGroup Condition="'$(DotNetBuildSourceOnly)' != 'true'">
       <_NetFrameworkBuildHostProjectReference Include="..\..\..\Workspaces\MSBuild\BuildHost\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.csproj">
-        <TargetFramework>net472</TargetFramework>
+        <TargetFramework>$(NetRoslynFramework)</TargetFramework>
         <!-- NOTE: Update the `BuildHostProcessManager.GetDotNetFrameworkBuildHostPath` method if ContentFolderName changes. -->
         <ContentFolderName>BuildHost-net472</ContentFolderName>
       </_NetFrameworkBuildHostProjectReference>

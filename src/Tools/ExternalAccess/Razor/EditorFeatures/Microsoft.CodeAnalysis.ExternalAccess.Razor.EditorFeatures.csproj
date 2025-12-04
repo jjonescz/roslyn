@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <RootNamespace>Microsoft.CodeAnalysis.ExternalAccess.Razor</RootNamespace>
-    <TargetFrameworks>net472</TargetFrameworks>
+    <TargetFrameworks>$(NetRoslynFramework)</TargetFrameworks>
     <UseWPF>true</UseWPF>
 
     <!-- NuGet -->
