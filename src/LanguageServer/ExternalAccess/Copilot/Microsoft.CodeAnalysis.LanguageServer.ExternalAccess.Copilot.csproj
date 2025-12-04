@@ -4,7 +4,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Microsoft.CodeAnalysis.LanguageServer.ExternalAccess.Copilot</RootNamespace>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>$(NetRoslynStandard)</TargetFramework>
 
     <IsPackable>true</IsPackable>
     <PackageId>Microsoft.CodeAnalysis.LanguageServer.ExternalAccess.Copilot</PackageId>

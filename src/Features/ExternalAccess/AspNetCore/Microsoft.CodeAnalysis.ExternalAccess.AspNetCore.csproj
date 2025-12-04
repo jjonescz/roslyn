@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <RootNamespace>Microsoft.CodeAnalysis.ExternalAccess.AspNetCore</RootNamespace>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>$(NetRoslynStandard)</TargetFramework>
 
     <!-- NuGet -->
     <IsPackable>true</IsPackable>

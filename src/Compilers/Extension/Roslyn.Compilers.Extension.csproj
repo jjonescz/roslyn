@@ -4,7 +4,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Roslyn.Compilers.Extension</RootNamespace>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>$(NetRoslynFramework)</TargetFramework>
     <IsShipping>false</IsShipping>
 
     <!-- VSIX -->
@@ -65,7 +65,7 @@
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <ForceIncludeInVSIX>true</ForceIncludeInVSIX>
-      <AdditionalProperties>TargetFramework=net472</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=$(NetRoslynFramework)</AdditionalProperties>
       <PkgDefEntry>BindingRedirect</PkgDefEntry>
     </ProjectReference>
     <ProjectReference Include="..\Core\Portable\Microsoft.CodeAnalysis.csproj">
@@ -78,13 +78,13 @@
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <ForceIncludeInVSIX>true</ForceIncludeInVSIX>
       <!-- Workaround for https://github.com/dotnet/sdk/issues/433#issuecomment-320024771 . Remove once resolved. -->
-      <AdditionalProperties>TargetFramework=net472</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=$(NetRoslynFramework)</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="..\CSharp\csc\AnyCpu\csc.csproj">
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <ForceIncludeInVSIX>true</ForceIncludeInVSIX>
-      <AdditionalProperties>TargetFramework=net472</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=$(NetRoslynFramework)</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="..\CSharp\Portable\Microsoft.CodeAnalysis.CSharp.csproj">
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup</IncludeOutputGroupsInVSIX>
@@ -100,13 +100,13 @@
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <ForceIncludeInVSIX>true</ForceIncludeInVSIX>
-      <AdditionalProperties>TargetFramework=net472</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=$(NetRoslynFramework)</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="..\..\Interactive\csi\csi.csproj">
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <ForceIncludeInVSIX>true</ForceIncludeInVSIX>
-      <AdditionalProperties>TargetFramework=net472</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=$(NetRoslynFramework)</AdditionalProperties>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

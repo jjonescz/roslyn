@@ -5,7 +5,7 @@
     <OutputType>Exe</OutputType>
     
     <!-- This project file effectively retargets our exe for .NET Framework ARM64.  -->
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>$(NetRoslynFramework)</TargetFramework>
     <PlatformTarget>ARM64</PlatformTarget>
     <AssemblyName>vbc</AssemblyName>
     <DisableNullableWarnings>true</DisableNullableWarnings>

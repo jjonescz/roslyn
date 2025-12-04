@@ -6,7 +6,7 @@
     <RootNamespace>Microsoft.CodeAnalysis.ExpressionEvaluator</RootNamespace>
     <AssemblyName>Microsoft.CodeAnalysis.ExpressionEvaluator.ExpressionCompiler</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>$(NetRoslynStandard)</TargetFramework>
     <DefineConstants>$(DefineConstants);EXPRESSIONCOMPILER</DefineConstants>
     <ApplyNgenOptimization>full</ApplyNgenOptimization>
     <IsSymbolPublishingPackage>true</IsSymbolPublishingPackage>

@@ -14,7 +14,7 @@
   <UsingTask TaskName="Microsoft.DotNet.Tools.ReplacePackageParts" AssemblyFile="$(_NuGetRepackAssembly)" />
 
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>$(NetRoslynFramework)</TargetFramework>
     <OutputType>Library</OutputType>
     <ApplyNgenOptimization>full</ApplyNgenOptimization>
   </PropertyGroup>

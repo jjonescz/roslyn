@@ -35,7 +35,7 @@
     </CopyPublishedOutputProjectReference>
 
     <CopyPublishedOutputProjectReference Include="..\HostProcess\x64\InteractiveHost64.csproj">
-      <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+      <SetTargetFramework>TargetFramework=$(NetRoslynFramework)</SetTargetFramework>
       <OutputItemType>InteractiveHostFiles_Desktop64</OutputItemType>
     </CopyPublishedOutputProjectReference>
 

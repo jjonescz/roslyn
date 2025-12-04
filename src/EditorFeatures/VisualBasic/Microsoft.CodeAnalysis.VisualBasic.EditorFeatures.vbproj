@@ -5,7 +5,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace></RootNamespace>
     <UseWpf>true</UseWpf>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>$(NetRoslynFramework)</TargetFramework>
     <!-- NuGet -->
     <IsPackable>true</IsPackable>
     <PackageDescription>

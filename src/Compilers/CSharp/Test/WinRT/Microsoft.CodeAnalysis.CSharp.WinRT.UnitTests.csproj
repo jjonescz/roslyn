@@ -4,7 +4,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen</RootNamespace>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>$(NetRoslynFramework)</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <AssemblyAttribute Include="Microsoft.CodeAnalysis.Test.Utilities.RunTestsInSinglePartitionAttribute" />
