@@ -67,6 +67,10 @@
       <PropertyGroup>
         <NetRoslynAll>$(NetRoslyn)</NetRoslynAll>
         <NetRoslynSourceBuild>$(NetRoslynAll)</NetRoslynSourceBuild>
+        <NetVS>$(NetRoslyn)</NetVS>
+        <NetVSCode>$(NetRoslyn)</NetVSCode>
+        <NetVSShared>$(NetRoslyn)</NetVSShared>
+        <NetRoslynBuildHostNetCoreVersion>$(NetRoslyn)</NetRoslynBuildHostNetCoreVersion>
         <NetRoslynStandard></NetRoslynStandard>
         <NetRoslynFramework></NetRoslynFramework>
       </PropertyGroup>
