@@ -5,7 +5,7 @@
     <OutputType>Library</OutputType>
     <OptionStrict>Off</OptionStrict>
     <VBRuntime>Default</VBRuntime>
-    <TargetFramework>$(NetRoslynFramework)</TargetFramework>
+    <TargetFrameworks>$(NetRoslyn);$(NetRoslynFramework)</TargetFrameworks>
     <UseWpf>true</UseWpf>
     <RootNamespace></RootNamespace>
   </PropertyGroup>

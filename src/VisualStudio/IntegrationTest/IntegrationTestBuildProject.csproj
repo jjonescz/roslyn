@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.Build.Traversal">
   <PropertyGroup>
-    <TargetFrameworks>$(NetRoslynFramework)</TargetFrameworks>
+    <TargetFrameworks>$(NetRoslyn);$(NetRoslynFramework)</TargetFrameworks>
     <ExcludeFromSourceOnlyBuild>true</ExcludeFromSourceOnlyBuild>
   </PropertyGroup>
 

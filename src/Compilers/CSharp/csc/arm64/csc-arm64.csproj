@@ -7,7 +7,7 @@
     <!-- This project file effectively retargets our exe for .NET Framework ARM64.  -->
     <AssemblyName>csc</AssemblyName>
     <PlatformTarget>ARM64</PlatformTarget>
-    <TargetFramework>$(NetRoslynFramework)</TargetFramework>
+    <TargetFrameworks>$(NetRoslyn);$(NetRoslynFramework)</TargetFrameworks>
     <DisableNullableWarnings>true</DisableNullableWarnings>
     <IsSymbolPublishingPackage>true</IsSymbolPublishingPackage>
     <ExcludeFromSourceOnlyBuild>true</ExcludeFromSourceOnlyBuild>

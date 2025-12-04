@@ -4,7 +4,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <AssemblyName>Microsoft.CodeAnalysis.VisualBasic.ExpressionEvaluator.ResultProvider</AssemblyName>
-    <TargetFramework>$(NetRoslynStandard)</TargetFramework>
+    <TargetFrameworks>$(NetRoslyn);$(NetRoslynStandard)</TargetFrameworks>
     <RootNamespace></RootNamespace>
     <IsSymbolPublishingPackage>true</IsSymbolPublishingPackage>
   </PropertyGroup>

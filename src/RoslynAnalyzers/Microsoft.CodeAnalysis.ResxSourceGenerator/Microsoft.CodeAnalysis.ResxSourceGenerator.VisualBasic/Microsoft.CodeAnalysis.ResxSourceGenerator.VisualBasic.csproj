@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>$(NetRoslynStandard)</TargetFramework>
+    <TargetFrameworks>$(NetRoslyn);$(NetRoslynStandard)</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <ReleaseTrackingOptOut>true</ReleaseTrackingOptOut>
 

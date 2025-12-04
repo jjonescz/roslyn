@@ -4,7 +4,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <OptionStrict>Off</OptionStrict>
-    <TargetFramework>$(NetRoslynFramework)</TargetFramework>
+    <TargetFrameworks>$(NetRoslyn);$(NetRoslynFramework)</TargetFrameworks>
     <UseWpf>true</UseWpf>
     <RootNamespace></RootNamespace>
   </PropertyGroup>
