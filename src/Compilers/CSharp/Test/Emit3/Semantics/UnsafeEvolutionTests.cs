@@ -297,7 +297,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Fact]
-    public void RulesAttribute_Field()
+    public void RulesAttribute_Reflection()
     {
         var sourceA = """
             using System;
@@ -308,8 +308,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 {
                     var module = type.Assembly.Modules.Single();
                     var attribute = module.GetCustomAttributes(false).Single(a => a.GetType().Name == "MemorySafetyRulesAttribute");
-                    var field = attribute.GetType().GetField("Version");
-                    return (int)field.GetValue(attribute);
+                    var prop = attribute.GetType().GetProperty("Version");
+                    return (int)prop.GetValue(attribute);
                 }
             }
             """;
