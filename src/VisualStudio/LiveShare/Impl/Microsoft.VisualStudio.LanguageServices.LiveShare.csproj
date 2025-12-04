@@ -5,7 +5,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Microsoft.VisualStudio.LanguageServices.LiveShare</RootNamespace>
     <AssemblyName>Microsoft.VisualStudio.LanguageServices.LiveShare</AssemblyName>
-    <TargetFramework>$(NetRoslynFramework)</TargetFramework>
+    <TargetFrameworks>$(NetRoslyn);$(NetRoslynFramework)</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <PackageDescription>
       A private package for the liveshare team to grant access to LSP implementations.

@@ -3,7 +3,7 @@
 <Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>$(NetRoslynFramework)</TargetFramework>
+    <TargetFrameworks>$(NetRoslyn);$(NetRoslynFramework)</TargetFrameworks>
     <UseWpf>true</UseWpf>
     <RootNamespace>Roslyn.VisualStudio.DiagnosticsWindow</RootNamespace>
     <GenerateResourceUsePreserializedResources Condition="'$(MSBuildRuntimeType)' == 'Core'">true</GenerateResourceUsePreserializedResources>

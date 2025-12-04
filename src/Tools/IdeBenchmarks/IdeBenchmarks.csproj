@@ -4,7 +4,7 @@
   <Import Project="$(RepositoryEngineeringDir)targets\GenerateCompilerExecutableBindingRedirects.targets" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>$(NetRoslynFramework)</TargetFramework>
+    <TargetFrameworks>$(NetRoslyn);$(NetRoslynFramework)</TargetFrameworks>
     <IsShipping>false</IsShipping>
     <NoWarn>$(NoWarn),CA2007</NoWarn>
     <!-- Xunit analyzer doesn't recognize benchmark attributes -->

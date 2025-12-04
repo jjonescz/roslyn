@@ -3,7 +3,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>$(NetRoslynFramework)</TargetFramework>
+    <TargetFrameworks>$(NetRoslyn);$(NetRoslynFramework)</TargetFrameworks>
     <RootNamespace>Microsoft.VisualStudio.LanguageServices.LiveShare.UnitTests</RootNamespace>
     <RoslynProjectType>UnitTest</RoslynProjectType>
   </PropertyGroup>

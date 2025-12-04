@@ -3,7 +3,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>$(NetRoslynFramework)</TargetFramework>
+    <TargetFrameworks>$(NetRoslyn);$(NetRoslynFramework)</TargetFrameworks>
     <SetupProductArch>arm64</SetupProductArch>
     <!-- If the user is building the entire repository locally, don't deploy this project. We will deploy the x64 flavor,
          which for purposes of local deploy is actually the same thing; the only difference of this project and the x64 flavor
