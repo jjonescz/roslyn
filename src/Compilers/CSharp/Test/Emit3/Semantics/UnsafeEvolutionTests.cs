@@ -2517,6 +2517,32 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Fact]
+    public void Member_Method_SafeBoundary()
+    {
+        CompileAndVerify(
+            lib: """
+                public class C
+                {
+                    public void M1() { unsafe { M2(); } }
+                    public unsafe void M2() { }
+                }
+                """,
+            caller: """
+                var c = new C();
+                c.M1();
+                c.M2();
+                """,
+            unsafeSymbols: ["C.M2"],
+            safeSymbols: ["C.M1"],
+            expectedDiagnostics:
+            [
+                // (3,1): error CS9502: Using 'C.M2()' is only permitted in an unsafe context because it is marked as 'unsafe' under the updated memory safety rules
+                // c.M2();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.M2()").WithArguments("C.M2()").WithLocation(3, 1),
+            ]);
+    }
+
+    [Fact]
     public void Member_Method_NameOf()
     {
         var source = """
