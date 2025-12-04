@@ -14782,6 +14782,62 @@ class C
                 outWriter.ToString());
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/49219")]
+        public void FailedGeneratorExecuteWarning_AsError_Specific()
+        {
+            var dir = Temp.CreateDirectory();
+            var src = dir.CreateFile("temp.cs").WriteAllText("class C;");
+            var cmd = CreateCSharpCompiler(null, dir.Path,
+                ["/t:library", "/nologo", "/warnaserror:CS8785", src.Path],
+                generators: [new FailsExecuteGenerator()]);
+            var outWriter = new StringWriter(CultureInfo.InvariantCulture);
+            var exitCode = cmd.Run(outWriter);
+            Assert.Equal(1, exitCode);
+            Assert.StartsWith(
+                "error CS8785: Generator 'FailsExecuteGenerator' failed to generate source. It will not contribute to the output and compilation errors may occur as a result. Exception was of type 'Exception' with message 'THROW'",
+                outWriter.ToString());
+        }
+
+        [Fact]
+        public void FailedGeneratorExecuteWarning_AsError_GlobalConfig()
+        {
+            var dir = Temp.CreateDirectory();
+            var src = dir.CreateFile("temp.cs").WriteAllText("class C;");
+            var analyzerConfig = dir.CreateFile(".globalconfig").WriteAllText("""
+                is_global = true
+                dotnet_diagnostic.CS8785.severity = error
+                """);
+            var cmd = CreateCSharpCompiler(null, dir.Path,
+                ["/t:library", "/nologo", $"/analyzerconfig:{analyzerConfig.Path}", src.Path],
+                generators: [new FailsExecuteGenerator()]);
+            var outWriter = new StringWriter(CultureInfo.InvariantCulture);
+            var exitCode = cmd.Run(outWriter);
+            Assert.Equal(1, exitCode);
+            Assert.StartsWith(
+                "error CS8785: Generator 'FailsExecuteGenerator' failed to generate source. It will not contribute to the output and compilation errors may occur as a result. Exception was of type 'Exception' with message 'THROW'",
+                outWriter.ToString());
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/81479")]
+        public void FailedGeneratorExecuteWarning_AsError_EditorConfig()
+        {
+            var dir = Temp.CreateDirectory();
+            var src = dir.CreateFile("temp.cs").WriteAllText("class C;");
+            var analyzerConfig = dir.CreateFile(".editorconfig").WriteAllText("""
+                [*]
+                dotnet_diagnostic.CS8785.severity = error
+                """);
+            var cmd = CreateCSharpCompiler(null, dir.Path,
+                ["/t:library", "/nologo", $"/analyzerconfig:{analyzerConfig.Path}", src.Path],
+                generators: [new FailsExecuteGenerator()]);
+            var outWriter = new StringWriter(CultureInfo.InvariantCulture);
+            var exitCode = cmd.Run(outWriter);
+            Assert.Equal(1, exitCode);
+            Assert.StartsWith(
+                "error CS8785: Generator 'FailsExecuteGenerator' failed to generate source. It will not contribute to the output and compilation errors may occur as a result. Exception was of type 'Exception' with message 'THROW'",
+                outWriter.ToString());
+        }
+
         [Fact, WorkItem(65313, "https://github.com/dotnet/roslyn/issues/65313")]
         public void FailedGeneratorExecuteWarning_Suppressed()
         {
@@ -14824,6 +14880,62 @@ class C
             var exitCode = cmd.Run(outWriter);
             Assert.Equal(1, exitCode);
             Assert.StartsWith($"error CS8784: Generator 'FailsInitializeGenerator' failed to initialize. It will not contribute to the output and compilation errors may occur as a result. Exception was of type 'Exception' with message 'THROW'",
+                outWriter.ToString());
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/49219")]
+        public void FailedGeneratorInitializeWarning_AsError_Specific()
+        {
+            var dir = Temp.CreateDirectory();
+            var src = dir.CreateFile("temp.cs").WriteAllText("class C;");
+            var cmd = CreateCSharpCompiler(null, dir.Path,
+                ["/t:library", "/nologo", "/warnaserror:CS8784", src.Path],
+                generators: [new PipelineCallbackGenerator(_ => throw new Exception("THROW")).AsSourceGenerator()]);
+            var outWriter = new StringWriter(CultureInfo.InvariantCulture);
+            var exitCode = cmd.Run(outWriter);
+            Assert.Equal(1, exitCode);
+            Assert.StartsWith(
+                "error CS8784: Generator 'PipelineCallbackGenerator' failed to initialize. It will not contribute to the output and compilation errors may occur as a result. Exception was of type 'Exception' with message 'THROW'",
+                outWriter.ToString());
+        }
+
+        [Fact]
+        public void FailedGeneratorInitializeWarning_AsError_GlobalConfig()
+        {
+            var dir = Temp.CreateDirectory();
+            var src = dir.CreateFile("temp.cs").WriteAllText("class C;");
+            var analyzerConfig = dir.CreateFile(".globalconfig").WriteAllText("""
+                is_global = true
+                dotnet_diagnostic.CS8784.severity = error
+                """);
+            var cmd = CreateCSharpCompiler(null, dir.Path,
+                ["/t:library", "/nologo", $"/analyzerconfig:{analyzerConfig.Path}", src.Path],
+                generators: [new PipelineCallbackGenerator(_ => throw new Exception("THROW")).AsSourceGenerator()]);
+            var outWriter = new StringWriter(CultureInfo.InvariantCulture);
+            var exitCode = cmd.Run(outWriter);
+            Assert.Equal(1, exitCode);
+            Assert.StartsWith(
+                "error CS8784: Generator 'PipelineCallbackGenerator' failed to initialize. It will not contribute to the output and compilation errors may occur as a result. Exception was of type 'Exception' with message 'THROW'",
+                outWriter.ToString());
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/81479")]
+        public void FailedGeneratorInitializeWarning_AsError_EditorConfig()
+        {
+            var dir = Temp.CreateDirectory();
+            var src = dir.CreateFile("temp.cs").WriteAllText("class C;");
+            var analyzerConfig = dir.CreateFile(".editorconfig").WriteAllText("""
+                [*]
+                dotnet_diagnostic.CS8784.severity = error
+                """);
+            var cmd = CreateCSharpCompiler(null, dir.Path,
+                ["/t:library", "/nologo", $"/analyzerconfig:{analyzerConfig.Path}", src.Path],
+                generators: [new PipelineCallbackGenerator(_ => throw new Exception("THROW")).AsSourceGenerator()]);
+            var outWriter = new StringWriter(CultureInfo.InvariantCulture);
+            var exitCode = cmd.Run(outWriter);
+            Assert.Equal(1, exitCode);
+            Assert.StartsWith(
+                "error CS8784: Generator 'PipelineCallbackGenerator' failed to initialize. It will not contribute to the output and compilation errors may occur as a result. Exception was of type 'Exception' with message 'THROW'",
                 outWriter.ToString());
         }
 
