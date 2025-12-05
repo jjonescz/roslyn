@@ -119,7 +119,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (node.IsParamsArrayOrCollection)
                 {
                     // Synthesized params collection is processed element wise.
-                    this.VisitList(node.UnconvertedCollectionExpression.Elements);
+                    this.VisitList(node.Elements);
                     return null;
                 }
 

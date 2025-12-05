@@ -7553,7 +7553,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         }
                         else
                         {
-                            elements = ((BoundCollectionExpression)((BoundConversion)argument).Operand).UnconvertedCollectionExpression.Elements.CastArray<BoundExpression>();
+                            elements = ((BoundCollectionExpression)((BoundConversion)argument).Operand).Elements.Cast<BoundExpression>().ToImmutableArray();
                         }
 
                         if (elements.Length == 0)
