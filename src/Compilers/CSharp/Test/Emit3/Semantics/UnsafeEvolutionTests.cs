@@ -2992,6 +2992,59 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             .VerifyDiagnostics();
     }
 
+    [Theory, CombinatorialData]
+    public void RequiresUnsafeAttribute_FromMetadata_Multiple_AndCorLib(bool useCompilationReference)
+    {
+        var corlibSource = """
+            namespace System
+            {
+                public class Object;
+                public class ValueType;
+                public class Attribute;
+                public struct Void;
+                public struct Int32;
+                public struct Boolean;
+                public class AttributeUsageAttribute
+                {
+                    public AttributeUsageAttribute(AttributeTargets t) { }
+                    public bool AllowMultiple { get; set; }
+                    public bool Inherited { get; set; }
+                }
+                public class Enum;
+                public enum AttributeTargets;
+            }
+            """;
+
+        var corlib = CreateEmptyCompilation([corlibSource, RequiresUnsafeAttributeDefinition]).VerifyDiagnostics();
+        var corlibRef = AsReference(corlib, useCompilationReference);
+
+        var comp1 = CreateEmptyCompilation(RequiresUnsafeAttributeDefinition, [corlibRef]).VerifyDiagnostics();
+        var ref1 = AsReference(comp1, useCompilationReference);
+
+        var comp2 = CreateEmptyCompilation(RequiresUnsafeAttributeDefinition, [corlibRef]).VerifyDiagnostics();
+        var ref2 = AsReference(comp2, useCompilationReference);
+
+        var source = """
+            public class C
+            {
+                public unsafe void M() { }
+            }
+            """;
+
+        // Using the attribute from corlib even if there are ambiguous definitions in other references.
+        var verifier = CompileAndVerify(CreateEmptyCompilation(source, [ref1, ref2, corlibRef],
+            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules()),
+            verify: Verification.Skipped,
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(m, includesAttributeDefinition: false,
+                unsafeSymbols: ["C.M"],
+                safeSymbols: ["C"]));
+
+        verifier.Diagnostics.WhereAsArray(d => d.Code != (int)ErrorCode.WRN_NoRuntimeMetadataVersion).Verify();
+
+        var comp = (CSharpCompilation)verifier.Compilation;
+        Assert.Same(comp.Assembly.CorLibrary, comp.GetReferencedAssemblySymbol(corlibRef));
+    }
+
     [Fact]
     public void RequiresUnsafeAttribute_FromMetadata_UnrecognizedConstructor()
     {
