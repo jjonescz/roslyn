@@ -13,6 +13,14 @@ In a typical project, this setting is controlled by the `AnalysisLevel` property
 which determines the `WarningLevel` property (passed to the `Csc` task).
 For more information on `AnalysisLevel`, see https://devblogs.microsoft.com/dotnet/automatically-find-latent-bugs-in-your-code-with-net-5/
 
+## Warning level 11
+
+The compiler shipped with .NET 11 (the C# 15 compiler) contains the following warnings which are reported only under `/warn:11` or higher.
+
+| Warning ID | Description |
+|------------|-------------|
+| CS9503 | [The 'unsafe' modifier does not have any effect here under the current rules](https://github.com/dotnet/csharplang/blob/main/proposals/unsafe-evolution.md#unsafe-modifiers-and-contexts) |
+
 ## Warning level 10
 
 The compiler shipped with .NET 10 (the C# 14 compiler) contains the following warnings which are reported only under `/warn:10` or higher.

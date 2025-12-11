@@ -210,6 +210,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             // docs/compilers/CSharp/Warnversion Warning Waves.md
             switch (code)
             {
+                case ErrorCode.WRN_UnsafeMeaningless:
+                    // Warning level 11 is exclusively for warnings introduced in the compiler
+                    // shipped with dotnet 11 (C# 15) and that can be reported for pre-existing code.
+                    return 11;
                 case ErrorCode.WRN_UnassignedInternalRefField:
                     // Warning level 10 is exclusively for warnings introduced in the compiler
                     // shipped with dotnet 10 (C# 14) and that can be reported for pre-existing code.
@@ -651,6 +655,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 or ErrorCode.ERR_UnsafeOperation
                 or ErrorCode.ERR_UnsafeUninitializedStackAlloc
                 or ErrorCode.ERR_UnsafeMemberOperation
+                or ErrorCode.WRN_UnsafeMeaningless
 
                 or ErrorCode.Unknown
                 or ErrorCode.ERR_NoMetadataFile

@@ -385,7 +385,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             var flags = BinderFlags.SuppressConstraintChecks | BinderFlags.SuppressObsoleteChecks;
             if (usingDirective.UnsafeKeyword != default)
             {
-                this.CheckUnsafeModifier(DeclarationModifiers.Unsafe, usingDirective.UnsafeKeyword.GetLocation(), diagnostics);
+                this.CheckUnsafeModifier(DeclarationModifiers.Unsafe, meaninglessUnderUpdatedRules: true, usingDirective.UnsafeKeyword.GetLocation(), diagnostics);
                 flags |= BinderFlags.UnsafeRegion;
             }
             else

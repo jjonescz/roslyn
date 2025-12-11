@@ -2457,6 +2457,216 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             Diagnostic(ErrorCode.ERR_UnsafeUninitializedStackAlloc, "stackalloc int[5]").WithLocation(3, 26));
     }
 
+    [Fact]
+    public void Declarations()
+    {
+        var source = """
+            #pragma warning disable CS0169 // unused field
+            #pragma warning disable CS8019 // unused using
+            #pragma warning disable CS8321 // unused local function
+            using static unsafe System.Collections.Generic.List<int*[]>;
+            using unsafe U = int*;
+            unsafe void F() { }
+            unsafe class C;
+            unsafe struct S;
+            unsafe interface I;
+            unsafe enum E { A }
+            unsafe record R;
+            class X
+            {
+                unsafe X() { }
+                unsafe ~X() { }
+                unsafe int f;
+                unsafe void M() { }
+                unsafe int P1 { get; set; }
+                int P2 { unsafe get => 0; unsafe set { } }
+                int P3 { get => 0; unsafe init { } }
+                unsafe event System.Action E1 { add { } remove { } }
+                event System.Action E2 { unsafe add { } unsafe remove { } }
+                public static unsafe implicit operator int(X x) => 0;
+            }
+            """;
+
+        // PROTOTYPE: 'unsafe' should be allowed on property/event accessors.
+
+        CreateCompilation([source, IsExternalInitTypeDefinition]).VerifyDiagnostics(
+            // (4,14): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            // using static unsafe System.Collections.Generic.List<int*[]>;
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "unsafe").WithLocation(4, 14),
+            // (5,7): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            // using unsafe U = int*;
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "unsafe").WithLocation(5, 7),
+            // (6,13): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            // unsafe void F() { }
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "F").WithLocation(6, 13),
+            // (7,14): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            // unsafe class C;
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "C").WithLocation(7, 14),
+            // (8,15): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            // unsafe struct S;
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "S").WithLocation(8, 15),
+            // (9,18): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            // unsafe interface I;
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "I").WithLocation(9, 18),
+            // (10,13): error CS0106: The modifier 'unsafe' is not valid for this item
+            // unsafe enum E { A }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "E").WithArguments("unsafe").WithLocation(10, 13),
+            // (11,15): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            // unsafe record R;
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "R").WithLocation(11, 15),
+            // (14,12): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            //     unsafe X() { }
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "X").WithLocation(14, 12),
+            // (15,13): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            //     unsafe ~X() { }
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "X").WithLocation(15, 13),
+            // (16,16): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            //     unsafe int f;
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "f").WithLocation(16, 16),
+            // (17,17): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            //     unsafe void M() { }
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "M").WithLocation(17, 17),
+            // (18,16): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            //     unsafe int P1 { get; set; }
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "P1").WithLocation(18, 16),
+            // (19,21): error CS0106: The modifier 'unsafe' is not valid for this item
+            //     int P2 { unsafe get => 0; unsafe set { } }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "get").WithArguments("unsafe").WithLocation(19, 21),
+            // (19,38): error CS0106: The modifier 'unsafe' is not valid for this item
+            //     int P2 { unsafe get => 0; unsafe set { } }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "set").WithArguments("unsafe").WithLocation(19, 38),
+            // (20,31): error CS0106: The modifier 'unsafe' is not valid for this item
+            //     int P3 { get => 0; unsafe init { } }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "init").WithArguments("unsafe").WithLocation(20, 31),
+            // (21,32): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            //     unsafe event System.Action E1 { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "E1").WithLocation(21, 32),
+            // (22,30): error CS1609: Modifiers cannot be placed on event accessor declarations
+            //     event System.Action E2 { unsafe add { } unsafe remove { } }
+            Diagnostic(ErrorCode.ERR_NoModifiersOnAccessor, "unsafe").WithLocation(22, 30),
+            // (22,45): error CS1609: Modifiers cannot be placed on event accessor declarations
+            //     event System.Action E2 { unsafe add { } unsafe remove { } }
+            Diagnostic(ErrorCode.ERR_NoModifiersOnAccessor, "unsafe").WithLocation(22, 45),
+            // (23,44): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            //     public static unsafe implicit operator int(X x) => 0;
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "int").WithLocation(23, 44));
+
+        var expectedDiagnostics = new[]
+        {
+            // (10,13): error CS0106: The modifier 'unsafe' is not valid for this item
+            // unsafe enum E { A }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "E").WithArguments("unsafe").WithLocation(10, 13),
+            // (19,21): error CS0106: The modifier 'unsafe' is not valid for this item
+            //     int P2 { unsafe get => 0; unsafe set { } }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "get").WithArguments("unsafe").WithLocation(19, 21),
+            // (19,38): error CS0106: The modifier 'unsafe' is not valid for this item
+            //     int P2 { unsafe get => 0; unsafe set { } }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "set").WithArguments("unsafe").WithLocation(19, 38),
+            // (20,31): error CS0106: The modifier 'unsafe' is not valid for this item
+            //     int P3 { get => 0; unsafe init { } }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "init").WithArguments("unsafe").WithLocation(20, 31),
+            // (22,30): error CS1609: Modifiers cannot be placed on event accessor declarations
+            //     event System.Action E2 { unsafe add { } unsafe remove { } }
+            Diagnostic(ErrorCode.ERR_NoModifiersOnAccessor, "unsafe").WithLocation(22, 30),
+            // (22,45): error CS1609: Modifiers cannot be placed on event accessor declarations
+            //     event System.Action E2 { unsafe add { } unsafe remove { } }
+            Diagnostic(ErrorCode.ERR_NoModifiersOnAccessor, "unsafe").WithLocation(22, 45),
+        };
+
+        CreateCompilation([source, IsExternalInitTypeDefinition], options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation([source, IsExternalInitTypeDefinition], options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules().WithWarningLevel(10)).VerifyDiagnostics(expectedDiagnostics);
+
+        expectedDiagnostics =
+        [
+            // (4,14): warning CS9503: The 'unsafe' modifier does not have any effect here under the current rules.
+            // using static unsafe System.Collections.Generic.List<int*[]>;
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "unsafe").WithLocation(4, 14),
+            // (5,7): warning CS9503: The 'unsafe' modifier does not have any effect here under the current rules.
+            // using unsafe U = int*;
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "unsafe").WithLocation(5, 7),
+            // (7,14): warning CS9503: The 'unsafe' modifier does not have any effect here under the current rules.
+            // unsafe class C;
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "C").WithLocation(7, 14),
+            // (8,15): warning CS9503: The 'unsafe' modifier does not have any effect here under the current rules.
+            // unsafe struct S;
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "S").WithLocation(8, 15),
+            // (9,18): warning CS9503: The 'unsafe' modifier does not have any effect here under the current rules.
+            // unsafe interface I;
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "I").WithLocation(9, 18),
+            // (10,13): error CS0106: The modifier 'unsafe' is not valid for this item
+            // unsafe enum E { A }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "E").WithArguments("unsafe").WithLocation(10, 13),
+            // (11,15): warning CS9503: The 'unsafe' modifier does not have any effect here under the current rules.
+            // unsafe record R;
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "R").WithLocation(11, 15),
+            // (19,21): error CS0106: The modifier 'unsafe' is not valid for this item
+            //     int P2 { unsafe get => 0; unsafe set { } }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "get").WithArguments("unsafe").WithLocation(19, 21),
+            // (19,38): error CS0106: The modifier 'unsafe' is not valid for this item
+            //     int P2 { unsafe get => 0; unsafe set { } }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "set").WithArguments("unsafe").WithLocation(19, 38),
+            // (20,31): error CS0106: The modifier 'unsafe' is not valid for this item
+            //     int P3 { get => 0; unsafe init { } }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "init").WithArguments("unsafe").WithLocation(20, 31),
+            // (22,30): error CS1609: Modifiers cannot be placed on event accessor declarations
+            //     event System.Action E2 { unsafe add { } unsafe remove { } }
+            Diagnostic(ErrorCode.ERR_NoModifiersOnAccessor, "unsafe").WithLocation(22, 30),
+            // (22,45): error CS1609: Modifiers cannot be placed on event accessor declarations
+            //     event System.Action E2 { unsafe add { } unsafe remove { } }
+            Diagnostic(ErrorCode.ERR_NoModifiersOnAccessor, "unsafe").WithLocation(22, 45),
+        ];
+
+        CreateCompilation([source, IsExternalInitTypeDefinition], options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules()).VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation([source, IsExternalInitTypeDefinition], options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules().WithWarningLevel(11)).VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation([source, IsExternalInitTypeDefinition],
+            parseOptions: TestOptions.RegularNext,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules()).VerifyDiagnostics(expectedDiagnostics);
+
+        // PROTOTYPE: Should there be langversion errors for the following?
+        CreateCompilation([source, IsExternalInitTypeDefinition],
+            parseOptions: TestOptions.Regular14,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules()).VerifyDiagnostics(
+            // (4,14): warning CS9503: The 'unsafe' modifier does not have any effect here under the current rules.
+            // using static unsafe System.Collections.Generic.List<int*[]>;
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "unsafe").WithLocation(4, 14),
+            // (5,7): warning CS9503: The 'unsafe' modifier does not have any effect here under the current rules.
+            // using unsafe U = int*;
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "unsafe").WithLocation(5, 7),
+            // (7,14): warning CS9503: The 'unsafe' modifier does not have any effect here under the current rules.
+            // unsafe class C;
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "C").WithLocation(7, 14),
+            // (8,15): warning CS9503: The 'unsafe' modifier does not have any effect here under the current rules.
+            // unsafe struct S;
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "S").WithLocation(8, 15),
+            // (9,18): warning CS9503: The 'unsafe' modifier does not have any effect here under the current rules.
+            // unsafe interface I;
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "I").WithLocation(9, 18),
+            // (10,13): error CS0106: The modifier 'unsafe' is not valid for this item
+            // unsafe enum E { A }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "E").WithArguments("unsafe").WithLocation(10, 13),
+            // (11,15): warning CS9503: The 'unsafe' modifier does not have any effect here under the current rules.
+            // unsafe record R;
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "R").WithLocation(11, 15),
+            // (19,21): error CS0106: The modifier 'unsafe' is not valid for this item
+            //     int P2 { unsafe get => 0; unsafe set { } }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "get").WithArguments("unsafe").WithLocation(19, 21),
+            // (19,38): error CS0106: The modifier 'unsafe' is not valid for this item
+            //     int P2 { unsafe get => 0; unsafe set { } }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "set").WithArguments("unsafe").WithLocation(19, 38),
+            // (20,31): error CS0106: The modifier 'unsafe' is not valid for this item
+            //     int P3 { get => 0; unsafe init { } }
+            Diagnostic(ErrorCode.ERR_BadMemberFlag, "init").WithArguments("unsafe").WithLocation(20, 31),
+            // (22,30): error CS1609: Modifiers cannot be placed on event accessor declarations
+            //     event System.Action E2 { unsafe add { } unsafe remove { } }
+            Diagnostic(ErrorCode.ERR_NoModifiersOnAccessor, "unsafe").WithLocation(22, 30),
+            // (22,45): error CS1609: Modifiers cannot be placed on event accessor declarations
+            //     event System.Action E2 { unsafe add { } unsafe remove { } }
+            Diagnostic(ErrorCode.ERR_NoModifiersOnAccessor, "unsafe").WithLocation(22, 45));
+    }
+
     // PROTOTYPE: Test also implicit methods used in patterns like GetEnumerator in foreach.
     // PROTOTYPE: Should some synthesized members be unsafe (like state machine methods that are declared unsafe)?
     [Theory, CombinatorialData]
