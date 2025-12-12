@@ -2877,6 +2877,555 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             ]);
     }
 
+    [Theory, CombinatorialData]
+    public void CompatMode_Method_ParameterType(
+        [CombinatorialValues("int*", "int*[]", "delegate*<void>")] string parameterType,
+        bool useCompilationReference)
+    {
+        var lib = CreateCompilation($$"""
+            public class C
+            {
+                public unsafe void M1(int x) { }
+                public unsafe void M2({{parameterType}} y) { }
+            }
+            """,
+            options: TestOptions.UnsafeReleaseDll,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        var source = """
+            var c = new C();
+            c.M1(0);
+            c.M2(null);
+            unsafe { c.M2(null); }
+            """;
+
+        var expectedDiagnostics = new[]
+        {
+            // (3,1): error CS9503: 'C.M2(int*)' must be used in an unsafe context because it has pointers in its signature
+            // c.M2(null);
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c.M2(null)").WithArguments($"C.M2({parameterType})").WithLocation(3, 1),
+        };
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation(source,
+            [libRef],
+            parseOptions: TestOptions.RegularNext,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation(source,
+            [libRef],
+            parseOptions: TestOptions.Regular14,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (3,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // c.M2(null);
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "c.M2(null)").WithArguments("updated memory safety rules").WithLocation(3, 1),
+            // (3,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // c.M2(null);
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "c.M2(null)").WithArguments("updated memory safety rules").WithLocation(3, 1),
+            // (3,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // c.M2(null);
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "null").WithArguments("updated memory safety rules").WithLocation(3, 6));
+
+        CompileAndVerify("""
+            var c = new C();
+            c.M1(0);
+            unsafe { c.M2(null); }
+            """,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+            verify: Verification.Skipped,
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(
+                m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                includesAttributeDefinition: !useCompilationReference,
+                isSynthesized: useCompilationReference ? null : true,
+                expectedUnsafeSymbols: ["C.M2"],
+                expectedSafeSymbols: ["C", "C.M1"]))
+            .VerifyDiagnostics();
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe)
+            .VerifyDiagnostics(
+            // (3,6): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.M2(null);
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(3, 6),
+            // (3,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.M2(null);
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c.M2(null)").WithLocation(3, 1));
+    }
+
+    [Theory, CombinatorialData]
+    public void CompatMode_Method_ReturnType(
+        [CombinatorialValues("int*", "int*[]", "delegate*<void>")] string returnType,
+        bool useCompilationReference)
+    {
+        var lib = CreateCompilation($$"""
+            public class C
+            {
+                public unsafe int M1(int i) => i;
+                public unsafe {{returnType}} M2(string s) => null;
+            }
+            """,
+            options: TestOptions.UnsafeReleaseDll,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        var source = """
+            var c = new C();
+            c.M1(0);
+            c.M2(null);
+            unsafe { c.M2(null); }
+            """;
+
+        var expectedDiagnostics = new[]
+        {
+            // (3,1): error CS9503: 'C.M2(string)' must be used in an unsafe context because it has pointers in its signature
+            // c.M2(null);
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c.M2(null)").WithArguments("C.M2(string)").WithLocation(3, 1),
+        };
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation(source,
+            [libRef],
+            parseOptions: TestOptions.RegularNext,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation(source,
+            [libRef],
+            parseOptions: TestOptions.Regular14,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (3,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // c.M2(null);
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "c.M2(null)").WithArguments("updated memory safety rules").WithLocation(3, 1),
+            // (3,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // c.M2(null);
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "c.M2(null)").WithArguments("updated memory safety rules").WithLocation(3, 1));
+
+        CompileAndVerify("""
+            var c = new C();
+            c.M1(0);
+            unsafe { c.M2(null); }
+            """,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(
+                m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                includesAttributeDefinition: !useCompilationReference,
+                isSynthesized: useCompilationReference ? null : true,
+                expectedUnsafeSymbols: ["C.M2"],
+                expectedSafeSymbols: ["C", "C.M1"]))
+            .VerifyDiagnostics();
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe)
+            .VerifyDiagnostics(
+            // (3,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.M2(null);
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c.M2(null)").WithLocation(3, 1));
+    }
+
+    [Theory, CombinatorialData]
+    public void CompatMode_Method_ExtensionMethod_ReceiverType(bool useCompilationReference)
+    {
+        var lib = CreateCompilation("""
+            public static class E
+            {
+                public static unsafe void M1(this int x) { }
+                public static unsafe void M2(this int*[] y) { }
+            }
+            """,
+            options: TestOptions.UnsafeReleaseDll,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        var source = """
+            123.M1();
+            new int*[0].M2();
+            unsafe { new int*[0].M2(); }
+            """;
+
+        var expectedDiagnostics = new[]
+        {
+            // (2,1): error CS9503: 'E.M2(int*[])' must be used in an unsafe context because it has pointers in its signature
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "new int*[0].M2()").WithArguments("E.M2(int*[])").WithLocation(2, 1),
+        };
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation(source,
+            [libRef],
+            parseOptions: TestOptions.RegularNext,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation(source,
+            [libRef],
+            parseOptions: TestOptions.Regular14,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (2,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "new int*[0]").WithArguments("updated memory safety rules").WithLocation(2, 1),
+            // (2,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "new int*[0].M2()").WithArguments("updated memory safety rules").WithLocation(2, 1),
+            // (2,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "new int*[0].M2()").WithArguments("updated memory safety rules").WithLocation(2, 1),
+            // (2,5): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "int*").WithArguments("updated memory safety rules").WithLocation(2, 5));
+
+        CompileAndVerify("""
+            123.M1();
+            unsafe { new int*[0].M2(); }
+            """,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+            verify: Verification.Skipped,
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(
+                m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                includesAttributeDefinition: !useCompilationReference,
+                isSynthesized: useCompilationReference ? null : true,
+                expectedUnsafeSymbols: ["E.M2"],
+                expectedSafeSymbols: ["E", "E.M1"]))
+            .VerifyDiagnostics();
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe)
+            .VerifyDiagnostics(
+            // (2,5): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(2, 5),
+            // (2,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new int*[0]").WithLocation(2, 1),
+            // (2,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new int*[0].M2()").WithLocation(2, 1));
+    }
+
+    [Theory, CombinatorialData]
+    public void CompatMode_Method_ExtensionMember_ReceiverType(bool useCompilationReference)
+    {
+        var lib = CreateCompilation("""
+            public unsafe static class E
+            {
+                extension(int x)
+                {
+                    public void M1() { }
+                }
+
+                extension(int*[] y)
+                {
+                    public void M2() { }
+                }
+            }
+            """,
+            options: TestOptions.UnsafeReleaseDll,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        var source = """
+            123.M1();
+            new int*[0].M2();
+            unsafe { new int*[0].M2(); }
+            """;
+
+        var expectedDiagnostics = new[]
+        {
+            // (2,1): error CS9503: 'E.extension(int*[]).M2()' must be used in an unsafe context because it has pointers in its signature
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "new int*[0].M2()").WithArguments("E.extension(int*[]).M2()").WithLocation(2, 1),
+        };
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation(source,
+            [libRef],
+            parseOptions: TestOptions.RegularNext,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation(source,
+            [libRef],
+            parseOptions: TestOptions.Regular14,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (2,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "new int*[0]").WithArguments("updated memory safety rules").WithLocation(2, 1),
+            // (2,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "new int*[0].M2()").WithArguments("updated memory safety rules").WithLocation(2, 1),
+            // (2,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "new int*[0].M2()").WithArguments("updated memory safety rules").WithLocation(2, 1),
+            // (2,5): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "int*").WithArguments("updated memory safety rules").WithLocation(2, 5));
+
+        CompileAndVerify("""
+            123.M1();
+            unsafe { new int*[0].M2(); }
+            """,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+            verify: Verification.Skipped,
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(
+                m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                includesAttributeDefinition: !useCompilationReference,
+                isSynthesized: useCompilationReference ? null : true,
+                expectedUnsafeSymbols: ["E.M2", ExtensionMember("E", "M2")],
+                expectedSafeSymbols: ["E", "E.M1", ExtensionMember("E", "M1")]))
+            .VerifyDiagnostics();
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe)
+            .VerifyDiagnostics(
+            // (2,5): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(2, 5),
+            // (2,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new int*[0]").WithLocation(2, 1),
+            // (2,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // new int*[0].M2();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new int*[0].M2()").WithLocation(2, 1));
+    }
+
+    [Theory, CombinatorialData]
+    public void CompatMode_Property(
+        [CombinatorialValues("int*", "int*[]", "delegate*<void>")] string type,
+        bool useCompilationReference)
+    {
+        var lib = CreateCompilation($$"""
+            public class C
+            {
+                public unsafe int P1 { get; set; }
+                public unsafe {{type}} P2 { get; set; }
+            }
+            """,
+            options: TestOptions.UnsafeReleaseDll,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        var source = """
+            var c = new C();
+            c.P1 = c.P1;
+            c.P2 = c.P2;
+            unsafe { c.P2 = c.P2; }
+            """;
+
+        var expectedDiagnostics = new[]
+        {
+            // (3,1): error CS9503: 'C.P2' must be used in an unsafe context because it has pointers in its signature
+            // c.P2 = c.P2;
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c.P2").WithArguments("C.P2").WithLocation(3, 1),
+            // (3,8): error CS9503: 'C.P2' must be used in an unsafe context because it has pointers in its signature
+            // c.P2 = c.P2;
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c.P2").WithArguments("C.P2").WithLocation(3, 8),
+        };
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation(source,
+            [libRef],
+            parseOptions: TestOptions.RegularNext,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation(source,
+            [libRef],
+            parseOptions: TestOptions.Regular14,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (3,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // c.P2 = c.P2;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "c.P2").WithArguments("updated memory safety rules").WithLocation(3, 1),
+            // (3,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // c.P2 = c.P2;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "c.P2").WithArguments("updated memory safety rules").WithLocation(3, 1),
+            // (3,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // c.P2 = c.P2;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "c.P2 = c.P2").WithArguments("updated memory safety rules").WithLocation(3, 1),
+            // (3,8): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // c.P2 = c.P2;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "c.P2").WithArguments("updated memory safety rules").WithLocation(3, 8),
+            // (3,8): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // c.P2 = c.P2;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "c.P2").WithArguments("updated memory safety rules").WithLocation(3, 8));
+
+        CompileAndVerify("""
+            var c = new C();
+            c.P1 = c.P1;
+            unsafe { c.P2 = c.P2; }
+            """,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+            verify: Verification.Skipped,
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(
+                m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                includesAttributeDefinition: !useCompilationReference,
+                isSynthesized: useCompilationReference ? null : true,
+                expectedUnsafeSymbols: ["C.P2", "C.get_P2", "C.set_P2"],
+                expectedSafeSymbols: ["C", "C.P1", "C.get_P1", "C.set_P1"]))
+            .VerifyDiagnostics();
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe)
+            .VerifyDiagnostics(
+            // (3,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.P2 = c.P2;
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c.P2").WithLocation(3, 1),
+            // (3,8): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.P2 = c.P2;
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c.P2").WithLocation(3, 8),
+            // (3,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.P2 = c.P2;
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c.P2 = c.P2").WithLocation(3, 1));
+    }
+
+    [Theory, CombinatorialData]
+    public void CompatMode_Property_Extension_ReceiverType(bool useCompilationReference)
+    {
+        var lib = CreateCompilation($$"""
+            public unsafe static class E
+            {
+                extension(int x)
+                {
+                    public int P1 { get => 0; set { } }
+                }
+
+                extension(int*[] y)
+                {
+                    public int P2 { get => 0; set { } }
+                }
+            }
+            """,
+            options: TestOptions.UnsafeReleaseDll,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        var source = """
+            var x = 123;
+            x.P1 = x.P1;
+            new int*[0].P2 = new int*[0].P2;
+            unsafe { new int*[0].P2 = new int*[0].P2; }
+            """;
+
+        var expectedDiagnostics = new[]
+        {
+            // (3,1): error CS9503: 'E.extension(int*[]).P2' must be used in an unsafe context because it has pointers in its signature
+            // new int*[0].P2 = new int*[0].P2;
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "new int*[0].P2").WithArguments("E.extension(int*[]).P2").WithLocation(3, 1),
+            // (3,18): error CS9503: 'E.extension(int*[]).P2' must be used in an unsafe context because it has pointers in its signature
+            // new int*[0].P2 = new int*[0].P2;
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "new int*[0].P2").WithArguments("E.extension(int*[]).P2").WithLocation(3, 18),
+        };
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation(source,
+            [libRef],
+            parseOptions: TestOptions.RegularNext,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(expectedDiagnostics);
+
+        CreateCompilation(source,
+            [libRef],
+            parseOptions: TestOptions.Regular14,
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (3,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // new int*[0].P2 = new int*[0].P2;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "new int*[0]").WithArguments("updated memory safety rules").WithLocation(3, 1),
+            // (3,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // new int*[0].P2 = new int*[0].P2;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "new int*[0].P2").WithArguments("updated memory safety rules").WithLocation(3, 1),
+            // (3,5): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // new int*[0].P2 = new int*[0].P2;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "int*").WithArguments("updated memory safety rules").WithLocation(3, 5),
+            // (3,18): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // new int*[0].P2 = new int*[0].P2;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "new int*[0]").WithArguments("updated memory safety rules").WithLocation(3, 18),
+            // (3,18): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // new int*[0].P2 = new int*[0].P2;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "new int*[0].P2").WithArguments("updated memory safety rules").WithLocation(3, 18),
+            // (3,22): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // new int*[0].P2 = new int*[0].P2;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "int*").WithArguments("updated memory safety rules").WithLocation(3, 22));
+
+        CompileAndVerify("""
+            var x = 123;
+            x.P1 = x.P1;
+            unsafe { new int*[0].P2 = new int*[0].P2; }
+            """,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+            verify: Verification.Skipped,
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(
+                m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                includesAttributeDefinition: !useCompilationReference,
+                isSynthesized: useCompilationReference ? null : true,
+                expectedUnsafeSymbols: [ExtensionMember("E", "P2"), "E.get_P2", ExtensionMember("E", "get_P2"), "E.set_P2", ExtensionMember("E", "set_P2")],
+                expectedSafeSymbols: ["E", ExtensionMember("E", "P1"), "E.get_P1", ExtensionMember("E", "get_P1"), "E.set_P1", ExtensionMember("E", "set_P1")]))
+            .VerifyDiagnostics();
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe)
+            .VerifyDiagnostics(
+            // (3,5): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // new int*[0].P2 = new int*[0].P2;
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(3, 5),
+            // (3,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // new int*[0].P2 = new int*[0].P2;
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new int*[0]").WithLocation(3, 1),
+            // (3,22): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // new int*[0].P2 = new int*[0].P2;
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(3, 22),
+            // (3,18): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // new int*[0].P2 = new int*[0].P2;
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new int*[0]").WithLocation(3, 18));
+    }
+
     [Fact]
     public void RequiresUnsafeAttribute_Synthesized()
     {
