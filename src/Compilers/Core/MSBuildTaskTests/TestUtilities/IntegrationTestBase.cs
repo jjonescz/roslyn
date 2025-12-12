@@ -466,4 +466,98 @@ public abstract class IntegrationTestBase : TestBase
 
         Assert.Contains(useSharedCompilation ? "server processed compilation" : "using command line tool by design", result.Output);
     }
+
+    /// <summary>
+    /// Project-wide warnings should have the project path in their location.
+    /// </summary>
+    [Fact, WorkItem("https://github.com/microsoft/testfx/issues/7051")]
+    public void ProjectWideWarning()
+    {
+        if (_msbuildExecutable == null) return;
+
+        _tempDirectory.CreateDirectory("app");
+        _tempDirectory.CreateDirectory("lib");
+
+        var result = RunCommandLineCompiler(
+            _msbuildExecutable,
+            "/m /nr:false /v:m /restore app/App.csproj",
+            _tempDirectory,
+            new Dictionary<string, string>
+            {
+                { "app/App.cs", """
+                    class C { }
+                    """ },
+                { "app/App.csproj", $"""
+                    <Project Sdk="Microsoft.NET.Sdk">
+                        <PropertyGroup>
+                            <TargetFramework>netstandard2.0</TargetFramework>
+                        </PropertyGroup>
+                        <ItemGroup>
+                            <ProjectReference Include="..\Lib\Lib.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+                        </ItemGroup>
+                        <Target Name="CustomWarning" BeforeTargets="CoreCompile">
+                            <Warning Text="Custom build warning" Code="CW0001" />
+                        </Target>
+                    </Project>
+                    """ },
+                { "lib/Lib.cs", """
+                    using System.Collections.Immutable;
+                    using Microsoft.CodeAnalysis;
+                    using Microsoft.CodeAnalysis.CSharp;
+                    using Microsoft.CodeAnalysis.Diagnostics;
+
+                    [DiagnosticAnalyzer(LanguageNames.CSharp)]
+                    public sealed class ProjectWideWarningDiagnosticAnalyzer : DiagnosticAnalyzer
+                    {
+                        private static readonly DiagnosticDescriptor Warning01 = new DiagnosticDescriptor("Warning01", "", "Analyzer warning", "", DiagnosticSeverity.Warning, isEnabledByDefault: true);
+
+                        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
+                        {
+                            get
+                            {
+                                return ImmutableArray.Create(Warning01);
+                            }
+                        }
+
+                        public override void Initialize(AnalysisContext context)
+                        {
+                            context.RegisterCompilationStartAction(ctx =>
+                            {
+                                ctx.RegisterSymbolAction(sym =>
+                                {
+                                    sym.ReportDiagnostic(Diagnostic.Create(Warning01, sym.Symbol.Locations[0]));
+                                },
+                                SymbolKind.NamedType);
+                            });
+                            context.RegisterCompilationAction(ctx =>
+                            {
+                                ctx.ReportDiagnostic(Diagnostic.Create(Warning01, location: null));
+                            });
+                        }
+                    }
+                    """ },
+                { "lib/Lib.csproj", $"""
+                    <Project Sdk="Microsoft.NET.Sdk">
+                        <PropertyGroup>
+                            <TargetFramework>netstandard2.0</TargetFramework>
+                        </PropertyGroup>
+                        <ItemGroup>
+                            <PackageReference Include="Microsoft.CodeAnalysis" Version="4.5.0" />
+                        </ItemGroup>
+                    </Project>
+                    """ },
+            });
+        _output.WriteLine(result.Output);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("""
+            App.csproj(9,9): warning CW0001: Custom build warning
+            """, result.Output);
+        Assert.Contains("""
+            CSC : warning Warning01: Analyzer warning
+            """, result.Output);
+        Assert.Contains("""
+            App.cs(1,7): warning Warning01: Analyzer warning
+            """, result.Output);
+    }
 }
