@@ -54,9 +54,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
-                return ContainingModule.UseUpdatedMemorySafetyRules
+                return IsExtern || (ContainingModule.UseUpdatedMemorySafetyRules
                     ? IsUnsafe
-                    : this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer();
+                    : this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer());
             }
         }
     }

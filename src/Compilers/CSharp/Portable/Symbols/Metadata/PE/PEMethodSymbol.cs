@@ -1820,9 +1820,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
         {
             get
             {
-                return ContainingModule.UseUpdatedMemorySafetyRules
+                return IsExtern || (ContainingModule.UseUpdatedMemorySafetyRules
                     ? IsDeclaredRequiresUnsafe
-                    : this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer();
+                    : this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer());
             }
         }
 

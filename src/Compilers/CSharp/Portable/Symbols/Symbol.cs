@@ -623,7 +623,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <summary>
         /// <see langword="true"/> if this is a member that was compiled under updated memory safety rules
         /// (<see cref="ModuleSymbol.UseUpdatedMemorySafetyRules"/>) and marked as <see langword="unsafe"/>,
-        /// or a member that was compiled under the legacy memory safety rules and contains pointers in its signature.
+        /// or a member that was compiled under the legacy memory safety rules and contains pointers in its signature,
+        /// or an <see langword="extern"/> member (regardless of the memory safety rules version).
         /// </summary>
         internal virtual bool IsCallerUnsafe => false; // PROTOTYPE: should be abstract (then unnecessary abstract overrides should be removed)
 

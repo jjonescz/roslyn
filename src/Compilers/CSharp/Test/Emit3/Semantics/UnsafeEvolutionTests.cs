@@ -3334,6 +3334,70 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "M1").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(3, 17));
     }
 
+    [Theory, CombinatorialData]
+    public void Extern_Method(bool useCompilationReference)
+    {
+        var lib = CreateCompilation($$"""
+            #pragma warning disable CS0626 // extern without attributes
+            public class C
+            {
+                public void M1(int x) { }
+                public extern void M2(int x);
+                [System.Runtime.InteropServices.DllImport("test")]
+                public static extern void M3(int x);
+            }
+            """,
+            options: TestOptions.UnsafeReleaseDll,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        var source = """
+            var c = new C();
+            c.M1(0);
+            c.M2(0);
+            C.M3(0);
+            unsafe { c.M2(0); }
+            unsafe { C.M3(0); }
+            """;
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (3,1): error CS9504: 'C.M2(int)' must be used in an unsafe context because it is marked as 'extern'
+            // c.M2(0);
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationExtern, "c.M2(0)").WithArguments("C.M2(int)").WithLocation(3, 1));
+
+        CompileAndVerify("""
+            var c = new C();
+            c.M1(0);
+            unsafe { c.M2(0); }
+            unsafe { c.M3(0); }
+            """,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+            verify: Verification.Skipped,
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(
+                m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                includesAttributeDefinition: !useCompilationReference,
+                isSynthesized: useCompilationReference ? null : true,
+                expectedUnsafeSymbols: ["C.M2"],
+                expectedSafeSymbols: ["C", "C.M1"]))
+            .VerifyDiagnostics();
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe)
+            .VerifyDiagnostics(
+            // (3,6): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.M2(null);
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(3, 6),
+            // (3,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.M2(null);
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c.M2(null)").WithLocation(3, 1));
+    }
+
     [Fact]
     public void RequiresUnsafeAttribute_NotSynthesized()
     {

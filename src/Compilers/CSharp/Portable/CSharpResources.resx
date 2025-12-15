@@ -8197,4 +8197,8 @@ To remove the warning, you can use /reference instead (set the Embed Interop Typ
   <data name="ERR_UnsafeMemberOperationCompat" xml:space="preserve">
     <value>'{0}' must be used in an unsafe context because it has pointers in its signature</value>
   </data>
+  <data name="ERR_UnsafeMemberOperationExtern" xml:space="preserve">
+    <value>'{0}' must be used in an unsafe context because it is marked as 'extern'</value>
+    <comment>'extern' is a keyword, should not be localized.</comment>
+  </data>
 </root>
