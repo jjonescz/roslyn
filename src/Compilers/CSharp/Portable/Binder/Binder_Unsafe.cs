@@ -26,11 +26,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (symbol.CallerUnsafeMode != CallerUnsafeMode.None)
             {
                 ReportUnsafeIfNotAllowed(node, diagnostics, disallowedUnder: MemorySafetyRules.Updated,
-                    customErrorCode: symbol.IsExtern
-                        ? ErrorCode.ERR_UnsafeMemberOperationExtern
-                        : symbol.ContainingModule.UseUpdatedMemorySafetyRules
-                        ? ErrorCode.ERR_UnsafeMemberOperation
-                        : ErrorCode.ERR_UnsafeMemberOperationCompat,
+                    customErrorCode: symbol.CallerUnsafeMode switch
+                    {
+                        CallerUnsafeMode.Compat => ErrorCode.ERR_UnsafeMemberOperationCompat,
+                        CallerUnsafeMode.Extern => ErrorCode.ERR_UnsafeMemberOperationExtern,
+                        CallerUnsafeMode.Explicit => ErrorCode.ERR_UnsafeMemberOperation,
+                        var other => throw ExceptionUtilities.UnexpectedValue(other),
+                    },
                     customArgs: [symbol]);
             }
         }

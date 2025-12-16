@@ -1869,9 +1869,13 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <summary>
         /// The member is implicitly considered unsafe because it contains pointers in its signature (and is compiled under the legacy memory safety rules),
         /// or it is an <see langword="extern"/> member (regardless of the memory safety rules version).
-        /// This member should not have the <see cref="AttributeDescription.RequiresUnsafeAttribute"/> emitted.
         /// </summary>
-        Implicit,
+        Compat,
+
+        /// <summary>
+        /// The member is implicitly considered unsafe because it is an <see langword="extern"/> member (regardless of the memory safety rules version).
+        /// </summary>
+        Extern,
 
         /// <summary>
         /// The member is explicitly marked as <see langword="unsafe"/> under the updated memory safety rules.

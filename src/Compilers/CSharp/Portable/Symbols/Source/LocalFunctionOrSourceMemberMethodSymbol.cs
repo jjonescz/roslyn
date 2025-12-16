@@ -61,13 +61,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         return CallerUnsafeMode.Explicit;
                     }
                 }
-                else
+                else if (this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer())
                 {
-                    return this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer()
-                        ? CallerUnsafeMode.Implicit : CallerUnsafeMode.None;
+                    return CallerUnsafeMode.Compat;
                 }
 
-                return IsExtern ? CallerUnsafeMode.Implicit : CallerUnsafeMode.None;
+                return IsExternal ? CallerUnsafeMode.Extern : CallerUnsafeMode.None;
             }
         }
     }

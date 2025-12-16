@@ -47,7 +47,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
         {
             // We currently pack everything into a 64-bit long with the following layout:
             //
-            // |..............................|b'|a'|z|y|x|w|v|u|t|s|r|q|p|ooo|n|m|l|k|j|i|h|g|f|e|d|c|b|aaaaa|
+            // |.............................|c'|b'|a'|z|y|x|w|v|u|t|s|r|q|p|ooo|n|m|l|k|j|i|h|g|f|e|d|c|b|aaaaa|
             // 
             // a = method kind. 5 bits.
             // b = method kind populated. 1 bit.
@@ -79,7 +79,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             // z = OverloadResolutionPriorityPopulated. 1 bit.
             // a' = RequiresUnsafe. 1 bit.
             // b' = RequiresUnsafePopulated. 1 bit.
-            // 30 bits remain for future purposes.
+            // c' = HasBody. 1 bit.
+            // 29 bits remain for future purposes.
 
             private const int MethodKindOffset = 0;
             private const long MethodKindMask = 0x1F;
@@ -113,6 +114,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             private const long OverloadResolutionPriorityPopulatedBit = B << 31;
             private const long RequiresUnsafeBit = B << 32;
             private const long RequiresUnsafePopulatedBit = B << 33;
+            private const long HasBodyBit = B << 34;
 
             private long _bits;
 
@@ -156,6 +158,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             public bool IsOverloadResolutionPriorityPopulated => (Volatile.Read(ref _bits) & OverloadResolutionPriorityPopulatedBit) != 0;
             public bool RequiresUnsafe => (Volatile.Read(ref _bits) & RequiresUnsafeBit) != 0;
             public bool RequiresUnsafePopulated => (Volatile.Read(ref _bits) & RequiresUnsafePopulatedBit) != 0;
+            public readonly bool HasBody => (_bits & HasBodyBit) != 0;
 
 #if DEBUG
             static PackedFlags()
@@ -165,6 +168,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 Debug.Assert(EnumUtilities.ContainsAllValues<NullableContextKind>((int)NullableContextMask));
             }
 #endif
+
+            public PackedFlags(bool hasBody)
+            {
+                _bits = hasBody ? HasBodyBit : 0;
+            }
 
             private static bool BitsAreUnsetOrSame(long bits, long mask)
             {
@@ -434,6 +442,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 moduleSymbol.Module.GetMethodDefPropsOrThrow(methodDef, out _name, out implFlags, out localflags, out rva);
                 Debug.Assert((uint)implFlags <= ushort.MaxValue);
                 _implFlags = (ushort)implFlags;
+                _packedFlags = new PackedFlags(
+                    hasBody: rva != 0);
             }
             catch (BadImageFormatException)
             {
@@ -540,6 +550,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
         public override bool IsExtern => HasFlag(MethodAttributes.PinvokeImpl);
 
         internal override bool IsExternal => IsExtern || (ImplementationAttributes & MethodImplAttributes.Runtime) != 0;
+
+        private bool HasBody => _packedFlags.HasBody;
 
         public override bool IsVararg => Signature.Header.CallingConvention == SignatureCallingConvention.VarArgs;
 
@@ -1827,13 +1839,18 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                         return CallerUnsafeMode.Explicit;
                     }
                 }
-                else
+                else if (this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer())
                 {
-                    return this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer()
-                        ? CallerUnsafeMode.Implicit : CallerUnsafeMode.None;
+                    return CallerUnsafeMode.Compat;
                 }
 
-                return IsExtern ? CallerUnsafeMode.Implicit : CallerUnsafeMode.None;
+                if (!HasBody)
+                {
+                    return CallerUnsafeMode.Extern;
+                }
+
+                Debug.Assert(!IsExternal);
+                return CallerUnsafeMode.None;
             }
         }
 
