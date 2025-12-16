@@ -1816,13 +1816,24 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
         internal sealed override bool UseUpdatedEscapeRules => ContainingModule.UseUpdatedEscapeRules;
 
-        internal sealed override bool IsCallerUnsafe
+        internal sealed override CallerUnsafeMode CallerUnsafeMode
         {
             get
             {
-                return IsExtern || (ContainingModule.UseUpdatedMemorySafetyRules
-                    ? IsDeclaredRequiresUnsafe
-                    : this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer());
+                if (ContainingModule.UseUpdatedMemorySafetyRules)
+                {
+                    if (IsDeclaredRequiresUnsafe)
+                    {
+                        return CallerUnsafeMode.Explicit;
+                    }
+                }
+                else
+                {
+                    return this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer()
+                        ? CallerUnsafeMode.Implicit : CallerUnsafeMode.None;
+                }
+
+                return IsExtern ? CallerUnsafeMode.Implicit : CallerUnsafeMode.None;
             }
         }
 

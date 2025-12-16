@@ -46,17 +46,28 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         /// <summary>
         /// Whether the method has the <see langword="unsafe"/> keyword in its signature.
-        /// Do not confuse with <see cref="IsCallerUnsafe"/>.
+        /// Do not confuse with <see cref="CallerUnsafeMode"/>.
         /// </summary>
         internal abstract bool IsUnsafe { get; }
 
-        internal sealed override bool IsCallerUnsafe
+        internal sealed override CallerUnsafeMode CallerUnsafeMode
         {
             get
             {
-                return IsExtern || (ContainingModule.UseUpdatedMemorySafetyRules
-                    ? IsUnsafe
-                    : this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer());
+                if (ContainingModule.UseUpdatedMemorySafetyRules)
+                {
+                    if (IsUnsafe)
+                    {
+                        return CallerUnsafeMode.Explicit;
+                    }
+                }
+                else
+                {
+                    return this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer()
+                        ? CallerUnsafeMode.Implicit : CallerUnsafeMode.None;
+                }
+
+                return IsExtern ? CallerUnsafeMode.Implicit : CallerUnsafeMode.None;
             }
         }
     }

@@ -226,7 +226,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 Assert.IsType<SourceModuleSymbol>(symbol.ContainingModule);
             }
 
-            Assert.True(shouldBeUnsafe == symbol.IsCallerUnsafe, $"Expected '{symbol.ToTestDisplayString()}' to be unsafe");
+            var expectedUnsafeMode = !shouldBeUnsafe
+                ? CallerUnsafeMode.None
+                : expectedAttributeInMetadata
+                ? CallerUnsafeMode.Explicit
+                : CallerUnsafeMode.Implicit;
+            Assert.True(expectedUnsafeMode == symbol.CallerUnsafeMode, $"Expected '{symbol.ToTestDisplayString()}' to have {nameof(CallerUnsafeMode)}.{expectedUnsafeMode} (got {symbol.CallerUnsafeMode})");
 
             Assert.True(seenSymbols.Add(symbol), $"Symbol '{symbol.ToTestDisplayString()}' specified multiple times.");
         }
@@ -2934,10 +2939,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: !useCompilationReference,
-                isSynthesized: useCompilationReference ? null : true,
+                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C.M2"],
-                expectedSafeSymbols: ["C", "C.M1"]))
+                expectedSafeSymbols: ["C", "C.M1"],
+                expectedAttributeInMetadata: false))
             .VerifyDiagnostics();
 
         CreateCompilation(source,
@@ -2993,10 +2998,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: !useCompilationReference,
-                isSynthesized: useCompilationReference ? null : true,
+                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C.M2"],
-                expectedSafeSymbols: ["C", "C.M1"]))
+                expectedSafeSymbols: ["C", "C.M1"],
+                expectedAttributeInMetadata: false))
             .VerifyDiagnostics();
 
         CreateCompilation(source,
@@ -3046,10 +3051,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: !useCompilationReference,
-                isSynthesized: useCompilationReference ? null : true,
+                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["E.M2"],
-                expectedSafeSymbols: ["E", "E.M1"]))
+                expectedSafeSymbols: ["E", "E.M1"],
+                expectedAttributeInMetadata: false))
             .VerifyDiagnostics();
 
         CreateCompilation(source,
@@ -3112,10 +3117,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: !useCompilationReference,
-                isSynthesized: useCompilationReference ? null : true,
+                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["E.M2", ExtensionMember("E", "M2")],
-                expectedSafeSymbols: ["E", "E.M1", ExtensionMember("E", "M1")]))
+                expectedSafeSymbols: ["E", "E.M1", ExtensionMember("E", "M1")],
+                expectedAttributeInMetadata: false))
             .VerifyDiagnostics();
 
         CreateCompilation(source,
@@ -3178,10 +3183,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: !useCompilationReference,
-                isSynthesized: useCompilationReference ? null : true,
+                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C.P2", "C.get_P2", "C.set_P2"],
-                expectedSafeSymbols: ["C", "C.P1", "C.get_P1", "C.set_P1"]))
+                expectedSafeSymbols: ["C", "C.P1", "C.get_P1", "C.set_P1"],
+                expectedAttributeInMetadata: false))
             .VerifyDiagnostics();
 
         CreateCompilation(source,
@@ -3249,10 +3254,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: !useCompilationReference,
-                isSynthesized: useCompilationReference ? null : true,
+                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: [ExtensionMember("E", "P2"), "E.get_P2", ExtensionMember("E", "get_P2"), "E.set_P2", ExtensionMember("E", "set_P2")],
-                expectedSafeSymbols: ["E", ExtensionMember("E", "P1"), "E.get_P1", ExtensionMember("E", "get_P1"), "E.set_P1", ExtensionMember("E", "set_P1")]))
+                expectedSafeSymbols: ["E", ExtensionMember("E", "P1"), "E.get_P1", ExtensionMember("E", "get_P1"), "E.set_P1", ExtensionMember("E", "set_P1")],
+                expectedAttributeInMetadata: false))
             .VerifyDiagnostics();
 
         CreateCompilation(source,
@@ -3820,7 +3825,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var refA = CompileIL(sourceA, prependDefaultHeader: false);
 
         var a = CreateCompilation("", [refA]).VerifyDiagnostics().GetReferencedAssemblySymbol(refA);
-        Assert.False(a.GlobalNamespace.GetMember("A.M").IsCallerUnsafe);
+        Assert.Equal(CallerUnsafeMode.None, a.GlobalNamespace.GetMember("A.M").CallerUnsafeMode);
 
         var sourceB = """
             A.M();
@@ -3866,7 +3871,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var refA = CompileIL(sourceA, prependDefaultHeader: false);
 
         var a = CreateCompilation("", [refA]).VerifyDiagnostics().GetReferencedAssemblySymbol(refA);
-        Assert.True(a.GlobalNamespace.GetMember("A.M").IsCallerUnsafe);
+        Assert.Equal(CallerUnsafeMode.Explicit, a.GlobalNamespace.GetMember("A.M").CallerUnsafeMode);
 
         var sourceB = """
             A.M();
@@ -3914,7 +3919,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var refA = CompileIL(sourceA, prependDefaultHeader: false);
 
         var a = CreateCompilation("", [refA]).VerifyDiagnostics().GetReferencedAssemblySymbol(refA);
-        Assert.True(a.GlobalNamespace.GetMember("A.M").IsCallerUnsafe);
+        Assert.Equal(CallerUnsafeMode.Explicit, a.GlobalNamespace.GetMember("A.M").CallerUnsafeMode);
 
         var sourceB = """
             A.M();
