@@ -1844,7 +1844,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     return CallerUnsafeMode.Compat;
                 }
 
-                if (!HasBody)
+                if (!HasBody && !IsAbstract)
                 {
                     return CallerUnsafeMode.Extern;
                 }
