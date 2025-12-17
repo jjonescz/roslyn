@@ -108,7 +108,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     return IsUnsafe ? CallerUnsafeMode.Explicit : CallerUnsafeMode.None;
                 }
 
-                return this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer()
+                return this.HasParameterContainingPointerType() ||
+                    ReturnType.ContainsPointerOrFunctionPointer() ||
+                    this.HasTypeParameterContainingPointerTypeInConstraint()
                     ? CallerUnsafeMode.Implicit : CallerUnsafeMode.None;
             }
         }

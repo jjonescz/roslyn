@@ -3081,6 +3081,101 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Theory, CombinatorialData]
+    public void CompatMode_Method_ConstraintType(bool useCompilationReference)
+    {
+        var lib = CreateCompilation("""
+            public class C
+            {
+                public unsafe void M<T>(T t) where T : I<int*[]> { }
+            }
+            public interface I<T>;
+            """,
+            options: TestOptions.UnsafeReleaseDll,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        var source = """
+            var c = new C();
+            c.M<D>(null);
+            class D : I<int*[]>;
+            """;
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (2,1): error CS9503: 'C.M<D>(D)' must be used in an unsafe context because it has pointers in its signature
+            // c.M<D>(null);
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c.M<D>(null)").WithArguments("C.M<D>(D)").WithLocation(2, 1));
+
+        CompileAndVerify("""
+            var c = new C();
+            unsafe { c.M<D>(null); }
+            class D : I<int*[]>;
+            """,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(
+                m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                includesAttributeDefinition: false,
+                expectedUnsafeSymbols: ["C.M"],
+                expectedSafeSymbols: ["C", "I"],
+                expectedAttributeInMetadata: false))
+            .VerifyDiagnostics();
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe)
+            .VerifyDiagnostics(
+            // (3,13): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // class D : I<int*[]>;
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(3, 13));
+    }
+
+    [Theory, CombinatorialData]
+    public void CompatMode_Method_DefaultParameterValue(bool useCompilationReference)
+    {
+        var lib = CreateCompilation("""
+            public class C
+            {
+                public unsafe void M(string s = nameof(I<int*[]>)) { }
+            }
+            public interface I<T>;
+            """,
+            options: TestOptions.UnsafeReleaseDll,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        var source = """
+            var c = new C();
+            c.M(s: null);
+            """;
+
+        CompileAndVerify(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+            symbolValidator: validate)
+            .VerifyDiagnostics();
+
+        CompileAndVerify(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe,
+            symbolValidator: validate)
+            .VerifyDiagnostics();
+
+        static void validate(ModuleSymbol module)
+        {
+            VerifyRequiresUnsafeAttribute(
+                module.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                includesAttributeDefinition: false,
+                expectedUnsafeSymbols: [],
+                expectedSafeSymbols: ["C", "C.M", "I"]);
+        }
+    }
+
+    [Theory, CombinatorialData]
     public void CompatMode_Method_ExtensionMethod_ReceiverType(bool useCompilationReference)
     {
         var lib = CreateCompilation("""

@@ -370,6 +370,43 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return false;
         }
 
+        internal static bool HasTypeParameterContainingPointerTypeInConstraint(this Symbol member)
+        {
+            foreach (var typeParameter in member.GetMemberTypeParameters())
+            {
+                if (checkTypeParameter(typeParameter))
+                {
+                    return true;
+                }
+            }
+
+            if (member.IsExtensionBlockMember())
+            {
+                foreach (var typeParameter in member.ContainingType.TypeParameters)
+                {
+                    if (checkTypeParameter(typeParameter))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+
+            static bool checkTypeParameter(TypeParameterSymbol typeParameter)
+            {
+                foreach (var constraintType in typeParameter.ConstraintTypesNoUseSiteDiagnostics)
+                {
+                    if (constraintType.Type.ContainsPointerOrFunctionPointer())
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
         public static bool IsEventOrPropertyWithImplementableNonPublicAccessor(this Symbol symbol)
         {
             Debug.Assert(symbol.ContainingType.IsInterface);

@@ -1821,7 +1821,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             return ContainingModule.UseUpdatedMemorySafetyRules
                 ? hasRequiresUnsafeAttribute
                 // This might be expensive, so we cache it in _packedFlags.
-                : this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer();
+                : this.HasParameterContainingPointerType() ||
+                    ReturnType.ContainsPointerOrFunctionPointer() ||
+                    this.HasTypeParameterContainingPointerTypeInConstraint();
         }
 
         internal sealed override CallerUnsafeMode CallerUnsafeMode
