@@ -15,6 +15,7 @@ param(
   [switch]$enableDumps = $false,
   [string]$bootstrapDir = "",
   [switch]$ci = $false,
+  [switch]$dogfoodCodeStyleAnalyzers = $false,
   [switch]$help)
 
 Set-StrictMode -version 2.0
@@ -57,8 +58,14 @@ try {
     Test-LastExitCode
   }
 
+  if ($dogfoodCodeStyleAnalyzers) {
+    Write-Host "Building CodeStyle analyzers for dogfooding"
+    & eng/build.ps1 -restore -build -ci:$ci -prepareMachine:$prepareMachine -configuration:$configuration -solution:"src/CodeStyle/All/AllCodeStyle.csproj" -warnAsError:$true -binaryLog -binaryLogName:"CodeStyle.binlog" -properties:"/p:NgenOptimization=false"
+    Test-LastExitCode
+  }
+
   Write-Host "Building Roslyn"
-  & eng/build.ps1 -restore -build -bootstrapDir:$bootstrapDir -ci:$ci -prepareMachine:$prepareMachine -runAnalyzers:$true -configuration:$configuration -pack -binaryLog -useGlobalNuGetCache:$false -warnAsError:$true -properties:"/p:RoslynEnforceCodeStyle=true"
+  & eng/build.ps1 -restore -build -bootstrapDir:$bootstrapDir -ci:$ci -prepareMachine:$prepareMachine -runAnalyzers:$true -configuration:$configuration -pack -binaryLog -useGlobalNuGetCache:$false -warnAsError:$true -properties:"/p:RoslynEnforceCodeStyle=true","/p:DogfoodCodeStyleAnalyzers=$dogfoodCodeStyleAnalyzers"
   Test-LastExitCode
 
   Subst-TempDir

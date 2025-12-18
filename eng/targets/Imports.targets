@@ -422,6 +422,27 @@
     </ItemGroup>
   </Target>
 
+  <Target Name="DogfoodCodeStyleAnalyzers" Condition="'$(EnforceCodeStyleInBuild)' == 'true' And '$(DogfoodCodeStyleAnalyzers)' == 'true'" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.FileName)' == 'Microsoft.CodeAnalysis.CodeStyle'" />
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.FileName)' == 'Microsoft.CodeAnalysis.CodeStyle.Fixes'" />
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.FileName)' == 'Microsoft.CodeAnalysis.CSharp.CodeStyle'" />
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.FileName)' == 'Microsoft.CodeAnalysis.CSharp.CodeStyle.Fixes'" />
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.FileName)' == 'Microsoft.CodeAnalysis.VisualBasic.CodeStyle'" />
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.FileName)' == 'Microsoft.CodeAnalysis.VisualBasic.CodeStyle.Fixes'" />
+      <Analyzer Include="$(ArtifactsDir)bin\Microsoft.CodeAnalysis.CodeStyle\$(Configuration)\netstandard2.0\Microsoft.CodeAnalysis.CodeStyle.dll" />
+      <Analyzer Include="$(ArtifactsDir)bin\Microsoft.CodeAnalysis.CodeStyle.Fixes\$(Configuration)\netstandard2.0\Microsoft.CodeAnalysis.CodeStyle.Fixes.dll" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(Language)' == 'C#'">
+      <Analyzer Include="$(ArtifactsDir)bin\Microsoft.CodeAnalysis.CSharp.CodeStyle\$(Configuration)\netstandard2.0\Microsoft.CodeAnalysis.CSharp.CodeStyle.dll" />
+      <Analyzer Include="$(ArtifactsDir)bin\Microsoft.CodeAnalysis.CSharp.CodeStyle.Fixes\$(Configuration)\netstandard2.0\Microsoft.CodeAnalysis.CSharp.CodeStyle.Fixes.dll" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(Language)' == 'VB'">
+      <Analyzer Include="$(ArtifactsDir)bin\Microsoft.CodeAnalysis.VisualBasic.CodeStyle\$(Configuration)\netstandard2.0\Microsoft.CodeAnalysis.VisualBasic.CodeStyle.dll" />
+      <Analyzer Include="$(ArtifactsDir)bin\Microsoft.CodeAnalysis.VisualBasic.CodeStyle.Fixes\$(Configuration)\netstandard2.0\Microsoft.CodeAnalysis.VisualBasic.CodeStyle.Fixes.dll" />
+    </ItemGroup>
+  </Target>
+
   <!-- Workaround for an issue where nested targets (e.g. GetCopyToPublishDirectoryItems in the SDK) call _SplitProjectReferencesByFileExistence without calling implict prerequisite AssignProjectConfiguration -->
   <Target Name="Workaround_SplitProjectReferencesByFileExistence" BeforeTargets="_SplitProjectReferencesByFileExistence" DependsOnTargets="AssignProjectConfiguration" />
 
