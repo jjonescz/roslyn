@@ -46522,6 +46522,38 @@ public static class E
     }
 
     [Fact]
+    public void Nullability_Invocation_12()
+    {
+        var lib = CompileAndVerify("""
+            #nullable enable
+            public static class E
+            {
+                public static void M1<T>(this int i) where T : notnull { }
+                extension(int i)
+                {
+                    public void M2<T>() where T : notnull { }
+                }
+            }
+            """)
+            .VerifyDiagnostics()
+            .GetImageReference();
+
+        var caller = CompileAndVerify("""
+            #nullable enable
+            123.M1<string?>();
+            123.M2<string?>();
+            """,
+            [lib])
+            .VerifyDiagnostics(
+            // (2,1): warning CS8714: The type 'string?' cannot be used as type parameter 'T' in the generic type or method 'E.M1<T>(int)'. Nullability of type argument 'string?' doesn't match 'notnull' constraint.
+            // 123.M1<string?>();
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInTypeParameterNotNullConstraint, "123.M1<string?>").WithArguments("E.M1<T>(int)", "T", "string?").WithLocation(2, 1),
+            // (3,1): warning CS8714: The type 'string?' cannot be used as type parameter 'T' in the generic type or method 'E.extension(int).M2<T>()'. Nullability of type argument 'string?' doesn't match 'notnull' constraint.
+            // 123.M2<string?>();
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInTypeParameterNotNullConstraint, "123.M2<string?>").WithArguments("E.extension(int).M2<T>()", "T", "string?").WithLocation(3, 1));
+    }
+
+    [Fact]
     public void Nullability_MethodGroup_01()
     {
         var src = """
