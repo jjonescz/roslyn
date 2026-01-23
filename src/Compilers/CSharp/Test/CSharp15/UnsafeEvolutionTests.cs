@@ -4942,6 +4942,37 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Fact]
+    public void Member_Constructor_NewConstraint()
+    {
+        CompileAndVerifyUnsafe(
+            lib: """
+                public class C
+                {
+                    public unsafe C() { }
+                    public static void M<T>() where T : new() { }
+                }
+                public class D<T> where T : new();
+                """,
+            caller: """
+                C.M<C>();
+                _ = new D<C>();
+                unsafe { C.M<C>(); }
+                unsafe { _ = new D<C>(); }
+                """,
+            expectedUnsafeSymbols: ["C..ctor"],
+            expectedSafeSymbols: ["C", "C.M", "D", "D..ctor"],
+            expectedDiagnostics:
+            [
+                // (1,1): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // C.M<C>();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "C.M<C>()").WithArguments("C.C()").WithLocation(1, 1),
+                // (2,9): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // _ = new D<C>();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "D<C>").WithArguments("C.C()").WithLocation(2, 9),
+            ]);
+    }
+
+    [Fact]
     public void Member_Destructor()
     {
         var lib = """
