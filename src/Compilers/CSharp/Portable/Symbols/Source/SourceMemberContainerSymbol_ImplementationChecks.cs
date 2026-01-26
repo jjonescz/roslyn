@@ -1204,6 +1204,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     },
                     overridingMemberLocation,
                     invokedAsExtensionMethod: false);
+
+                CheckCallerUnsafeMismatch(overriddenMethod, overridingMethod, overridingMemberLocation, static l => l, diagnostics);
             }
         }
 
@@ -1543,6 +1545,25 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 {
                     reportMismatchInParameterType(diagnostics, baseMethod, overrideMethod, overrideParameter, topLevel: true, (baseParameter, extraArgument));
                 }
+            }
+        }
+
+        internal static void CheckCallerUnsafeMismatch<TArg>(
+            MethodSymbol? overriddenMember,
+            MethodSymbol? overridingMember,
+            TArg arg,
+            Func<TArg, Location> overridingMemberLocation,
+            BindingDiagnosticBag diagnostics)
+        {
+            if (overriddenMember is null || overridingMember is null)
+            {
+                return;
+            }
+
+            var leastOverriddenMember = overriddenMember.GetLeastOverriddenMember(overriddenMember.ContainingType);
+            if (overridingMember.CallerUnsafeMode != CallerUnsafeMode.None && leastOverriddenMember.CallerUnsafeMode == CallerUnsafeMode.None)
+            {
+                diagnostics.Add(ErrorCode.ERR_CallerUnsafeOverridingSafe, overridingMemberLocation(arg), overridingMember, leastOverriddenMember);
             }
         }
 #nullable disable

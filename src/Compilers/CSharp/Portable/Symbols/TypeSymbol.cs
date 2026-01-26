@@ -1882,6 +1882,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                 allowVariance: true,
                                 invokedAsExtensionMethod: false);
                         }
+
                         SourceMemberContainerTypeSymbol.CheckRefReadonlyInMismatch(
                             implementedMethod, implementingMethod, diagnostics,
                             static (diagnostics, implementedMethod, implementingMethod, implementingParameter, _, arg) =>
@@ -1893,6 +1894,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                             },
                             implementingType,
                             invokedAsExtensionMethod: false);
+
+                        SourceMemberContainerTypeSymbol.CheckCallerUnsafeMismatch(
+                            implementedMethod,
+                            implementingMethod,
+                            (implementedMethod, implementingType, implementingMethod),
+                            static arg => GetImplicitImplementationDiagnosticLocation(arg.implementedMethod, arg.implementingType, arg.implementingMethod),
+                            diagnostics);
 
                         if (implementingMethod.HasUnscopedRefAttributeOnMethodOrProperty())
                         {
