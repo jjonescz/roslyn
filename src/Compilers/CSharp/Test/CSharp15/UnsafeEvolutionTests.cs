@@ -3123,6 +3123,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     public unsafe virtual void M3() { }
                     public virtual void M4() { }
                     public virtual void M5() { }
+                    public virtual void M6() { }
                 }
 
                 public class C : B
@@ -3131,14 +3132,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     public new virtual void M2() { }
                     public override void M3() { }
                     public override void M4() { }
-                    public new unsafe virtual void M5() { }
+                    public unsafe new virtual void M5() { }
                 }
                 """,
             caller: """
-                var d1 = new D1(); d1.M1(); d1.M2(); d1.M3(); d1.M4(); d1.M5();
-                var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5();
-                var d3 = new D3(); d3.M1(); d3.M2(); d3.M3(); d3.M4(); d3.M5();
-                C c = d1; c.M1(); c.M2(); c.M3(); c.M4(); c.M5();
+                var d1 = new D1(); d1.M1(); d1.M2(); d1.M3(); d1.M4(); d1.M5(); d1.M6();
+                var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+                var d3 = new D3(); d3.M1(); d3.M2(); d3.M3(); d3.M4(); d3.M5(); d3.M6();
+                C c = d1; c.M1(); c.M2(); c.M3(); c.M4(); c.M5(); c.M6();
 
                 class D1 : C
                 {
@@ -3147,7 +3148,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     public override void M3() { }
                     public override void M4() { }
                     public override void M5() { }
-                    public void BaseCalls() { base.M1(); base.M2(); base.M3(); base.M4(); }
+                    public override void M6() { }
+                    public void BaseCalls() { base.M1(); base.M2(); base.M3(); base.M4(); base.m6(); }
                 }
 
                 class D2 : C
@@ -3157,12 +3159,13 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     public unsafe override void M3() { }
                     public unsafe override void M4() { }
                     public unsafe override void M5() { }
+                    public unsafe override void M6() { }
                 }
 
                 class D3 : C;
                 """,
             expectedUnsafeSymbols: ["B.M1", "B.M2", "B.M3", "C.M1", "C.M5"],
-            expectedSafeSymbols: ["B.M4", "B.M5", "C.M2", "C.M3", "C.M4"],
+            expectedSafeSymbols: ["B.M4", "B.M5", "B.M6", "C.M2", "C.M3", "C.M4"],
             expectedDiagnostics:
             [
                 // (2,20): error CS9502: 'D2.M1()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
@@ -5903,6 +5906,150 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Theory, CombinatorialData]
+    public void CompatMode_Method_Override(bool useCompilationReference)
+    {
+        var lib = CreateCompilation("""
+            public class B
+            {
+                public unsafe virtual int* M1() => null;
+                public unsafe virtual int* M2() => null;
+                public unsafe virtual int* M3() => null;
+                public unsafe virtual void M4() { }
+                public unsafe virtual void M5() { }
+                public unsafe virtual void M6() { }
+            }
+
+            public class C : B
+            {
+                public unsafe override int* M1() => null;
+                public unsafe new virtual int* M2() => null;
+                public unsafe override void M4() { }
+                public unsafe new void M5() { }
+            }
+            """,
+            options: TestOptions.UnsafeReleaseDll)
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        CreateCompilation("""
+            var d1 = new D1(); d1.M1(); d1.M2(); d1.M3(); d1.M4(); d1.M5(); d1.M6();
+            var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+            var d3 = new D3(); d3.M1(); d3.M2(); d3.M3(); d3.M4(); d3.M5(); d3.M6();
+            C c = d1; c.M1(); c.M2(); c.M3(); c.M4(); c.M5(); c.M6();
+
+            class D1 : C
+            {
+                public override int* M1() => null;
+                public override int* M2() => null;
+                public override int* M3() => null;
+                public override void M4() { }
+                public override void M5() { }
+                public override void M6() { }
+                public void BaseCalls() { base.M1(); base.M2(); base.M3(); base.M4(); base.M5(); base.M6(); }
+            }
+
+            class D2 : C
+            {
+                public unsafe override int* M1() => null;
+                public unsafe override int* M2() => null;
+                public unsafe override int* M3() => null;
+                public unsafe override void M4() { }
+                public unsafe override void M5() { }
+                public unsafe override void M6() { }
+            }
+
+            class D3 : C;
+            """,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (2,20): error CS9502: 'D2.M1()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+            // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M1()").WithArguments("D2.M1()").WithLocation(2, 20),
+            // (2,29): error CS9502: 'D2.M2()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+            // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M2()").WithArguments("D2.M2()").WithLocation(2, 29),
+            // (2,38): error CS9502: 'D2.M3()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+            // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M3()").WithArguments("D2.M3()").WithLocation(2, 38),
+            // (3,20): error CS9503: 'C.M1()' must be used in an unsafe context because it has pointers in its signature
+            // var d3 = new D3(); d3.M1(); d3.M2(); d3.M3();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "d3.M1()").WithArguments("C.M1()").WithLocation(3, 20),
+            // (3,29): error CS9503: 'C.M2()' must be used in an unsafe context because it has pointers in its signature
+            // var d3 = new D3(); d3.M1(); d3.M2(); d3.M3();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "d3.M2()").WithArguments("C.M2()").WithLocation(3, 29),
+            // (3,38): error CS9503: 'B.M3()' must be used in an unsafe context because it has pointers in its signature
+            // var d3 = new D3(); d3.M1(); d3.M2(); d3.M3();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "d3.M3()").WithArguments("B.M3()").WithLocation(3, 38),
+            // (4,11): error CS9503: 'C.M1()' must be used in an unsafe context because it has pointers in its signature
+            // C c = d1; c.M1(); c.M2();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c.M1()").WithArguments("C.M1()").WithLocation(4, 11),
+            // (4,19): error CS9503: 'C.M2()' must be used in an unsafe context because it has pointers in its signature
+            // C c = d1; c.M1(); c.M2();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c.M2()").WithArguments("C.M2()").WithLocation(4, 19),
+            // (11,31): error CS9503: 'C.M1()' must be used in an unsafe context because it has pointers in its signature
+            //     public void BaseCalls() { base.M1(); base.M2(); base.M3(); }
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "base.M1()").WithArguments("C.M1()").WithLocation(11, 31),
+            // (11,42): error CS9503: 'C.M2()' must be used in an unsafe context because it has pointers in its signature
+            //     public void BaseCalls() { base.M1(); base.M2(); base.M3(); }
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "base.M2()").WithArguments("C.M2()").WithLocation(11, 42),
+            // (11,53): error CS9503: 'B.M3()' must be used in an unsafe context because it has pointers in its signature
+            //     public void BaseCalls() { base.M1(); base.M2(); base.M3(); }
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "base.M3()").WithArguments("B.M3()").WithLocation(11, 53));
+    }
+
+    [Theory, CombinatorialData]
+    public void CompatMode_Method_Implementation(bool useCompilationReference)
+    {
+        var lib = CreateCompilation("""
+            public interface I
+            {
+                unsafe int* M1();
+                unsafe void M2();
+            }
+            """,
+            options: TestOptions.UnsafeReleaseDll)
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        CreateCompilation("""
+            I i = new C1();
+            i.M1();
+            i.M2();
+
+            public class C1 : I
+            {
+                public int* M1() => null;
+                public void M2() { }
+            }
+
+            public class C2 : I
+            {
+                int* I.M1() => null;
+                void I.M2() { }
+            }
+
+            public class C3 : I
+            {
+                public unsafe int* M1() => null;
+                public unsafe void M2() { }
+            }
+
+            public class C4 : I
+            {
+                unsafe int* I.M1() => null;
+                unsafe void I.M2() { }
+            }
+            """,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (2,1): error CS9503: 'I.M()' must be used in an unsafe context because it has pointers in its signature
+            // i.M();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "i.M()").WithArguments("I.M()").WithLocation(2, 1));
+    }
+
+    [Theory, CombinatorialData]
     public void CompatMode_Property(
         [CombinatorialValues("int*", "int*[]", "delegate*<void>")] string type,
         bool useCompilationReference)
@@ -6489,6 +6636,241 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     includesAttributeDefinition: false,
                     expectedUnsafeSymbols: [],
                     expectedSafeSymbols: ["C", "C.M"]))
+                .VerifyDiagnostics();
+        }
+    }
+
+    [Fact]
+    public void Extern_Method_Override()
+    {
+        var libSource = """
+            #pragma warning disable CS0626 // extern without attributes
+            public class B
+            {
+                public extern virtual void M1();
+                public extern virtual void M2();
+                public extern virtual void M3();
+                public virtual void M4();
+                public virtual void M5();
+                public virtual void M6();
+            }
+
+            public class C : B
+            {
+                public extern override void M1();
+                public extern new virtual void M2();
+                public extern override void M4();
+                public extern new override void M5();
+            }
+            """;
+
+        var callerSource = """
+            #pragma warning disable CS0626 // extern without attributes
+            var d1 = new D1(); d1.M1(); d1.M2(); d1.M3(); d1.M4(); d1.M5(); d1.M6();
+            var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+            var d3 = new D3(); d3.M1(); d3.M2(); d3.M3(); d3.M4(); d3.M5(); d3.M6();
+            var d4 = new D4(); d4.M1(); d4.M2(); d4.M3(); d4.M4(); d4.M5(); d4.M6();
+            C c = d1; c.M1(); c.M2(); c.M3(); c.M4(); c.M5(); c.M6();
+
+            class D1 : C
+            {
+                public override void M1() { }
+                public override void M2() { }
+                public override void M3() { }
+                public override void M4() { }
+                public override void M5() { }
+                public override void M6() { }
+                public void BaseCalls() { base.M1(); base.M2(); base.M3(); base.M4(); base.M5(); base.M6(); }
+            }
+
+            class D2 : C
+            {
+                public unsafe override void M1() { }
+                public unsafe override void M2() { }
+                public unsafe override void M3() { }
+                public unsafe override void M4() { }
+                public unsafe override void M5() { }
+                public unsafe override void M6() { }
+            }
+
+            class D3 : C
+            {
+                public extern override void M1();
+                public extern override void M2();
+                public extern override void M3();
+                public extern override void M4();
+                public extern override void M5();
+                public extern override void M6();
+            }
+
+            class D4 : C;
+            """;
+
+        CompileAndVerifyUnsafe(
+            libSource,
+            callerSource,
+            verify: Verification.Skipped,
+            expectedUnsafeSymbols: ["B.M1", "B.M2", "B.M3", "C.M1", "C.M2", "C.M4", "C.M5"],
+            expectedSafeSymbols: ["B", "B.M4", "B.M5", "B.M6", "C"],
+            expectedDiagnostics:
+            [
+                // (3,20): error CS9502: 'D2.M1()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M1()").WithArguments("D2.M1()").WithLocation(3, 20),
+                // (3,29): error CS9502: 'D2.M2()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M2()").WithArguments("D2.M2()").WithLocation(3, 29),
+                // (3,38): error CS9502: 'D2.M3()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M3()").WithArguments("D2.M3()").WithLocation(3, 38),
+                // (4,20): error CS9502: 'D3.M1()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // var d3 = new D3(); d3.M1(); d3.M2(); d3.M3();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d3.M1()").WithArguments("D3.M1()").WithLocation(4, 20),
+                // (4,29): error CS9502: 'D3.M2()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // var d3 = new D3(); d3.M1(); d3.M2(); d3.M3();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d3.M2()").WithArguments("D3.M2()").WithLocation(4, 29),
+                // (4,38): error CS9502: 'D3.M3()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // var d3 = new D3(); d3.M1(); d3.M2(); d3.M3();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d3.M3()").WithArguments("D3.M3()").WithLocation(4, 38),
+                // (5,20): error CS9502: 'C.M1()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // var d4 = new D4(); d4.M1(); d4.M2(); d4.M3();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d4.M1()").WithArguments("C.M1()").WithLocation(5, 20),
+                // (5,29): error CS9502: 'C.M2()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // var d4 = new D4(); d4.M1(); d4.M2(); d4.M3();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d4.M2()").WithArguments("C.M2()").WithLocation(5, 29),
+                // (5,38): error CS9502: 'B.M3()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // var d4 = new D4(); d4.M1(); d4.M2(); d4.M3();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d4.M3()").WithArguments("B.M3()").WithLocation(5, 38),
+                // (6,11): error CS9502: 'C.M1()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // C c = d1; c.M1(); c.M2();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.M1()").WithArguments("C.M1()").WithLocation(6, 11),
+                // (6,19): error CS9502: 'C.M2()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // C c = d1; c.M1(); c.M2();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.M2()").WithArguments("C.M2()").WithLocation(6, 19),
+                // (13,31): error CS9502: 'C.M1()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                //     public void BaseCalls() { base.M1(); base.M2(); base.M3(); }
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "base.M1()").WithArguments("C.M1()").WithLocation(13, 31),
+                // (13,42): error CS9502: 'C.M2()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                //     public void BaseCalls() { base.M1(); base.M2(); base.M3(); }
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "base.M2()").WithArguments("C.M2()").WithLocation(13, 42),
+                // (13,53): error CS9502: 'B.M3()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                //     public void BaseCalls() { base.M1(); base.M2(); base.M3(); }
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "base.M3()").WithArguments("B.M3()").WithLocation(13, 53),
+            ]);
+
+        // When compiling the lib under legacy rules, extern members are not unsafe.
+        var lib = CreateCompilation(libSource,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+
+        foreach (var useCompilationReference in new[] { false, true })
+        {
+            CompileAndVerify(callerSource,
+                [AsReference(lib, useCompilationReference)],
+                options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+                verify: Verification.Skipped,
+                symbolValidator: m => VerifyRequiresUnsafeAttribute(
+                    m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                    includesAttributeDefinition: false,
+                    expectedUnsafeSymbols: [],
+                    expectedSafeSymbols: ["B", "C", "B.M1", "B.M2", "B.M3", "C.M1", "C.M2"]))
+                .VerifyDiagnostics();
+        }
+    }
+
+    [Fact]
+    public void Extern_Method_Implementation()
+    {
+        var libSource = """
+            #pragma warning disable CS0626 // extern without attributes
+            public interface I
+            {
+                extern void M1();
+                void M2();
+            }
+            """;
+
+        var callerSource = """
+            #pragma warning disable CS0626 // extern without attributes
+            I i = new C1();
+            i.M1();
+            i.M2();
+
+            public class C1 : I
+            {
+                public void M1() { }
+                public void M2() { }
+            }
+
+            public class C2 : I
+            {
+                void I.M1() { }
+                void I.M2() { }
+            }
+
+            public class C3 : I
+            {
+                public unsafe void M1() { }
+                public unsafe void M2() { }
+            }
+
+            public class C4 : I
+            {
+                unsafe void I.M1() { }
+                unsafe void I.M2() { }
+            }
+
+            public class C5 : I
+            {
+                public extern void M1();
+                public extern void M2();
+            }
+
+            public class C6 : I
+            {
+                extern void I.M1();
+                extern void I.M2();
+            }
+            """;
+
+        CompileAndVerifyUnsafe(
+            libSource,
+            callerSource,
+            targetFramework: TargetFramework.Net100,
+            verify: Verification.Skipped,
+            expectedUnsafeSymbols: ["I.M1"],
+            expectedSafeSymbols: ["I", "I.M2"],
+            expectedDiagnostics:
+            [
+                // (3,1): error CS9502: 'C.M2()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // c.M2();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.M2()").WithArguments("C.M2()").WithLocation(3, 1),
+                // (4,1): error CS9502: 'C.M3()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // C.M3();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "C.M3()").WithArguments("C.M3()").WithLocation(4, 1),
+                // (5,1): error CS9502: 'C.M4()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // c.M4();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.M4()").WithArguments("C.M4()").WithLocation(5, 1),
+            ]);
+
+        // When compiling the lib under legacy rules, extern members are not unsafe.
+        var lib = CreateCompilation(libSource,
+            targetFramework: TargetFramework.Net60,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+
+        foreach (var useCompilationReference in new[] { false, true })
+        {
+            CompileAndVerify(callerSource,
+                [AsReference(lib, useCompilationReference)],
+                targetFramework: TargetFramework.Net60,
+                options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+                verify: Verification.Skipped,
+                symbolValidator: m => VerifyRequiresUnsafeAttribute(
+                    m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                    includesAttributeDefinition: false,
+                    expectedUnsafeSymbols: [],
+                    expectedSafeSymbols: ["I", "I.M1", "I.M2"]))
                 .VerifyDiagnostics();
         }
     }
