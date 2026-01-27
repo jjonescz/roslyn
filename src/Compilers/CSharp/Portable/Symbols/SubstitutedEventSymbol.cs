@@ -136,5 +136,22 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return OriginalDefinition.IsWindowsRuntimeEvent;
             }
         }
+
+        internal sealed override CallerUnsafeMode CallerUnsafeMode
+        {
+            get
+            {
+                var original = base.CallerUnsafeMode;
+
+                if (original == CallerUnsafeMode.None &&
+                    !ContainingModule.UseUpdatedMemorySafetyRules &&
+                    Type.ContainsPointerOrFunctionPointer())
+                {
+                    return CallerUnsafeMode.Implicit;
+                }
+
+                return original;
+            }
+        }
     }
 }

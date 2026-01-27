@@ -6054,6 +6054,116 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Theory, CombinatorialData]
+    public void CompatMode_Method_SubstitutedType(
+        [CombinatorialValues("int*[]           ", "delegate*<void>[]")] string substitutedType,
+        bool useCompilationReference)
+    {
+        var lib = CreateCompilation("""
+            public class C<T>
+            {
+                public void M1(int x) { }
+                public void M2(T y) { }
+                public T M3() => default;
+                public void M4<U>(U u) { }
+            }
+            """,
+            options: TestOptions.UnsafeReleaseDll,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        // Note: compat mode is not perfect, it doesn't "propagate" through F<T>.
+        var source = $$"""
+            var c = new C<{{substitutedType}}>();
+            c.M1(0);
+            c.M2(default);
+            c.M3();
+            c.M4<int>(0);
+            c.M4<{{substitutedType}}>(default);
+            F<{{substitutedType}}>(c);
+            void F<T>(C<T> c) => c.M2(default);
+            """;
+
+        var substitutedTypeTrimmed = substitutedType.Trim();
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (3,1): error CS9503: 'C<int*[]>.M2(int*[])' must be used in an unsafe context because it has pointers in its signature
+            // c.M2(default);
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c.M2(default)").WithArguments($"C<{substitutedTypeTrimmed}>.M2({substitutedTypeTrimmed})").WithLocation(3, 1),
+            // (4,1): error CS9503: 'C<int*[]>.M3()' must be used in an unsafe context because it has pointers in its signature
+            // c.M3();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c.M3()").WithArguments($"C<{substitutedTypeTrimmed}>.M3()").WithLocation(4, 1),
+            // (6,1): error CS9503: 'C<int*[]>.M4<int*[]>(int*[])' must be used in an unsafe context because it has pointers in its signature
+            // c.M4<int*[]>(default);
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, $"c.M4<{substitutedType}>(default)").WithArguments($"C<{substitutedTypeTrimmed}>.M4<{substitutedTypeTrimmed}>({substitutedTypeTrimmed})").WithLocation(6, 1));
+
+        CompileAndVerify($$"""
+            var c = new C<{{substitutedType}}>();
+            unsafe { c.M2(default); }
+            unsafe { c.M3(); }
+            unsafe { c.M4<{{substitutedType}}>(default); }
+            """,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+            verify: Verification.Skipped,
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(
+                m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                includesAttributeDefinition: false,
+                expectedUnsafeSymbols: [constructSymbol("C.M4", m => [new PointerTypeSymbol(TypeWithAnnotations.Create(m.GetCorLibType(SpecialType.System_Int32)))])],
+                expectedSafeSymbols: ["C", "C.M1", "C.M2", "C.M3", "C.M4", constructSymbol("C.M4", m => [m.GetCorLibType(SpecialType.System_Int32)])],
+                expectedUnsafeMode: CallerUnsafeMode.Implicit))
+            .VerifyDiagnostics();
+
+        var pointerType = substitutedTypeTrimmed[..(substitutedTypeTrimmed.IndexOf('*') + 1)];
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe)
+            .VerifyDiagnostics(
+            // (1,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // var c = new C<int*[]>();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, pointerType).WithLocation(1, 15),
+            // (1,9): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // var c = new C<int*[]>();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, $"new C<{substitutedType}>()").WithLocation(1, 9),
+            // (3,6): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.M2(default);
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "default").WithLocation(3, 6),
+            // (3,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.M2(default);
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c.M2(default)").WithLocation(3, 1),
+            // (4,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.M3();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c.M3()").WithLocation(4, 1),
+            // (6,6): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.M4<int*[]>(default);
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, pointerType).WithLocation(6, 6),
+            // (6,25): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.M4<int*[]>(default);
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "default").WithLocation(6, 25),
+            // (6,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.M4<int*[]>(default);
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, $"c.M4<{substitutedType}>(default)").WithLocation(6, 1),
+            // (7,3): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // F<int*[]>(c);
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, pointerType).WithLocation(7, 3),
+            // (7,22): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // F<int*[]>(c);
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c").WithLocation(7, 22),
+            // (7,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // F<int*[]>(c);
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, $"F<{substitutedType}>(c)").WithLocation(7, 1));
+
+        static Func<ModuleSymbol, Symbol> constructSymbol(string qualifiedName, Func<ModuleSymbol, TypeSymbol[]> typeArguments)
+        {
+            return m => m.GlobalNamespace.GetMember<MethodSymbol>(qualifiedName).Construct(typeArguments(m));
+        }
+    }
+
+    [Theory, CombinatorialData]
     public void CompatMode_Method_ReturnType(
         [CombinatorialValues("int*", "int*[]", "delegate*<void>")] string returnType,
         bool useCompilationReference)
@@ -6549,7 +6659,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             .VerifyDiagnostics();
         var libRef = AsReference(lib, useCompilationReference);
 
-        // PROTOTYPE: Should a method like `I<T>.M(T)` be considered caller-unsafe under compat rules when substituted for `T = int*[]`?
         var source = """
             I<int*[]> i = new C1();
             i.M1();
@@ -6584,15 +6693,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             [libRef],
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
-            // (19,26): error CS9504: Unsafe member 'C3.M1()' overrides safe member 'I<int*[]>.M1()'
-            //     public unsafe int*[] M1() => null;
-            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C3.M1()", "I<int*[]>.M1()").WithLocation(19, 26),
+            // (2,1): error CS9503: 'I<int*[]>.M1()' must be used in an unsafe context because it has pointers in its signature
+            // i.M1();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "i.M1()").WithArguments("I<int*[]>.M1()").WithLocation(2, 1),
             // (20,24): error CS9504: Unsafe member 'C3.M2()' overrides safe member 'I<int*[]>.M2()'
             //     public unsafe void M2() { }
             Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M2").WithArguments("C3.M2()", "I<int*[]>.M2()").WithLocation(20, 24),
-            // (25,29): error CS9504: Unsafe member 'C4.I<int*[]>.M1()' overrides safe member 'I<int*[]>.M1()'
-            //     unsafe int*[] I<int*[]>.M1() => null;
-            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C4.I<int*[]>.M1()", "I<int*[]>.M1()").WithLocation(25, 29),
             // (26,27): error CS9504: Unsafe member 'C4.I<int*[]>.M2()' overrides safe member 'I<int*[]>.M2()'
             //     unsafe void I<int*[]>.M2() { }
             Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M2").WithArguments("C4.I<int*[]>.M2()", "I<int*[]>.M2()").WithLocation(26, 27));
@@ -6697,6 +6803,74 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             // (3,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
             // c.P2 = c.P2;
             Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c.P2 = c.P2").WithLocation(3, 1));
+    }
+
+    [Theory, CombinatorialData]
+    public void CompatMode_Property_SubstitutedType(bool useCompilationReference)
+    {
+        var lib = CreateCompilation("""
+            public class C<T>
+            {
+                public T P1 { get; set; }
+                public int P2 { get; set; }
+            }
+            """,
+            options: TestOptions.UnsafeReleaseDll,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        var source = """
+            var c = new C<int*[]>();
+            c.P1 = c.P1;
+            c.P2 = c.P2;
+            """;
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (2,1): error CS9503: 'C<int*[]>.P1.set' must be used in an unsafe context because it has pointers in its signature
+            // c.P1 = c.P1;
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c.P1").WithArguments("C<int*[]>.P1.set").WithLocation(2, 1),
+            // (2,8): error CS9503: 'C<int*[]>.P1.get' must be used in an unsafe context because it has pointers in its signature
+            // c.P1 = c.P1;
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c.P1").WithArguments("C<int*[]>.P1.get").WithLocation(2, 8));
+
+        CompileAndVerify("""
+            var c = new C<int*[]>();
+            unsafe { c.P1 = c.P1; }
+            """,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+            verify: Verification.Skipped,
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(
+                m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                includesAttributeDefinition: false,
+                expectedUnsafeSymbols: [],
+                expectedSafeSymbols: ["C", "C.P1", "C.P2"],
+                expectedUnsafeMode: CallerUnsafeMode.Implicit))
+            .VerifyDiagnostics();
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe)
+            .VerifyDiagnostics(
+            // (1,9): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // var c = new C<int*[]>();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new C<int*[]>()").WithLocation(1, 9),
+            // (1,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // var c = new C<int*[]>();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(1, 15),
+            // (2,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.P1 = c.P1;
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c.P1").WithLocation(2, 1),
+            // (2,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.P1 = c.P1;
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c.P1 = c.P1").WithLocation(2, 1),
+            // (2,8): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.P1 = c.P1;
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c.P1").WithLocation(2, 8));
     }
 
     [Theory, CombinatorialData]
@@ -6868,6 +7042,98 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Theory, CombinatorialData]
+    public void CompatMode_Indexer_SubstitutedType(bool useCompilationReference)
+    {
+        var lib = CreateCompilation("""
+            public class C1<T> { public T this[int i] { get => default; set { } } }
+            public class C2<T> { public int this[T t] { get => 0; set { } } }
+            """,
+            options: TestOptions.UnsafeReleaseDll,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        var source = """
+            var c1 = new C1<int*[]>();
+            c1[0] = c1[0];
+            var c2 = new C2<int*[]>();
+            c2[null] = c2[null];
+            """;
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (2,1): error CS9503: 'C1<int*[]>.this[int].set' must be used in an unsafe context because it has pointers in its signature
+            // c1[0] = c1[0];
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c1[0]").WithArguments("C1<int*[]>.this[int].set").WithLocation(2, 1),
+            // (2,9): error CS9503: 'C1<int*[]>.this[int].get' must be used in an unsafe context because it has pointers in its signature
+            // c1[0] = c1[0];
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c1[0]").WithArguments("C1<int*[]>.this[int].get").WithLocation(2, 9),
+            // (4,1): error CS9503: 'C2<int*[]>.this[int*[]].set' must be used in an unsafe context because it has pointers in its signature
+            // c2[null] = c2[null];
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c2[null]").WithArguments("C2<int*[]>.this[int*[]].set").WithLocation(4, 1),
+            // (4,12): error CS9503: 'C2<int*[]>.this[int*[]].get' must be used in an unsafe context because it has pointers in its signature
+            // c2[null] = c2[null];
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c2[null]").WithArguments("C2<int*[]>.this[int*[]].get").WithLocation(4, 12));
+
+        CompileAndVerify("""
+            var c1 = new C1<int*[]>();
+            unsafe { c1[0] = c1[0]; }
+            var c2 = new C2<int*[]>();
+            unsafe { c2[null] = c2[null]; }
+            """,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+            verify: Verification.Skipped,
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(
+                m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                includesAttributeDefinition: false,
+                expectedUnsafeSymbols: [],
+                expectedSafeSymbols: ["C1.this[]", "C2.this[]"],
+                expectedUnsafeMode: CallerUnsafeMode.Implicit))
+            .VerifyDiagnostics();
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe)
+            .VerifyDiagnostics(
+            // (1,10): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // var c1 = new C1<int*[]>();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new C1<int*[]>()").WithLocation(1, 10),
+            // (1,17): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // var c1 = new C1<int*[]>();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(1, 17),
+            // (2,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c1[0] = c1[0];
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c1").WithLocation(2, 1),
+            // (2,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c1[0] = c1[0];
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c1[0]").WithLocation(2, 1),
+            // (2,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c1[0] = c1[0];
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c1[0] = c1[0]").WithLocation(2, 1),
+            // (2,9): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c1[0] = c1[0];
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c1").WithLocation(2, 9),
+            // (2,9): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c1[0] = c1[0];
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c1[0]").WithLocation(2, 9),
+            // (3,10): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // var c2 = new C2<int*[]>();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new C2<int*[]>()").WithLocation(3, 10),
+            // (3,17): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // var c2 = new C2<int*[]>();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(3, 17),
+            // (4,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c2[null] = c2[null];
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c2").WithLocation(4, 1),
+            // (4,12): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c2[null] = c2[null];
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c2").WithLocation(4, 12));
+    }
+
+    [Theory, CombinatorialData]
     public void CompatMode_Event(bool useCompilationReference)
     {
         var lib = CreateCompilation("""
@@ -6921,6 +7187,66 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             // (3,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
             // c.E2 += null;
             Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c.E2").WithLocation(3, 1));
+    }
+
+    [Theory, CombinatorialData]
+    public void CompatMode_Event_SubstitutedType(bool useCompilationReference)
+    {
+        var lib = CreateCompilation("""
+            #pragma warning disable CS0067 // unused event
+            public class C<T>
+            {
+                public event System.Action<T> E1;
+                public event System.Action E2;
+            }
+            """,
+            options: TestOptions.UnsafeReleaseDll,
+            assemblyName: "lib")
+            .VerifyDiagnostics();
+        var libRef = AsReference(lib, useCompilationReference);
+
+        var source = """
+            var c = new C<int*[]>();
+            c.E1 += null;
+            c.E2 += null;
+            """;
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (2,1): error CS9503: 'C<int*[]>.E1' must be used in an unsafe context because it has pointers in its signature
+            // c.E1 += null;
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c.E1").WithArguments("C<int*[]>.E1").WithLocation(2, 1));
+
+        CompileAndVerify("""
+            var c = new C<int*[]>();
+            unsafe { c.E1 += null; }
+            """,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
+            verify: Verification.Skipped,
+            symbolValidator: m => VerifyRequiresUnsafeAttribute(
+                m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
+                includesAttributeDefinition: false,
+                expectedUnsafeSymbols: [],
+                expectedSafeSymbols: ["C", "C.E1", "C.E2"],
+                expectedUnsafeMode: CallerUnsafeMode.Implicit))
+            .VerifyDiagnostics();
+
+        CreateCompilation(source,
+            [libRef],
+            options: TestOptions.UnsafeReleaseExe)
+            .VerifyDiagnostics(
+            // (1,9): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // var c = new C<int*[]>();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new C<int*[]>()").WithLocation(1, 9),
+            // (1,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // var c = new C<int*[]>();
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(1, 15),
+            // (2,1): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
+            // c.E1 += null;
+            Diagnostic(ErrorCode.ERR_UnsafeNeeded, "c.E1").WithLocation(2, 1));
     }
 
     [Theory, CombinatorialData]

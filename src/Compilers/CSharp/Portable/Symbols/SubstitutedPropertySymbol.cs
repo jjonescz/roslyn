@@ -144,6 +144,23 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
+        internal sealed override CallerUnsafeMode CallerUnsafeMode
+        {
+            get
+            {
+                var original = base.CallerUnsafeMode;
+
+                if (original == CallerUnsafeMode.None &&
+                    !ContainingModule.UseUpdatedMemorySafetyRules &&
+                    (this.HasParameterContainingPointerType() || Type.ContainsPointerOrFunctionPointer()))
+                {
+                    return CallerUnsafeMode.Implicit;
+                }
+
+                return original;
+            }
+        }
+
         private ImmutableArray<ParameterSymbol> SubstituteParameters()
         {
             var unsubstitutedParameters = OriginalDefinition.Parameters;

@@ -167,7 +167,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal sealed override bool HasUnscopedRefAttribute => _underlyingProperty.HasUnscopedRefAttribute;
 
-        internal sealed override CallerUnsafeMode CallerUnsafeMode => _underlyingProperty.CallerUnsafeMode;
+        internal override CallerUnsafeMode CallerUnsafeMode => _underlyingProperty.CallerUnsafeMode;
 
         internal override ObsoleteAttributeData ObsoleteAttributeData
         {

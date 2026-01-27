@@ -302,6 +302,23 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
+        internal sealed override CallerUnsafeMode CallerUnsafeMode
+        {
+            get
+            {
+                var original = base.CallerUnsafeMode;
+
+                if (original == CallerUnsafeMode.None &&
+                    !ContainingModule.UseUpdatedMemorySafetyRules &&
+                    (this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer()))
+                {
+                    return CallerUnsafeMode.Implicit;
+                }
+
+                return original;
+            }
+        }
+
         internal sealed override bool CallsAreOmitted(SyntaxTree syntaxTree)
         {
             return OriginalDefinition.CallsAreOmitted(syntaxTree);
