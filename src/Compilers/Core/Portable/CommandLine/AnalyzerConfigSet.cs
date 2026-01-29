@@ -168,18 +168,29 @@ namespace Microsoft.CodeAnalysis
         public AnalyzerConfigOptionsResult GlobalConfigOptions
             => _lazyConfigOptions.Initialize(static @this => @this.ParseGlobalConfigOptions(), this);
 
+        /// <inheritdoc cref="GetOptionsForSourcePath(string, string?)"/>
+        public AnalyzerConfigOptionsResult GetOptionsForSourcePath(string sourcePath)
+        {
+            return GetOptionsForSourcePath(sourcePath, globalConfigRelativePath: null);
+        }
+
         /// <summary>
         /// Returns a <see cref="AnalyzerConfigOptionsResult"/> for a source file. This computes which <see cref="AnalyzerConfig"/> rules applies to this file, and correctly applies
         /// precedence rules if there are multiple rules for the same file.
         /// </summary>
         /// <param name="sourcePath">The path to a file such as a source file or additional file. Must be non-null.</param>
+        /// <param name="globalConfigRelativePath">
+        /// If not empty, relative sections in the global config matching this are also applied.
+        /// </param>
         /// <remarks>This method is safe to call from multiple threads.</remarks>
-        public AnalyzerConfigOptionsResult GetOptionsForSourcePath(string sourcePath)
+        internal AnalyzerConfigOptionsResult GetOptionsForSourcePath(string sourcePath, string? globalConfigRelativePath)
         {
             if (sourcePath == null)
             {
                 throw new ArgumentNullException(nameof(sourcePath));
             }
+
+            Debug.Assert(globalConfigRelativePath is null || globalConfigRelativePath.StartsWith("/"));
 
             var sectionKey = _sectionKeyPool.Allocate();
 
@@ -188,13 +199,23 @@ namespace Microsoft.CodeAnalysis
             normalizedPath = PathUtilities.NormalizeDriveLetter(normalizedPath);
 
             // If we have a global config, add any sections that match the full path. We can have at most one section since
-            // we would have merged them earlier.
-            foreach (var section in _globalConfig.NamedSections)
+            // we would have merged them earlier (unless `globalConfigRelativePath` is not null).
+            for (var sectionIndex = 0; sectionIndex < _globalConfig.NamedSections.Length; sectionIndex++)
             {
+                var section = _globalConfig.NamedSections[sectionIndex];
+
                 if (normalizedPath.Equals(section.Name, Section.NameComparer))
                 {
+                    Debug.Assert(_globalConfig.SectionMatchers[sectionIndex] is null);
                     sectionKey.Add(section);
-                    break;
+                    if (string.IsNullOrEmpty(globalConfigRelativePath)) break;
+                }
+
+                var matcher = _globalConfig.SectionMatchers[sectionIndex];
+                if (!string.IsNullOrEmpty(globalConfigRelativePath) &&
+                    matcher?.IsMatch(globalConfigRelativePath) == true)
+                {
+                    sectionKey.Add(section);
                 }
             }
             int globalConfigOptionsCount = sectionKey.Count;
@@ -498,6 +519,10 @@ namespace Microsoft.CodeAnalysis
 
                         MergeSection(config.PathToFile, unescapedSection, config.GlobalLevel, isGlobalSection: false);
                     }
+                    else if (IsAllowedRelativeSectionName(section.Name))
+                    {
+                        MergeSection(config.PathToFile, section, config.GlobalLevel, isGlobalSection: false);
+                    }
                     else
                     {
                         diagnostics.Add(Diagnostic.Create(
@@ -509,11 +534,16 @@ namespace Microsoft.CodeAnalysis
                 }
             }
 
+            private static bool IsAllowedRelativeSectionName(string sectionName)
+            {
+                return sectionName.StartsWith("generated/", Section.NameComparer);
+            }
+
             internal GlobalAnalyzerConfig Build(DiagnosticBag diagnostics)
             {
                 if (_values is null || _duplicates is null)
                 {
-                    return new GlobalAnalyzerConfig(new Section(GlobalSectionName, AnalyzerOptions.Empty), ImmutableArray<Section>.Empty);
+                    return new GlobalAnalyzerConfig(new Section(GlobalSectionName, AnalyzerOptions.Empty), [], []);
                 }
 
                 // issue diagnostics for any duplicate keys
@@ -538,13 +568,15 @@ namespace Microsoft.CodeAnalysis
                 _values.Remove(string.Empty);
 
                 ArrayBuilder<Section> namedSectionBuilder = new ArrayBuilder<Section>(_values.Count);
+                var sectionMatchersBuilder = new ArrayBuilder<SectionNameMatcher?>(_values.Count);
                 foreach (var sectionName in _values.Keys.Order())
                 {
                     namedSectionBuilder.Add(GetSection(sectionName));
+                    sectionMatchersBuilder.Add(IsAllowedRelativeSectionName(sectionName) ? TryCreateSectionNameMatcher(sectionName) : null);
                 }
 
                 // create the global config
-                GlobalAnalyzerConfig globalConfig = new GlobalAnalyzerConfig(globalSection, namedSectionBuilder.ToImmutableAndFree());
+                GlobalAnalyzerConfig globalConfig = new GlobalAnalyzerConfig(globalSection, namedSectionBuilder.ToImmutableAndFree(), sectionMatchersBuilder.ToImmutableAndFree());
                 _values = null;
                 return globalConfig;
             }
@@ -645,10 +677,15 @@ namespace Microsoft.CodeAnalysis
 
             internal ImmutableArray<AnalyzerConfig.Section> NamedSections { get; }
 
-            public GlobalAnalyzerConfig(AnalyzerConfig.Section globalSection, ImmutableArray<AnalyzerConfig.Section> namedSections)
+            internal ImmutableArray<SectionNameMatcher?> SectionMatchers { get; }
+
+            public GlobalAnalyzerConfig(AnalyzerConfig.Section globalSection, ImmutableArray<AnalyzerConfig.Section> namedSections, ImmutableArray<SectionNameMatcher?> sectionMatchers)
             {
+                Debug.Assert(namedSections.Length == sectionMatchers.Length);
+
                 GlobalSection = globalSection;
                 NamedSections = namedSections;
+                SectionMatchers = sectionMatchers;
             }
         }
     }

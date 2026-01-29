@@ -65,6 +65,11 @@ namespace Microsoft.CodeAnalysis
 
         public GeneratorDriver RunGeneratorsAndUpdateCompilation(Compilation compilation, out Compilation outputCompilation, out ImmutableArray<Diagnostic> diagnostics, CancellationToken cancellationToken = default)
         {
+            return RunGeneratorsAndUpdateCompilation(compilation, analyzerConfigSet: null, out outputCompilation, out diagnostics, cancellationToken);
+        }
+
+        internal GeneratorDriver RunGeneratorsAndUpdateCompilation(Compilation compilation, AnalyzerConfigSet? analyzerConfigSet, out Compilation outputCompilation, out ImmutableArray<Diagnostic> diagnostics, CancellationToken cancellationToken = default)
+        {
             var diagnosticsBag = DiagnosticBag.GetInstance();
             var state = RunGeneratorsCore(compilation, diagnosticsBag, generatorFilter: null, cancellationToken);
 
@@ -78,6 +83,39 @@ namespace Microsoft.CodeAnalysis
             }
             outputCompilation = compilation.AddSyntaxTrees(trees);
             trees.Free();
+
+            if (analyzerConfigSet is not null)
+            {
+                var globalConfigOptions = analyzerConfigSet.GlobalConfigOptions;
+                var originalSyntaxTreeCount = compilation.SyntaxTrees.Count();
+                var analyzerConfigOptions = outputCompilation.SyntaxTrees.SelectAsArray((tree, i) =>
+                {
+                    var baseDirectory = this._state.BaseDirectory;
+                    string? globalConfigRelativePath;
+                    if (baseDirectory is not null && i >= originalSyntaxTreeCount)
+                    {
+                        globalConfigRelativePath =
+                            tree.FilePath.StartsWith(baseDirectory, StringComparison.OrdinalIgnoreCase)
+                            ? PathUtilities.CollapseWithForwardSlash($"/generated/{tree.FilePath[baseDirectory.Length..]}")
+                            : null;
+                        Debug.Assert(globalConfigRelativePath is not null);
+                    }
+                    else
+                    {
+                        globalConfigRelativePath = null;
+                    }
+                    return analyzerConfigSet.GetOptionsForSourcePath(tree.FilePath, globalConfigRelativePath);
+                });
+
+                foreach (var analyzerConfigOption in analyzerConfigOptions)
+                {
+                    diagnostics.AddRange(analyzerConfigOption.Diagnostics);
+                }
+
+                outputCompilation = outputCompilation.WithOptions(
+                    outputCompilation.Options.WithSyntaxTreeOptionsProvider(
+                        new CompilerSyntaxTreeOptionsProvider(outputCompilation.SyntaxTrees.ToArray(), analyzerConfigOptions, globalConfigOptions)));
+            }
 
             return FromState(state);
         }
