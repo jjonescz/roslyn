@@ -15386,6 +15386,36 @@ dotnet_diagnostic.Warning01.severity = error;
                 expectedWarningCount: expectedWarningCount);
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/41171")]
+        public void GlobalAnalyzerConfig_SuppressDiagnosticInGeneratedFiles_2()
+        {
+            var rootDir = Temp.CreateDirectory();
+
+            var srcDir = rootDir.CreateDirectory("src");
+            var cs = srcDir.CreateFile("test.cs").WriteAllText("class C;");
+            var editorConfig = srcDir.CreateFile(".editorconfig").WriteAllText("""
+                [*.cs]
+                my_custom_option = hey
+                """);
+
+            var generator = new PipelineCallbackGenerator((ctx) =>
+            {
+                ctx.RegisterSourceOutput(ctx.ParseOptionsProvider, (spc, po) =>
+                {
+                    spc.AddSource("output1.cs", "class G1;");
+                });
+            });
+
+            VerifyOutput(
+                srcDir,
+                cs,
+                additionalFlags: [$"/analyzerconfig:{editorConfig.Path}"],
+                analyzers: [new OptionReadingDiagnosticAnalyzer()],
+                generators: [generator.AsSourceGenerator()],
+                includeCurrentAssemblyAsAnalyzerReference: false,
+                expectedWarningCount: 2);
+        }
+
         [Theory, CombinatorialData]
         public void TestAdditionalFileAnalyzer(bool registerFromInitialize)
         {
@@ -16160,6 +16190,31 @@ dotnet_diagnostic.CS9204.severity = warning
                 (symbolContext) =>
                 {
                     symbolContext.ReportDiagnostic(Diagnostic.Create(Warning01, symbolContext.Symbol.Locations.First()));
+                },
+                SymbolKind.NamedType);
+        }
+    }
+
+    [DiagnosticAnalyzer(LanguageNames.CSharp)]
+    internal class OptionReadingDiagnosticAnalyzer : CompilationStartedAnalyzer
+    {
+        internal static readonly DiagnosticDescriptor Warning01 = new DiagnosticDescriptor("Warning01", "", "Throwing a diagnostic for types declared: {0}", "", DiagnosticSeverity.Warning, isEnabledByDefault: true);
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
+        {
+            get
+            {
+                return ImmutableArray.Create(Warning01);
+            }
+        }
+
+        public override void CreateAnalyzerWithinCompilation(CompilationStartAnalysisContext context)
+        {
+            context.RegisterSymbolAction(
+                (symbolContext) =>
+                {
+                    symbolContext.Options.AnalyzerConfigOptionsProvider.GetOptions(symbolContext.Symbol.Locations.First().SourceTree).TryGetValue("my_custom_option", out var value);
+                    symbolContext.ReportDiagnostic(Diagnostic.Create(Warning01, symbolContext.Symbol.Locations.First(), value));
                 },
                 SymbolKind.NamedType);
         }
