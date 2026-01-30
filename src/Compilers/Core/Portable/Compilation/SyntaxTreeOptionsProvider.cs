@@ -58,7 +58,7 @@ namespace Microsoft.CodeAnalysis
             ImmutableArray<AnalyzerConfigOptionsResult> results,
             AnalyzerConfigOptionsResult globalResults)
         {
-            Debug.Assert(trees.Length == results.Length);
+            Debug.Assert(results.IsDefault || trees.Length == results.Length);
 
             var builder = ImmutableDictionary.CreateBuilder<SyntaxTree, Options>();
             for (int i = 0; i < trees.Length; i++)

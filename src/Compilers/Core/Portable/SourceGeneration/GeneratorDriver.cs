@@ -84,6 +84,7 @@ namespace Microsoft.CodeAnalysis
             outputCompilation = compilation.AddSyntaxTrees(trees);
             trees.Free();
 
+            // re-read analyzer config for the generated files
             if (analyzerConfigSet is not null)
             {
                 var globalConfigOptions = analyzerConfigSet.GlobalConfigOptions;
