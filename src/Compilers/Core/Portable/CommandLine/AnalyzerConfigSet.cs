@@ -200,7 +200,7 @@ namespace Microsoft.CodeAnalysis
             normalizedPath = PathUtilities.NormalizeDriveLetter(normalizedPath);
 
             // If we have a global config, add any sections that match the full path. We can have at most one section since
-            // we would have merged them earlier (unless `globalConfigRelativePath` is not null).
+            // we would have merged them earlier (unless `globalConfigRelativePath` is not null or empty).
             for (var sectionIndex = 0; sectionIndex < _globalConfig.NamedSections.Length; sectionIndex++)
             {
                 var section = _globalConfig.NamedSections[sectionIndex];
