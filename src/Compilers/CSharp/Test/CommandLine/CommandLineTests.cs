@@ -15415,6 +15415,7 @@ dotnet_diagnostic.Warning01.severity = error;
         [InlineData(".editorconfig", "test.cs", new[] { "C" }, new[] { "G" })]
         [InlineData(".editorconfig", $"**/*.{nameof(PipelineCallbackGenerator)}/**.cs", new[] { "G" }, new[] { "C" })]
         [InlineData(".globalconfig", "", new[] { "C", "G" }, new string[0])]
+        [InlineData(".globalconfig", $"generated/*/*.{nameof(PipelineCallbackGenerator)}/**.cs", new[] { "G" }, new[] { "C" })]
         public void GlobalAnalyzerConfig_CustomAnalyzerOption(
             string fileName,
             string sectionName,
