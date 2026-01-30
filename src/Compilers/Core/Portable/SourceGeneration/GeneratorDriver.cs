@@ -88,11 +88,11 @@ namespace Microsoft.CodeAnalysis
             {
                 var globalConfigOptions = analyzerConfigSet.GlobalConfigOptions;
                 var originalSyntaxTreeCount = compilation.SyntaxTrees.Count();
-                var analyzerConfigOptions = outputCompilation.SyntaxTrees.SelectAsArray((tree, i) =>
+                var analyzerConfigOptions = outputCompilation.SyntaxTrees.SelectAsArray(static (tree, i, arg) =>
                 {
-                    var baseDirectory = this._state.BaseDirectory;
+                    var baseDirectory = arg.@this._state.BaseDirectory;
                     string? globalConfigRelativePath;
-                    if (baseDirectory is not null && i >= originalSyntaxTreeCount)
+                    if (baseDirectory is not null && i >= arg.originalSyntaxTreeCount)
                     {
                         globalConfigRelativePath =
                             tree.FilePath.StartsWith(baseDirectory, StringComparison.OrdinalIgnoreCase)
@@ -104,8 +104,8 @@ namespace Microsoft.CodeAnalysis
                     {
                         globalConfigRelativePath = null;
                     }
-                    return analyzerConfigSet.GetOptionsForSourcePath(tree.FilePath, globalConfigRelativePath);
-                });
+                    return arg.analyzerConfigSet.GetOptionsForSourcePath(tree.FilePath, globalConfigRelativePath);
+                }, (@this: this, analyzerConfigSet, originalSyntaxTreeCount));
 
                 foreach (var analyzerConfigOption in analyzerConfigOptions)
                 {

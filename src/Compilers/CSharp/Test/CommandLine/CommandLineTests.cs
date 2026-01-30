@@ -15325,7 +15325,8 @@ dotnet_diagnostic.Warning01.severity = error;
         [InlineData("*.cs", 9)]
         [InlineData("generated/Microsoft.CodeAnalysis.Test.Utilities/Roslyn.Test.Utilities.TestGenerators.PipelineCallbackGenerator/*.cs", 5)]
         [InlineData("generated/Microsoft.CodeAnalysis.Test.Utilities/Roslyn.Test.Utilities.TestGenerators.PipelineCallbackGenerator2/*.cs", 5)]
-        [InlineData("generated/Microsoft.CodeAnalysis.Test.Utilities/*.cs", 2)]
+        [InlineData("generated/Microsoft.CodeAnalysis.Test.Utilities/*.cs", 8)]
+        [InlineData("generated/Microsoft.CodeAnalysis.Test.Utilities/**/*.cs", 2)]
         public void GlobalAnalyzerConfig_SuppressDiagnosticInGeneratedFiles_NamedSection(
             string sectionName, int expectedWarningCount)
         {

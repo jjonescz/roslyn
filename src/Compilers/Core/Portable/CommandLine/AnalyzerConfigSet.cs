@@ -180,7 +180,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         /// <param name="sourcePath">The path to a file such as a source file or additional file. Must be non-null.</param>
         /// <param name="globalConfigRelativePath">
-        /// If not empty, relative sections in the global config matching this are also applied.
+        /// Relative sections in the global config matching this are applied if and only if this parameter is not null or empty.
         /// </param>
         /// <remarks>This method is safe to call from multiple threads.</remarks>
         internal AnalyzerConfigOptionsResult GetOptionsForSourcePath(string sourcePath, string? globalConfigRelativePath)
@@ -190,7 +190,7 @@ namespace Microsoft.CodeAnalysis
                 throw new ArgumentNullException(nameof(sourcePath));
             }
 
-            Debug.Assert(globalConfigRelativePath is null || globalConfigRelativePath.StartsWith("/"));
+            Debug.Assert(string.IsNullOrEmpty(globalConfigRelativePath) || globalConfigRelativePath.StartsWith("/"));
 
             var sectionKey = _sectionKeyPool.Allocate();
 
@@ -220,38 +220,41 @@ namespace Microsoft.CodeAnalysis
             }
             int globalConfigOptionsCount = sectionKey.Count;
 
-            // The editorconfig paths are sorted from shortest to longest, so matches
-            // are resolved from most nested to least nested, where last setting wins
-            for (int analyzerConfigIndex = 0; analyzerConfigIndex < _analyzerConfigs.Length; analyzerConfigIndex++)
+            if (string.IsNullOrEmpty(globalConfigRelativePath))
             {
-                var config = _analyzerConfigs[analyzerConfigIndex];
-
-                if (PathUtilities.IsSameDirectoryOrChildOf(normalizedPath, config.NormalizedDirectory, StringComparison.Ordinal))
+                // The editorconfig paths are sorted from shortest to longest, so matches
+                // are resolved from most nested to least nested, where last setting wins
+                for (int analyzerConfigIndex = 0; analyzerConfigIndex < _analyzerConfigs.Length; analyzerConfigIndex++)
                 {
-                    // If this config is a root config, then clear earlier options since they don't apply
-                    // to this source file.
-                    if (config.IsRoot)
-                    {
-                        sectionKey.RemoveRange(globalConfigOptionsCount, sectionKey.Count - globalConfigOptionsCount);
-                    }
+                    var config = _analyzerConfigs[analyzerConfigIndex];
 
-                    int dirLength = config.NormalizedDirectory.Length;
-                    // Leave '/' if the normalized directory ends with a '/'. This can happen if
-                    // we're in a root directory (e.g. '/' or 'Z:/'). The section matching
-                    // always expects that the relative path start with a '/'. 
-                    if (config.NormalizedDirectory[dirLength - 1] == '/')
+                    if (PathUtilities.IsSameDirectoryOrChildOf(normalizedPath, config.NormalizedDirectory, StringComparison.Ordinal))
                     {
-                        dirLength--;
-                    }
-                    string relativePath = normalizedPath.Substring(dirLength);
-
-                    ImmutableArray<SectionNameMatcher?> matchers = _analyzerMatchers[analyzerConfigIndex];
-                    for (int sectionIndex = 0; sectionIndex < matchers.Length; sectionIndex++)
-                    {
-                        if (matchers[sectionIndex]?.IsMatch(relativePath) == true)
+                        // If this config is a root config, then clear earlier options since they don't apply
+                        // to this source file.
+                        if (config.IsRoot)
                         {
-                            var section = config.NamedSections[sectionIndex];
-                            sectionKey.Add(section);
+                            sectionKey.RemoveRange(globalConfigOptionsCount, sectionKey.Count - globalConfigOptionsCount);
+                        }
+
+                        int dirLength = config.NormalizedDirectory.Length;
+                        // Leave '/' if the normalized directory ends with a '/'. This can happen if
+                        // we're in a root directory (e.g. '/' or 'Z:/'). The section matching
+                        // always expects that the relative path start with a '/'. 
+                        if (config.NormalizedDirectory[dirLength - 1] == '/')
+                        {
+                            dirLength--;
+                        }
+                        string relativePath = normalizedPath.Substring(dirLength);
+
+                        ImmutableArray<SectionNameMatcher?> matchers = _analyzerMatchers[analyzerConfigIndex];
+                        for (int sectionIndex = 0; sectionIndex < matchers.Length; sectionIndex++)
+                        {
+                            if (matchers[sectionIndex]?.IsMatch(relativePath) == true)
+                            {
+                                var section = config.NamedSections[sectionIndex];
+                                sectionKey.Add(section);
+                            }
                         }
                     }
                 }
