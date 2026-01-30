@@ -91,15 +91,16 @@ namespace Microsoft.CodeAnalysis
                 var originalSyntaxTreeCount = compilation.SyntaxTrees.Count();
                 var analyzerConfigOptions = outputCompilation.SyntaxTrees.SelectAsArray(static (tree, i, arg) =>
                 {
+                    var isSourceGeneratedFile = i >= arg.originalSyntaxTreeCount;
                     var baseDirectory = arg.@this._state.BaseDirectory;
-                    string? globalConfigRelativePath = baseDirectory is not null && i >= arg.originalSyntaxTreeCount
+                    string? globalConfigRelativePath = baseDirectory is not null && isSourceGeneratedFile
                         ? AnalyzerConfigSet.GlobalAnalyzerConfigBuilder.GetGlobalConfigRelativePathForGeneratedFile(baseDirectory, tree.FilePath)
                         : null;
                     return arg.analyzerConfigSet.GetOptionsForSourcePath(
                         tree.FilePath,
                         globalConfigRelativePath,
                         // editorconfig sections were never applied to generated files so we currently preseve that for backcompat
-                        excludeEditorConfigSections: true);
+                        excludeEditorConfigSections: isSourceGeneratedFile);
                 }, (@this: this, analyzerConfigSet, originalSyntaxTreeCount));
 
                 foreach (var analyzerConfigOption in analyzerConfigOptions)
