@@ -168,7 +168,7 @@ namespace Microsoft.CodeAnalysis
         public AnalyzerConfigOptionsResult GlobalConfigOptions
             => _lazyConfigOptions.Initialize(static @this => @this.ParseGlobalConfigOptions(), this);
 
-        /// <inheritdoc cref="GetOptionsForSourcePath(string, string?)"/>
+        /// <inheritdoc cref="GetOptionsForSourcePath(string, string?, bool)"/>
         public AnalyzerConfigOptionsResult GetOptionsForSourcePath(string sourcePath)
         {
             return GetOptionsForSourcePath(sourcePath, globalConfigRelativePath: null);
@@ -180,11 +180,11 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         /// <param name="sourcePath">The path to a file such as a source file or additional file. Must be non-null.</param>
         /// <param name="globalConfigRelativePath">
-        /// Relative sections in the global config matching this are applied if and only if this parameter is not null or empty.
+        /// If this is not null or empty, relative sections in the global config matching this are applied.
         /// Only some relative sections are supported in global config files, see <see cref="GlobalAnalyzerConfigBuilder.IsAllowedRelativeSectionName"/>.
         /// </param>
         /// <remarks>This method is safe to call from multiple threads.</remarks>
-        internal AnalyzerConfigOptionsResult GetOptionsForSourcePath(string sourcePath, string? globalConfigRelativePath)
+        internal AnalyzerConfigOptionsResult GetOptionsForSourcePath(string sourcePath, string? globalConfigRelativePath, bool excludeEditorConfigSections = false)
         {
             if (sourcePath == null)
             {
@@ -221,7 +221,7 @@ namespace Microsoft.CodeAnalysis
             }
             int globalConfigOptionsCount = sectionKey.Count;
 
-            if (string.IsNullOrEmpty(globalConfigRelativePath))
+            if (!excludeEditorConfigSections)
             {
                 // The editorconfig paths are sorted from shortest to longest, so matches
                 // are resolved from most nested to least nested, where last setting wins
