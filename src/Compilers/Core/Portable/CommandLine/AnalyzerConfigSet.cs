@@ -505,6 +505,20 @@ namespace Microsoft.CodeAnalysis
             internal const string GlobalConfigPath = "<Global Config>";
             internal const string GlobalSectionName = "Global Section";
 
+            private static bool IsAllowedRelativeSectionName(string sectionName)
+            {
+                return sectionName.StartsWith("generated/", Section.NameComparer);
+            }
+
+            internal static string GetGlobalConfigRelativePathForGeneratedFile(string baseDirectory, string filePath)
+            {
+                var result = filePath.StartsWith(baseDirectory, StringComparison.OrdinalIgnoreCase)
+                    ? PathUtilities.CollapseWithForwardSlash($"/generated/{filePath[baseDirectory.Length..]}")
+                    : null;
+                Debug.Assert(result is not null);
+                return result;
+            }
+
             internal void MergeIntoGlobalConfig(AnalyzerConfig config, DiagnosticBag diagnostics)
             {
                 if (_values is null)
@@ -536,11 +550,6 @@ namespace Microsoft.CodeAnalysis
                             config.PathToFile));
                     }
                 }
-            }
-
-            private static bool IsAllowedRelativeSectionName(string sectionName)
-            {
-                return sectionName.StartsWith("generated/", Section.NameComparer);
             }
 
             internal GlobalAnalyzerConfig Build(DiagnosticBag diagnostics)

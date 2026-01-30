@@ -1156,10 +1156,7 @@ namespace Microsoft.CodeAnalysis
                             embeddedTextBuilder.Add(EmbeddedText.FromSource(tree.FilePath, sourceText));
                             if (analyzerOptionsBuilder is object)
                             {
-                                var globalConfigRelativePath = tree.FilePath.StartsWith(baseDirectory, StringComparison.OrdinalIgnoreCase)
-                                    ? PathUtilities.CollapseWithForwardSlash($"/generated/{tree.FilePath[baseDirectory.Length..]}")
-                                    : null;
-                                Debug.Assert(globalConfigRelativePath is not null);
+                                var globalConfigRelativePath = AnalyzerConfigSet.GlobalAnalyzerConfigBuilder.GetGlobalConfigRelativePathForGeneratedFile(baseDirectory, tree.FilePath);
                                 analyzerOptionsBuilder.Add(analyzerConfigSet!.GetOptionsForSourcePath(tree.FilePath, globalConfigRelativePath));
                             }
 

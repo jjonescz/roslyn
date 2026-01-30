@@ -92,19 +92,9 @@ namespace Microsoft.CodeAnalysis
                 var analyzerConfigOptions = outputCompilation.SyntaxTrees.SelectAsArray(static (tree, i, arg) =>
                 {
                     var baseDirectory = arg.@this._state.BaseDirectory;
-                    string? globalConfigRelativePath;
-                    if (baseDirectory is not null && i >= arg.originalSyntaxTreeCount)
-                    {
-                        globalConfigRelativePath =
-                            tree.FilePath.StartsWith(baseDirectory, StringComparison.OrdinalIgnoreCase)
-                            ? PathUtilities.CollapseWithForwardSlash($"/generated/{tree.FilePath[baseDirectory.Length..]}")
-                            : null;
-                        Debug.Assert(globalConfigRelativePath is not null);
-                    }
-                    else
-                    {
-                        globalConfigRelativePath = null;
-                    }
+                    string? globalConfigRelativePath = baseDirectory is not null && i >= arg.originalSyntaxTreeCount
+                        ? AnalyzerConfigSet.GlobalAnalyzerConfigBuilder.GetGlobalConfigRelativePathForGeneratedFile(baseDirectory, tree.FilePath)
+                        : null;
                     return arg.analyzerConfigSet.GetOptionsForSourcePath(tree.FilePath, globalConfigRelativePath);
                 }, (@this: this, analyzerConfigSet, originalSyntaxTreeCount));
 
