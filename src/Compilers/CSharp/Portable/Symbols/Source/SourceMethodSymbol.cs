@@ -149,7 +149,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (target.CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
             {
-                if (target is not SourceMethodSymbol sourceMethod || !sourceMethod.HasRequiresUnsafeAttribute)
+                bool hasRequiresUnsafeAttribute = target switch
+                {
+                    SourceMethodSymbol sourceMethod => sourceMethod.HasRequiresUnsafeAttribute,
+                    SourceExtensionImplementationMethodSymbol extensionImpl => extensionImpl.UnderlyingMethod is SourceMethodSymbol original && original.HasRequiresUnsafeAttribute,
+                    _ => false,
+                };
+
+                if (!hasRequiresUnsafeAttribute)
                 {
                     AddSynthesizedAttribute(ref attributes, moduleBuilder.TrySynthesizeRequiresUnsafeAttribute(target));
                 }
