@@ -300,7 +300,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             if (symbol.ContainingModule is PEModuleSymbol peModuleSymbol)
             {
                 var unfilteredAttributes = peModuleSymbol.GetCustomAttributesForToken(MetadataTokens.EntityHandle(symbol.MetadataToken));
-                var unfilteredAttribute = unfilteredAttributes.SingleOrDefault(a => a.AttributeClass?.Name == Name);
+                var unfilteredAttribute = unfilteredAttributes.FirstOrDefault(a => a.AttributeClass?.Name == Name);
                 if (symbolExpectedUnsafeMode.NeedsRequiresUnsafeAttribute())
                 {
                     Assert.NotNull(unfilteredAttribute);
@@ -2689,10 +2689,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 VerifyMemorySafetyRulesAttribute(m, includesAttributeDefinition: true, includesAttributeUse: true, isSynthesized: true);
                 VerifyRequiresUnsafeAttribute(
                     m,
-                    includesAttributeDefinition: true,
-                    isSynthesized: true,
-                    expectedUnsafeSymbols: [.. unsafeSymbols],
-                    expectedSafeSymbols: [.. safeSymbols]);
+                    includesAttributeDefinition: false,
+                    expectedUnsafeSymbols: [],
+                    expectedSafeSymbols: [.. safeSymbols, .. unsafeSymbols]);
             })
             .VerifyDiagnostics();
 
@@ -2757,10 +2756,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         bool callerUnsafeBlock,
         bool? compilationReference)
     {
+        var requiresUnsafeAttribute = apiUnsafe && apiUpdatedRules
+            ? "[System.Runtime.CompilerServices.RequiresUnsafe]"
+            : "";
+
         var api = $$"""
             public class C
             {
-                public {{(apiUnsafe ? "unsafe" : "")}} void M() => System.Console.Write(111);
+                {{requiresUnsafeAttribute}}
+                public void M() => System.Console.Write(111);
             }
             """;
 
@@ -2776,7 +2780,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
         if (compilationReference is { } useCompilationReference)
         {
-            var apiCompilation = CreateCompilation(api,
+            var apiCompilation = CreateCompilation(
+                [api, .. (apiUnsafe && apiUpdatedRules ? new[] { RequiresUnsafeAttributeDefinition } : [])],
                 options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules(apiUpdatedRules))
                 .VerifyDiagnostics();
             var apiReference = AsReference(apiCompilation, useCompilationReference);
@@ -2791,25 +2796,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 return;
             }
 
-            comp = CreateCompilation([api, caller],
+            comp = CreateCompilation(
+                [api, caller, .. (apiUnsafe && apiUpdatedRules ? new[] { RequiresUnsafeAttributeDefinition } : [])],
                 parseOptions: TestOptions.Regular.WithLanguageVersion(callerLangVersion),
                 options: TestOptions.ReleaseExe.WithAllowUnsafe(callerAllowUnsafe).WithUpdatedMemorySafetyRules(callerUpdatedRules));
-
-            if (!callerAllowUnsafe && apiUnsafe)
-            {
-                expectedDiagnostics.Add(
-                    // (3,24): error CS0227: Unsafe code may only appear if compiling with /unsafe
-                    //     public unsafe void M() => System.Console.Write(111);
-                    Diagnostic(ErrorCode.ERR_IllegalUnsafe, "M").WithLocation(3, 24));
-            }
-
-            if (apiUnsafe && apiUpdatedRules && callerUpdatedRules && callerLangVersion < LanguageVersionFacts.CSharpNext)
-            {
-                expectedDiagnostics.Add(
-                    // (3,24): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-                    //     public unsafe void M() => System.Console.Write(111);
-                    Diagnostic(ErrorCode.ERR_FeatureInPreview, "M").WithArguments("updated memory safety rules").WithLocation(3, 24));
-            }
         }
 
         if (!callerAllowUnsafe && callerUnsafeBlock)
@@ -3152,9 +3142,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (4,17): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     unsafe void M2();
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "M2").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 17));
+            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 38),
+            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 38));
     }
 
     [Fact]
@@ -3185,9 +3178,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             // (1,1): error CS9502: 'C.M1()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
             // new C().M1();
             Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "new C().M1()").WithArguments("C.M1()").WithLocation(1, 1),
-            // (5,33): error CS9504: Unsafe member 'C.M1()' cannot override safe member 'B.M1()'
-            //     public unsafe override void M1() { }
-            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C.M1()", "B.M1()").WithLocation(5, 33),
+            // (6,26): error CS9504: Unsafe member 'C.M1()' cannot override safe member 'B.M1()'
+            //     public override void M1() { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C.M1()", "B.M1()").WithLocation(6, 26),
         };
 
         CompileAndVerifyUnsafe(
@@ -3199,22 +3192,22 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             expectedDiagnostics: expectedDiagnostics,
             expectedDiagnosticsWhenReferencingLegacyLib: expectedDiagnostics);
 
-        CreateCompilation([lib, caller],
+        CreateCompilation([lib, caller, RequiresUnsafeAttributeDefinition],
             parseOptions: TestOptions.Regular14,
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
+            // (4,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(4, 6),
+            // (5,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(5, 6),
+            // (6,26): error CS9504: Unsafe member 'C.M1()' cannot override safe member 'B.M1()'
+            //     public override void M1() { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C.M1()", "B.M1()").WithLocation(6, 26),
             // (1,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
             // new C().M1();
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "new C().M1()").WithArguments("updated memory safety rules").WithLocation(1, 1),
-            // (4,32): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     public unsafe virtual void M2() { }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "M2").WithArguments("updated memory safety rules").WithLocation(4, 32),
-            // (5,33): error CS9504: Unsafe member 'C.M1()' cannot override safe member 'B.M1()'
-            //     public unsafe override void M1() { }
-            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C.M1()", "B.M1()").WithLocation(5, 33),
-            // (5,33): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     public unsafe override void M1() { }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "M1").WithArguments("updated memory safety rules").WithLocation(5, 33));
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "new C().M1()").WithArguments("updated memory safety rules").WithLocation(1, 1));
     }
 
     [Fact]
@@ -3224,9 +3217,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class B
                 {
-                    public unsafe virtual void M1() { }
-                    public unsafe virtual void M2() { }
-                    public unsafe virtual void M3() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public virtual void M1() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public virtual void M2() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public virtual void M3() { }
                     public virtual void M4() { }
                     public virtual void M5() { }
                     public virtual void M6() { }
@@ -3234,11 +3230,13 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 public class C : B
                 {
-                    public unsafe override void M1() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override void M1() { }
                     public new virtual void M2() { }
                     public override void M3() { }
                     public override void M4() { }
-                    public unsafe new virtual void M5() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public new virtual void M5() { }
                 }
                 """,
             caller: """
@@ -3260,16 +3258,23 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 class D2 : C
                 {
-                    public unsafe override void M1() { }
-                    public unsafe override void M2() { }
-                    public unsafe override void M3() { }
-                    public unsafe override void M4() { }
-                    public unsafe override void M5() { }
-                    public unsafe override void M6() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override void M1() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override void M2() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override void M3() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override void M4() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override void M5() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override void M6() { }
                 }
 
                 class D3 : C;
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["B.M1", "B.M2", "B.M3", "C.M1", "C.M5"],
             expectedSafeSymbols: ["B.M4", "B.M5", "B.M6", "C.M2", "C.M3", "C.M4"],
             expectedDiagnostics:
@@ -3307,15 +3312,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (14,31): error CS9502: 'C.M1()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 //     public void BaseCalls() { base.M1(); base.M2(); base.M3(); base.M4(); base.M6(); }
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "base.M1()").WithArguments("C.M1()").WithLocation(14, 31),
-                // (20,33): error CS9504: Unsafe member 'D2.M2()' cannot override safe member 'C.M2()'
-                //     public unsafe override void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M2").WithArguments("D2.M2()", "C.M2()").WithLocation(20, 33),
-                // (22,33): error CS9504: Unsafe member 'D2.M4()' cannot override safe member 'B.M4()'
-                //     public unsafe override void M4() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M4").WithArguments("D2.M4()", "B.M4()").WithLocation(22, 33),
-                // (24,33): error CS9504: Unsafe member 'D2.M6()' cannot override safe member 'B.M6()'
-                //     public unsafe override void M6() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M6").WithArguments("D2.M6()", "B.M6()").WithLocation(24, 33),
+                // (22,26): error CS9504: Unsafe member 'D2.M2()' cannot override safe member 'C.M2()'
+                //     public override void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M2").WithArguments("D2.M2()", "C.M2()").WithLocation(22, 26),
+                // (26,26): error CS9504: Unsafe member 'D2.M4()' cannot override safe member 'B.M4()'
+                //     public override void M4() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M4").WithArguments("D2.M4()", "B.M4()").WithLocation(26, 26),
+                // (30,26): error CS9504: Unsafe member 'D2.M6()' cannot override safe member 'B.M6()'
+                //     public override void M6() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M6").WithArguments("D2.M6()", "B.M6()").WithLocation(30, 26),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
@@ -3337,24 +3342,24 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (2,65): error CS9502: 'D2.M6()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M6()").WithArguments("D2.M6()").WithLocation(2, 65),
-                // (19,33): error CS9504: Unsafe member 'D2.M1()' cannot override safe member 'B.M1()'
-                //     public unsafe override void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("D2.M1()", "B.M1()").WithLocation(19, 33),
-                // (20,33): error CS9504: Unsafe member 'D2.M2()' cannot override safe member 'C.M2()'
-                //     public unsafe override void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M2").WithArguments("D2.M2()", "C.M2()").WithLocation(20, 33),
-                // (21,33): error CS9504: Unsafe member 'D2.M3()' cannot override safe member 'B.M3()'
-                //     public unsafe override void M3() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M3").WithArguments("D2.M3()", "B.M3()").WithLocation(21, 33),
-                // (22,33): error CS9504: Unsafe member 'D2.M4()' cannot override safe member 'B.M4()'
-                //     public unsafe override void M4() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M4").WithArguments("D2.M4()", "B.M4()").WithLocation(22, 33),
-                // (23,33): error CS9504: Unsafe member 'D2.M5()' cannot override safe member 'C.M5()'
-                //     public unsafe override void M5() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M5").WithArguments("D2.M5()", "C.M5()").WithLocation(23, 33),
-                // (24,33): error CS9504: Unsafe member 'D2.M6()' cannot override safe member 'B.M6()'
-                //     public unsafe override void M6() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M6").WithArguments("D2.M6()", "B.M6()").WithLocation(24, 33),
+                // (20,26): error CS9504: Unsafe member 'D2.M1()' cannot override safe member 'B.M1()'
+                //     public override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("D2.M1()", "B.M1()").WithLocation(20, 26),
+                // (22,26): error CS9504: Unsafe member 'D2.M2()' cannot override safe member 'C.M2()'
+                //     public override void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M2").WithArguments("D2.M2()", "C.M2()").WithLocation(22, 26),
+                // (24,26): error CS9504: Unsafe member 'D2.M3()' cannot override safe member 'B.M3()'
+                //     public override void M3() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M3").WithArguments("D2.M3()", "B.M3()").WithLocation(24, 26),
+                // (26,26): error CS9504: Unsafe member 'D2.M4()' cannot override safe member 'B.M4()'
+                //     public override void M4() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M4").WithArguments("D2.M4()", "B.M4()").WithLocation(26, 26),
+                // (28,26): error CS9504: Unsafe member 'D2.M5()' cannot override safe member 'C.M5()'
+                //     public override void M5() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M5").WithArguments("D2.M5()", "C.M5()").WithLocation(28, 26),
+                // (30,26): error CS9504: Unsafe member 'D2.M6()' cannot override safe member 'B.M6()'
+                //     public override void M6() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M6").WithArguments("D2.M6()", "B.M6()").WithLocation(30, 26),
             ]);
     }
 
@@ -3430,7 +3435,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             }
             class C2 : B
             {
-                public unsafe override void M() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public override void M() { }
             }
             """,
             [refA],
@@ -3442,9 +3448,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             // (6,1): error CS9502: 'B.M()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
             // b.M();
             Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "b.M()").WithArguments("B.M()").WithLocation(6, 1),
-            // (16,33): error CS9504: Unsafe member 'C2.M()' cannot override safe member 'A.M()'
-            //     public unsafe override void M() { }
-            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M").WithArguments("C2.M()", "A.M()").WithLocation(16, 33));
+            // (17,26): error CS9504: Unsafe member 'C2.M()' cannot override safe member 'A.M()'
+            //     public override void M() { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M").WithArguments("C2.M()", "A.M()").WithLocation(17, 26));
     }
 
     [Fact]
@@ -3454,14 +3460,16 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public interface I1
                 {
-                    unsafe void M1();
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    void M1();
                     void M2();
                 }
 
                 public interface I2
                 {
                     void M1();
-                    unsafe void M2();
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    void M2();
                 }
 
                 public class C1 : I1
@@ -3487,26 +3495,34 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 public class C3 : I1
                 {
-                    public unsafe void M1() { }
-                    public unsafe void M2() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void M1() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void M2() { }
                 }
 
                 public class C4 : I1
                 {
-                    unsafe void I1.M1() { }
-                    unsafe void I1.M2() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    void I1.M1() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    void I1.M2() { }
                 }
 
                 public class C5 : I1, I2
                 {
-                    public unsafe void M1() { }
-                    public unsafe void M2() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void M1() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void M2() { }
                 }
 
                 public class C6 : I2, I1
                 {
-                    public unsafe void M1() { }
-                    public unsafe void M2() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void M1() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void M2() { }
                 }
 
                 public class C7 : I1, I2
@@ -3521,6 +3537,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     public void M2() { }
                 }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["I1.M1", "I2.M2"],
             expectedSafeSymbols: ["I1.M2", "I2.M1", "C1.M1", "C1.M2", "C2.I1.M1", "C2.I1.M2"],
             expectedDiagnostics:
@@ -3531,63 +3548,63 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (7,1): error CS9502: 'I2.M2()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // i2.M2();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "i2.M2()").WithArguments("I2.M2()").WithLocation(7, 1),
-                // (12,24): error CS9505: Unsafe member 'C3.M2()' cannot implicitly implement safe member 'I1.M2()'
-                //     public unsafe void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C3.M2()", "I1.M2()").WithLocation(12, 24),
-                // (18,20): error CS9506: Unsafe member 'C4.I1.M2()' cannot implement safe member 'I1.M2()'
-                //     unsafe void I1.M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M2").WithArguments("C4.I1.M2()", "I1.M2()").WithLocation(18, 20),
-                // (23,24): error CS9505: Unsafe member 'C5.M1()' cannot implicitly implement safe member 'I2.M1()'
-                //     public unsafe void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C5.M1()", "I2.M1()").WithLocation(23, 24),
-                // (24,24): error CS9505: Unsafe member 'C5.M2()' cannot implicitly implement safe member 'I1.M2()'
-                //     public unsafe void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C5.M2()", "I1.M2()").WithLocation(24, 24),
-                // (29,24): error CS9505: Unsafe member 'C6.M1()' cannot implicitly implement safe member 'I2.M1()'
-                //     public unsafe void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C6.M1()", "I2.M1()").WithLocation(29, 24),
-                // (30,24): error CS9505: Unsafe member 'C6.M2()' cannot implicitly implement safe member 'I1.M2()'
-                //     public unsafe void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C6.M2()", "I1.M2()").WithLocation(30, 24),
+                // (14,17): error CS9505: Unsafe member 'C3.M2()' cannot implicitly implement safe member 'I1.M2()'
+                //     public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C3.M2()", "I1.M2()").WithLocation(14, 17),
+                // (22,13): error CS9506: Unsafe member 'C4.I1.M2()' cannot implement safe member 'I1.M2()'
+                //     void I1.M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M2").WithArguments("C4.I1.M2()", "I1.M2()").WithLocation(22, 13),
+                // (28,17): error CS9505: Unsafe member 'C5.M1()' cannot implicitly implement safe member 'I2.M1()'
+                //     public void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C5.M1()", "I2.M1()").WithLocation(28, 17),
+                // (30,17): error CS9505: Unsafe member 'C5.M2()' cannot implicitly implement safe member 'I1.M2()'
+                //     public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C5.M2()", "I1.M2()").WithLocation(30, 17),
+                // (36,17): error CS9505: Unsafe member 'C6.M1()' cannot implicitly implement safe member 'I2.M1()'
+                //     public void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C6.M1()", "I2.M1()").WithLocation(36, 17),
+                // (38,17): error CS9505: Unsafe member 'C6.M2()' cannot implicitly implement safe member 'I1.M2()'
+                //     public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C6.M2()", "I1.M2()").WithLocation(38, 17),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
-                // (11,24): error CS9505: Unsafe member 'C3.M1()' cannot implicitly implement safe member 'I1.M1()'
-                //     public unsafe void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C3.M1()", "I1.M1()").WithLocation(11, 24),
-                // (12,24): error CS9505: Unsafe member 'C3.M2()' cannot implicitly implement safe member 'I1.M2()'
-                //     public unsafe void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C3.M2()", "I1.M2()").WithLocation(12, 24),
-                // (17,20): error CS9506: Unsafe member 'C4.I1.M1()' cannot implement safe member 'I1.M1()'
-                //     unsafe void I1.M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M1").WithArguments("C4.I1.M1()", "I1.M1()").WithLocation(17, 20),
-                // (18,20): error CS9506: Unsafe member 'C4.I1.M2()' cannot implement safe member 'I1.M2()'
-                //     unsafe void I1.M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M2").WithArguments("C4.I1.M2()", "I1.M2()").WithLocation(18, 20),
-                // (23,24): error CS9505: Unsafe member 'C5.M1()' cannot implicitly implement safe member 'I1.M1()'
-                //     public unsafe void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C5.M1()", "I1.M1()").WithLocation(23, 24),
-                // (23,24): error CS9505: Unsafe member 'C5.M1()' cannot implicitly implement safe member 'I2.M1()'
-                //     public unsafe void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C5.M1()", "I2.M1()").WithLocation(23, 24),
-                // (24,24): error CS9505: Unsafe member 'C5.M2()' cannot implicitly implement safe member 'I1.M2()'
-                //     public unsafe void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C5.M2()", "I1.M2()").WithLocation(24, 24),
-                // (24,24): error CS9505: Unsafe member 'C5.M2()' cannot implicitly implement safe member 'I2.M2()'
-                //     public unsafe void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C5.M2()", "I2.M2()").WithLocation(24, 24),
-                // (29,24): error CS9505: Unsafe member 'C6.M1()' cannot implicitly implement safe member 'I2.M1()'
-                //     public unsafe void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C6.M1()", "I2.M1()").WithLocation(29, 24),
-                // (29,24): error CS9505: Unsafe member 'C6.M1()' cannot implicitly implement safe member 'I1.M1()'
-                //     public unsafe void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C6.M1()", "I1.M1()").WithLocation(29, 24),
-                // (30,24): error CS9505: Unsafe member 'C6.M2()' cannot implicitly implement safe member 'I2.M2()'
-                //     public unsafe void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C6.M2()", "I2.M2()").WithLocation(30, 24),
-                // (30,24): error CS9505: Unsafe member 'C6.M2()' cannot implicitly implement safe member 'I1.M2()'
-                //     public unsafe void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C6.M2()", "I1.M2()").WithLocation(30, 24),
+                // (12,17): error CS9505: Unsafe member 'C3.M1()' cannot implicitly implement safe member 'I1.M1()'
+                //     public void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C3.M1()", "I1.M1()").WithLocation(12, 17),
+                // (14,17): error CS9505: Unsafe member 'C3.M2()' cannot implicitly implement safe member 'I1.M2()'
+                //     public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C3.M2()", "I1.M2()").WithLocation(14, 17),
+                // (20,13): error CS9506: Unsafe member 'C4.I1.M1()' cannot implement safe member 'I1.M1()'
+                //     void I1.M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M1").WithArguments("C4.I1.M1()", "I1.M1()").WithLocation(20, 13),
+                // (22,13): error CS9506: Unsafe member 'C4.I1.M2()' cannot implement safe member 'I1.M2()'
+                //     void I1.M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M2").WithArguments("C4.I1.M2()", "I1.M2()").WithLocation(22, 13),
+                // (28,17): error CS9505: Unsafe member 'C5.M1()' cannot implicitly implement safe member 'I1.M1()'
+                //     public void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C5.M1()", "I1.M1()").WithLocation(28, 17),
+                // (28,17): error CS9505: Unsafe member 'C5.M1()' cannot implicitly implement safe member 'I2.M1()'
+                //     public void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C5.M1()", "I2.M1()").WithLocation(28, 17),
+                // (30,17): error CS9505: Unsafe member 'C5.M2()' cannot implicitly implement safe member 'I1.M2()'
+                //     public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C5.M2()", "I1.M2()").WithLocation(30, 17),
+                // (30,17): error CS9505: Unsafe member 'C5.M2()' cannot implicitly implement safe member 'I2.M2()'
+                //     public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C5.M2()", "I2.M2()").WithLocation(30, 17),
+                // (36,17): error CS9505: Unsafe member 'C6.M1()' cannot implicitly implement safe member 'I2.M1()'
+                //     public void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C6.M1()", "I2.M1()").WithLocation(36, 17),
+                // (36,17): error CS9505: Unsafe member 'C6.M1()' cannot implicitly implement safe member 'I1.M1()'
+                //     public void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C6.M1()", "I1.M1()").WithLocation(36, 17),
+                // (38,17): error CS9505: Unsafe member 'C6.M2()' cannot implicitly implement safe member 'I2.M2()'
+                //     public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C6.M2()", "I2.M2()").WithLocation(38, 17),
+                // (38,17): error CS9505: Unsafe member 'C6.M2()' cannot implicitly implement safe member 'I1.M2()'
+                //     public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C6.M2()", "I1.M2()").WithLocation(38, 17),
             ]);
     }
 
@@ -3599,13 +3616,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public interface I
                 {
                     void M1();
-                    unsafe void M2();
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    void M2();
                 }
 
                 public class B1 : I
                 {
                     public virtual void M1() { }
-                    public unsafe virtual void M2() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public virtual void M2() { }
                 }
                 """,
             caller: """
@@ -3621,22 +3640,26 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 class B2 : I
                 {
-                    public unsafe virtual void M1() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public virtual void M1() { }
                     public virtual void M2() { }
                 }
 
                 class C1 : B1
                 {
-                    public unsafe override void M1() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override void M1() { }
                     public override void M2() { }
                 }
 
                 class C2 : B1, I
                 {
-                    public unsafe override void M1() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override void M1() { }
                     public override void M2() { }
                 }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["I.M2", "B1.M2"],
             expectedSafeSymbols: ["I.M1", "B1.M1"],
             expectedDiagnostics:
@@ -3650,36 +3673,36 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (9,1): error CS9502: 'I.M2()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // i.M2();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "i.M2()").WithArguments("I.M2()").WithLocation(9, 1),
-                // (13,32): error CS9505: Unsafe member 'B2.M1()' cannot implicitly implement safe member 'I.M1()'
-                //     public unsafe virtual void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("B2.M1()", "I.M1()").WithLocation(13, 32),
-                // (19,33): error CS9504: Unsafe member 'C1.M1()' cannot override safe member 'B1.M1()'
-                //     public unsafe override void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C1.M1()", "B1.M1()").WithLocation(19, 33),
-                // (25,33): error CS9504: Unsafe member 'C2.M1()' cannot override safe member 'B1.M1()'
-                //     public unsafe override void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C2.M1()", "B1.M1()").WithLocation(25, 33),
-                // (25,33): error CS9505: Unsafe member 'C2.M1()' cannot implicitly implement safe member 'I.M1()'
-                //     public unsafe override void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C2.M1()", "I.M1()").WithLocation(25, 33),
+                // (14,25): error CS9505: Unsafe member 'B2.M1()' cannot implicitly implement safe member 'I.M1()'
+                //     public virtual void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("B2.M1()", "I.M1()").WithLocation(14, 25),
+                // (21,26): error CS9504: Unsafe member 'C1.M1()' cannot override safe member 'B1.M1()'
+                //     public override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C1.M1()", "B1.M1()").WithLocation(21, 26),
+                // (28,26): error CS9504: Unsafe member 'C2.M1()' cannot override safe member 'B1.M1()'
+                //     public override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C2.M1()", "B1.M1()").WithLocation(28, 26),
+                // (28,26): error CS9505: Unsafe member 'C2.M1()' cannot implicitly implement safe member 'I.M1()'
+                //     public override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C2.M1()", "I.M1()").WithLocation(28, 26),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
                 // (2,1): error CS9502: 'C1.M1()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // c1.M1();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c1.M1()").WithArguments("C1.M1()").WithLocation(2, 1),
-                // (13,32): error CS9505: Unsafe member 'B2.M1()' cannot implicitly implement safe member 'I.M1()'
-                //     public unsafe virtual void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("B2.M1()", "I.M1()").WithLocation(13, 32),
-                // (19,33): error CS9504: Unsafe member 'C1.M1()' cannot override safe member 'B1.M1()'
-                //     public unsafe override void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C1.M1()", "B1.M1()").WithLocation(19, 33),
-                // (25,33): error CS9504: Unsafe member 'C2.M1()' cannot override safe member 'B1.M1()'
-                //     public unsafe override void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C2.M1()", "B1.M1()").WithLocation(25, 33),
-                // (25,33): error CS9505: Unsafe member 'C2.M1()' cannot implicitly implement safe member 'I.M1()'
-                //     public unsafe override void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C2.M1()", "I.M1()").WithLocation(25, 33),
+                // (14,25): error CS9505: Unsafe member 'B2.M1()' cannot implicitly implement safe member 'I.M1()'
+                //     public virtual void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("B2.M1()", "I.M1()").WithLocation(14, 25),
+                // (21,26): error CS9504: Unsafe member 'C1.M1()' cannot override safe member 'B1.M1()'
+                //     public override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C1.M1()", "B1.M1()").WithLocation(21, 26),
+                // (28,26): error CS9504: Unsafe member 'C2.M1()' cannot override safe member 'B1.M1()'
+                //     public override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C2.M1()", "B1.M1()").WithLocation(28, 26),
+                // (28,26): error CS9505: Unsafe member 'C2.M1()' cannot implicitly implement safe member 'I.M1()'
+                //     public override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C2.M1()", "I.M1()").WithLocation(28, 26),
             ]);
     }
 
@@ -3694,12 +3717,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             // (7,17): warning CS0108: 'C1.M1()' hides inherited member 'B.M1()'. Use the new keyword if hiding was intended.
             //     public void M1() { }
             Diagnostic(ErrorCode.WRN_NewRequired, "M1").WithArguments("C1.M1()", "B.M1()").WithLocation(7, 17),
-            // (8,24): warning CS0108: 'C1.M2()' hides inherited member 'B.M2()'. Use the new keyword if hiding was intended.
-            //     public unsafe void M2() { }
-            Diagnostic(ErrorCode.WRN_NewRequired, "M2").WithArguments("C1.M2()", "B.M2()").WithLocation(8, 24),
-            // (14,24): error CS0111: Type 'C2' already defines a member called 'M1' with the same parameter types
-            //     public unsafe void M1() { }
-            Diagnostic(ErrorCode.ERR_MemberAlreadyExists, "M1").WithArguments("M1", "C2").WithLocation(14, 24),
+            // (9,17): warning CS0108: 'C1.M2()' hides inherited member 'B.M2()'. Use the new keyword if hiding was intended.
+            //     public void M2() { }
+            Diagnostic(ErrorCode.WRN_NewRequired, "M2").WithArguments("C1.M2()", "B.M2()").WithLocation(9, 17),
+            // (16,17): error CS0111: Type 'C2' already defines a member called 'M1' with the same parameter types
+            //     public void M1() { }
+            Diagnostic(ErrorCode.ERR_MemberAlreadyExists, "M1").WithArguments("M1", "C2").WithLocation(16, 17),
         ];
 
         DiagnosticDescription[] updatedCallerDiagnostics =
@@ -3714,7 +3737,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class B
                 {
-                    public unsafe void M1() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void M1() { }
                     public void M2() { }
                 }
                 """,
@@ -3726,15 +3750,18 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 class C1 : B
                 {
                     public void M1() { }
-                    public unsafe void M2() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void M2() { }
                 }
 
                 class C2
                 {
                     public void M1() { }
-                    public unsafe void M1() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void M1() { }
                 }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["B.M1"],
             expectedSafeSymbols: ["B.M2"],
             expectedDiagnostics: updatedCallerDiagnostics,
@@ -3751,15 +3778,18 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             public class C : INotifyCompletion
             {
-                public unsafe bool IsCompleted => false;
-                public unsafe C GetAwaiter() => this;
-                public unsafe void GetResult() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public bool IsCompleted => false;
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public C GetAwaiter() => this;
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public void GetResult() { }
                 public {{onCompletedModifier}} void OnCompleted(Action continuation) { }
             }
             """;
 
         CreateCompilation(
-            getLib("unsafe"),
+            [getLib("[System.Runtime.CompilerServices.RequiresUnsafe]"), RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
             // (9,24): error CS9505: Unsafe member 'C.OnCompleted(Action)' cannot implicitly implement safe member 'INotifyCompletion.OnCompleted(Action)'
@@ -3831,8 +3861,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public interface INotifyCompletion;
                 public static class AsyncHelpers
                 {
-                    public unsafe static void AwaitAwaiter<TAwaiter>(TAwaiter awaiter) where TAwaiter : INotifyCompletion { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public static void AwaitAwaiter<TAwaiter>(TAwaiter awaiter) where TAwaiter : INotifyCompletion { }
                 }
+                public class RequiresUnsafeAttribute : Attribute { }
             }
             namespace System.Threading.Tasks
             {
@@ -3901,7 +3933,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 [CollectionBuilder(typeof(C), nameof(Create))]
                 public class C : IEnumerable<int>
                 {
-                    public static unsafe C Create(ReadOnlySpan<int> s) => new C();
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public static C Create(ReadOnlySpan<int> s) => new C();
                     public IEnumerator<int> GetEnumerator() => throw null;
                     IEnumerator IEnumerable.GetEnumerator() => throw null;
                 }
@@ -3921,7 +3954,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 M3(1, 2, 3);
                 static unsafe void M3(params C c) { }
                 """,
-            additionalSources: [TestSources.Span, CollectionBuilderAttributeDefinition],
+            additionalSources: [TestSources.Span, CollectionBuilderAttributeDefinition, RequiresUnsafeAttributeDefinition],
             verify: Verification.Skipped,
             expectedUnsafeSymbols: ["C.Create"],
             expectedSafeSymbols: ["C"],
@@ -3965,7 +3998,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C : IEnumerable<int>
                 {
                     public static C Create(ReadOnlySpan<int> s) => new C();
-                    public unsafe IEnumerator<int> GetEnumerator() => null;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public IEnumerator<int> GetEnumerator() => null;
                     IEnumerator<int> IEnumerable<int>.GetEnumerator() => null;
                     IEnumerator IEnumerable.GetEnumerator() => null;
                 }
@@ -3975,7 +4009,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 M(1, 2, 3);
                 static void M(params C c) { }
                 """,
-            additionalSources: [TestSources.Span, CollectionBuilderAttributeDefinition],
+                additionalSources: [TestSources.Span, CollectionBuilderAttributeDefinition, RequiresUnsafeAttributeDefinition],
             verify: Verification.Skipped,
             expectedUnsafeSymbols: ["C.GetEnumerator"],
             expectedSafeSymbols: ["C", "C.Create"],
@@ -3992,7 +4026,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 public class C : IEnumerable<int>
                 {
-                    public unsafe C() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public C() { }
                     public void Add(int x) { }
                     public IEnumerator<int> GetEnumerator() => throw null;
                     IEnumerator IEnumerable.GetEnumerator() => throw null;
@@ -4013,6 +4048,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 M3(1, 2, 3);
                 static unsafe void M3(params C c) { }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C..ctor"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics:
@@ -4051,7 +4087,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 public class C : IEnumerable<int>
                 {
-                    public unsafe void Add(int x) { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void Add(int x) { }
                     public IEnumerator<int> GetEnumerator() => throw null;
                     IEnumerator IEnumerable.GetEnumerator() => throw null;
                 }
@@ -4079,6 +4116,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 class X { public C F; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.Add"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics:
@@ -4341,9 +4379,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             """, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
-            // (6,24): error CS9505: Unsafe member 'C.Dispose()' cannot implicitly implement safe member 'IDisposable.Dispose()'
+            // (7,17): error CS9505: Unsafe member 'C.Dispose()' cannot implicitly implement safe member 'IDisposable.Dispose()'
             //     public unsafe void Dispose() { }
-            Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "Dispose").WithArguments("C.Dispose()", "System.IDisposable.Dispose()").WithLocation(6, 24));
+            Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "Dispose").WithArguments("C.Dispose()", "System.IDisposable.Dispose()").WithLocation(7, 17));
     }
 
     [Fact]
@@ -4573,10 +4611,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 namespace System.Threading;
                 public class Lock
                 {
-                    public unsafe Scope EnterScope() => new();
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public Scope EnterScope() => new();
                     public ref struct Scope
                     {
-                        public unsafe void Dispose() { }
+                        [System.Runtime.CompilerServices.RequiresUnsafe]
+                        public void Dispose() { }
                     }
                 }
                 """,
@@ -4584,6 +4624,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 lock (new System.Threading.Lock()) { }
                 unsafe { lock (new System.Threading.Lock()) { } }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             verify: Verification.Skipped,
             expectedUnsafeSymbols: ["System.Threading.Lock.EnterScope", "System.Threading.Lock.Scope.Dispose"],
             expectedSafeSymbols: ["System.Threading.Lock", "System.Threading.Lock.Scope"],
@@ -4606,8 +4647,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 namespace System.Runtime.CompilerServices;
                 public interface ITuple
                 {
-                    unsafe int Length { get; }
-                    unsafe object this[int index] { get; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    int Length { get; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    object this[int index] { get; }
                 }
                 """,
             caller: """
@@ -4615,6 +4658,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 _ = o is (int x, string y);
                 unsafe { _ = o is (int a, string b); }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["System.Runtime.CompilerServices.ITuple.Length", "System.Runtime.CompilerServices.ITuple.get_Length", "System.Runtime.CompilerServices.ITuple.this[]", "System.Runtime.CompilerServices.ITuple.get_Item"],
             expectedSafeSymbols: ["System.Runtime.CompilerServices.ITuple"],
             expectedDiagnostics:
@@ -4636,9 +4680,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 [System.Runtime.CompilerServices.InterpolatedStringHandler]
                 public struct C
                 {
-                    public unsafe C(int literalLength, int formattedCount) { }
-                    public unsafe void AppendLiteral(string s) { }
-                    public unsafe void AppendFormatted<T>(T t) { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public C(int literalLength, int formattedCount) { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void AppendLiteral(string s) { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void AppendFormatted<T>(T t) { }
                 }
                 """,
             caller: """
@@ -4646,7 +4693,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { log($"a{0}"); };
                 void log(C c) { }
                 """,
-            additionalSources: [InterpolatedStringHandlerAttribute],
+            additionalSources: [InterpolatedStringHandlerAttribute, RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: [Overload("C..ctor", parameterCount: 2), "C.AppendLiteral", "C.AppendFormatted"],
             expectedSafeSymbols: ["C", Overload("C..ctor", parameterCount: 0)],
             expectedDiagnostics:
@@ -4665,15 +4712,16 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
     [Theory, CombinatorialData]
     public void Member_Interceptor(
-        [CombinatorialValues("unsafe", "")] string unsafe1,
-        [CombinatorialValues("unsafe", "")] string unsafe2)
+        [CombinatorialValues("[System.Runtime.CompilerServices.RequiresUnsafe]", "")] string unsafe1,
+        [CombinatorialValues("[System.Runtime.CompilerServices.RequiresUnsafe]", "")] string unsafe2)
     {
         var source = ($$"""
             C.M();
 
             class C
             {
-                public static {{unsafe1}} void M() { }
+                {{unsafe1}}
+                public static void M() { }
             }
             """, "Program.cs");
 
@@ -4686,14 +4734,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             class D
             {
                 {{interceptableLocation.GetInterceptsLocationAttributeSyntax()}}
-                public static {{unsafe2}} void M() => System.Console.Write(1);
+                {{unsafe2}}
+                public static void M() => System.Console.Write(1);
             }
             """, "Interceptor.cs");
 
-        CreateCompilation([source, interceptor, (TestSources.InterceptsLocationAttribute, "Attribute.cs")],
+        CreateCompilation([source, interceptor, (TestSources.InterceptsLocationAttribute, "Attribute.cs"), RequiresUnsafeAttributeDefinition],
             parseOptions: TestOptions.RegularPreview.WithFeature(Feature.InterceptorsNamespaces, "global"),
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
-            .VerifyDiagnostics(unsafe1 == "unsafe"
+            .VerifyDiagnostics(unsafe1.Length > 0
             ? [
                 // Program.cs(1,1): error CS9502: 'C.M()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // C.M();
@@ -4710,7 +4759,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             public static class C
             {
-                public unsafe static IEnumerable<int> M()
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public static IEnumerable<int> M()
                 {
                     yield return 1;
                 }
@@ -4723,6 +4773,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 foreach (var x in C.M()) { }
                 unsafe { foreach (var y in C.M()) { } }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.M"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics:
@@ -4734,14 +4785,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
         // Test symbols that are only in PE image (hence cannot test them via the helper above).
         var libRef = CreateCompilation(
-            lib,
+            [lib, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules().WithMetadataImportOptions(MetadataImportOptions.All))
             .EmitToImageReference();
         var libAssemblySymbol = CreateCompilation("", [libRef]).GetReferencedAssemblySymbol(libRef);
         VerifyRequiresUnsafeAttribute(
             libAssemblySymbol.Modules.Single(),
             includesAttributeDefinition: true,
-            isSynthesized: true,
+            isSynthesized: false,
             expectedUnsafeSymbols: ["C.M"],
             expectedSafeSymbols: ["C", "C.<M>d__0", "C.<M>d__0.MoveNext"]);
     }
@@ -4753,10 +4804,11 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             M1();
             M2();
             unsafe { M1(); }
-            static unsafe void M1() { }
+            [System.Runtime.CompilerServices.RequiresUnsafe]
+            static void M1() { }
             static void M2() { }
             """;
-        CreateCompilation(source,
+        CreateCompilation([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
             // (1,1): error CS9502: 'M1()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
@@ -4837,7 +4889,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             public class C
             {
                 public int P1 { get; set; }
-                public unsafe int P2 { get; set; }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public int P2 { get; set; }
             }
             """;
 
@@ -4849,6 +4902,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 c.P2 = c.P2 + 123;
                 unsafe { c.P2 = c.P2 + 123; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.P2", "C.get_P2", "C.set_P2"],
             expectedSafeSymbols: ["C.P1", "C.get_P1", "C.set_P1"],
             expectedDiagnostics:
@@ -4864,15 +4918,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (4,19): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public unsafe int P2 { get; set; }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "int").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 19),
-            // (4,28): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public unsafe int P2 { get; set; }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "get").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 28),
-            // (4,33): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public unsafe int P2 { get; set; }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "set").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 33));
+            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 38),
+            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 38));
     }
 
     [Fact]
@@ -4882,7 +4933,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    public unsafe int P { get; set; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public int P { get; set; }
                 }
                 """,
             caller: """
@@ -4890,6 +4942,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 c.P += 123;
                 unsafe { c.P += 123; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.P", "C.get_P", "C.set_P"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics:
@@ -4910,9 +4963,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    public unsafe C P1 { get; set; }
-                    public C P2 { unsafe get; set; }
-                    public C P3 { get; unsafe set; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public C P1 { get; set; }
+                    public C P2 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
+                    public C P3 { get; [System.Runtime.CompilerServices.RequiresUnsafe] set; }
                     public C P4 { get; set; }
                 }
                 """,
@@ -4934,6 +4988,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { _ = new C { P1 = null, P2 = null, P3 = null, P4 = null }; }
                 unsafe { _ = new C { P1 = { }, P2 = { }, P3 = { }, P4 = { } }; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.P1", "C.get_P1", "C.set_P1", "C.get_P2", "C.set_P3"],
             expectedSafeSymbols: ["C", "C.P2", "C.set_P2", "C.P3", "C.get_P3", "C.P4", "C.get_P4", "C.set_P4"],
             expectedDiagnostics:
@@ -4960,8 +5015,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    public unsafe int this[int i] => 0;
-                    public unsafe int Length => 0;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public int this[int i] => 0;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public int Length => 0;
                 }
                 """,
             caller: """
@@ -4971,7 +5028,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { _ = c is { Length: 0 }; }
                 unsafe { _ = c is []; }
                 """,
-            additionalSources: [TestSources.Index],
+            additionalSources: [TestSources.Index, RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.this[]", "C.get_Item", "C.Length", "C.get_Length"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics:
@@ -5001,7 +5058,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     extension(int x)
                     {
                         public int P1 { get => x; set { } }
-                        public unsafe int P2 { get => x; set { } }
+                        [System.Runtime.CompilerServices.RequiresUnsafe]
+                        public int P2 { get => x; set { } }
                     }
                 }
                 """,
@@ -5014,6 +5072,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { x.P2 = x.P2 + 444; }
                 unsafe { E.get_P2(x); E.set_P2(x, 0); }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: [ExtensionMember("E", "P2"), "E.get_P2", ExtensionMember("E", "get_P2"), "E.set_P2", ExtensionMember("E", "set_P2")],
             expectedSafeSymbols: [ExtensionMember("E", "P1"), "E.get_P1", ExtensionMember("E", "get_P1"), "E.set_P1", ExtensionMember("E", "set_P1")],
             expectedDiagnostics:
@@ -5040,7 +5099,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public record C(int P1, int P2)
                 {
-                    public unsafe int P2 { get; set; } = P2;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public int P2 { get; set; } = P2;
                 }
                 """,
             caller: """
@@ -5048,7 +5108,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 c.P2 = c.P1 + c.P2;
                 unsafe { c.P2 = c.P1 + c.P2; }
                 """,
-            additionalSources: [IsExternalInitTypeDefinition],
+            additionalSources: [IsExternalInitTypeDefinition, RequiresUnsafeAttributeDefinition],
             verify: Verification.Skipped,
             expectedUnsafeSymbols: ["C.P2", "C.get_P2", "C.set_P2"],
             expectedSafeSymbols: ["C.P1", "C.get_P1", "C.set_P1"],
@@ -5069,8 +5129,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var lib = """
             public class C
             {
-                public int P1 { unsafe get; set; }
-                public int P2 { get; unsafe set; }
+                public int P1 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
+                public int P2 { get; [System.Runtime.CompilerServices.RequiresUnsafe] set; }
             }
             """;
 
@@ -5083,6 +5143,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { c.P1 = c.P1 + 123; }
                 unsafe { c.P2 = c.P2 + 123; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.get_P1", "C.set_P2"],
             expectedSafeSymbols: ["C.P1", "C.P2", "C.get_P2", "C.set_P1"],
             expectedDiagnostics:
@@ -5095,26 +5156,32 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.P2").WithArguments("C.P2.set").WithLocation(3, 1),
             ]);
 
-        CreateCompilation(lib, parseOptions: TestOptions.Regular14).VerifyDiagnostics(
-            // (3,21): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     public int P1 { unsafe get; set; }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "unsafe").WithArguments("updated memory safety rules").WithLocation(3, 21),
-            // (4,26): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     public int P2 { get; unsafe set; }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "unsafe").WithArguments("updated memory safety rules").WithLocation(4, 26));
+        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.Regular14).VerifyDiagnostics(
+            // (3,22): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     public int P1 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(3, 22),
+            // (4,27): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     public int P2 { get; [System.Runtime.CompilerServices.RequiresUnsafe] set; }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(4, 27));
 
-        CreateCompilation(lib, parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
-        CreateCompilation(lib, parseOptions: TestOptions.RegularPreview).VerifyEmitDiagnostics();
+        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
+        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularPreview).VerifyEmitDiagnostics();
 
         CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (3,28): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public int P1 { unsafe get; set; }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "get").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(3, 28),
-            // (4,33): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public int P2 { get; unsafe set; }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "set").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 33));
+            // (3,54): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     public int P1 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(3, 54),
+            // (3,54): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     public int P1 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(3, 54),
+            // (4,59): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     public int P2 { get; [System.Runtime.CompilerServices.RequiresUnsafe] set; }
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 59),
+            // (4,59): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     public int P2 { get; [System.Runtime.CompilerServices.RequiresUnsafe] set; }
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 59));
     }
 
     [Fact]
@@ -5125,9 +5192,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class A : System.Attribute
                 {
                     public int P1 { get; set; }
-                    public unsafe int P2 { get; set; }
-                    public int P3 { unsafe get; set; }
-                    public int P4 { get; unsafe set; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public int P2 { get; set; }
+                    public int P3 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
+                    public int P4 { get; [System.Runtime.CompilerServices.RequiresUnsafe] set; }
                     public unsafe int F;
                 }
                 """,
@@ -5144,6 +5212,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     [A(P1 = 0, P2 = 0, P3 = 0, P4 = 0, F = 0)] void M2() { }
                 }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["A.P2", "A.get_P2", "A.set_P2", "A.get_P3", "A.set_P4"],
             expectedSafeSymbols: ["A.P1", "A.get_P1", "A.set_P1", "A.set_P3", "A.get_P4", "A.F"],
             expectedDiagnostics:
@@ -5170,8 +5239,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class B
                 {
-                    public unsafe virtual int P1 { get; set; }
-                    public virtual int P2 { unsafe get; set; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public virtual int P1 { get; set; }
+                    public virtual int P2 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
                     public virtual int P3 { get; set; }
                 }
                 """,
@@ -5184,17 +5254,21 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 class C1 : B
                 {
                     public override int P1 { get; set; }
-                    public unsafe override int P2 { get; set; }
-                    public override int P3 { unsafe get; set; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override int P2 { get; set; }
+                    public override int P3 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
                 }
 
                 class C2 : B
                 {
-                    public unsafe override int P1 { get; set; }
-                    public override int P2 { unsafe get; set; }
-                    public unsafe override int P3 { get; set; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override int P1 { get; set; }
+                    public override int P2 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override int P3 { get; set; }
                 }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["B.P1", "B.get_P1", "B.set_P1", "B.get_P2"],
             expectedSafeSymbols: ["B.P2", "B.set_P2", "B.P3", "B.get_P3", "B.set_P3"],
             expectedDiagnostics:
@@ -5208,18 +5282,18 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (4,8): error CS9502: 'C1.P3.get' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // c.P3 = c.P3 + 123;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.P3").WithArguments("C1.P3.get").WithLocation(4, 8),
-                // (9,42): error CS9504: Unsafe member 'C1.P2.set' cannot override safe member 'B.P2.set'
-                //     public unsafe override int P2 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C1.P2.set", "B.P2.set").WithLocation(9, 42),
-                // (10,37): error CS9504: Unsafe member 'C1.P3.get' cannot override safe member 'B.P3.get'
-                //     public override int P3 { unsafe get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C1.P3.get", "B.P3.get").WithLocation(10, 37),
-                // (17,37): error CS9504: Unsafe member 'C2.P3.get' cannot override safe member 'B.P3.get'
-                //     public unsafe override int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P3.get", "B.P3.get").WithLocation(17, 37),
-                // (17,42): error CS9504: Unsafe member 'C2.P3.set' cannot override safe member 'B.P3.set'
-                //     public unsafe override int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C2.P3.set", "B.P3.set").WithLocation(17, 42),
+                // (10,35): error CS9504: Unsafe member 'C1.P2.set' cannot override safe member 'B.P2.set'
+                //     public override int P2 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C1.P2.set", "B.P2.set").WithLocation(10, 35),
+                // (11,79): error CS9504: Unsafe member 'C1.P3.get' cannot override safe member 'B.P3.get'
+                //     public override int P3 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C1.P3.get", "B.P3.get").WithLocation(11, 79),
+                // (20,30): error CS9504: Unsafe member 'C2.P3.get' cannot override safe member 'B.P3.get'
+                //     public override int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P3.get", "B.P3.get").WithLocation(20, 30),
+                // (20,35): error CS9504: Unsafe member 'C2.P3.set' cannot override safe member 'B.P3.set'
+                //     public override int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C2.P3.set", "B.P3.set").WithLocation(20, 35),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
@@ -5232,30 +5306,30 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (4,8): error CS9502: 'C1.P3.get' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // c.P3 = c.P3 + 123;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.P3").WithArguments("C1.P3.get").WithLocation(4, 8),
-                // (9,37): error CS9504: Unsafe member 'C1.P2.get' cannot override safe member 'B.P2.get'
-                //     public unsafe override int P2 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C1.P2.get", "B.P2.get").WithLocation(9, 37),
-                // (9,42): error CS9504: Unsafe member 'C1.P2.set' cannot override safe member 'B.P2.set'
-                //     public unsafe override int P2 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C1.P2.set", "B.P2.set").WithLocation(9, 42),
-                // (10,37): error CS9504: Unsafe member 'C1.P3.get' cannot override safe member 'B.P3.get'
-                //     public override int P3 { unsafe get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C1.P3.get", "B.P3.get").WithLocation(10, 37),
-                // (15,37): error CS9504: Unsafe member 'C2.P1.get' cannot override safe member 'B.P1.get'
-                //     public unsafe override int P1 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P1.get", "B.P1.get").WithLocation(15, 37),
-                // (15,42): error CS9504: Unsafe member 'C2.P1.set' cannot override safe member 'B.P1.set'
-                //     public unsafe override int P1 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C2.P1.set", "B.P1.set").WithLocation(15, 42),
-                // (16,37): error CS9504: Unsafe member 'C2.P2.get' cannot override safe member 'B.P2.get'
-                //     public override int P2 { unsafe get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P2.get", "B.P2.get").WithLocation(16, 37),
-                // (17,37): error CS9504: Unsafe member 'C2.P3.get' cannot override safe member 'B.P3.get'
-                //     public unsafe override int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P3.get", "B.P3.get").WithLocation(17, 37),
-                // (17,42): error CS9504: Unsafe member 'C2.P3.set' cannot override safe member 'B.P3.set'
-                //     public unsafe override int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C2.P3.set", "B.P3.set").WithLocation(17, 42),
+                // (10,30): error CS9504: Unsafe member 'C1.P2.get' cannot override safe member 'B.P2.get'
+                //     public override int P2 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C1.P2.get", "B.P2.get").WithLocation(10, 30),
+                // (10,35): error CS9504: Unsafe member 'C1.P2.set' cannot override safe member 'B.P2.set'
+                //     public override int P2 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C1.P2.set", "B.P2.set").WithLocation(10, 35),
+                // (11,79): error CS9504: Unsafe member 'C1.P3.get' cannot override safe member 'B.P3.get'
+                //     public override int P3 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C1.P3.get", "B.P3.get").WithLocation(11, 79),
+                // (17,30): error CS9504: Unsafe member 'C2.P1.get' cannot override safe member 'B.P1.get'
+                //     public override int P1 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P1.get", "B.P1.get").WithLocation(17, 30),
+                // (17,35): error CS9504: Unsafe member 'C2.P1.set' cannot override safe member 'B.P1.set'
+                //     public override int P1 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C2.P1.set", "B.P1.set").WithLocation(17, 35),
+                // (18,79): error CS9504: Unsafe member 'C2.P2.get' cannot override safe member 'B.P2.get'
+                //     public override int P2 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P2.get", "B.P2.get").WithLocation(18, 79),
+                // (20,30): error CS9504: Unsafe member 'C2.P3.get' cannot override safe member 'B.P3.get'
+                //     public override int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P3.get", "B.P3.get").WithLocation(20, 30),
+                // (20,35): error CS9504: Unsafe member 'C2.P3.set' cannot override safe member 'B.P3.set'
+                //     public override int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C2.P3.set", "B.P3.set").WithLocation(20, 35),
             ]);
     }
 
@@ -5266,8 +5340,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public interface I
                 {
-                    unsafe int P1 { get; set; }
-                    int P2 { unsafe get; set; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    int P1 { get; set; }
+                    int P2 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
                     int P3 { get; set; }
                 }
                 """,
@@ -5280,17 +5355,21 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 class C1 : I
                 {
                     public int P1 { get; set; }
-                    public unsafe int P2 { get; set; }
-                    public int P3 { unsafe get; set; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public int P2 { get; set; }
+                    public int P3 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
                 }
 
                 class C2 : I
                 {
-                    public unsafe int P1 { get; set; }
-                    public int P2 { unsafe get; set; }
-                    public unsafe int P3 { get; set; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public int P1 { get; set; }
+                    public int P2 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public int P3 { get; set; }
                 }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["I.P1", "I.get_P1", "I.set_P1", "I.get_P2"],
             expectedSafeSymbols: ["I.P2", "I.set_P2", "I.P3", "I.get_P3", "I.set_P3"],
             expectedDiagnostics:
@@ -5304,45 +5383,45 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (3,8): error CS9502: 'I.P2.get' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // i.P2 = i.P2 + 123;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "i.P2").WithArguments("I.P2.get").WithLocation(3, 8),
-                // (9,33): error CS9505: Unsafe member 'C1.P2.set' cannot implicitly implement safe member 'I.P2.set'
-                //     public unsafe int P2 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C1.P2.set", "I.P2.set").WithLocation(9, 33),
-                // (10,28): error CS9505: Unsafe member 'C1.P3.get' cannot implicitly implement safe member 'I.P3.get'
-                //     public int P3 { unsafe get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C1.P3.get", "I.P3.get").WithLocation(10, 28),
-                // (17,28): error CS9505: Unsafe member 'C2.P3.get' cannot implicitly implement safe member 'I.P3.get'
-                //     public unsafe int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P3.get", "I.P3.get").WithLocation(17, 28),
-                // (17,33): error CS9505: Unsafe member 'C2.P3.set' cannot implicitly implement safe member 'I.P3.set'
-                //     public unsafe int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C2.P3.set", "I.P3.set").WithLocation(17, 33),
+                // (10,26): error CS9505: Unsafe member 'C1.P2.set' cannot implicitly implement safe member 'I.P2.set'
+                //     public int P2 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C1.P2.set", "I.P2.set").WithLocation(10, 26),
+                // (11,70): error CS9505: Unsafe member 'C1.P3.get' cannot implicitly implement safe member 'I.P3.get'
+                //     public int P3 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C1.P3.get", "I.P3.get").WithLocation(11, 70),
+                // (20,21): error CS9505: Unsafe member 'C2.P3.get' cannot implicitly implement safe member 'I.P3.get'
+                //     public int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P3.get", "I.P3.get").WithLocation(20, 21),
+                // (20,26): error CS9505: Unsafe member 'C2.P3.set' cannot implicitly implement safe member 'I.P3.set'
+                //     public int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C2.P3.set", "I.P3.set").WithLocation(20, 26),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
-                // (9,28): error CS9505: Unsafe member 'C1.P2.get' cannot implicitly implement safe member 'I.P2.get'
-                //     public unsafe int P2 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C1.P2.get", "I.P2.get").WithLocation(9, 28),
-                // (9,33): error CS9505: Unsafe member 'C1.P2.set' cannot implicitly implement safe member 'I.P2.set'
-                //     public unsafe int P2 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C1.P2.set", "I.P2.set").WithLocation(9, 33),
-                // (10,28): error CS9505: Unsafe member 'C1.P3.get' cannot implicitly implement safe member 'I.P3.get'
-                //     public int P3 { unsafe get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C1.P3.get", "I.P3.get").WithLocation(10, 28),
-                // (15,28): error CS9505: Unsafe member 'C2.P1.get' cannot implicitly implement safe member 'I.P1.get'
-                //     public unsafe int P1 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P1.get", "I.P1.get").WithLocation(15, 28),
-                // (15,33): error CS9505: Unsafe member 'C2.P1.set' cannot implicitly implement safe member 'I.P1.set'
-                //     public unsafe int P1 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C2.P1.set", "I.P1.set").WithLocation(15, 33),
-                // (16,28): error CS9505: Unsafe member 'C2.P2.get' cannot implicitly implement safe member 'I.P2.get'
-                //     public int P2 { unsafe get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P2.get", "I.P2.get").WithLocation(16, 28),
-                // (17,28): error CS9505: Unsafe member 'C2.P3.get' cannot implicitly implement safe member 'I.P3.get'
-                //     public unsafe int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P3.get", "I.P3.get").WithLocation(17, 28),
-                // (17,33): error CS9505: Unsafe member 'C2.P3.set' cannot implicitly implement safe member 'I.P3.set'
-                //     public unsafe int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C2.P3.set", "I.P3.set").WithLocation(17, 33),
+                // (10,21): error CS9505: Unsafe member 'C1.P2.get' cannot implicitly implement safe member 'I.P2.get'
+                //     public int P2 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C1.P2.get", "I.P2.get").WithLocation(10, 21),
+                // (10,26): error CS9505: Unsafe member 'C1.P2.set' cannot implicitly implement safe member 'I.P2.set'
+                //     public int P2 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C1.P2.set", "I.P2.set").WithLocation(10, 26),
+                // (11,70): error CS9505: Unsafe member 'C1.P3.get' cannot implicitly implement safe member 'I.P3.get'
+                //     public int P3 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C1.P3.get", "I.P3.get").WithLocation(11, 70),
+                // (17,21): error CS9505: Unsafe member 'C2.P1.get' cannot implicitly implement safe member 'I.P1.get'
+                //     public int P1 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P1.get", "I.P1.get").WithLocation(17, 21),
+                // (17,26): error CS9505: Unsafe member 'C2.P1.set' cannot implicitly implement safe member 'I.P1.set'
+                //     public int P1 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C2.P1.set", "I.P1.set").WithLocation(17, 26),
+                // (18,70): error CS9505: Unsafe member 'C2.P2.get' cannot implicitly implement safe member 'I.P2.get'
+                //     public int P2 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P2.get", "I.P2.get").WithLocation(18, 70),
+                // (20,21): error CS9505: Unsafe member 'C2.P3.get' cannot implicitly implement safe member 'I.P3.get'
+                //     public int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P3.get", "I.P3.get").WithLocation(20, 21),
+                // (20,26): error CS9505: Unsafe member 'C2.P3.set' cannot implicitly implement safe member 'I.P3.set'
+                //     public int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C2.P3.set", "I.P3.set").WithLocation(20, 26),
             ]);
     }
 
@@ -5357,7 +5436,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             }
             public class C2
             {
-                public unsafe int this[int i] { get => i; set { } }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public int this[int i] { get => i; set { } }
             }
             """;
 
@@ -5370,6 +5450,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 c2[0] = c2[0] + 123;
                 unsafe { c2[0] = c2[0] + 123; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C2.this[]", "C2.get_Item", "C2.set_Item"],
             expectedSafeSymbols: ["C1.this[]", "C1.get_Item", "C1.set_Item"],
             expectedDiagnostics:
@@ -5385,15 +5466,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (7,19): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public unsafe int this[int i] { get => i; set { } }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "int").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(7, 19),
-            // (7,37): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public unsafe int this[int i] { get => i; set { } }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "get").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(7, 37),
-            // (7,47): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public unsafe int this[int i] { get => i; set { } }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "set").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(7, 47));
+            // (7,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(7, 38),
+            // (7,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(7, 38));
     }
 
     [Fact]
@@ -5403,7 +5481,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    public unsafe int this[int i] { get => i; set { } }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public int this[int i] { get => i; set { } }
                 }
                 """,
             caller: """
@@ -5411,6 +5490,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 c[0] += 123;
                 unsafe { c[0] += 123; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.this[]", "C.get_Item", "C.set_Item"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics:
@@ -5429,9 +5509,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     {
         CompileAndVerifyUnsafe(
             lib: """
-                public class C1 { public unsafe object this[int i] { get => null; set { } } }
-                public class C2 { public object this[int i] { unsafe get => null; set { } } }
-                public class C3 { public object this[int i] { get => null; unsafe set { } } }
+                public class C1 { [System.Runtime.CompilerServices.RequiresUnsafe] public object this[int i] { get => null; set { } } }
+                public class C2 { public object this[int i] { [System.Runtime.CompilerServices.RequiresUnsafe] get => null; set { } } }
+                public class C3 { public object this[int i] { get => null; [System.Runtime.CompilerServices.RequiresUnsafe] set { } } }
                 public class C4 { public object this[int i] { get => null; set { } } }
                 """,
             caller: """
@@ -5443,6 +5523,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { _ = new C2 { [0] = null, [0] = { } }; }
                 unsafe { _ = new C3 { [0] = null, [0] = { } }; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C1.this[]", "C1.get_Item", "C1.set_Item", "C2.get_Item", "C3.set_Item"],
             expectedSafeSymbols: ["C1", "C2", "C2.this[]", "C2.set_Item", "C3", "C3.this[]", "C3.get_Item", "C4", "C4.this[]", "C4.get_Item", "C4.set_Item"],
             expectedDiagnostics:
@@ -5468,11 +5549,11 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var lib = """
             public class C1
             {
-                public int this[int i] { unsafe get => i; set { } }
+                public int this[int i] { [System.Runtime.CompilerServices.RequiresUnsafe] get => i; set { } }
             }
             public class C2
             {
-                public int this[int i] { get => i; unsafe set { } }
+                public int this[int i] { get => i; [System.Runtime.CompilerServices.RequiresUnsafe] set { } }
             }
             """;
 
@@ -5486,6 +5567,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { c1[0] = c1[0] + 123; }
                 unsafe { c2[0] = c2[0] + 123; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C1.get_Item", "C2.set_Item"],
             expectedSafeSymbols: ["C1.this[]", "C2.this[]", "C2.get_Item", "C1.set_Item"],
             expectedDiagnostics:
@@ -5498,13 +5580,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c2[0]").WithArguments("C2.this[int].set").WithLocation(4, 1),
             ]);
 
-        CreateCompilation(lib, parseOptions: TestOptions.Regular14).VerifyDiagnostics(
-            // (3,30): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     public int this[int i] { unsafe get => i; set { } }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "unsafe").WithArguments("updated memory safety rules").WithLocation(3, 30),
-            // (7,40): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     public int this[int i] { get => i; unsafe set { } }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "unsafe").WithArguments("updated memory safety rules").WithLocation(7, 40));
+        CreateCompilation(lib, parseOptions: TestOptions.Regular14).VerifyDiagnostics();
 
         CreateCompilation(lib, parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
         CreateCompilation(lib, parseOptions: TestOptions.RegularPreview).VerifyEmitDiagnostics();
@@ -5512,12 +5588,18 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (3,37): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public int this[int i] { unsafe get => i; set { } }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "get").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(3, 37),
-            // (7,47): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public int this[int i] { get => i; unsafe set { } }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "set").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(7, 47));
+            // (3,51): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     public int this[int i] { [System.Runtime.CompilerServices.RequiresUnsafe] get => i; set { } }
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(3, 51),
+            // (3,51): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     public int this[int i] { [System.Runtime.CompilerServices.RequiresUnsafe] get => i; set { } }
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(3, 51),
+            // (7,61): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     public int this[int i] { get => i; [System.Runtime.CompilerServices.RequiresUnsafe] set { } }
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(7, 61),
+            // (7,61): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     public int this[int i] { get => i; [System.Runtime.CompilerServices.RequiresUnsafe] set { } }
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(7, 61));
     }
 
     [Fact]
@@ -5527,7 +5609,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             public class C
             {
                 public event System.Action E1 { add { } remove { } }
-                public unsafe event System.Action E2 { add { } remove { } }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public event System.Action E2 { add { } remove { } }
             }
             """;
 
@@ -5539,6 +5622,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 c.E2 += null;
                 unsafe { c.E2 += null; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.E2", "C.add_E2", "C.remove_E2"],
             expectedSafeSymbols: ["C.E1", "C.add_E1", "C.remove_E1"],
             expectedDiagnostics:
@@ -5551,21 +5635,18 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (4,39): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public unsafe event System.Action E2 { add { } remove { } }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "E2").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 39),
-            // (4,44): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public unsafe event System.Action E2 { add { } remove { } }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "add").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 44),
-            // (4,52): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public unsafe event System.Action E2 { add { } remove { } }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "remove").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 52));
+            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 38),
+            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 38));
 
-        CreateCompilation("""
+        var source = """
             class C
             {
                 event System.Action E1, E2;
-                unsafe event System.Action E3, E4;
+                [System.Runtime.CompilerServices.RequiresUnsafe] event System.Action E3, E4;
                 void M()
                 {
                     E1();
@@ -5584,7 +5665,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     unsafe { E4 = null; }
                 }
             }
-            """,
+            """;
+        CreateCompilation([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
             // (9,9): error CS9502: 'C.E3' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
@@ -5632,19 +5714,23 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var lib = """
             public class C
             {
-                public unsafe event System.Action E { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public event System.Action E { }
             }
             """;
 
         CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (3,39): error CS0065: 'C.E': event property must have both add and remove accessors
-            //     public unsafe event System.Action E { }
-            Diagnostic(ErrorCode.ERR_EventNeedsBothAccessors, "E").WithArguments("C.E").WithLocation(3, 39),
-            // (3,39): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public unsafe event System.Action E { }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "E").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(3, 39));
+            // (4,32): error CS0065: 'C.E': event property must have both add and remove accessors
+            //     public event System.Action E { }
+            Diagnostic(ErrorCode.ERR_EventNeedsBothAccessors, "E").WithArguments("C.E").WithLocation(4, 32),
+            // (3,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(3, 38),
+            // (3,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(3, 38));
     }
 
     [Fact]
@@ -5655,8 +5741,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 #pragma warning disable CS0067 // unused event
                 public class B
                 {
-                    public unsafe virtual event System.Action E1;
-                    public unsafe virtual event System.Action E2 { add { } remove { } }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public virtual event System.Action E1;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public virtual event System.Action E2 { add { } remove { } }
                     public virtual event System.Action E3;
                     public virtual event System.Action E4 { add { } remove { } }
                 }
@@ -5674,18 +5762,23 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 {
                     public override event System.Action E1;
                     public override event System.Action E2 { add { } remove { } }
-                    public unsafe override event System.Action E3;
-                    public unsafe override event System.Action E4 { add { } remove { } }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override event System.Action E3;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override event System.Action E4 { add { } remove { } }
                 }
 
                 class C2 : B
                 {
-                    public unsafe override event System.Action E1;
-                    public unsafe override event System.Action E2 { add { } remove { } }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override event System.Action E1;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public override event System.Action E2 { add { } remove { } }
                     public override event System.Action E3;
                     public override event System.Action E4 { add { } remove { } }
                 }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["B.E1", "B.add_E1", "B.remove_E1", "B.E2", "B.add_E2", "B.remove_E2"],
             expectedSafeSymbols: ["B.E3", "B.add_E3", "B.remove_E3", "B.E4", "B.add_E4", "B.remove_E4"],
             expectedDiagnostics:
@@ -5696,12 +5789,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (5,1): error CS9502: 'C1.E4' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // c.E4 += null;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.E4").WithArguments("C1.E4").WithLocation(5, 1),
-                // (13,48): error CS9504: Unsafe member 'C1.E3' cannot override safe member 'B.E3'
-                //     public unsafe override event System.Action E3;
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E3").WithArguments("C1.E3", "B.E3").WithLocation(13, 48),
-                // (14,48): error CS9504: Unsafe member 'C1.E4' cannot override safe member 'B.E4'
-                //     public unsafe override event System.Action E4 { add { } remove { } }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E4").WithArguments("C1.E4", "B.E4").WithLocation(14, 48),
+                // (14,41): error CS9504: Unsafe member 'C1.E3' cannot override safe member 'B.E3'
+                //     public override event System.Action E3;
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E3").WithArguments("C1.E3", "B.E3").WithLocation(14, 41),
+                // (16,41): error CS9504: Unsafe member 'C1.E4' cannot override safe member 'B.E4'
+                //     public override event System.Action E4 { add { } remove { } }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E4").WithArguments("C1.E4", "B.E4").WithLocation(16, 41),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
@@ -5711,18 +5804,18 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (5,1): error CS9502: 'C1.E4' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // c.E4 += null;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.E4").WithArguments("C1.E4").WithLocation(5, 1),
-                // (13,48): error CS9504: Unsafe member 'C1.E3' cannot override safe member 'B.E3'
-                //     public unsafe override event System.Action E3;
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E3").WithArguments("C1.E3", "B.E3").WithLocation(13, 48),
-                // (14,48): error CS9504: Unsafe member 'C1.E4' cannot override safe member 'B.E4'
-                //     public unsafe override event System.Action E4 { add { } remove { } }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E4").WithArguments("C1.E4", "B.E4").WithLocation(14, 48),
-                // (19,48): error CS9504: Unsafe member 'C2.E1' cannot override safe member 'B.E1'
-                //     public unsafe override event System.Action E1;
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E1").WithArguments("C2.E1", "B.E1").WithLocation(19, 48),
-                // (20,48): error CS9504: Unsafe member 'C2.E2' cannot override safe member 'B.E2'
-                //     public unsafe override event System.Action E2 { add { } remove { } }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E2").WithArguments("C2.E2", "B.E2").WithLocation(20, 48),
+                // (14,41): error CS9504: Unsafe member 'C1.E3' cannot override safe member 'B.E3'
+                //     public override event System.Action E3;
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E3").WithArguments("C1.E3", "B.E3").WithLocation(14, 41),
+                // (16,41): error CS9504: Unsafe member 'C1.E4' cannot override safe member 'B.E4'
+                //     public override event System.Action E4 { add { } remove { } }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E4").WithArguments("C1.E4", "B.E4").WithLocation(16, 41),
+                // (22,41): error CS9504: Unsafe member 'C2.E1' cannot override safe member 'B.E1'
+                //     public override event System.Action E1;
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E1").WithArguments("C2.E1", "B.E1").WithLocation(22, 41),
+                // (24,41): error CS9504: Unsafe member 'C2.E2' cannot override safe member 'B.E2'
+                //     public override event System.Action E2 { add { } remove { } }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E2").WithArguments("C2.E2", "B.E2").WithLocation(24, 41),
             ]);
     }
 
@@ -5733,7 +5826,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public interface I
                 {
-                    unsafe event System.Action E1;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    event System.Action E1;
                     event System.Action E2;
                 }
                 """,
@@ -5747,27 +5841,32 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 class C1 : I
                 {
                     public event System.Action E1;
-                    public unsafe event System.Action E2;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public event System.Action E2;
                 }
 
                 class C2 : I
                 {
                     public event System.Action E1 { add { } remove { } }
-                    public unsafe event System.Action E2 { add { } remove { } }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public event System.Action E2 { add { } remove { } }
                 }
 
                 class C3 : I
                 {
-                    public unsafe event System.Action E1;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public event System.Action E1;
                     public event System.Action E2;
                 }
 
                 class C4 : I
                 {
-                    public unsafe event System.Action E1 { add { } remove { } }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public event System.Action E1 { add { } remove { } }
                     public event System.Action E2 { add { } remove { } }
                 }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["I.E1", "I.add_E1", "I.remove_E1"],
             expectedSafeSymbols: ["I.E2", "I.add_E2", "I.remove_E2"],
             expectedDiagnostics:
@@ -5775,27 +5874,27 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (2,1): error CS9502: 'I.E1' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // i.E1 += null;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "i.E1").WithArguments("I.E1").WithLocation(2, 1),
-                // (10,39): error CS9505: Unsafe member 'C1.E2' cannot implicitly implement safe member 'I.E2'
-                //     public unsafe event System.Action E2;
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C1.E2", "I.E2").WithLocation(10, 39),
-                // (16,39): error CS9505: Unsafe member 'C2.E2' cannot implicitly implement safe member 'I.E2'
-                //     public unsafe event System.Action E2 { add { } remove { } }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C2.E2", "I.E2").WithLocation(16, 39),
+                // (11,32): error CS9505: Unsafe member 'C1.E2' cannot implicitly implement safe member 'I.E2'
+                //     public event System.Action E2;
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C1.E2", "I.E2").WithLocation(11, 32),
+                // (18,32): error CS9505: Unsafe member 'C2.E2' cannot implicitly implement safe member 'I.E2'
+                //     public event System.Action E2 { add { } remove { } }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C2.E2", "I.E2").WithLocation(18, 32),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
-                // (10,39): error CS9505: Unsafe member 'C1.E2' cannot implicitly implement safe member 'I.E2'
-                //     public unsafe event System.Action E2;
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C1.E2", "I.E2").WithLocation(10, 39),
-                // (16,39): error CS9505: Unsafe member 'C2.E2' cannot implicitly implement safe member 'I.E2'
-                //     public unsafe event System.Action E2 { add { } remove { } }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C2.E2", "I.E2").WithLocation(16, 39),
-                // (21,39): error CS9505: Unsafe member 'C3.E1' cannot implicitly implement safe member 'I.E1'
-                //     public unsafe event System.Action E1;
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E1").WithArguments("C3.E1", "I.E1").WithLocation(21, 39),
-                // (27,39): error CS9505: Unsafe member 'C4.E1' cannot implicitly implement safe member 'I.E1'
-                //     public unsafe event System.Action E1 { add { } remove { } }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E1").WithArguments("C4.E1", "I.E1").WithLocation(27, 39),
+                // (11,32): error CS9505: Unsafe member 'C1.E2' cannot implicitly implement safe member 'I.E2'
+                //     public event System.Action E2;
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C1.E2", "I.E2").WithLocation(11, 32),
+                // (18,32): error CS9505: Unsafe member 'C2.E2' cannot implicitly implement safe member 'I.E2'
+                //     public event System.Action E2 { add { } remove { } }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C2.E2", "I.E2").WithLocation(18, 32),
+                // (24,32): error CS9505: Unsafe member 'C3.E1' cannot implicitly implement safe member 'I.E1'
+                //     public event System.Action E1;
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E1").WithArguments("C3.E1", "I.E1").WithLocation(24, 32),
+                // (31,32): error CS9505: Unsafe member 'C4.E1' cannot implicitly implement safe member 'I.E1'
+                //     public event System.Action E1 { add { } remove { } }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E1").WithArguments("C4.E1", "I.E1").WithLocation(31, 32),
             ]);
     }
 
@@ -5806,7 +5905,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             public class C
             {
                 public C(int i) { }
-                public unsafe C() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public C() { }
             }
             public unsafe class C2(int x)
             {
@@ -5822,6 +5922,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { _ = new C(); }
                 _ = new C2(0);
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: [Overload("C..ctor", parameterCount: 0)],
             expectedSafeSymbols: ["C", Overload("C..ctor", parameterCount: 1), "C2", "C2..ctor"],
             expectedDiagnostics:
@@ -5834,9 +5935,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (4,19): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public unsafe C() { }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "C").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 19));
+            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 38),
+            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 38));
     }
 
     [Fact]
@@ -5846,7 +5950,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class B
                 {
-                    public unsafe B() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public B() { }
                 }
                 """,
             caller: """
@@ -5877,10 +5982,13 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 class C5 : B
                 {
-                    public unsafe C5() { }
-                    public unsafe C5(int x) : base() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public C5() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public C5(int x) : base() { }
                 }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["B..ctor"],
             expectedSafeSymbols: ["B"],
             expectedDiagnostics:
@@ -5900,6 +6008,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (16,14): error CS9502: 'B.B()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // class D1() : B();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "B()").WithArguments("B.B()").WithLocation(16, 14),
+                // (28,5): error CS9502: 'B.B()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                //     [System.Runtime.CompilerServices.RequiresUnsafe]
+                //     public C5() { }
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, @"[System.Runtime.CompilerServices.RequiresUnsafe]
+    public C5() { }").WithArguments("B.B()").WithLocation(28, 5),
+                // (31,22): error CS9502: 'B.B()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                //     public C5(int x) : base() { }
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, ": base()").WithArguments("B.B()").WithLocation(31, 22),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
@@ -5912,21 +6028,27 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Fact]
     public void Member_Constructor_This()
     {
-        CreateCompilation("""
+        var source = """
             class C
             {
                 public C() { }
-                public unsafe C(int x) { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public C(int x) { }
                 public C(string s) : this() { }
                 public C(C c) : this(0) { }
-                public unsafe C(int[] a) : this(0) { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public C(int[] a) : this(0) { }
             }
-            """,
+            """;
+        CreateCompilation([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
-            // (6,19): error CS9502: 'C.C(int)' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+            // (7,19): error CS9502: 'C.C(int)' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
             //     public C(C c) : this(0) { }
-            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, ": this(0)").WithArguments("C.C(int)").WithLocation(6, 19));
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, ": this(0)").WithArguments("C.C(int)").WithLocation(7, 19),
+            // (9,23): error CS9502: 'C.C(int)' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+            //     public C(int[] a) : this(0) { }
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, ": this(0)").WithArguments("C.C(int)").WithLocation(9, 23));
     }
 
     [Fact]
@@ -5936,7 +6058,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             public class C
             {
                 public static readonly int F = 42;
-                static unsafe C() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                static C() { }
             }
             """;
 
@@ -5946,6 +6069,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 _ = C.F;
                 """,
             optionsDll: TestOptions.UnsafeReleaseDll.WithMetadataImportOptions(MetadataImportOptions.All),
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C..cctor"],
             expectedSafeSymbols: ["C", "C..ctor"],
             expectedDiagnostics: []);
@@ -5953,9 +6077,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (4,19): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     static unsafe C() { }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "C").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 19));
+            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 38),
+            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 38));
     }
 
     [Fact]
@@ -5965,7 +6092,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class A : System.Attribute
                 {
-                    public unsafe A() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public A() { }
                     public A(int x) { }
                 }
                 """,
@@ -5976,6 +6104,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { [A] void M3() { } }
                 [A] unsafe void M4() { }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: [Overload("A..ctor", parameterCount: 0)],
             expectedSafeSymbols: ["A", Overload("A..ctor", parameterCount: 1)],
             expectedDiagnostics:
@@ -5992,7 +6121,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var lib = """
             public class C
             {
-                unsafe ~C() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                ~C() { }
             }
             """;
 
@@ -6001,6 +6131,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             caller: """
                 _ = new C();
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.Finalize"],
             expectedSafeSymbols: [],
             expectedDiagnostics: []);
@@ -6008,21 +6139,26 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (3,13): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     unsafe ~C() { }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "C").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(3, 13));
+            // (3,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(3, 38),
+            // (3,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(3, 38));
 
-        CreateCompilation("""
+        var source = """
             class C
             {
-                unsafe ~C() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                ~C() { }
                 void M() { Finalize(); }
             }
             class D : C
             {
                 ~D() { } // implicitly calls base finalizer
             }
-            """,
+            """;
+        CreateCompilation([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
             // (4,16): error CS9502: 'C.~C()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
@@ -6040,7 +6176,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             public class C
             {
                 public static C operator +(C c1, C c2) => c1;
-                public static unsafe C operator -(C c1, C c2) => c1;
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public static C operator -(C c1, C c2) => c1;
             }
             """;
 
@@ -6052,6 +6189,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 _ = c - c;
                 unsafe { _ = c - c; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.op_Subtraction"],
             expectedSafeSymbols: ["C.op_Addition"],
             expectedDiagnostics:
@@ -6064,9 +6202,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (4,37): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public static unsafe C operator -(C c1, C c2) => c1;
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "-").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 37));
+            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 38),
+            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 38));
     }
 
     [Fact]
@@ -6079,7 +6220,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 extension(C)
                 {
                     public static C operator +(C c1, C c2) => c1;
-                    public static unsafe C operator -(C c1, C c2) => c1;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public static C operator -(C c1, C c2) => c1;
                 }
             }
             """;
@@ -6095,6 +6237,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { _ = c - c; }
                 unsafe { E.op_Subtraction(c, c); }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["E.op_Subtraction", ExtensionMember("E", "op_Subtraction")],
             expectedSafeSymbols: ["E.op_Addition", ExtensionMember("E", "op_Addition")],
             expectedDiagnostics:
@@ -6110,9 +6253,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([lib, MemorySafetyRulesAttributeDefinition, ExtensionMarkerAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (7,41): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //         public static unsafe C operator -(C c1, C c2) => c1;
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "-").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(7, 41));
+            // (7,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //         [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(7, 38),
+            // (7,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //         [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(7, 38));
     }
 
     [Fact]
@@ -6122,7 +6268,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             public class C
             {
                 public void operator +=(C c) { }
-                public unsafe void operator -=(C c) { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public void operator -=(C c) { }
             }
             """;
 
@@ -6134,7 +6281,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 c -= c;
                 unsafe { c -= c; }
                 """,
-            additionalSources: [CompilerFeatureRequiredAttribute],
+            additionalSources: [CompilerFeatureRequiredAttribute, RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.op_SubtractionAssignment"],
             expectedSafeSymbols: ["C.op_AdditionAssignment"],
             expectedDiagnostics:
@@ -6147,9 +6294,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([lib, MemorySafetyRulesAttributeDefinition, CompilerFeatureRequiredAttribute],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (4,33): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     public unsafe void operator -=(C c) { }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "-=").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 33));
+            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 38),
+            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 38));
     }
 
     [Fact]
@@ -6162,7 +6312,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 extension(C c1)
                 {
                     public void operator +=(C c2) { }
-                    public unsafe void operator -=(C c2) { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void operator -=(C c2) { }
                 }
             }
             """;
@@ -6178,7 +6329,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { c -= c; }
                 unsafe { E.op_SubtractionAssignment(c, c); }
                 """,
-            additionalSources: [CompilerFeatureRequiredAttribute],
+            additionalSources: [CompilerFeatureRequiredAttribute, RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["E.op_SubtractionAssignment", ExtensionMember("E", "op_SubtractionAssignment")],
             expectedSafeSymbols: ["E.op_AdditionAssignment", ExtensionMember("E", "op_AdditionAssignment")],
             expectedDiagnostics:
@@ -6194,9 +6345,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([lib, MemorySafetyRulesAttributeDefinition, CompilerFeatureRequiredAttribute, ExtensionMarkerAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (7,37): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //         public unsafe void operator -=(C c2) { }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "-=").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(7, 37));
+            // (7,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //         [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(7, 38),
+            // (7,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //         [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(7, 38));
     }
 
     [Fact]
@@ -6207,7 +6361,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public void operator ++() { }
-                    public unsafe void operator --() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void operator --() { }
                 }
                 """,
             caller: """
@@ -6216,7 +6371,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 c--;
                 unsafe { c--; }
                 """,
-            additionalSources: [CompilerFeatureRequiredAttribute],
+            additionalSources: [CompilerFeatureRequiredAttribute, RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.op_DecrementAssignment"],
             expectedSafeSymbols: ["C.op_IncrementAssignment"],
             expectedDiagnostics:
@@ -6235,7 +6390,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public static implicit operator int(C c) => 0;
-                    public static unsafe implicit operator string(C c) => "";
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public static implicit operator string(C c) => "";
                 }
                 """,
             caller: """
@@ -6244,6 +6400,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 string s = c;
                 unsafe { string s2 = c; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: [OverloadByReturnType("C.op_Implicit", "System.String")],
             expectedSafeSymbols: [OverloadByReturnType("C.op_Implicit", "System.Int32")],
             expectedDiagnostics:
@@ -8695,9 +8852,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([source, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
-            // (3,38): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
+            // (3,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
             //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "RequiresUnsafe").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(3, 38));
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(3, 38),
+            // (3,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(3, 38));
     }
 
     [Fact]
@@ -8791,9 +8951,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([source, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (6,42): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
+            // (6,42): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
             //         [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "RequiresUnsafe").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(6, 42));
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(6, 42),
+            // (6,42): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
+            //         [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(6, 42));
     }
 
     /// <summary>
@@ -9003,26 +9166,20 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             """;
 
         // Ambiguous attribute definitions from references => synthesize our own.
-        CompileAndVerify(source, [ref1, ref2],
-            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules(),
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(
-                m,
-                includesAttributeDefinition: true,
-                isSynthesized: true,
-                expectedUnsafeSymbols: ["C.M"],
-                expectedSafeSymbols: ["C"]))
-            .VerifyDiagnostics();
+        CreateCompilation(source, [ref1, ref2],
+            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (3,38): error CS0433: The type 'RequiresUnsafeAttribute' exists in both ...
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_SameFullNameAggAgg, "RequiresUnsafe").WithLocation(3, 38));
 
         // Also defined in source.
-        CompileAndVerify([source, RequiresUnsafeAttributeDefinition], [ref1, ref2],
-            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules(),
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(
-                m,
-                includesAttributeDefinition: true,
-                isSynthesized: false,
-                expectedUnsafeSymbols: ["C.M"],
-                expectedSafeSymbols: ["C"]))
-            .VerifyDiagnostics();
+        CreateCompilation([source, RequiresUnsafeAttributeDefinition], [ref1, ref2],
+            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (3,38): error CS0433: The type 'RequiresUnsafeAttribute' exists in both ...
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_SameFullNameAggAgg, "RequiresUnsafe").WithLocation(3, 38));
     }
 
     [Theory, CombinatorialData]
@@ -9066,19 +9223,13 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             """;
 
         // Using the attribute from corlib even if there are ambiguous definitions in other references.
-        var verifier = CompileAndVerify(CreateEmptyCompilation(source, [ref1, ref2, corlibRef],
-            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules()),
-            verify: Verification.Skipped,
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(
-                m,
-                includesAttributeDefinition: false,
-                expectedUnsafeSymbols: ["C.M"],
-                expectedSafeSymbols: ["C"]));
-
-        verifier.Diagnostics.WhereAsArray(d => d.Code != (int)ErrorCode.WRN_NoRuntimeMetadataVersion).Verify();
-
-        var comp = (CSharpCompilation)verifier.Compilation;
-        Assert.Same(comp.Assembly.CorLibrary, comp.GetReferencedAssemblySymbol(corlibRef));
+        CreateEmptyCompilation(source, [ref1, ref2, corlibRef],
+            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules()
+                .WithSpecificDiagnosticOptions([KeyValuePair.Create("CS8021", ReportDiagnostic.Suppress)]))
+            .VerifyDiagnostics(
+            // (3,38): error CS0433: The type 'RequiresUnsafeAttribute' exists in both ...
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_SameFullNameAggAgg, "RequiresUnsafe").WithLocation(3, 38));
     }
 
     [Fact]

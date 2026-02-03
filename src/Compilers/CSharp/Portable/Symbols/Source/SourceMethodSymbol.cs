@@ -107,7 +107,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 if (ContainingModule.UseUpdatedMemorySafetyRules)
                 {
-                    return HasRequiresUnsafeAttribute || IsExtern
+                    return HasRequiresUnsafeAttribute || IsExtern || AssociatedPropertyOrEventHasRequiresUnsafeAttribute()
                         ? CallerUnsafeMode.Explicit
                         : CallerUnsafeMode.None;
                 }
@@ -115,6 +115,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer()
                     ? CallerUnsafeMode.Implicit : CallerUnsafeMode.None;
             }
+        }
+
+        private bool AssociatedPropertyOrEventHasRequiresUnsafeAttribute()
+        {
+            return AssociatedSymbol switch
+            {
+                SourcePropertySymbolBase property => property.HasRequiresUnsafeAttribute,
+                SourceEventSymbol @event => @event.HasRequiresUnsafeAttribute,
+                _ => false,
+            };
         }
 
         internal override bool HasAsyncMethodBuilderAttribute(out TypeSymbol? builderArgument)
