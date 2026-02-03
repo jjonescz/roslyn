@@ -1045,8 +1045,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
             {
-                MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, compilation, location);
-                compilation.EnsureRequiresUnsafeAttributeExists(diagnostics, location, modifyCompilation: true);
+                if (!HasRequiresUnsafeAttribute)
+                {
+                    MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, compilation, location);
+                    compilation.EnsureRequiresUnsafeAttributeExists(diagnostics, location, modifyCompilation: true);
+                }
             }
 
             ParameterHelpers.EnsureRefKindAttributesExist(compilation, Parameters, diagnostics, modifyCompilation: true);
@@ -1376,6 +1379,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return (PropertyWellKnownAttributeData)attributesBag.DecodedWellKnownAttributeData;
         }
 
+        internal bool HasRequiresUnsafeAttribute => GetDecodedWellKnownAttributeData()?.HasRequiresUnsafeAttribute == true;
+
         /// <summary>
         /// Returns data decoded from special early bound well-known attributes applied to the symbol or null if there are no applied attributes.
         /// </summary>
@@ -1429,7 +1434,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
             {
-                AddSynthesizedAttribute(ref attributes, moduleBuilder.TrySynthesizeRequiresUnsafeAttribute(this));
+                if (!HasRequiresUnsafeAttribute)
+                {
+                    AddSynthesizedAttribute(ref attributes, moduleBuilder.TrySynthesizeRequiresUnsafeAttribute(this));
+                }
             }
 
             if (IsRequired)
@@ -1566,6 +1574,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 CSharpAttributeData.DecodeSkipLocalsInitAttribute<PropertyWellKnownAttributeData>(DeclaringCompilation, ref arguments);
             }
+            else if (attribute.IsTargetAttribute(AttributeDescription.RequiresUnsafeAttribute))
+            {
+                MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, arguments.AttributeSyntaxOpt);
+                arguments.GetOrCreateData<PropertyWellKnownAttributeData>().HasRequiresUnsafeAttribute = true;
+            }
             else if (attribute.IsTargetAttribute(AttributeDescription.DynamicAttribute))
             {
                 // DynamicAttribute should not be set explicitly.
@@ -1575,7 +1588,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 ReservedAttributes.DynamicAttribute
                 | ReservedAttributes.IsReadOnlyAttribute
                 | ReservedAttributes.RequiresLocationAttribute
-                | ReservedAttributes.RequiresUnsafeAttribute
                 | ReservedAttributes.IsUnmanagedAttribute
                 | ReservedAttributes.IsByRefLikeAttribute
                 | ReservedAttributes.TupleElementNamesAttribute

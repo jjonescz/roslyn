@@ -292,9 +292,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             };
             Assert.False(symbol is null, $"Cannot find symbol '{symbolGetter}'");
 
-            var attribute = symbol.GetAttributes().SingleOrDefault(a => a.AttributeClass?.Name == Name);
-            Assert.True(attribute is null, $"Attribute should not be exposed by '{symbol.ToTestDisplayString()}'");
-
             var symbolExpectedUnsafeMode = shouldBeUnsafe ? expectedUnsafeMode : CallerUnsafeMode.None;
 
             if (symbol.ContainingModule is PEModuleSymbol peModuleSymbol)
@@ -8581,26 +8578,28 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var source = """
             class C
             {
-                unsafe void M1() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                void M1() { }
                 void M2() { }
             }
             """;
 
-        CompileAndVerify(source,
+        CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithMetadataImportOptions(MetadataImportOptions.All),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: false,
+                includesAttributeDefinition: true,
+                isSynthesized: false,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: ["C", "C.M1", "C.M2"]))
             .VerifyDiagnostics();
 
-        var ref1 = CompileAndVerify(source,
+        var ref1 = CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules().WithMetadataImportOptions(MetadataImportOptions.All),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
                 includesAttributeDefinition: true,
-                isSynthesized: true,
+                isSynthesized: false,
                 expectedUnsafeSymbols: ["C.M1"],
                 expectedSafeSymbols: ["C", "C.M2"]))
             .VerifyDiagnostics()
@@ -8619,7 +8618,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             class B
             {
                 void M3() { }
-                unsafe void M4() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                void M4() { }
             }
             """;
 
@@ -8627,18 +8627,18 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules().WithMetadataImportOptions(MetadataImportOptions.All),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: true,
-                isSynthesized: true,
+                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["B.M4"],
                 expectedSafeSymbols: ["B", "B.M3"]))
             .VerifyDiagnostics();
 
-        CompileAndVerify(source,
+        CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithMetadataImportOptions(MetadataImportOptions.All),
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: false,
+                includesAttributeDefinition: true,
+                isSynthesized: false,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: ["C", "C.M1", "C.M2"]))
             .VerifyDiagnostics();
@@ -8646,9 +8646,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([source, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
-            // (3,17): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //     unsafe void M1() { }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "M1").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(3, 17));
+            // (3,38): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
+            //     [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "RequiresUnsafe").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(3, 38));
     }
 
     [Fact]
@@ -8698,7 +8698,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             {
                 void M()
                 {
-                    unsafe void M1() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    void M1() { }
                     void M2() { }
                 }
             }
@@ -8707,31 +8708,33 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var m1 = "C.<M>g__M1|0_0";
         var m2 = "C.<M>g__M2|0_1";
 
-        CompileAndVerify(source,
+        CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithMetadataImportOptions(MetadataImportOptions.All),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: false,
+                includesAttributeDefinition: true,
+                isSynthesized: false,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: [m1, m2]))
             .VerifyDiagnostics();
 
-        CompileAndVerify(source,
+        CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules().WithMetadataImportOptions(MetadataImportOptions.All),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
                 includesAttributeDefinition: true,
-                isSynthesized: true,
+                isSynthesized: false,
                 expectedUnsafeSymbols: [m1],
                 expectedSafeSymbols: [m2]))
             .VerifyDiagnostics();
 
-        CompileAndVerify(source,
+        CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithMetadataImportOptions(MetadataImportOptions.All),
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: false,
+                includesAttributeDefinition: true,
+                isSynthesized: false,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: [m1, m2]))
             .VerifyDiagnostics();
@@ -8739,9 +8742,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([source, MemorySafetyRulesAttributeDefinition],
             options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
             .VerifyEmitDiagnostics(
-            // (6,21): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
-            //         unsafe void M1() { }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "M1").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(6, 21));
+            // (6,42): error CS0518: Predefined type 'System.Runtime.CompilerServices.RequiresUnsafeAttribute' is not defined or imported
+            //         [System.Runtime.CompilerServices.RequiresUnsafe]
+            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "RequiresUnsafe").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(6, 42));
     }
 
     /// <summary>
@@ -8833,7 +8836,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             using System.Reflection;
             public class A
             {
-                public unsafe void M1() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public void M1() { }
                 public void M2() { }
                 public static void RequiresUnsafe(MethodInfo method)
                 {
@@ -8842,7 +8846,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 }
             }
             """;
-        var refA = CreateCompilation(sourceA,
+        var refA = CreateCompilation([sourceA, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics()
             .EmitToImageReference();
@@ -8850,7 +8854,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var sourceB = """
             class B : A
             {
-                public unsafe void M3() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public void M3() { }
                 public void M4() { }
                 static void Main()
                 {
@@ -8873,7 +8878,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var source = """
             public class C
             {
-                public unsafe void M() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public void M() { }
             }
             """;
 
@@ -8915,7 +8921,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var source = """
             public class C
             {
-                public unsafe void M() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public void M() { }
             }
             """;
 
@@ -8941,7 +8948,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var source = """
             public class C
             {
-                public unsafe void M() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public void M() { }
             }
             """;
 
@@ -9003,7 +9011,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var source = """
             public class C
             {
-                public unsafe void M() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public void M() { }
             }
             """;
 
@@ -9206,42 +9215,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         ];
 
         comp = CreateCompilation([source, CompilerFeatureRequiredAttribute], [ref1], options: TestOptions.ReleaseDll.WithUpdatedMemorySafetyRules(updatedRules));
-        comp.VerifyDiagnostics(
-            // (4,6): error CS8335: Do not use 'System.Runtime.CompilerServices.RequiresUnsafeAttribute'. This is reserved for compiler usage.
-            //     [RequiresUnsafeAttribute] void M() { }
-            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(4, 6),
-            // (5,6): error CS8335: Do not use 'System.Runtime.CompilerServices.RequiresUnsafeAttribute'. This is reserved for compiler usage.
-            //     [RequiresUnsafeAttribute] int P { get; set; }
-            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(5, 6),
-            // (6,15): error CS8335: Do not use 'System.Runtime.CompilerServices.RequiresUnsafeAttribute'. This is reserved for compiler usage.
-            //     int P2 { [RequiresUnsafeAttribute] get; [RequiresUnsafeAttribute] set; }
-            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(6, 15),
-            // (6,46): error CS8335: Do not use 'System.Runtime.CompilerServices.RequiresUnsafeAttribute'. This is reserved for compiler usage.
-            //     int P2 { [RequiresUnsafeAttribute] get; [RequiresUnsafeAttribute] set; }
-            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(6, 46),
-            // (8,6): error CS8335: Do not use 'System.Runtime.CompilerServices.RequiresUnsafeAttribute'. This is reserved for compiler usage.
-            //     [RequiresUnsafeAttribute] event System.Action E1;
-            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(8, 6),
-            // (9,31): error CS8335: Do not use 'System.Runtime.CompilerServices.RequiresUnsafeAttribute'. This is reserved for compiler usage.
-            //     event System.Action E2 { [RequiresUnsafeAttribute] add { } [RequiresUnsafeAttribute] remove { } }
-            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(9, 31),
-            // (9,65): error CS8335: Do not use 'System.Runtime.CompilerServices.RequiresUnsafeAttribute'. This is reserved for compiler usage.
-            //     event System.Action E2 { [RequiresUnsafeAttribute] add { } [RequiresUnsafeAttribute] remove { } }
-            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(9, 65),
-            // (10,6): error CS8335: Do not use 'System.Runtime.CompilerServices.RequiresUnsafeAttribute'. This is reserved for compiler usage.
-            //     [RequiresUnsafeAttribute] int this[int i] { get => i; set { } }
-            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(10, 6),
-            // (11,6): error CS8335: Do not use 'System.Runtime.CompilerServices.RequiresUnsafeAttribute'. This is reserved for compiler usage.
-            //     [RequiresUnsafeAttribute] C() { }
-            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(11, 6),
-            // (12,6): error CS8335: Do not use 'System.Runtime.CompilerServices.RequiresUnsafeAttribute'. This is reserved for compiler usage.
-            //     [RequiresUnsafeAttribute] ~C() { }
-            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(12, 6),
-            // (13,6): error CS8335: Do not use 'System.Runtime.CompilerServices.RequiresUnsafeAttribute'. This is reserved for compiler usage.
-            //     [RequiresUnsafeAttribute] public static C operator +(C c1, C c2) => c1;
-            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(13, 6),
-            // (14,6): error CS8335: Do not use 'System.Runtime.CompilerServices.RequiresUnsafeAttribute'. This is reserved for compiler usage.
-            //     [RequiresUnsafeAttribute] public void operator +=(C c) { }
-            Diagnostic(ErrorCode.ERR_ExplicitReservedAttr, "RequiresUnsafeAttribute").WithArguments("System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(14, 6));
+        comp.VerifyDiagnostics();
     }
 }

@@ -984,8 +984,11 @@ done:
 
             if (CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
             {
-                MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, compilation, _location);
-                compilation.EnsureRequiresUnsafeAttributeExists(diagnostics, _location, modifyCompilation: true);
+                if (!HasRequiresUnsafeAttribute)
+                {
+                    MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, compilation, _location);
+                    compilation.EnsureRequiresUnsafeAttributeExists(diagnostics, _location, modifyCompilation: true);
+                }
             }
 
             if (compilation.ShouldEmitNullableAttributes(this) &&

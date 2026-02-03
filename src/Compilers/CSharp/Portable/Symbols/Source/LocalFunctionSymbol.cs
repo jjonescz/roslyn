@@ -130,8 +130,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             if (CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
             {
                 var location = Syntax.Identifier.GetLocation();
-                MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(addTo, compilation, location);
-                compilation.EnsureRequiresUnsafeAttributeExists(addTo, location, modifyCompilation: false);
+                if (!HasRequiresUnsafeAttribute)
+                {
+                    MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(addTo, compilation, location);
+                    compilation.EnsureRequiresUnsafeAttributeExists(addTo, location, modifyCompilation: false);
+                }
             }
 
             ParameterHelpers.EnsureRefKindAttributesExist(compilation, Parameters, addTo, modifyCompilation: false);

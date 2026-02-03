@@ -99,13 +99,15 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// </summary>
         internal abstract bool IsUnsafe { get; }
 
+        internal bool HasRequiresUnsafeAttribute => GetDecodedWellKnownAttributeData()?.HasRequiresUnsafeAttribute == true;
+
         internal sealed override CallerUnsafeMode CallerUnsafeMode
         {
             get
             {
                 if (ContainingModule.UseUpdatedMemorySafetyRules)
                 {
-                    return IsUnsafe || IsExtern
+                    return HasRequiresUnsafeAttribute || IsExtern
                         ? CallerUnsafeMode.Explicit
                         : CallerUnsafeMode.None;
                 }
@@ -137,7 +139,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (target.CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
             {
-                AddSynthesizedAttribute(ref attributes, moduleBuilder.TrySynthesizeRequiresUnsafeAttribute(target));
+                if (target is not SourceMethodSymbol sourceMethod || !sourceMethod.HasRequiresUnsafeAttribute)
+                {
+                    AddSynthesizedAttribute(ref attributes, moduleBuilder.TrySynthesizeRequiresUnsafeAttribute(target));
+                }
             }
 
             var compilation = target.DeclaringCompilation;

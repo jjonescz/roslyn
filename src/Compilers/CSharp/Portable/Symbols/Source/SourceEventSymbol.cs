@@ -354,9 +354,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 ReservedAttributes.NullableAttribute
                 | ReservedAttributes.NativeIntegerAttribute
                 | ReservedAttributes.TupleElementNamesAttribute
-                | ReservedAttributes.RequiresUnsafeAttribute
                 | ReservedAttributes.ExtensionMarkerAttribute))
             {
+            }
+            else if (attribute.IsTargetAttribute(AttributeDescription.RequiresUnsafeAttribute))
+            {
+                MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, arguments.AttributeSyntaxOpt);
+                arguments.GetOrCreateData<CommonEventWellKnownAttributeData>().HasRequiresUnsafeAttribute = true;
             }
             else if (attribute.IsTargetAttribute(AttributeDescription.ExcludeFromCodeCoverageAttribute))
             {
@@ -402,7 +406,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
             {
-                AddSynthesizedAttribute(ref attributes, moduleBuilder.TrySynthesizeRequiresUnsafeAttribute(this));
+                if (!HasRequiresUnsafeAttribute)
+                {
+                    AddSynthesizedAttribute(ref attributes, moduleBuilder.TrySynthesizeRequiresUnsafeAttribute(this));
+                }
             }
         }
 
@@ -463,13 +470,15 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get { return (_modifiers & DeclarationModifiers.Unsafe) != 0; }
         }
 
+        private bool HasRequiresUnsafeAttribute => GetDecodedWellKnownAttributeData()?.HasRequiresUnsafeAttribute == true;
+
         internal sealed override CallerUnsafeMode CallerUnsafeMode
         {
             get
             {
                 if (ContainingModule.UseUpdatedMemorySafetyRules)
                 {
-                    return IsUnsafe || IsExtern
+                    return HasRequiresUnsafeAttribute || IsExtern
                         ? CallerUnsafeMode.Explicit
                         : CallerUnsafeMode.None;
                 }
@@ -870,8 +879,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
             {
-                MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, compilation, location);
-                compilation.EnsureRequiresUnsafeAttributeExists(diagnostics, location, modifyCompilation: true);
+                if (!HasRequiresUnsafeAttribute)
+                {
+                    MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, compilation, location);
+                    compilation.EnsureRequiresUnsafeAttributeExists(diagnostics, location, modifyCompilation: true);
+                }
             }
 
             EventSymbol? explicitlyImplementedEvent = ExplicitInterfaceImplementations.FirstOrDefault();
