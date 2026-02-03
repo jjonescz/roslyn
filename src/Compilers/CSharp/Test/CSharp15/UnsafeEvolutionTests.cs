@@ -109,6 +109,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
         void symbolValidator(ModuleSymbol module)
         {
+            var expectsRequiresUnsafeAttribute = expectedUnsafeSymbols.Length > 0;
+
             if (module is SourceModuleSymbol)
             {
                 VerifyMemorySafetyRulesAttribute(module, includesAttributeDefinition: false, includesAttributeUse: false);
@@ -124,8 +126,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 VerifyMemorySafetyRulesAttribute(module, includesAttributeDefinition: true, includesAttributeUse: true, isSynthesized: true);
                 VerifyRequiresUnsafeAttribute(
                     module,
-                    includesAttributeDefinition: true,
-                    isSynthesized: true,
+                    includesAttributeDefinition: expectsRequiresUnsafeAttribute,
+                    isSynthesized: null,
                     expectedUnsafeSymbols: expectedUnsafeSymbols,
                     expectedSafeSymbols: expectedSafeSymbols,
                     expectedUnsafeMode: expectedUnsafeMode);
@@ -248,25 +250,26 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         {
             Assert.NotNull(type);
 
-            Assert.NotNull(isSynthesized);
-            Assert.Equal(isSynthesized.Value ? Accessibility.Internal : Accessibility.Public, type.DeclaredAccessibility);
-
-            if (isSynthesized.Value)
+            if (isSynthesized is not null)
             {
-                var attributeAttributes = type.GetAttributes()
-                    .Select(a => a.AttributeClass.ToTestDisplayString())
-                    .OrderBy(StringComparer.Ordinal);
-                Assert.Equal(
-                    [
-                        "Microsoft.CodeAnalysis.EmbeddedAttribute",
-                        "System.Runtime.CompilerServices.CompilerGeneratedAttribute",
-                    ],
-                    attributeAttributes);
+                Assert.Equal(isSynthesized.Value ? Accessibility.Internal : Accessibility.Public, type.DeclaredAccessibility);
+
+                if (isSynthesized.Value)
+                {
+                    var attributeAttributes = type.GetAttributes()
+                        .Select(a => a.AttributeClass.ToTestDisplayString())
+                        .OrderBy(StringComparer.Ordinal);
+                    Assert.Equal(
+                        [
+                            "Microsoft.CodeAnalysis.EmbeddedAttribute",
+                            "System.Runtime.CompilerServices.CompilerGeneratedAttribute",
+                        ],
+                        attributeAttributes);
+                }
             }
         }
         else
         {
-            Assert.Null(type);
             Assert.Null(isSynthesized);
         }
 
@@ -298,8 +301,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             {
                 var unfilteredAttributes = peModuleSymbol.GetCustomAttributesForToken(MetadataTokens.EntityHandle(symbol.MetadataToken));
                 var unfilteredAttribute = unfilteredAttributes.SingleOrDefault(a => a.AttributeClass?.Name == Name);
-                var expectedUnfilteredAttribute = symbolExpectedUnsafeMode.NeedsRequiresUnsafeAttribute();
-                Assert.True((unfilteredAttribute != null) == expectedUnfilteredAttribute, $"Attribute should{(expectedUnfilteredAttribute ? "" : " not")} be in metadata for '{symbol.ToTestDisplayString()}'");
+                if (symbolExpectedUnsafeMode.NeedsRequiresUnsafeAttribute())
+                {
+                    Assert.NotNull(unfilteredAttribute);
+                }
             }
             else
             {
@@ -2849,7 +2854,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public static void M() { }
-                    public static unsafe void M(int x) { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public static void M(int x) { }
                 }
                 """,
             caller: """
@@ -2858,6 +2864,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 _ = nameof(C.M);
                 unsafe { C.M(1); }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: [Overload("C.M", 1)],
             expectedSafeSymbols: ["C", Overload("C.M", 0)],
             expectedDiagnostics:
@@ -2876,7 +2883,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public void M1() { unsafe { M2(); } }
-                    public unsafe void M2() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void M2() { }
                 }
                 """,
             caller: """
@@ -2884,6 +2892,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 c.M1();
                 c.M2();
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.M2"],
             expectedSafeSymbols: ["C.M1"],
             expectedDiagnostics:
@@ -2901,12 +2910,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    public static unsafe void M() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public static void M() { }
                 }
                 """,
             caller: """
                 _ = nameof(C.M);
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.M"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics: []);
@@ -2919,11 +2930,13 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public static class E
                 {
-                    public static unsafe void M1(this int x) { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public static void M1(this int x) { }
 
                     extension(int x)
                     {
-                        public unsafe void M2() { }
+                        [System.Runtime.CompilerServices.RequiresUnsafe]
+                        public void M2() { }
                     }
                 }
                 """,
@@ -2937,6 +2950,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { E.M1(123); }
                 unsafe { E.M2(123); }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["E.M1", "E.M2", ExtensionMember("E", "M2")],
             expectedSafeSymbols: [],
             expectedDiagnostics:
@@ -2970,7 +2984,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     {
                         yield return 1;
                     }
-                    public unsafe void M3() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void M3() { }
                 }
                 """,
             caller: """
@@ -2980,6 +2995,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 c.M3();
                 unsafe { c.M3(); }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.M3"],
             expectedSafeSymbols: ["C.M1", "C.M2"],
             expectedDiagnostics:
@@ -2997,13 +3013,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public static class C
                 {
-                    public static unsafe void M() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public static void M() { }
                 }
                 """,
             caller: """
                 delegate*<void> p1 = &C.M;
                 unsafe { delegate*<void> p2 = &C.M; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.M"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics:
@@ -3029,7 +3047,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public static class C
                 {
-                    public static unsafe void M() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public static void M() { }
                 }
                 """,
             caller: """
@@ -3041,6 +3060,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 delegate void D1();
                 unsafe delegate void D2();
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.M"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics:
@@ -3074,7 +3094,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class A : System.Attribute
                 {
-                    public unsafe void F(int x) { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void F(int x) { }
                 }
                 """,
             caller: """
@@ -3084,6 +3105,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { [A(F = 0)] void M3() { } }
                 [A(F = 0)] unsafe void M4() { }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["A.F"],
             expectedSafeSymbols: ["A"],
             expectedDiagnostics:
@@ -3104,7 +3126,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             public interface I
             {
                 void M1();
-                unsafe void M2();
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                void M2();
             }
             """;
 
@@ -3116,6 +3139,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 i.M2();
                 unsafe { i.M2(); }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["I.M2"],
             expectedSafeSymbols: ["I", "I.M1"],
             expectedDiagnostics:
@@ -3140,7 +3164,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             public class B
             {
                 public virtual void M1() { }
-                public unsafe virtual void M2() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public virtual void M2() { }
             }
             """;
 
@@ -3149,7 +3174,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             class C : B
             {
-                public unsafe override void M1() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public override void M1() { }
                 public override void M2() { }
             }
             """;
@@ -3167,6 +3193,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CompileAndVerifyUnsafe(
             lib: lib,
             caller: caller,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["B.M2"],
             expectedSafeSymbols: ["B.M1"],
             expectedDiagnostics: expectedDiagnostics,
@@ -4129,7 +4156,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 public class C : IEnumerable<int>
                 {
-                    public unsafe IEnumerator<int> GetEnumerator() => null;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public IEnumerator<int> GetEnumerator() => null;
                     IEnumerator<int> IEnumerable<int>.GetEnumerator() => null;
                     IEnumerator IEnumerable.GetEnumerator() => null;
                 }
@@ -4138,6 +4166,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 foreach (var c in new C()) { }
                 unsafe { foreach (var c in new C()) { } }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.GetEnumerator"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics:
@@ -4159,9 +4188,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C : IEnumerable<int>
                 {
                     public void Add(int x) { }
-                    public unsafe C GetEnumerator() => this;
-                    public unsafe bool MoveNext() => false;
-                    public unsafe int Current => 0;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public C GetEnumerator() => this;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public bool MoveNext() => false;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public int Current => 0;
                     IEnumerator<int> IEnumerable<int>.GetEnumerator() => null;
                     IEnumerator IEnumerable.GetEnumerator() => null;
                 }
@@ -4170,6 +4202,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 C c1 = [.. new C()];
                 unsafe { C c2 = [.. new C()]; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.GetEnumerator", "C.MoveNext", "C.Current", "C.get_Current"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics:
@@ -4194,7 +4227,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public C GetEnumerator() => this;
-                    public unsafe bool MoveNext() => false;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public bool MoveNext() => false;
                     public int Current => 0;
                 }
                 """,
@@ -4202,6 +4236,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 foreach (var x in new C()) { }
                 unsafe { foreach (var x in new C()) { } }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.MoveNext"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics:
@@ -4223,13 +4258,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 {
                     public C GetEnumerator() => this;
                     public bool MoveNext() => false;
-                    public unsafe int Current {{getter}}
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public int Current {{getter}}
                 }
                 """,
             caller: """
                 foreach (var x in new C()) { }
                 unsafe { foreach (var x in new C()) { } }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.Current", "C.get_Current"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics:
@@ -4249,13 +4286,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 {
                     public C GetEnumerator() => this;
                     public bool MoveNext() => false;
-                    public int Current { unsafe get => 0; }
+                    public int Current { [System.Runtime.CompilerServices.RequiresUnsafe] get => 0; }
                 }
                 """,
             caller: """
                 foreach (var x in new C()) { }
                 unsafe { foreach (var x in new C()) { } }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.get_Current"],
             expectedSafeSymbols: ["C", "C.Current"],
             expectedDiagnostics:
@@ -4275,13 +4313,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 {
                     public C GetEnumerator() => this;
                     public bool MoveNext() => false;
-                    public int Current { get => 0; unsafe set { } }
+                    public int Current { get => 0; [System.Runtime.CompilerServices.RequiresUnsafe] set { } }
                 }
                 """,
             caller: """
                 foreach (var x in new C()) { }
                 unsafe { foreach (var x in new C()) { } }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.set_Current"],
             expectedSafeSymbols: ["C", "C.Current", "C.get_Current"],
             expectedDiagnostics: []);
@@ -4290,15 +4329,16 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Fact]
     public void Member_Dispose_Class()
     {
-        CreateCompilation("""
+        CreateCompilation(["""
             public class C : System.IDisposable
             {
                 public C GetEnumerator() => this;
                 public bool MoveNext() => false;
                 public int Current => 0;
-                public unsafe void Dispose() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe]
+                public void Dispose() { }
             }
-            """,
+            """, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
             // (6,24): error CS9505: Unsafe member 'C.Dispose()' cannot implicitly implement safe member 'IDisposable.Dispose()'
@@ -4338,7 +4378,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     public enum AttributeTargets;
                     public interface IDisposable
                     {
-                        unsafe void Dispose();
+                        [System.Runtime.CompilerServices.RequiresUnsafe]
+                        void Dispose();
                     }
                 }
 
@@ -4369,6 +4410,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { using (var c = new C()) { } }
                 unsafe { System.Collections.Generic.List<int> l2 = [.. new C()]; }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             targetFramework: TargetFramework.Empty,
             optionsDll: TestOptions.UnsafeDebugDll
                 // warning CS8021: No value for RuntimeMetadataVersion found
@@ -4400,7 +4442,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     public S GetEnumerator() => this;
                     public bool MoveNext() => false;
                     public int Current => 0;
-                    public unsafe void Dispose() { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void Dispose() { }
                 }
                 """,
             caller: """
@@ -4409,6 +4452,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 unsafe { foreach (var y in new S()) { } }
                 unsafe { using (var s = new S()) { } }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             verify: Verification.Skipped,
             expectedUnsafeSymbols: ["S.Dispose"],
             expectedSafeSymbols: ["S"],
@@ -4434,13 +4478,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     public C GetAsyncEnumerator() => this;
                     public Task<bool> MoveNextAsync() => null;
                     public int Current => 0;
-                    public unsafe Task DisposeAsync() => null;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public Task DisposeAsync() => null;
                 }
                 """,
             caller: """
                 await foreach (var x in new C()) { }
                 await using (var c = new C()) { }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.DisposeAsync"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics:
@@ -4460,13 +4506,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CompileAndVerifyUnsafe(
             lib: """
                 public class C1 { public ref int GetPinnableReference() => throw null; }
-                public class C2 { public unsafe ref int GetPinnableReference() => throw null; }
+                public class C2 { [System.Runtime.CompilerServices.RequiresUnsafe] public ref int GetPinnableReference() => throw null; }
                 """,
             caller: """
                 fixed (int* p = new C1()) { }
                 fixed (int* p = new C2()) { }
                 unsafe { fixed (int* p = new C2()) { } }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C2.GetPinnableReference"],
             expectedSafeSymbols: ["C1", "C1.GetPinnableReference", "C2"],
             expectedDiagnostics:
@@ -4499,13 +4546,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    public unsafe void Deconstruct(out int x, out int y) { x = y = 0; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void Deconstruct(out int x, out int y) { x = y = 0; }
                 }
                 """,
             caller: """
                 var (x, y) = new C();
                 unsafe { var (a, b) = new C(); }
                 """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: ["C.Deconstruct"],
             expectedSafeSymbols: ["C"],
             expectedDiagnostics:
