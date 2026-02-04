@@ -95,8 +95,11 @@ namespace Microsoft.CodeAnalysis
                     {
                         // standard EditorConfig sections were never applied to generated files here (i.e., the diagnostic options didn't have an effect on generated files)
                         // so we currently preseve that for backcompat and only apply the special sections to generated files
-                        var specialPath = GetAnalyzerConfigSpecialPathForGeneratedFile(arg.baseDirectory, tree.FilePath);
-                        return arg.analyzerConfigSet.GetOptionsForSourcePath(specialPath, additionalSourcePath: null, requiredEditorConfigSectionPrefix: "$generated$/");
+                        var specialPath = GeneratedCodeUtilities.GetAnalyzerConfigSpecialPathForGeneratedFile(arg.baseDirectory, tree.FilePath);
+                        return arg.analyzerConfigSet.GetOptionsForSourcePath(
+                            specialPath,
+                            additionalSourcePath: null,
+                            requiredEditorConfigSectionPrefix: GeneratedCodeUtilities.AnalyzerConfigSpecialPrefixForGeneratedFile);
                     }
 
                     return arg.analyzerConfigSet.GetOptionsForSourcePath(tree.FilePath);
@@ -474,14 +477,6 @@ namespace Microsoft.CodeAnalysis
         {
             var type = generator.GetGeneratorType();
             return Path.Combine(baseDirectory ?? "", type.Assembly.GetName().Name ?? string.Empty, type.FullName!);
-        }
-
-        internal static string GetAnalyzerConfigSpecialPathForGeneratedFile(string baseDirectory, string filePath)
-        {
-            // Transform filePath `{baseDirectory}/{generatorAssemblyName}/{generatorFullTypeName}/{fileHint}`
-            // into `{baseDirectory}/$generated$/{generatorAssemblyName}/{generatorFullTypeName}/{fileHint}`.
-            var relativePath = PathUtilities.GetRelativePath(baseDirectory, filePath);
-            return Path.Combine(baseDirectory, "$generated$", relativePath);
         }
 
         private static ImmutableArray<IIncrementalGenerator> GetIncrementalGenerators(ImmutableArray<ISourceGenerator> generators, string sourceExtension)

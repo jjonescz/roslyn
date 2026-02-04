@@ -1485,6 +1485,62 @@ public sealed class PullDiagnosticTests(ITestOutputHelper testOutputHelper) : Ab
         Assert.Empty(results[2].Diagnostics!);
     }
 
+    [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/41171")]
+    public async Task TestWorkspaceDiagnostics_SourceGeneratedFiles_SpecialSection(bool useVSDiagnostics, bool mutatingLspWorkspace)
+    {
+        var testRoot = TempRoot.Root;
+        var documentPath = Path.Combine(testRoot, "file.cs");
+        var globalConfigPath = Path.Combine(testRoot, ".globalconfig");
+        var editorConfigPath = Path.Combine(testRoot, ".editorconfig");
+
+        var workspaceXml = $"""
+                <Workspace>
+                    <Project Language="C#" AssemblyName="Assembly1" CommonReferences="true">
+                        <Document FilePath="{documentPath}">
+                // Hello, World
+                        </Document>
+                        <AnalyzerConfigDocument FilePath="{globalConfigPath}">
+                is_global = true
+                dotnet_diagnostic.SYN0001.severity = warning
+                        </AnalyzerConfigDocument>
+                        <AnalyzerConfigDocument FilePath="{editorConfigPath}">
+                [$generated$/**]
+                dotnet_diagnostic.SYN0001.severity = error
+                        </AnalyzerConfigDocument>
+                    </Project>
+                </Workspace>
+                """;
+
+        var additionalAnalyzers = new DiagnosticAnalyzer[] { new CSharpSyntaxAnalyzer() };
+
+        await using var testLspServer = await CreateTestWorkspaceFromXmlAsync(
+            workspaceXml, mutatingLspWorkspace, BackgroundAnalysisScope.FullSolution, useVSDiagnostics, additionalAnalyzers: additionalAnalyzers);
+
+        var document = testLspServer.GetCurrentSolution().Projects.Single().Documents.Single();
+
+        var generator = new SingleFileTestGenerator(content: "", hintName: "GeneratedFile.cs");
+        testLspServer.TestWorkspace.OnAnalyzerReferenceAdded(
+            document.Project.Id,
+            new TestGeneratorReference(generator));
+
+        var results = await RunGetWorkspacePullDiagnosticsAsync(testLspServer, useVSDiagnostics);
+
+        Assert.Equal(3, results.Length);
+
+        // The file in the project should have the globalconfig rule applied and return a warning.
+        Assert.True(results[0].Uri.ParsedUri!.AbsolutePath.EndsWith("file.cs"));
+        Assert.Equal(CSharpSyntaxAnalyzer.RuleId, results[0].Diagnostics!.Single().Code);
+        Assert.Equal(LSP.DiagnosticSeverity.Warning, results[0].Diagnostics!.Single().Severity);
+
+        // The file in the project should have the editorconfig rule applied and return an error.
+        Assert.True(results[1].Uri.ParsedUri!.AbsolutePath.EndsWith("GeneratedFile.cs"));
+        Assert.Equal(CSharpSyntaxAnalyzer.RuleId, results[1].Diagnostics!.Single().Code);
+        Assert.Equal(LSP.DiagnosticSeverity.Error, results[1].Diagnostics!.Single().Severity);
+
+        Assert.True(results[2].Uri.ParsedUri!.AbsolutePath.EndsWith("Assembly1.csproj"));
+        Assert.Empty(results[2].Diagnostics!);
+    }
+
     [Theory, CombinatorialData]
     public async Task TestWorkspaceDiagnosticsDoesNotIncludeSourceGeneratorDiagnosticsClosedFSAOffAndNoFilesOpen(bool useVSDiagnostics, bool mutatingLspWorkspace)
     {

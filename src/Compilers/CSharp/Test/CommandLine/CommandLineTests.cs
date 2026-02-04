@@ -15334,6 +15334,7 @@ dotnet_diagnostic.Warning01.severity = error;
             new[] { "C", "D", "G1" })]
         [InlineData("$generated$/Microsoft.CodeAnalysis.Test.Utilities/*.cs", new[] { "C", "D", "G1", "G2" })]
         [InlineData("$generated$/Microsoft.CodeAnalysis.Test.Utilities/**/*.cs", new[] { "C", "D" })]
+        [InlineData("$generated$/**", new[] { "C", "D" })]
         public void AnalyzerConfig_SuppressDiagnosticInGeneratedFiles_NamedSection(
             string sectionName, string[] expectedSymbolsWithWarnings)
         {

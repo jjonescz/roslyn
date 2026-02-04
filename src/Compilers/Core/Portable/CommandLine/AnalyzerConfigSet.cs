@@ -182,7 +182,7 @@ namespace Microsoft.CodeAnalysis
         /// <param name="additionalSourcePath">An alternative path to the file that is matched in addition to <paramref name="sourcePath"/> (all sections matching any of them are combined).</param>
         /// <param name="requiredEditorConfigSectionPrefix">Filter for EditorConfig sections.</param>
         /// <remarks>This method is safe to call from multiple threads.</remarks>
-        internal AnalyzerConfigOptionsResult GetOptionsForSourcePath(string sourcePath, string? additionalSourcePath, string? requiredEditorConfigSectionPrefix)
+        public AnalyzerConfigOptionsResult GetOptionsForSourcePath(string sourcePath, string? additionalSourcePath, string? requiredEditorConfigSectionPrefix)
         {
             if (sourcePath == null)
             {

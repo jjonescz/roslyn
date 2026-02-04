@@ -23,15 +23,18 @@ internal sealed partial class ProjectState
     {
         public readonly struct Value(AnalyzerConfigSet configSet, StructuredAnalyzerConfigOptions fallbackOptions)
         {
-            private readonly ConcurrentDictionary<string, AnalyzerConfigData> _sourcePathToResult = [];
-            private readonly Func<string, AnalyzerConfigData> _computeFunction = path => new AnalyzerConfigData(configSet.GetOptionsForSourcePath(path), fallbackOptions);
+            private readonly ConcurrentDictionary<(string, string?, string?), AnalyzerConfigData> _sourcePathToResult = [];
+            private readonly Func<(string, string?, string?), AnalyzerConfigData> _computeFunction = arg => new AnalyzerConfigData(configSet.GetOptionsForSourcePath(arg.Item1, arg.Item2, arg.Item3), fallbackOptions);
             private readonly Lazy<AnalyzerConfigData> _global = new(() => new AnalyzerConfigData(configSet.GlobalConfigOptions, StructuredAnalyzerConfigOptions.Empty));
 
             public AnalyzerConfigData GlobalConfigOptions
                 => _global.Value;
 
-            public AnalyzerConfigData GetOptionsForSourcePath(string sourcePath)
-                => _sourcePathToResult.GetOrAdd(sourcePath, _computeFunction);
+            /// <summary>
+            /// See <see cref="AnalyzerConfigSet.GetOptionsForSourcePath(string, string?, string?)"/>.
+            /// </summary>
+            public AnalyzerConfigData GetOptionsForSourcePath(string sourcePath, string? additionalSourcePath = null, string? requiredEditorConfigSectionPrefix = null)
+                => _sourcePathToResult.GetOrAdd((sourcePath, additionalSourcePath, requiredEditorConfigSectionPrefix), _computeFunction);
         }
 
         public readonly AsyncLazy<Value> Lazy = AsyncLazy.Create(

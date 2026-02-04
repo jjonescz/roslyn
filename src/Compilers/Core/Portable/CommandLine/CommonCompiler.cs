@@ -1158,8 +1158,11 @@ namespace Microsoft.CodeAnalysis
                             {
                                 // standard EditorConfig sections were always applied to generated files here (i.e., the custom analyzer options had an effect on generated files)
                                 // so we preseve that for backcompat and apply both the special and normal sections to generated files
-                                var specialPath = GeneratorDriver.GetAnalyzerConfigSpecialPathForGeneratedFile(baseDirectory, tree.FilePath);
-                                analyzerOptionsBuilder.Add(analyzerConfigSet!.GetOptionsForSourcePath(tree.FilePath, specialPath, requiredEditorConfigSectionPrefix: null));
+                                var specialPath = GeneratedCodeUtilities.GetAnalyzerConfigSpecialPathForGeneratedFile(baseDirectory, tree.FilePath);
+                                analyzerOptionsBuilder.Add(analyzerConfigSet!.GetOptionsForSourcePath(
+                                    tree.FilePath,
+                                    additionalSourcePath: specialPath,
+                                    requiredEditorConfigSectionPrefix: null));
                             }
 
                             // write out the file if an output path was explicitly provided

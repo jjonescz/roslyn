@@ -173,6 +173,18 @@ namespace Roslyn.Utilities
             return GeneratedKind.Unknown;
         }
 
+        internal const string AnalyzerConfigSpecialPrefixForGeneratedFile = "$generated$/";
+
+        internal static string GetAnalyzerConfigSpecialPathForGeneratedFile(string baseDirectory, string filePath)
+        {
+            // Transform filePath `{baseDirectory}/{generatorAssemblyName}/{generatorFullTypeName}/{fileHint}`
+            // into `{baseDirectory}/$generated$/{generatorAssemblyName}/{generatorFullTypeName}/{fileHint}`.
+            var relativePath = PathUtilities.GetRelativePath(baseDirectory, filePath);
+            return PathUtilities.CombinePathsUnchecked(
+                PathUtilities.CombinePathsUnchecked(baseDirectory, "$generated$"),
+                relativePath);
+        }
+
         internal static bool? ToNullable(this GeneratedKind kind)
             => kind switch
             {

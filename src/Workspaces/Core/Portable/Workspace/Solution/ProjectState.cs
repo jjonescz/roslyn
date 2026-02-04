@@ -97,7 +97,7 @@ internal sealed partial class ProjectState : IComparable<ProjectState>
         {
             projectInfoFixed = projectInfoFixed.WithCompilationOptions(
                 projectInfoFixed.CompilationOptions.WithSyntaxTreeOptionsProvider(
-                    new ProjectSyntaxTreeOptionsProvider(_analyzerConfigOptionsCache)));
+                    new ProjectSyntaxTreeOptionsProvider(this, _analyzerConfigOptionsCache)));
         }
 
         var parseOptions = projectInfoFixed.ParseOptions;
@@ -380,9 +380,10 @@ internal sealed partial class ProjectState : IComparable<ProjectState>
     {
         if (documentState.Id.IsSourceGenerated)
         {
-            // Source generated document file paths should not be used to lookup
-            // analyzer config options as they do not actually exist on disk.
-            return null;
+            return PathUtilities.GetDirectoryName(projectState.FilePath) is { Length: > 0 } projectDir &&
+                documentState.FilePath is { Length: > 0 } filePath
+                ? GeneratedCodeUtilities.GetAnalyzerConfigSpecialPathForGeneratedFile(projectDir, filePath)
+                : null;
         }
 
         if (!string.IsNullOrEmpty(documentState.FilePath))
@@ -397,12 +398,11 @@ internal sealed partial class ProjectState : IComparable<ProjectState>
 
         if (documentState.Name != null && projectFilePath != null)
         {
-            var projectPath = PathUtilities.GetDirectoryName(projectFilePath);
+            var projectDir = PathUtilities.GetDirectoryName(projectFilePath);
 
-            if (!RoslynString.IsNullOrEmpty(projectPath) &&
-                PathUtilities.GetDirectoryName(projectFilePath) is string directory)
+            if (!RoslynString.IsNullOrEmpty(projectDir))
             {
-                return PathUtilities.CombinePathsUnchecked(directory, documentState.Name);
+                return PathUtilities.CombinePathsUnchecked(projectDir, documentState.Name);
             }
         }
 
@@ -472,7 +472,11 @@ internal sealed partial class ProjectState : IComparable<ProjectState>
                 return GetOptions(cache, documentState);
             }
 
-            return GetOptionsForSourcePath(cache, tree.FilePath);
+            var specialPath = documentId?.IsSourceGenerated == true &&
+                PathUtilities.GetDirectoryName(projectState.FilePath) is { } baseDirectory
+                ? GeneratedCodeUtilities.GetAnalyzerConfigSpecialPathForGeneratedFile(baseDirectory, tree.FilePath)
+                : null;
+            return GetOptionsForSourcePath(cache, tree.FilePath, specialPath);
         }
 
         internal async ValueTask<StructuredAnalyzerConfigOptions> GetOptionsAsync(DocumentState documentState, CancellationToken cancellationToken)
@@ -502,8 +506,8 @@ internal sealed partial class ProjectState : IComparable<ProjectState>
             return GetOptionsForSourcePath(GetCache(), textFile.Path);
         }
 
-        private static StructuredAnalyzerConfigOptions GetOptionsForSourcePath(in AnalyzerConfigOptionsCache.Value cache, string path)
-            => cache.GetOptionsForSourcePath(path).ConfigOptionsWithFallback;
+        private static StructuredAnalyzerConfigOptions GetOptionsForSourcePath(in AnalyzerConfigOptionsCache.Value cache, string path, string? additionalSourcePath = null, string? requiredEditorConfigSectionPrefix = null)
+            => cache.GetOptionsForSourcePath(path, additionalSourcePath, requiredEditorConfigSectionPrefix).ConfigOptionsWithFallback;
     }
 
     /// <summary>
@@ -554,7 +558,7 @@ internal sealed partial class ProjectState : IComparable<ProjectState>
             => NamingStylePreferences.Empty;
     }
 
-    private sealed class ProjectSyntaxTreeOptionsProvider(AnalyzerConfigOptionsCache lazyAnalyzerConfigSet) : SyntaxTreeOptionsProvider
+    private sealed class ProjectSyntaxTreeOptionsProvider(ProjectState projectState, AnalyzerConfigOptionsCache lazyAnalyzerConfigSet) : SyntaxTreeOptionsProvider
     {
         private readonly AnalyzerConfigOptionsCache _lazyAnalyzerConfigSet = lazyAnalyzerConfigSet;
 
@@ -567,17 +571,18 @@ internal sealed partial class ProjectState : IComparable<ProjectState>
 
         public override bool TryGetDiagnosticValue(SyntaxTree tree, string diagnosticId, CancellationToken cancellationToken, out ReportDiagnostic severity)
         {
+            var filePath = tree.FilePath;
+
             var state = DocumentState.GetDocumentIdForTree(tree);
             if (state?.IsSourceGenerated == true)
             {
-                // While source generated files have file paths, they do not exist on disk
-                // and .editorconfig files should not apply to them based on that path.
-                severity = ReportDiagnostic.Default;
-                return false;
+                filePath = GeneratedCodeUtilities.GetAnalyzerConfigSpecialPathForGeneratedFile(
+                    baseDirectory: PathUtilities.GetDirectoryName(projectState.FilePath)!, // TODO: consider capturing only the file path, not full ProjectState
+                    filePath: filePath);
             }
 
             var options = _lazyAnalyzerConfigSet.Lazy
-                .GetValue(cancellationToken).GetOptionsForSourcePath(tree.FilePath);
+                .GetValue(cancellationToken).GetOptionsForSourcePath(filePath);
             return options.TreeOptions.TryGetValue(diagnosticId, out severity);
         }
 
@@ -776,7 +781,7 @@ internal sealed partial class ProjectState : IComparable<ProjectState>
             throw new NotSupportedException(WorkspacesResources.Removing_compilation_options_is_not_supported);
         }
 
-        var newProvider = new ProjectSyntaxTreeOptionsProvider(_analyzerConfigOptionsCache);
+        var newProvider = new ProjectSyntaxTreeOptionsProvider(this, _analyzerConfigOptionsCache);
 
         return With(projectInfo: ProjectInfo.WithCompilationOptions(options.WithSyntaxTreeOptionsProvider(newProvider))
                    .WithVersion(Version.GetNewerVersion()));
@@ -907,7 +912,7 @@ internal sealed partial class ProjectState : IComparable<ProjectState>
         // Changing analyzer configs changes compilation options
         if (CompilationOptions != null)
         {
-            var newProvider = new ProjectSyntaxTreeOptionsProvider(newOptionsCache);
+            var newProvider = new ProjectSyntaxTreeOptionsProvider(this, newOptionsCache);
             projectInfo = projectInfo
                 .WithCompilationOptions(CompilationOptions.WithSyntaxTreeOptionsProvider(newProvider));
         }
