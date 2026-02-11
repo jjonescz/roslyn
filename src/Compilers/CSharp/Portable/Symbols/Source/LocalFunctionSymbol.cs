@@ -127,16 +127,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             var compilation = DeclaringCompilation;
 
-            if (CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
-            {
-                var location = Syntax.Identifier.GetLocation();
-                if (!HasRequiresUnsafeAttribute)
-                {
-                    MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(addTo, compilation, location);
-                    compilation.EnsureRequiresUnsafeAttributeExists(addTo, location, modifyCompilation: false);
-                }
-            }
-
             ParameterHelpers.EnsureRefKindAttributesExist(compilation, Parameters, addTo, modifyCompilation: false);
             ParameterHelpers.EnsureParamCollectionAttributeExists(compilation, Parameters, addTo, modifyCompilation: false);
             ParameterHelpers.EnsureNativeIntegerAttributeExists(compilation, Parameters, addTo, modifyCompilation: false);

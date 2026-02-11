@@ -107,24 +107,24 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 if (ContainingModule.UseUpdatedMemorySafetyRules)
                 {
-                    return HasRequiresUnsafeAttribute || IsExtern || AssociatedPropertyOrEventHasRequiresUnsafeAttribute()
+                    return HasRequiresUnsafeAttribute || IsExtern || associatedPropertyOrEventHasRequiresUnsafeAttribute()
                         ? CallerUnsafeMode.Explicit
                         : CallerUnsafeMode.None;
                 }
 
                 return this.HasParameterContainingPointerType() || ReturnType.ContainsPointerOrFunctionPointer()
                     ? CallerUnsafeMode.Implicit : CallerUnsafeMode.None;
-            }
-        }
 
-        private bool AssociatedPropertyOrEventHasRequiresUnsafeAttribute()
-        {
-            return AssociatedSymbol switch
-            {
-                SourcePropertySymbolBase property => property.HasRequiresUnsafeAttribute,
-                SourceEventSymbol @event => @event.HasRequiresUnsafeAttribute,
-                _ => false,
-            };
+                bool associatedPropertyOrEventHasRequiresUnsafeAttribute()
+                {
+                    return AssociatedSymbol switch
+                    {
+                        SourcePropertySymbolBase property => property.HasRequiresUnsafeAttribute,
+                        SourceEventSymbol @event => @event.HasRequiresUnsafeAttribute,
+                        _ => false,
+                    };
+                }
+            }
         }
 
         internal override bool HasAsyncMethodBuilderAttribute(out TypeSymbol? builderArgument)
@@ -145,21 +145,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             if (target.IsDeclaredReadOnly && !target.ContainingType.IsReadOnly)
             {
                 AddSynthesizedAttribute(ref attributes, moduleBuilder.SynthesizeIsReadOnlyAttribute(target));
-            }
-
-            if (target.CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
-            {
-                bool hasRequiresUnsafeAttribute = target switch
-                {
-                    SourceMethodSymbol sourceMethod => sourceMethod.HasRequiresUnsafeAttribute,
-                    SourceExtensionImplementationMethodSymbol extensionImpl => extensionImpl.UnderlyingMethod is SourceMethodSymbol original && original.HasRequiresUnsafeAttribute,
-                    _ => false,
-                };
-
-                if (!hasRequiresUnsafeAttribute)
-                {
-                    AddSynthesizedAttribute(ref attributes, moduleBuilder.TrySynthesizeRequiresUnsafeAttribute(target));
-                }
             }
 
             var compilation = target.DeclaringCompilation;

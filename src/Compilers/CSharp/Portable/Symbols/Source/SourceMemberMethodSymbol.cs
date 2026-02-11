@@ -982,15 +982,6 @@ done:
                 compilation.EnsureIsReadOnlyAttributeExists(diagnostics, _location, modifyCompilation: true);
             }
 
-            if (CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
-            {
-                if (!HasRequiresUnsafeAttribute)
-                {
-                    MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, compilation, _location);
-                    compilation.EnsureRequiresUnsafeAttributeExists(diagnostics, _location, modifyCompilation: true);
-                }
-            }
-
             if (compilation.ShouldEmitNullableAttributes(this) &&
                 ShouldEmitNullableContextValue(out _))
             {

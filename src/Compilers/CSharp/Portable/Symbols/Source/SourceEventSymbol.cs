@@ -357,11 +357,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 | ReservedAttributes.ExtensionMarkerAttribute))
             {
             }
-            else if (attribute.IsTargetAttribute(AttributeDescription.RequiresUnsafeAttribute))
-            {
-                MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, arguments.AttributeSyntaxOpt);
-                arguments.GetOrCreateData<CommonEventWellKnownAttributeData>().HasRequiresUnsafeAttribute = true;
-            }
             else if (attribute.IsTargetAttribute(AttributeDescription.ExcludeFromCodeCoverageAttribute))
             {
                 arguments.GetOrCreateData<CommonEventWellKnownAttributeData>().HasExcludeFromCodeCoverageAttribute = true;
@@ -373,6 +368,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             else if (attribute.IsTargetAttribute(AttributeDescription.UnscopedRefAttribute))
             {
                 diagnostics.Add(ErrorCode.ERR_UnscopedRefAttributeUnsupportedMemberTarget, arguments.AttributeSyntaxOpt!.Location);
+            }
+            else if (attribute.IsTargetAttribute(AttributeDescription.RequiresUnsafeAttribute))
+            {
+                MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, arguments.AttributeSyntaxOpt!);
+                arguments.GetOrCreateData<CommonEventWellKnownAttributeData>().HasRequiresUnsafeAttribute = true;
             }
         }
 
@@ -402,14 +402,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             if (compilation.ShouldEmitNullableAttributes(this))
             {
                 AddSynthesizedAttribute(ref attributes, moduleBuilder.SynthesizeNullableAttributeIfNecessary(this, containingType.GetNullableContextValue(), type));
-            }
-
-            if (CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
-            {
-                if (!HasRequiresUnsafeAttribute)
-                {
-                    AddSynthesizedAttribute(ref attributes, moduleBuilder.TrySynthesizeRequiresUnsafeAttribute(this));
-                }
             }
         }
 
@@ -875,15 +867,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 TypeWithAnnotations.NeedsNullableAttribute())
             {
                 compilation.EnsureNullableAttributeExists(diagnostics, location, modifyCompilation: true);
-            }
-
-            if (CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
-            {
-                if (!HasRequiresUnsafeAttribute)
-                {
-                    MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, compilation, location);
-                    compilation.EnsureRequiresUnsafeAttributeExists(diagnostics, location, modifyCompilation: true);
-                }
             }
 
             EventSymbol? explicitlyImplementedEvent = ExplicitInterfaceImplementations.FirstOrDefault();

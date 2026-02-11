@@ -14,22 +14,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     /// </summary>
     internal sealed class PropertyWellKnownAttributeData : CommonPropertyWellKnownAttributeData, ISkipLocalsInitAttributeTarget, IMemberNotNullAttributeTarget
     {
-        private bool _hasRequiresUnsafeAttribute;
-        public bool HasRequiresUnsafeAttribute
-        {
-            get
-            {
-                VerifySealed(expected: true);
-                return _hasRequiresUnsafeAttribute;
-            }
-            set
-            {
-                VerifySealed(expected: false);
-                _hasRequiresUnsafeAttribute = value;
-                SetDataStored();
-            }
-        }
-
         private bool _hasDisallowNullAttribute;
         public bool HasDisallowNullAttribute
         {
@@ -122,6 +106,22 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 VerifySealed(expected: false);
                 _hasUnscopedRefAttribute = value;
+                SetDataStored();
+            }
+        }
+
+        private bool _hasRequiresUnsafeAttribute;
+        public bool HasRequiresUnsafeAttribute
+        {
+            get
+            {
+                VerifySealed(expected: true);
+                return _hasRequiresUnsafeAttribute;
+            }
+            set
+            {
+                VerifySealed(expected: false);
+                _hasRequiresUnsafeAttribute = value;
                 SetDataStored();
             }
         }

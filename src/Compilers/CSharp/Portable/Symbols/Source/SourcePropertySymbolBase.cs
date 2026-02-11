@@ -1043,15 +1043,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 compilation.EnsureIsReadOnlyAttributeExists(diagnostics, location, modifyCompilation: true);
             }
 
-            if (CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
-            {
-                if (!HasRequiresUnsafeAttribute)
-                {
-                    MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, compilation, location);
-                    compilation.EnsureRequiresUnsafeAttributeExists(diagnostics, location, modifyCompilation: true);
-                }
-            }
-
             ParameterHelpers.EnsureRefKindAttributesExist(compilation, Parameters, diagnostics, modifyCompilation: true);
             ParameterHelpers.EnsureParamCollectionAttributeExists(compilation, Parameters, diagnostics, modifyCompilation: true);
 
@@ -1432,14 +1423,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 AddSynthesizedAttribute(ref attributes, moduleBuilder.SynthesizeIsReadOnlyAttribute(this));
             }
 
-            if (CallerUnsafeMode.NeedsRequiresUnsafeAttribute())
-            {
-                if (!HasRequiresUnsafeAttribute)
-                {
-                    AddSynthesizedAttribute(ref attributes, moduleBuilder.TrySynthesizeRequiresUnsafeAttribute(this));
-                }
-            }
-
             if (IsRequired)
             {
                 AddSynthesizedAttribute(
@@ -1574,11 +1557,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 CSharpAttributeData.DecodeSkipLocalsInitAttribute<PropertyWellKnownAttributeData>(DeclaringCompilation, ref arguments);
             }
-            else if (attribute.IsTargetAttribute(AttributeDescription.RequiresUnsafeAttribute))
-            {
-                MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, arguments.AttributeSyntaxOpt);
-                arguments.GetOrCreateData<PropertyWellKnownAttributeData>().HasRequiresUnsafeAttribute = true;
-            }
             else if (attribute.IsTargetAttribute(AttributeDescription.DynamicAttribute))
             {
                 // DynamicAttribute should not be set explicitly.
@@ -1643,6 +1621,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 {
                     diagnostics.Add(ErrorCode.ERR_UnscopedRefAttributeUnsupportedMemberTarget, arguments.AttributeSyntaxOpt.Location);
                 }
+            }
+            else if (attribute.IsTargetAttribute(AttributeDescription.RequiresUnsafeAttribute))
+            {
+                MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, arguments.AttributeSyntaxOpt);
+                arguments.GetOrCreateData<PropertyWellKnownAttributeData>().HasRequiresUnsafeAttribute = true;
             }
             else if (attribute.IsTargetAttribute(AttributeDescription.OverloadResolutionPriorityAttribute))
             {
