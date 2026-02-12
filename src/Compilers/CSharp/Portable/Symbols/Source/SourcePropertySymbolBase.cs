@@ -1043,6 +1043,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 compilation.EnsureIsReadOnlyAttributeExists(diagnostics, location, modifyCompilation: true);
             }
 
+            if (NeedsSynthesizedRequiresUnsafeAttribute)
+            {
+                Debug.Assert(CallerUnsafeMode == CallerUnsafeMode.Explicit);
+                Binder.GetWellKnownTypeMember(compilation, WellKnownMember.System_Runtime_CompilerServices_RequiresUnsafeAttribute__ctor, diagnostics, GetFirstLocation());
+            }
+
             ParameterHelpers.EnsureRefKindAttributesExist(compilation, Parameters, diagnostics, modifyCompilation: true);
             ParameterHelpers.EnsureParamCollectionAttributeExists(compilation, Parameters, diagnostics, modifyCompilation: true);
 
@@ -1372,6 +1378,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal bool HasRequiresUnsafeAttribute => GetDecodedWellKnownAttributeData()?.HasRequiresUnsafeAttribute == true;
 
+        private bool NeedsSynthesizedRequiresUnsafeAttribute
+        {
+            get
+            {
+                return ContainingModule.UseUpdatedMemorySafetyRules &&
+                    !HasRequiresUnsafeAttribute &&
+                    IsExtern;
+            }
+        }
+
         /// <summary>
         /// Returns data decoded from special early bound well-known attributes applied to the symbol or null if there are no applied attributes.
         /// </summary>
@@ -1421,6 +1437,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             if (this.ReturnsByRefReadonly)
             {
                 AddSynthesizedAttribute(ref attributes, moduleBuilder.SynthesizeIsReadOnlyAttribute(this));
+            }
+
+            if (NeedsSynthesizedRequiresUnsafeAttribute)
+            {
+                Debug.Assert(CallerUnsafeMode == CallerUnsafeMode.Explicit);
+                AddSynthesizedAttribute(ref attributes, compilation.TrySynthesizeAttribute(WellKnownMember.System_Runtime_CompilerServices_RequiresUnsafeAttribute__ctor));
             }
 
             if (IsRequired)
