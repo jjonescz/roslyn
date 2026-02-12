@@ -40,8 +40,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
         Assert.False(optionsDll.UseUpdatedMemorySafetyRules);
 
-        var expectsRequiresUnsafeAttribute = expectedUnsafeSymbols.Length > 0;
-
         CreateCompilation([lib, caller, .. additionalSources],
             targetFramework: targetFramework,
             parseOptions: parseOptions,
@@ -87,7 +85,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 VerifyMemorySafetyRulesAttribute(module, includesAttributeDefinition: false, includesAttributeUse: false);
                 VerifyRequiresUnsafeAttribute(
                     module,
-                    includesAttributeDefinition: expectsRequiresUnsafeAttribute,
                     expectedUnsafeSymbols: expectedUnsafeSymbols,
                     expectedSafeSymbols: expectedSafeSymbols,
                     expectedUnsafeMode: CallerUnsafeMode.None);
@@ -118,7 +115,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 isSynthesized: isSource ? null : true);
             VerifyRequiresUnsafeAttribute(
                 module,
-                includesAttributeDefinition: expectsRequiresUnsafeAttribute,
                 expectedUnsafeSymbols: expectedUnsafeSymbols,
                 expectedSafeSymbols: expectedSafeSymbols,
                 expectedUnsafeMode: expectedUnsafeMode);
@@ -226,16 +222,11 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     /// </remarks>
     private static void VerifyRequiresUnsafeAttribute(
         ModuleSymbol module,
-        bool includesAttributeDefinition,
         ReadOnlySpan<object> expectedUnsafeSymbols,
         ReadOnlySpan<object> expectedSafeSymbols,
         CallerUnsafeMode expectedUnsafeMode = CallerUnsafeMode.Explicit)
     {
         const string Name = "RequiresUnsafeAttribute";
-        const string FullName = $"System.Runtime.CompilerServices.{Name}";
-        var type = (NamedTypeSymbol)module.GlobalNamespace.GetMember(FullName);
-
-        Assert.Equal(includesAttributeDefinition, type is not null);
 
         var seenSymbols = new HashSet<Symbol>();
 
@@ -2631,7 +2622,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 VerifyMemorySafetyRulesAttribute(m, includesAttributeDefinition: false, includesAttributeUse: false);
                 VerifyRequiresUnsafeAttribute(
                     m,
-                    includesAttributeDefinition: false,
                     expectedUnsafeSymbols: [],
                     expectedSafeSymbols: [.. safeSymbols, .. unsafeSymbols]);
             })
@@ -2645,7 +2635,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 VerifyMemorySafetyRulesAttribute(m, includesAttributeDefinition: true, includesAttributeUse: true, isSynthesized: true);
                 VerifyRequiresUnsafeAttribute(
                     m,
-                    includesAttributeDefinition: false,
                     expectedUnsafeSymbols: [],
                     expectedSafeSymbols: [.. safeSymbols, .. unsafeSymbols]);
             })
@@ -3335,7 +3324,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             includesAttributeUse: true);
         VerifyRequiresUnsafeAttribute(
             moduleA,
-            includesAttributeDefinition: true,
             expectedUnsafeSymbols: ["B.M"],
             expectedSafeSymbols: ["A", "A.M", "B"]);
 
@@ -4706,7 +4694,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var libAssemblySymbol = CreateCompilation("", [libRef]).GetReferencedAssemblySymbol(libRef);
         VerifyRequiresUnsafeAttribute(
             libAssemblySymbol.Modules.Single(),
-            includesAttributeDefinition: true,
             expectedUnsafeSymbols: ["C.M"],
             expectedSafeSymbols: ["C", "C.<M>d__0", "C.<M>d__0.MoveNext"]);
     }
@@ -4780,7 +4767,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             .GetReferencedAssemblySymbol(metadata);
         VerifyRequiresUnsafeAttribute(
             assemblySymbol.Modules.Single(),
-            includesAttributeDefinition: false,
             expectedUnsafeSymbols: [],
             expectedSafeSymbols:
             [
@@ -6359,7 +6345,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: ["C", "C.F", (object)getFunctionPointerType, (object)getFunctionPointerMethod],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit))
@@ -6430,7 +6415,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C.M2"],
                 expectedSafeSymbols: ["C", "C.M1"],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit))
@@ -6489,7 +6473,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules(),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C.M2"],
                 expectedSafeSymbols: ["C", "C.M1"],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit))
@@ -6541,7 +6524,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         {
             VerifyRequiresUnsafeAttribute(
                 module.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: ["C", "I", "C.M", "D"],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit);
@@ -6584,7 +6566,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         {
             VerifyRequiresUnsafeAttribute(
                 module.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: ["C", "C.M", "I"]);
         }
@@ -6636,7 +6617,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["E.M2"],
                 expectedSafeSymbols: ["E", "E.M1"],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit))
@@ -6716,7 +6696,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["E.M2", ExtensionMember("E", "M2")],
                 expectedSafeSymbols: ["E", "E.M1", ExtensionMember("E", "M1")],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit))
@@ -7027,7 +7006,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C.P2", "C.get_P2", "C.set_P2"],
                 expectedSafeSymbols: ["C", "C.P1", "C.get_P1", "C.set_P1"],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit))
@@ -7109,7 +7087,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: [ExtensionMember("E", "P2"), "E.get_P2", ExtensionMember("E", "get_P2"), "E.set_P2", ExtensionMember("E", "set_P2")],
                 expectedSafeSymbols: ["E", ExtensionMember("E", "P1"), "E.get_P1", ExtensionMember("E", "get_P1"), "E.set_P1", ExtensionMember("E", "set_P1")],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit))
@@ -7195,7 +7172,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C2.this[]", "C2.get_Item", "C2.set_Item"],
                 expectedSafeSymbols: ["C1", "C2", "C1.this[]", "C1.get_Item", "C1.set_Item"],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit))
@@ -7257,7 +7233,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C.E2", "C.add_E2", "C.remove_E2"],
                 expectedSafeSymbols: ["C", "C.E1", "C.add_E1", "C.remove_E1"],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit))
@@ -7309,7 +7284,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: [Overload("C..ctor", parameterCount: 1)],
                 expectedSafeSymbols: ["C", Overload("C..ctor", parameterCount: 0)],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit))
@@ -7370,7 +7344,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C.op_SubtractionAssignment"],
                 expectedSafeSymbols: ["C", "C.op_AdditionAssignment"],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit))
@@ -7440,7 +7413,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 verify: Verification.Skipped,
                 symbolValidator: m => VerifyRequiresUnsafeAttribute(
                     m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                    includesAttributeDefinition: false,
                     expectedUnsafeSymbols: [],
                     expectedSafeSymbols: ["C", "C.M1", "C.M2", "C.M3", "C.M4"]))
                 .VerifyDiagnostics();
@@ -7483,7 +7455,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
-                includesAttributeDefinition: !useCompilationReference,
                 expectedUnsafeSymbols: ["C.M"],
                 expectedSafeSymbols: ["C"]);
         }
@@ -7514,7 +7485,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C.M"],
                 expectedSafeSymbols: ["C"],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit);
@@ -7565,7 +7535,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 verify: Verification.Skipped,
                 symbolValidator: m => VerifyRequiresUnsafeAttribute(
                     m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                    includesAttributeDefinition: false,
                     expectedUnsafeSymbols: [],
                     expectedSafeSymbols: ["C", "C.M"]))
                 .VerifyDiagnostics();
@@ -7936,7 +7905,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 verify: Verification.Skipped,
                 symbolValidator: m => VerifyRequiresUnsafeAttribute(
                     m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                    includesAttributeDefinition: false,
                     expectedUnsafeSymbols: [],
                     expectedSafeSymbols: ["C", "C.P1", "C.set_P1", "C.P2", "C.set_P2", "C.P3", "C.set_P3", "C.P4", "C.set_P4"]))
                 .VerifyDiagnostics();
@@ -7979,7 +7947,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
-                includesAttributeDefinition: !useCompilationReference,
                 expectedUnsafeSymbols: ["C.P", "C.set_P"],
                 expectedSafeSymbols: ["C"]);
         }
@@ -8010,7 +7977,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C.P", "C.set_P"],
                 expectedSafeSymbols: ["C"],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit);
@@ -8061,7 +8027,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 verify: Verification.Skipped,
                 symbolValidator: m => VerifyRequiresUnsafeAttribute(
                     m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                    includesAttributeDefinition: false,
                     expectedUnsafeSymbols: [],
                     expectedSafeSymbols: ["C", "C.P", "C.set_P"]))
                 .VerifyDiagnostics();
@@ -8114,7 +8079,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 verify: Verification.Skipped,
                 symbolValidator: m => VerifyRequiresUnsafeAttribute(
                     m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                    includesAttributeDefinition: false,
                     expectedUnsafeSymbols: [],
                     expectedSafeSymbols: ["C", "C.this[]", "C.get_Item", "C.set_Item"]))
                 .VerifyDiagnostics();
@@ -8160,7 +8124,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
-                includesAttributeDefinition: !useCompilationReference,
                 expectedUnsafeSymbols: ["C.this[]", "C.get_Item", "C.set_Item"],
                 expectedSafeSymbols: ["C"]);
         }
@@ -8194,7 +8157,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C.this[]", "C.get_Item", "C.set_Item"],
                 expectedSafeSymbols: ["C"],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit);
@@ -8244,7 +8206,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 verify: Verification.Skipped,
                 symbolValidator: m => VerifyRequiresUnsafeAttribute(
                     m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                    includesAttributeDefinition: false,
                     expectedUnsafeSymbols: [],
                     expectedSafeSymbols: ["C", "C.E", "C.add_E", "C.remove_E"]))
                 .VerifyDiagnostics();
@@ -8287,7 +8248,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
-                includesAttributeDefinition: !useCompilationReference,
                 expectedUnsafeSymbols: ["C.E", "C.add_E", "C.remove_E"],
                 expectedSafeSymbols: ["C"]);
         }
@@ -8313,7 +8273,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C.E", "C.add_E", "C.remove_E"],
                 expectedSafeSymbols: ["C"],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit);
@@ -8362,7 +8321,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 verify: Verification.Skipped,
                 symbolValidator: m => VerifyRequiresUnsafeAttribute(
                     m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                    includesAttributeDefinition: false,
                     expectedUnsafeSymbols: [],
                     expectedSafeSymbols: ["C", "C..ctor"]))
                 .VerifyDiagnostics();
@@ -8404,7 +8362,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
-                includesAttributeDefinition: !useCompilationReference,
                 expectedUnsafeSymbols: ["C..ctor"],
                 expectedSafeSymbols: ["C"]);
         }
@@ -8435,7 +8392,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C..ctor"],
                 expectedSafeSymbols: ["C"],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit);
@@ -8486,7 +8442,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 verify: Verification.Skipped,
                 symbolValidator: m => VerifyRequiresUnsafeAttribute(
                     m.ReferencedAssemblySymbols.Single(a => a.Name == "lib").Modules.Single(),
-                    includesAttributeDefinition: false,
                     expectedUnsafeSymbols: [],
                     expectedSafeSymbols: ["C", "C.op_AdditionAssignment"]))
                 .VerifyDiagnostics();
@@ -8529,7 +8484,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
-                includesAttributeDefinition: !useCompilationReference,
                 expectedUnsafeSymbols: ["C.op_AdditionAssignment"],
                 expectedSafeSymbols: ["C"]);
         }
@@ -8560,7 +8514,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C.op_AdditionAssignment"],
                 expectedSafeSymbols: ["C"],
                 expectedUnsafeMode: CallerUnsafeMode.Implicit);
@@ -8583,7 +8536,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.UnsafeReleaseDll.WithMetadataImportOptions(MetadataImportOptions.All),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: true,
                 expectedUnsafeSymbols: ["C.M1"],
                 expectedSafeSymbols: ["C", "C.M2"],
                 expectedUnsafeMode: CallerUnsafeMode.None))
@@ -8593,7 +8545,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules().WithMetadataImportOptions(MetadataImportOptions.All),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: true,
                 expectedUnsafeSymbols: ["C.M1"],
                 expectedSafeSymbols: ["C", "C.M2"]))
             .VerifyDiagnostics()
@@ -8603,7 +8554,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules().WithMetadataImportOptions(MetadataImportOptions.All),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: []))
             .VerifyDiagnostics();
@@ -8621,7 +8571,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules().WithMetadataImportOptions(MetadataImportOptions.All),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["B.M4"],
                 expectedSafeSymbols: ["B", "B.M3"]))
             .VerifyDiagnostics();
@@ -8631,7 +8580,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: true,
                 expectedUnsafeSymbols: ["C.M1"],
                 expectedSafeSymbols: ["C", "C.M2"],
                 expectedUnsafeMode: CallerUnsafeMode.None))
@@ -8661,7 +8609,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CompileAndVerify(source,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: ["C", "C.M"]))
             .VerifyDiagnostics();
@@ -8670,7 +8617,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.ReleaseDll.WithUpdatedMemorySafetyRules(),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: ["C", "C.M"]))
             .VerifyDiagnostics();
@@ -8680,7 +8626,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: ["C", "C.M"]))
             .VerifyDiagnostics();
@@ -8709,7 +8654,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.UnsafeReleaseDll.WithMetadataImportOptions(MetadataImportOptions.All),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: true,
                 expectedUnsafeSymbols: [m1],
                 expectedSafeSymbols: [m2],
                 expectedUnsafeMode: CallerUnsafeMode.None))
@@ -8719,7 +8663,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules().WithMetadataImportOptions(MetadataImportOptions.All),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: true,
                 expectedUnsafeSymbols: [m1],
                 expectedSafeSymbols: [m2]))
             .VerifyDiagnostics();
@@ -8729,7 +8672,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: true,
                 expectedUnsafeSymbols: [m1],
                 expectedSafeSymbols: [m2],
                 expectedUnsafeMode: CallerUnsafeMode.None))
@@ -8801,7 +8743,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.UnsafeReleaseDll.WithMetadataImportOptions(MetadataImportOptions.All),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: [lam]))
             .VerifyDiagnostics();
@@ -8810,7 +8751,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules().WithMetadataImportOptions(MetadataImportOptions.All),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: [lam]))
             .VerifyDiagnostics();
@@ -8820,7 +8760,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: [lam]))
             .VerifyDiagnostics();
@@ -8886,7 +8825,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.UnsafeReleaseDll,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: true,
                 expectedUnsafeSymbols: ["C.M"],
                 expectedSafeSymbols: ["C"],
                 expectedUnsafeMode: CallerUnsafeMode.None))
@@ -8896,7 +8834,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules(),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: true,
                 expectedUnsafeSymbols: ["C.M"],
                 expectedSafeSymbols: ["C"]))
             .VerifyDiagnostics();
@@ -8909,7 +8846,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CompileAndVerify(comp,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: true,
                 expectedUnsafeSymbols: [],
                 expectedSafeSymbols: [AttributeDescription.RequiresUnsafeAttribute.FullName]))
             .VerifyDiagnostics();
@@ -8927,7 +8863,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules(),
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                includesAttributeDefinition: false,
                 expectedUnsafeSymbols: ["C.M"],
                 expectedSafeSymbols: ["C"]))
             .VerifyDiagnostics();
