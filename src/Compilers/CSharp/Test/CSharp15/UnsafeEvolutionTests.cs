@@ -5509,9 +5509,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             expectedSafeSymbols: ["C.E1", "C.add_E1", "C.remove_E1"],
             expectedDiagnostics:
             [
-                // (3,1): error CS9502: 'C.E2' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // (3,6): error CS9502: 'C.E2.add' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // c.E2 += null;
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.E2").WithArguments("C.E2").WithLocation(3, 1),
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "+=").WithArguments("C.E2.add").WithLocation(3, 6),
             ]);
 
         var source = """
@@ -5558,26 +5558,31 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Fact]
     public void Member_Event_Accessors()
     {
-        var source = """
-            public class C
-            {
-                public event System.Action E1 { unsafe add { } remove { } }
-                public event System.Action E2 { add { } unsafe remove { } }
-            }
-            """;
-
-        var expectedDiagnostics = new[]
-        {
-            // (3,37): error CS1609: Modifiers cannot be placed on event accessor declarations
-            //     public event System.Action E1 { unsafe add { } remove { } }
-            Diagnostic(ErrorCode.ERR_NoModifiersOnAccessor, "unsafe").WithLocation(3, 37),
-            // (4,45): error CS1609: Modifiers cannot be placed on event accessor declarations
-            //     public event System.Action E2 { add { } unsafe remove { } }
-            Diagnostic(ErrorCode.ERR_NoModifiersOnAccessor, "unsafe").WithLocation(4, 45),
-        };
-
-        CreateCompilation(source, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
-        CreateCompilation(source, options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules()).VerifyDiagnostics(expectedDiagnostics);
+        CompileAndVerifyUnsafe(
+            lib: """
+                public class C
+                {
+                    public event System.Action E1 { [System.Runtime.CompilerServices.RequiresUnsafe] add { } remove { } }
+                    public event System.Action E2 { add { } [System.Runtime.CompilerServices.RequiresUnsafe] remove { } }
+                }
+                """,
+            caller: """
+                var c = new C();
+                c.E1 += null; c.E1 -= null;
+                c.E2 += null; c.E2 -= null;
+                """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
+            expectedUnsafeSymbols: ["C.add_E1", "C.remove_E2"],
+            expectedSafeSymbols: ["C.E1", "C.remove_E1", "C.E2", "C.add_E2"],
+            expectedDiagnostics:
+            [
+                // (2,6): error CS9502: 'C.E1.add' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // c.E1 += null; c.E1 -= null;
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "+=").WithArguments("C.E1.add").WithLocation(2, 6),
+                // (3,20): error CS9502: 'C.E2.remove' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // c.E2 += null; c.E2 -= null;
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "-=").WithArguments("C.E2.remove").WithLocation(3, 20),
+            ]);
     }
 
     [Fact]
@@ -5630,12 +5635,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             expectedSafeSymbols: ["B.E3", "B.add_E3", "B.remove_E3", "B.E4", "B.add_E4", "B.remove_E4"],
             expectedDiagnostics:
             [
-                // (4,1): error CS9502: 'C1.E3' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // (4,6): error CS9502: 'C1.E3.add' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // c.E3 += null;
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.E3").WithArguments("C1.E3").WithLocation(4, 1),
-                // (5,1): error CS9502: 'C1.E4' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "+=").WithArguments("C1.E3.add").WithLocation(4, 6),
+                // (5,6): error CS9502: 'C1.E4.add' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // c.E4 += null;
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.E4").WithArguments("C1.E4").WithLocation(5, 1),
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "+=").WithArguments("C1.E4.add").WithLocation(5, 6),
                 // (14,41): error CS9504: Unsafe member 'C1.E3' cannot override safe member 'B.E3'
                 //     public override event System.Action E3;
                 Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E3").WithArguments("C1.E3", "B.E3").WithLocation(14, 41),
@@ -5645,12 +5650,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
-                // (4,1): error CS9502: 'C1.E3' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // (4,6): error CS9502: 'C1.E3.add' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // c.E3 += null;
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.E3").WithArguments("C1.E3").WithLocation(4, 1),
-                // (5,1): error CS9502: 'C1.E4' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "+=").WithArguments("C1.E3.add").WithLocation(4, 6),
+                // (5,6): error CS9502: 'C1.E4.add' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // c.E4 += null;
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.E4").WithArguments("C1.E4").WithLocation(5, 1),
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "+=").WithArguments("C1.E4.add").WithLocation(5, 6),
                 // (14,41): error CS9504: Unsafe member 'C1.E3' cannot override safe member 'B.E3'
                 //     public override event System.Action E3;
                 Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E3").WithArguments("C1.E3", "B.E3").WithLocation(14, 41),
@@ -5718,9 +5723,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             expectedSafeSymbols: ["I.E2", "I.add_E2", "I.remove_E2"],
             expectedDiagnostics:
             [
-                // (2,1): error CS9502: 'I.E1' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // (2,6): error CS9502: 'I.E1.add' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // i.E1 += null;
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "i.E1").WithArguments("I.E1").WithLocation(2, 1),
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "+=").WithArguments("I.E1.add").WithLocation(2, 6),
                 // (11,32): error CS9505: Unsafe member 'C1.E2' cannot implicitly implement safe member 'I.E2'
                 //     public event System.Action E2;
                 Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C1.E2", "I.E2").WithLocation(11, 32),
@@ -7084,9 +7089,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             [libRef],
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
-            // (3,1): error CS9503: 'C.E2' must be used in an unsafe context because it has pointers in its signature
+            // (3,6): error CS9503: 'C.E2.add' must be used in an unsafe context because it has pointers in its signature
             // c.E2 += null;
-            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "c.E2").WithArguments("C.E2").WithLocation(3, 1));
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "+=").WithArguments("C.E2.add").WithLocation(3, 6));
 
         CompileAndVerify("""
             var c = new C();
@@ -8171,9 +8176,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
         var commonDiagnostics = new[]
         {
-            // (1,1): error CS9502: 'C.E' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+            // (1,5): error CS9502: 'C.E.add' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
             // C.E += null;
-            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "C.E").WithArguments("C.E").WithLocation(1, 1),
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "+=").WithArguments("C.E.add").WithLocation(1, 5),
         };
 
         CompileAndVerifyUnsafe(
@@ -8251,9 +8256,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 [libUpdatedRef],
                 options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
                 .VerifyDiagnostics(
-                // (1,1): error CS9502: 'C.E' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+                // (1,5): error CS9502: 'C.E.add' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // C.E += null;
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "C.E").WithArguments("C.E").WithLocation(1, 1))
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "+=").WithArguments("C.E.add").WithLocation(1, 5))
                 .GetReferencedAssemblySymbol(libUpdatedRef);
 
             object[] unsafeSymbols = ["C.E", "C.add_E", "C.remove_E"];
@@ -8279,9 +8284,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 [libLegacyRef],
                 options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
                 .VerifyDiagnostics(
-                // (1,1): error CS9503: 'C.E' must be used in an unsafe context because it has pointers in its signature
+                // (1,5): error CS9503: 'C.E.add' must be used in an unsafe context because it has pointers in its signature
                 // C.E += null;
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "C.E").WithArguments("C.E").WithLocation(1, 1))
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "+=").WithArguments("C.E.add").WithLocation(1, 5))
                 .GetReferencedAssemblySymbol(libLegacyRef);
 
             VerifyRequiresUnsafeAttribute(
