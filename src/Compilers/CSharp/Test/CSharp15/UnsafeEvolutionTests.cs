@@ -8568,7 +8568,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Fact]
-    public void RequiresUnsafeAttribute_Synthesized()
+    public void RequiresUnsafeAttribute_Applied()
     {
         var source = """
             class C
@@ -8584,8 +8584,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
                 includesAttributeDefinition: true,
-                expectedUnsafeSymbols: [],
-                expectedSafeSymbols: ["C", "C.M1", "C.M2"]))
+                expectedUnsafeSymbols: ["C.M1"],
+                expectedSafeSymbols: ["C", "C.M2"],
+                expectedUnsafeMode: CallerUnsafeMode.None))
             .VerifyDiagnostics();
 
         var ref1 = CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
@@ -8631,8 +8632,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
                 includesAttributeDefinition: true,
-                expectedUnsafeSymbols: [],
-                expectedSafeSymbols: ["C", "C.M1", "C.M2"]))
+                expectedUnsafeSymbols: ["C.M1"],
+                expectedSafeSymbols: ["C", "C.M2"],
+                expectedUnsafeMode: CallerUnsafeMode.None))
             .VerifyDiagnostics();
 
         CreateCompilation([source, MemorySafetyRulesAttributeDefinition],
@@ -8647,7 +8649,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Fact]
-    public void RequiresUnsafeAttribute_NotSynthesized()
+    public void RequiresUnsafeAttribute_NotApplied()
     {
         var source = """
             public class C
@@ -8708,8 +8710,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
                 includesAttributeDefinition: true,
-                expectedUnsafeSymbols: [],
-                expectedSafeSymbols: [m1, m2]))
+                expectedUnsafeSymbols: [m1],
+                expectedSafeSymbols: [m2],
+                expectedUnsafeMode: CallerUnsafeMode.None))
             .VerifyDiagnostics();
 
         CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
@@ -8727,8 +8730,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
                 includesAttributeDefinition: true,
-                expectedUnsafeSymbols: [],
-                expectedSafeSymbols: [m1, m2]))
+                expectedUnsafeSymbols: [m1],
+                expectedSafeSymbols: [m2],
+                expectedUnsafeMode: CallerUnsafeMode.None))
             .VerifyDiagnostics();
 
         CreateCompilation([source, MemorySafetyRulesAttributeDefinition],
@@ -8883,8 +8887,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
                 includesAttributeDefinition: true,
-                expectedUnsafeSymbols: [],
-                expectedSafeSymbols: ["C", "C.M"]))
+                expectedUnsafeSymbols: ["C.M"],
+                expectedSafeSymbols: ["C"],
+                expectedUnsafeMode: CallerUnsafeMode.None))
             .VerifyDiagnostics();
 
         CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
