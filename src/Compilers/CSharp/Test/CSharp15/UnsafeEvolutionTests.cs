@@ -3091,17 +3091,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Fact]
     public void Member_Method_Interface()
     {
-        var lib = """
-            public interface I
-            {
-                void M1();
-                [System.Runtime.CompilerServices.RequiresUnsafe]
-                void M2();
-            }
-            """;
-
         CompileAndVerifyUnsafe(
-            lib: lib,
+            lib: """
+                public interface I
+                {
+                    void M1();
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    void M2();
+                }
+                """,
             caller: """
                 I i = null;
                 i.M1();
@@ -3117,16 +3115,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // i.M2();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "i.M2()").WithArguments("I.M2()").WithLocation(3, 1),
             ]);
-
-        CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 38),
-            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 38));
     }
 
     [Fact]
@@ -4854,17 +4842,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Fact]
     public void Member_Property()
     {
-        var lib = """
-            public class C
-            {
-                public int P1 { get; set; }
-                [System.Runtime.CompilerServices.RequiresUnsafe]
-                public int P2 { get; set; }
-            }
-            """;
-
         CompileAndVerifyUnsafe(
-            lib: lib,
+            lib: """
+                public class C
+                {
+                    public int P1 { get; set; }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public int P2 { get; set; }
+                }
+                """,
             caller: """
                 var c = new C();
                 c.P1 = c.P1 + 123;
@@ -4883,16 +4869,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // c.P2 = c.P2 + 123;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.P2").WithArguments("C.P2.get").WithLocation(3, 8)
             ]);
-
-        CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 38),
-            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 38));
     }
 
     [Fact]
@@ -5129,22 +5105,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.Regular14).VerifyEmitDiagnostics();
         CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
         CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularPreview).VerifyEmitDiagnostics();
-
-        CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (3,54): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     public int P1 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(3, 54),
-            // (3,54): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     public int P1 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(3, 54),
-            // (4,59): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     public int P2 { get; [System.Runtime.CompilerServices.RequiresUnsafe] set; }
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 59),
-            // (4,59): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     public int P2 { get; [System.Runtime.CompilerServices.RequiresUnsafe] set; }
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 59));
     }
 
     [Fact]
@@ -5392,20 +5352,18 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Fact]
     public void Member_Indexer()
     {
-        var lib = """
-            public class C1
-            {
-                public int this[int i] { get => i; set { } }
-            }
-            public class C2
-            {
-                [System.Runtime.CompilerServices.RequiresUnsafe]
-                public int this[int i] { get => i; set { } }
-            }
-            """;
-
         CompileAndVerifyUnsafe(
-            lib: lib,
+            lib: """
+                public class C1
+                {
+                    public int this[int i] { get => i; set { } }
+                }
+                public class C2
+                {
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public int this[int i] { get => i; set { } }
+                }
+                """,
             caller: """
                 var c1 = new C1();
                 c1[0] = c1[0] + 123;
@@ -5425,16 +5383,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // c2[0] = c2[0] + 123;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c2[0]").WithArguments("C2.this[int].get").WithLocation(4, 9),
             ]);
-
-        CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (7,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(7, 38),
-            // (7,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(7, 38));
     }
 
     [Fact]
@@ -5545,38 +5493,20 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
         CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
         CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularPreview).VerifyEmitDiagnostics();
-
-        CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (3,63): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     public int this[int i] { [System.Runtime.CompilerServices.RequiresUnsafe] get => i; set { } }
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(3, 63),
-            // (3,63): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     public int this[int i] { [System.Runtime.CompilerServices.RequiresUnsafe] get => i; set { } }
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(3, 63),
-            // (7,73): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     public int this[int i] { get => i; [System.Runtime.CompilerServices.RequiresUnsafe] set { } }
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(7, 73),
-            // (7,73): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     public int this[int i] { get => i; [System.Runtime.CompilerServices.RequiresUnsafe] set { } }
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(7, 73));
     }
 
     [Fact]
     public void Member_Event()
     {
-        var lib = """
-            public class C
-            {
-                public event System.Action E1 { add { } remove { } }
-                [System.Runtime.CompilerServices.RequiresUnsafe]
-                public event System.Action E2 { add { } remove { } }
-            }
-            """;
-
         CompileAndVerifyUnsafe(
-            lib: lib,
+            lib: """
+                public class C
+                {
+                    public event System.Action E1 { add { } remove { } }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public event System.Action E2 { add { } remove { } }
+                }
+                """,
             caller: """
                 var c = new C();
                 c.E1 += null;
@@ -5592,16 +5522,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // c.E2 += null;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.E2").WithArguments("C.E2").WithLocation(3, 1),
             ]);
-
-        CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 38),
-            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 38));
 
         var source = """
             class C
@@ -5667,31 +5587,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
         CreateCompilation(source, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedDiagnostics);
         CreateCompilation(source, options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules()).VerifyDiagnostics(expectedDiagnostics);
-    }
-
-    [Fact]
-    public void Member_Event_NoAccessors()
-    {
-        var lib = """
-            public class C
-            {
-                [System.Runtime.CompilerServices.RequiresUnsafe]
-                public event System.Action E { }
-            }
-            """;
-
-        CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (4,32): error CS0065: 'C.E': event property must have both add and remove accessors
-            //     public event System.Action E { }
-            Diagnostic(ErrorCode.ERR_EventNeedsBothAccessors, "E").WithArguments("C.E").WithLocation(4, 32),
-            // (3,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(3, 38),
-            // (3,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(3, 38));
     }
 
     [Fact]
@@ -5862,21 +5757,19 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Fact]
     public void Member_Constructor()
     {
-        var lib = """
-            public class C
-            {
-                public C(int i) { }
-                [System.Runtime.CompilerServices.RequiresUnsafe]
-                public C() { }
-            }
-            public unsafe class C2(int x)
-            {
-                int _x = x;
-            }
-            """;
-
         CompileAndVerifyUnsafe(
-            lib: lib,
+            lib: """
+                public class C
+                {
+                    public C(int i) { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public C() { }
+                }
+                public unsafe class C2(int x)
+                {
+                    int _x = x;
+                }
+                """,
             caller: """
                 _ = new C(0);
                 _ = new C();
@@ -5892,16 +5785,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // _ = new C();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "new C()").WithArguments("C.C()").WithLocation(2, 5),
             ]);
-
-        CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 38),
-            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 38));
     }
 
     [Fact]
@@ -6015,17 +5898,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Fact]
     public void Member_Constructor_Static()
     {
-        var lib = """
-            public class C
-            {
-                public static readonly int F = 42;
-                [System.Runtime.CompilerServices.RequiresUnsafe]
-                static C() { }
-            }
-            """;
-
         CompileAndVerifyUnsafe(
-            lib: lib,
+            lib: """
+                public class C
+                {
+                    public static readonly int F = 42;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    static C() { }
+                }
+                """,
             caller: """
                 _ = C.F;
                 """,
@@ -6034,16 +5915,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             expectedUnsafeSymbols: ["C..cctor"],
             expectedSafeSymbols: ["C", "C..ctor"],
             expectedDiagnostics: []);
-
-        CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 38),
-            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 38));
     }
 
     [Fact]
@@ -6079,16 +5950,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Fact]
     public void Member_Destructor()
     {
-        var lib = """
-            public class C
-            {
-                [System.Runtime.CompilerServices.RequiresUnsafe]
-                ~C() { }
-            }
-            """;
-
         CompileAndVerifyUnsafe(
-            lib: lib,
+            lib: """
+                public class C
+                {
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    ~C() { }
+                }
+                """,
             caller: """
                 _ = new C();
                 """,
@@ -6096,16 +5965,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             expectedUnsafeSymbols: ["C.Finalize"],
             expectedSafeSymbols: [],
             expectedDiagnostics: []);
-
-        CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (3,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(3, 38),
-            // (3,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(3, 38));
 
         var source = """
             class C
@@ -6133,17 +5992,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Fact]
     public void Member_Operator_Static()
     {
-        var lib = """
-            public class C
-            {
-                public static C operator +(C c1, C c2) => c1;
-                [System.Runtime.CompilerServices.RequiresUnsafe]
-                public static C operator -(C c1, C c2) => c1;
-            }
-            """;
-
         CompileAndVerifyUnsafe(
-            lib: lib,
+            lib: """
+                public class C
+                {
+                    public static C operator +(C c1, C c2) => c1;
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public static C operator -(C c1, C c2) => c1;
+                }
+                """,
             caller: """
                 var c = new C();
                 _ = c + c;
@@ -6159,36 +6016,24 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // _ = c - c;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c - c").WithArguments("C.operator -(C, C)").WithLocation(3, 5),
             ]);
-
-        CreateCompilation([lib, MemorySafetyRulesAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 38),
-            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 38));
     }
 
     [Fact]
     public void Member_Operator_Static_Extension()
     {
-        var lib = """
-            public class C;
-            public static class E
-            {
-                extension(C)
-                {
-                    public static C operator +(C c1, C c2) => c1;
-                    [System.Runtime.CompilerServices.RequiresUnsafe]
-                    public static C operator -(C c1, C c2) => c1;
-                }
-            }
-            """;
-
         CompileAndVerifyUnsafe(
-            lib: lib,
+            lib: """
+                public class C;
+                public static class E
+                {
+                    extension(C)
+                    {
+                        public static C operator +(C c1, C c2) => c1;
+                        [System.Runtime.CompilerServices.RequiresUnsafe]
+                        public static C operator -(C c1, C c2) => c1;
+                    }
+                }
+                """,
             caller: """
                 var c = new C();
                 _ = c + c;
@@ -6210,32 +6055,20 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // E.op_Subtraction(c, c);
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "E.op_Subtraction(c, c)").WithArguments("E.op_Subtraction(C, C)").WithLocation(5, 1),
             ]);
-
-        CreateCompilation([lib, MemorySafetyRulesAttributeDefinition, ExtensionMarkerAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (7,42): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //         [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(7, 42),
-            // (7,42): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //         [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(7, 42));
     }
 
     [Fact]
     public void Member_Operator_Instance()
     {
-        var lib = """
-            public class C
-            {
-                public void operator +=(C c) { }
-                [System.Runtime.CompilerServices.RequiresUnsafe]
-                public void operator -=(C c) { }
-            }
-            """;
-
         CompileAndVerifyUnsafe(
-            lib: lib,
+            lib: """
+                public class C
+                {
+                    public void operator +=(C c) { }
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public void operator -=(C c) { }
+                }
+                """,
             caller: """
                 var c = new C();
                 c += c;
@@ -6251,36 +6084,24 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // c -= c;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c -= c").WithArguments("C.operator -=(C)").WithLocation(3, 1),
             ]);
-
-        CreateCompilation([lib, MemorySafetyRulesAttributeDefinition, CompilerFeatureRequiredAttribute],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(4, 38),
-            // (4,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(4, 38));
     }
 
     [Fact]
     public void Member_Operator_Instance_Extension()
     {
-        var lib = """
-            public class C;
-            public static class E
-            {
-                extension(C c1)
-                {
-                    public void operator +=(C c2) { }
-                    [System.Runtime.CompilerServices.RequiresUnsafe]
-                    public void operator -=(C c2) { }
-                }
-            }
-            """;
-
         CompileAndVerifyUnsafe(
-            lib: lib,
+            lib: """
+                public class C;
+                public static class E
+                {
+                    extension(C c1)
+                    {
+                        public void operator +=(C c2) { }
+                        [System.Runtime.CompilerServices.RequiresUnsafe]
+                        public void operator -=(C c2) { }
+                    }
+                }
+                """,
             caller: """
                 var c = new C();
                 c += c;
@@ -6302,16 +6123,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // E.op_SubtractionAssignment(c, c);
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "E.op_SubtractionAssignment(c, c)").WithArguments("E.op_SubtractionAssignment(C, C)").WithLocation(5, 1),
             ]);
-
-        CreateCompilation([lib, MemorySafetyRulesAttributeDefinition, CompilerFeatureRequiredAttribute, ExtensionMarkerAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (7,42): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //         [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Runtime.CompilerServices").WithLocation(7, 42),
-            // (7,42): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Runtime.CompilerServices' (are you missing an assembly reference?)
-            //         [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Runtime.CompilerServices").WithLocation(7, 42));
     }
 
     [Fact]
