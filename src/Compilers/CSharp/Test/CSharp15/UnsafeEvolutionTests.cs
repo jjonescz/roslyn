@@ -3978,7 +3978,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 M(1, 2, 3);
                 static void M(params C c) { }
                 """,
-                additionalSources: [TestSources.Span, CollectionBuilderAttributeDefinition, RequiresUnsafeAttributeDefinition],
+            additionalSources: [TestSources.Span, CollectionBuilderAttributeDefinition, RequiresUnsafeAttributeDefinition],
             verify: Verification.Skipped,
             expectedUnsafeSymbols: ["C.GetEnumerator"],
             expectedSafeSymbols: ["C", "C.Create"],
@@ -8910,10 +8910,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Theory, CombinatorialData]
     public void RequiresUnsafeAttribute_FromMetadata_Multiple(bool useCompilationReference)
     {
-        var comp1 = CreateCompilation(RequiresUnsafeAttributeDefinition).VerifyDiagnostics();
+        var comp1 = CreateCompilation(RequiresUnsafeAttributeDefinition, assemblyName: "lib1").VerifyDiagnostics();
         var ref1 = AsReference(comp1, useCompilationReference);
 
-        var comp2 = CreateCompilation(RequiresUnsafeAttributeDefinition).VerifyDiagnostics();
+        var comp2 = CreateCompilation(RequiresUnsafeAttributeDefinition, assemblyName: "lib2").VerifyDiagnostics();
         var ref2 = AsReference(comp2, useCompilationReference);
 
         var source = """
@@ -8924,23 +8924,31 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             }
             """;
 
-        // Ambiguous attribute definitions from references => synthesize our own.
+        // Ambiguous attribute definitions from references.
         CreateCompilation(source, [ref1, ref2],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
-            .GetDiagnostics()
-            .VerifyErrorCodes(
-            // (3,38): error CS0433: The type 'RequiresUnsafeAttribute' exists in both ...
+            .VerifyDiagnostics(
+            // (3,38): error CS0433: The type 'RequiresUnsafeAttribute' exists in both 'lib1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null' and 'lib2, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
             //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_SameFullNameAggAgg));
+            Diagnostic(ErrorCode.ERR_SameFullNameAggAgg, "RequiresUnsafe").WithArguments("lib1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null", "System.Runtime.CompilerServices.RequiresUnsafeAttribute", "lib2, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null").WithLocation(3, 38));
 
         // Also defined in source.
-        CreateCompilation([source, RequiresUnsafeAttributeDefinition], [ref1, ref2],
+        var lib = CreateCompilation([source, RequiresUnsafeAttributeDefinition], [ref1, ref2],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
-            .GetDiagnostics()
-            .VerifyErrorCodes(
-            // (3,38): warning CS0436: The type 'RequiresUnsafeAttribute' in '' conflicts with the imported type ...
+            .VerifyDiagnostics(
+            // (3,38): warning CS0436: The type 'RequiresUnsafeAttribute' in '' conflicts with the imported type 'RequiresUnsafeAttribute' in 'lib1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'. Using the type defined in ''.
             //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.WRN_SameFullNameThisAggAgg));
+            Diagnostic(ErrorCode.WRN_SameFullNameThisAggAgg, "RequiresUnsafe").WithArguments("", "System.Runtime.CompilerServices.RequiresUnsafeAttribute", "lib1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null", "System.Runtime.CompilerServices.RequiresUnsafeAttribute").WithLocation(3, 38));
+
+        CreateCompilation("""
+            new C().M();
+            """,
+            [AsReference(lib, useCompilationReference)],
+            options: TestOptions.ReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (1,1): error CS9502: 'C.M()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+            // new C().M();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "new C().M()").WithArguments("C.M()").WithLocation(1, 1));
     }
 
     [Theory, CombinatorialData]
@@ -8951,6 +8959,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             {
                 public class Object;
                 public class ValueType;
+                public class String;
                 public class Attribute;
                 public struct Void;
                 public struct Int32;
@@ -8966,32 +8975,38 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             }
             """;
 
-        var corlib = CreateEmptyCompilation([corlibSource, RequiresUnsafeAttributeDefinition]).VerifyDiagnostics();
+        var corlib = CreateEmptyCompilation([corlibSource, RequiresUnsafeAttributeDefinition], assemblyName: "corlib").VerifyDiagnostics();
         var corlibRef = AsReference(corlib, useCompilationReference);
 
-        var comp1 = CreateEmptyCompilation(RequiresUnsafeAttributeDefinition, [corlibRef]).VerifyDiagnostics();
+        var comp1 = CreateEmptyCompilation(RequiresUnsafeAttributeDefinition, [corlibRef], assemblyName: "lib1").VerifyDiagnostics();
         var ref1 = AsReference(comp1, useCompilationReference);
 
-        var comp2 = CreateEmptyCompilation(RequiresUnsafeAttributeDefinition, [corlibRef]).VerifyDiagnostics();
+        var comp2 = CreateEmptyCompilation(RequiresUnsafeAttributeDefinition, [corlibRef], assemblyName: "lib2").VerifyDiagnostics();
         var ref2 = AsReference(comp2, useCompilationReference);
 
         var source = """
+            #pragma warning disable CS0626 // extern without attributes
             public class C
             {
-                [System.Runtime.CompilerServices.RequiresUnsafe]
-                public void M() { }
+                public extern void M();
             }
             """;
 
         // Using the attribute from corlib even if there are ambiguous definitions in other references.
-        CreateEmptyCompilation(source, [ref1, ref2, corlibRef],
+        var lib = CreateEmptyCompilation(source, [ref1, ref2, corlibRef],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules()
                 .WithSpecificDiagnosticOptions([KeyValuePair.Create("CS8021", ReportDiagnostic.Suppress)]))
-            .GetDiagnostics()
-            .VerifyErrorCodes(
-            // (3,38): error CS0433: The type 'RequiresUnsafeAttribute' exists in both ...
-            //     [System.Runtime.CompilerServices.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_SameFullNameAggAgg));
+            .VerifyDiagnostics();
+
+        CreateEmptyCompilation("""
+            new C().M();
+            """,
+            [AsReference(lib, useCompilationReference), ref1, ref2, corlibRef],
+            options: TestOptions.ReleaseExe.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (1,1): error CS9502: 'C.M()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
+            // new C().M();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "new C().M()").WithArguments("C.M()").WithLocation(1, 1));
     }
 
     [Fact]
