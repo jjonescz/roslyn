@@ -42,6 +42,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
         Assert.False(optionsDll.UseUpdatedMemorySafetyRules);
 
+        var expectsRequiresUnsafeAttribute = expectedUnsafeSymbols.Length > 0;
+
         CreateCompilation([lib, caller, .. additionalSources],
             targetFramework: targetFramework,
             parseOptions: parseOptions,
@@ -87,9 +89,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 VerifyMemorySafetyRulesAttribute(module, includesAttributeDefinition: false, includesAttributeUse: false);
                 VerifyRequiresUnsafeAttribute(
                     module,
-                    includesAttributeDefinition: false,
-                    expectedUnsafeSymbols: [],
-                    expectedSafeSymbols: [.. expectedUnsafeSymbols, .. expectedSafeSymbols]);
+                    includesAttributeDefinition: expectsRequiresUnsafeAttribute,
+                    expectedUnsafeSymbols: expectedUnsafeSymbols,
+                    expectedSafeSymbols: expectedSafeSymbols,
+                    expectedUnsafeMode: CallerUnsafeMode.None);
             })
             .VerifyDiagnostics()
             .GetImageReference();
@@ -109,28 +112,18 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
         void symbolValidator(ModuleSymbol module)
         {
-            var expectsRequiresUnsafeAttribute = expectedUnsafeSymbols.Length > 0;
-
-            if (module is SourceModuleSymbol)
-            {
-                VerifyMemorySafetyRulesAttribute(module, includesAttributeDefinition: false, includesAttributeUse: false);
-                VerifyRequiresUnsafeAttribute(
-                    module,
-                    includesAttributeDefinition: expectsRequiresUnsafeAttribute,
-                    expectedUnsafeSymbols: expectedUnsafeSymbols,
-                    expectedSafeSymbols: expectedSafeSymbols,
-                    expectedUnsafeMode: expectedUnsafeMode);
-            }
-            else
-            {
-                VerifyMemorySafetyRulesAttribute(module, includesAttributeDefinition: true, includesAttributeUse: true, isSynthesized: true);
-                VerifyRequiresUnsafeAttribute(
-                    module,
-                    includesAttributeDefinition: expectsRequiresUnsafeAttribute,
-                    expectedUnsafeSymbols: expectedUnsafeSymbols,
-                    expectedSafeSymbols: expectedSafeSymbols,
-                    expectedUnsafeMode: expectedUnsafeMode);
-            }
+            var isSource = module is SourceModuleSymbol;
+            VerifyMemorySafetyRulesAttribute(
+                module,
+                includesAttributeDefinition: !isSource,
+                includesAttributeUse: !isSource,
+                isSynthesized: isSource ? null : true);
+            VerifyRequiresUnsafeAttribute(
+                module,
+                includesAttributeDefinition: expectsRequiresUnsafeAttribute,
+                expectedUnsafeSymbols: expectedUnsafeSymbols,
+                expectedSafeSymbols: expectedSafeSymbols,
+                expectedUnsafeMode: expectedUnsafeMode);
         }
     }
 
@@ -266,15 +259,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 Func<ModuleSymbol, Symbol> func => func(module),
                 _ => throw ExceptionUtilities.UnexpectedValue(symbolGetter),
             };
-            Assert.False(symbol is null, $"Cannot find symbol '{symbolGetter}'");
+            Assert.False(symbol is null, $"Cannot find symbol '{symbolGetter}'.");
 
             var symbolExpectedUnsafeMode = shouldBeUnsafe ? expectedUnsafeMode : CallerUnsafeMode.None;
 
-            Assert.True(symbolExpectedUnsafeMode == symbol.CallerUnsafeMode, $"Expected '{symbol.ToTestDisplayString()}' to have {nameof(CallerUnsafeMode)}.{symbolExpectedUnsafeMode} (got {symbol.CallerUnsafeMode})");
+            Assert.True(symbolExpectedUnsafeMode == symbol.CallerUnsafeMode, $"Expected {symbol.GetType().Name} '{symbol.ToTestDisplayString()}' to have {nameof(CallerUnsafeMode)}.{symbolExpectedUnsafeMode} (got {symbol.CallerUnsafeMode}).");
 
-            var shouldHaveAttribute = symbolExpectedUnsafeMode == CallerUnsafeMode.Explicit;
             var attribute = symbol.GetAttributes().SingleOrDefault(a => a.AttributeClass?.Name == Name);
-            Assert.True(shouldHaveAttribute == attribute is not null, $"Attribute mismatch on '{symbol.ToTestDisplayString()}'");
+            Assert.True(shouldBeUnsafe == attribute is not null, $"Expected {symbol.GetType().Name} '{symbol.ToTestDisplayString()}' to{(shouldBeUnsafe ? "" : " not")} have the attribute.");
 
             Assert.True(seenSymbols.Add(symbol), $"Symbol '{symbol.ToTestDisplayString()}' specified multiple times.");
         }

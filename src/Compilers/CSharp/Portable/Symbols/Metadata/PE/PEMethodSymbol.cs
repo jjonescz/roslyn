@@ -1086,7 +1086,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     if (containingModule.AttributeMatchesFilter(handle, AttributeDescription.RequiresUnsafeAttribute))
                     {
                         hasRequiresUnsafeAttribute = true;
-                        continue;
                     }
 
                     builder.Add(new PEAttributeData(containingModule, handle));
