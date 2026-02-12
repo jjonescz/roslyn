@@ -241,12 +241,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         ReadOnlySpan<object> expectedSafeSymbols,
         object[]? expectedNoAttributeInSource = null,
         object[]? expectedNoAttribute = null,
+        object[]? expectedAttribute = null,
         CallerUnsafeMode expectedUnsafeMode = CallerUnsafeMode.Explicit)
     {
         const string Name = "RequiresUnsafeAttribute";
 
         var expectedNoAttributeInSourceSymbols = (expectedNoAttributeInSource ?? []).SelectAsArray(getSymbol);
         var expectedNoAttributeSymbols = (expectedNoAttribute ?? []).SelectAsArray(getSymbol);
+        var expectedAttributeSymbols = (expectedAttribute ?? []).SelectAsArray(getSymbol);
 
         var seenSymbols = new HashSet<Symbol>();
 
@@ -262,6 +264,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
         Assert.All(expectedNoAttributeInSourceSymbols, s => Assert.True(seenSymbols.Contains(s)));
         Assert.All(expectedNoAttributeSymbols, s => Assert.True(seenSymbols.Contains(s)));
+        Assert.All(expectedAttributeSymbols, s => Assert.True(seenSymbols.Contains(s)));
 
         void verifySymbol(object symbolGetter, bool shouldBeUnsafe)
         {
@@ -273,11 +276,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             var attribute = symbol.GetAttributes().SingleOrDefault(a => a.AttributeClass?.Name == Name);
             var associatedAttribute = (symbol as MethodSymbol)?.AssociatedSymbol?.GetAttributes().SingleOrDefault(a => a.AttributeClass?.Name == Name);
             var hasAttribute = attribute is not null || associatedAttribute is not null;
-            var shouldHaveAttribute = shouldBeUnsafe && expectedUnsafeMode != CallerUnsafeMode.Implicit &&
+            var shouldHaveAttribute = expectedAttributeSymbols.Contains(symbol) ||
+                (shouldBeUnsafe && expectedUnsafeMode != CallerUnsafeMode.Implicit &&
                 (module is not SourceModuleSymbol || !expectedNoAttributeInSourceSymbols.Contains(symbol)) &&
-                !expectedNoAttributeSymbols.Contains(symbol);
+                !expectedNoAttributeSymbols.Contains(symbol));
             Assert.True(shouldHaveAttribute == hasAttribute,
-                $"Expected {symbol.GetType().Name} '{symbol.ToTestDisplayString()}' {(shouldBeUnsafe ? "or" : "and")} its associated symbol to{(shouldBeUnsafe ? "" : " not")} have the attribute.");
+                $"Expected {symbol.GetType().Name} '{symbol.ToTestDisplayString()}' {(shouldHaveAttribute ? "or" : "and")} its associated symbol to{(shouldHaveAttribute ? "" : " not")} have the attribute.");
 
             Assert.True(seenSymbols.Add(symbol), $"Symbol '{symbol.ToTestDisplayString()}' specified multiple times.");
 
@@ -2613,25 +2617,26 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         [
             """
             #pragma warning disable CS8321 // unused local function
-            unsafe void F() { }
+            [System.Runtime.CompilerServices.RequiresUnsafe] void F() { }
             class C
             {
-                unsafe void M() { }
-                unsafe int P { get; set; }
+                [System.Runtime.CompilerServices.RequiresUnsafe] void M() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe] int P { get; set; }
 
-                unsafe event System.Action E { add { } remove { } }
-                unsafe int this[int i] { get => i; set { } }
-                unsafe C() { }
-                unsafe ~C() { }
-                public unsafe static C operator +(C c1, C c2) => c1;
-                public unsafe void operator +=(C c) { }
+                [System.Runtime.CompilerServices.RequiresUnsafe] event System.Action E { add { } remove { } }
+                [System.Runtime.CompilerServices.RequiresUnsafe] int this[int i] { get => i; set { } }
+                [System.Runtime.CompilerServices.RequiresUnsafe] C() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe] ~C() { }
+                [System.Runtime.CompilerServices.RequiresUnsafe] public static C operator +(C c1, C c2) => c1;
+                [System.Runtime.CompilerServices.RequiresUnsafe] public void operator +=(C c) { }
             #pragma warning disable CS0169 // unused field
-                unsafe int F;
+                [System.Runtime.CompilerServices.RequiresUnsafe] int F;
             }
-            unsafe class U;
-            unsafe delegate void D();
+            [System.Runtime.CompilerServices.RequiresUnsafe] class U;
+            [System.Runtime.CompilerServices.RequiresUnsafe] delegate void D();
             """,
             CompilerFeatureRequiredAttribute,
+            RequiresUnsafeAttributeDefinition,
         ];
 
         string[] safeSymbols = ["C", "C.F", "U", "D"];
@@ -2647,6 +2652,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             "C.op_Addition",
             "C.op_AdditionAssignment",
         ];
+        string[] symbolsWithAttribute = safeSymbols.Except(["C"]).Concat(unsafeSymbols).ToArray();
 
         CompileAndVerify(source,
             parseOptions: TestOptions.Regular14,
@@ -2657,7 +2663,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 VerifyRequiresUnsafeAttribute(
                     m,
                     expectedUnsafeSymbols: [],
-                    expectedSafeSymbols: [.. safeSymbols, .. unsafeSymbols]);
+                    expectedSafeSymbols: [.. safeSymbols, .. unsafeSymbols],
+                    expectedAttribute: symbolsWithAttribute);
             })
             .VerifyDiagnostics();
 
@@ -2669,15 +2676,43 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 VerifyMemorySafetyRulesAttribute(m, includesAttributeDefinition: true, includesAttributeUse: true, isSynthesized: true);
                 VerifyRequiresUnsafeAttribute(
                     m,
-                    expectedUnsafeSymbols: [],
-                    expectedSafeSymbols: [.. safeSymbols, .. unsafeSymbols]);
+                    expectedUnsafeSymbols: [.. unsafeSymbols],
+                    expectedSafeSymbols: [.. safeSymbols],
+                    expectedAttribute: symbolsWithAttribute);
             })
             .VerifyDiagnostics();
 
         CreateCompilation(source,
             parseOptions: TestOptions.Regular14,
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
-            .VerifyDiagnostics();
+            .VerifyDiagnostics(
+            // (2,2): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // [System.Runtime.CompilerServices.RequiresUnsafe] void F() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(2, 2),
+            // (5,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     [System.Runtime.CompilerServices.RequiresUnsafe] void M() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(5, 6),
+            // (6,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     [System.Runtime.CompilerServices.RequiresUnsafe] int P { get; set; }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(6, 6),
+            // (8,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     [System.Runtime.CompilerServices.RequiresUnsafe] event System.Action E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(8, 6),
+            // (9,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     [System.Runtime.CompilerServices.RequiresUnsafe] int this[int i] { get => i; set { } }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(9, 6),
+            // (10,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     [System.Runtime.CompilerServices.RequiresUnsafe] C() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(10, 6),
+            // (11,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     [System.Runtime.CompilerServices.RequiresUnsafe] ~C() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(11, 6),
+            // (12,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     [System.Runtime.CompilerServices.RequiresUnsafe] public static C operator +(C c1, C c2) => c1;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(12, 6),
+            // (13,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     [System.Runtime.CompilerServices.RequiresUnsafe] public void operator +=(C c) { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(13, 6));
     }
 
     [Theory, CombinatorialData]
@@ -5091,14 +5126,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.P2").WithArguments("C.P2.set").WithLocation(3, 1),
             ]);
 
-        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.Regular14).VerifyDiagnostics(
-            // (3,22): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     public int P1 { [System.Runtime.CompilerServices.RequiresUnsafe] get; set; }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(3, 22),
-            // (4,27): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     public int P2 { get; [System.Runtime.CompilerServices.RequiresUnsafe] set; }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Runtime.CompilerServices.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(4, 27));
-
+        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.Regular14).VerifyEmitDiagnostics();
         CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
         CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularPreview).VerifyEmitDiagnostics();
 
