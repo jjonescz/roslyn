@@ -260,13 +260,13 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             Assert.False(symbol is null, $"Cannot find symbol '{symbolGetter}'.");
 
             var symbolExpectedUnsafeMode = shouldBeUnsafe ? expectedUnsafeMode : CallerUnsafeMode.None;
-
             Assert.True(symbolExpectedUnsafeMode == symbol.CallerUnsafeMode, $"Expected {symbol.GetType().Name} '{symbol.ToTestDisplayString()}' to have {nameof(CallerUnsafeMode)}.{symbolExpectedUnsafeMode} (got {symbol.CallerUnsafeMode}).");
 
             var attribute = symbol.GetAttributes().SingleOrDefault(a => a.AttributeClass?.Name == Name);
             var associatedAttribute = (symbol as MethodSymbol)?.AssociatedSymbol?.GetAttributes().SingleOrDefault(a => a.AttributeClass?.Name == Name);
             var hasAttribute = attribute is not null || associatedAttribute is not null;
-            Assert.True(shouldBeUnsafe == hasAttribute || !hasAttribute && symbol is SourceExtensionImplementationMethodSymbol,
+            var shouldHaveAttribute = shouldBeUnsafe && expectedUnsafeMode != CallerUnsafeMode.Implicit;
+            Assert.True(shouldHaveAttribute == hasAttribute || !hasAttribute && symbol is SourceExtensionImplementationMethodSymbol,
                 $"Expected {symbol.GetType().Name} '{symbol.ToTestDisplayString()}' {(shouldBeUnsafe ? "or" : "and")} its associated symbol to{(shouldBeUnsafe ? "" : " not")} have the attribute.");
 
             Assert.True(seenSymbols.Add(symbol), $"Symbol '{symbol.ToTestDisplayString()}' specified multiple times.");
