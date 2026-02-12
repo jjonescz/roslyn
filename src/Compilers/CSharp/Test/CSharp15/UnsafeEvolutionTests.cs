@@ -3950,9 +3950,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (12,1): error CS9502: 'C.Create(ReadOnlySpan<int>)' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // M3(1, 2, 3);
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M3(1, 2, 3)").WithArguments("C.Create(System.ReadOnlySpan<int>)").WithLocation(12, 1),
-            ],
-            expectedDiagnosticsWhenReferencingLegacyLib:
-            [
             ]);
     }
 
@@ -4037,9 +4034,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (12,1): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // M3(1, 2, 3);
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M3(1, 2, 3)").WithArguments("C.C()").WithLocation(12, 1),
-            ],
-            expectedDiagnosticsWhenReferencingLegacyLib:
-            [
             ]);
     }
 
@@ -4138,9 +4132,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (18,10): error CS9502: 'C.Add(int)' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
                 // M3(1, 2, 3);
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "3").WithArguments("C.Add(int)").WithLocation(18, 10),
-            ],
-            expectedDiagnosticsWhenReferencingLegacyLib:
-            [
             ]);
     }
 
