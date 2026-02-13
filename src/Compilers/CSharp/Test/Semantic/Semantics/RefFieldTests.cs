@@ -25766,6 +25766,50 @@ class Program
             }
         }
 
+        [Fact]
+        public void RefSafetyRules_Boundary()
+        {
+            var source1 = """
+                public static class C
+                {
+                    public static R M(ref int x) => new R { F = ref x };
+                    public static int GetF(ref R r) => r.F;
+                }
+                public ref struct R
+                {
+                    public ref int F;
+                }
+                """;
+            var ref1 = CreateCompilation(source1, targetFramework: TargetFramework.Net70)
+                .VerifyDiagnostics().EmitToImageReference();
+
+            var source2 = """
+                R r = F();
+                System.Console.WriteLine(C.GetF(ref r)); // use after free
+
+                static R M2(ref int y) => C.M(ref y);
+
+                static R F()
+                {
+                    int i = 2 * 2;
+                    return M2(ref i);
+                }
+                """;
+
+            CreateCompilation(source2, [ref1], targetFramework: TargetFramework.Net70).VerifyDiagnostics(
+                // (9,19): error CS8168: Cannot return local 'i' by reference because it is not a ref local
+                //     return M2(ref i);
+                Diagnostic(ErrorCode.ERR_RefReturnLocal, "i").WithArguments("i").WithLocation(9, 19),
+                // (9,12): error CS8347: Cannot use a result of 'M2(ref int)' in this context because it may expose variables referenced by parameter 'y' outside of their declaration scope
+                //     return M2(ref i);
+                Diagnostic(ErrorCode.ERR_EscapeCall, "M2(ref i)").WithArguments("M2(ref int)", "y").WithLocation(9, 12));
+
+            CompileAndVerify(source2, [ref1],
+                verify: Verification.Skipped,
+                expectedOutput: "4",
+                parseOptions: TestOptions.Regular10).VerifyDiagnostics();
+        }
+
         [Theory]
         [CombinatorialData]
         public void UnscopedRefAttribute_Overrides_04(
