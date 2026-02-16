@@ -8248,8 +8248,16 @@ To remove the warning, you can use /reference instead (set the Embed Interop Typ
     <value>'{0}' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'</value>
     <comment>'RequiresUnsafe' and 'extern' should not be localized.</comment>
   </data>
+  <data name="ERR_UnsafeMemberOperationConstructorConstraint" xml:space="preserve">
+    <value>An unsafe context is required because the target constructor of a 'new()' constraint '{0}' is marked as 'RequiresUnsafe' or 'extern'</value>
+    <comment>'RequiresUnsafe', 'extern', and 'new()' should not be localized.</comment>
+  </data>
   <data name="ERR_UnsafeMemberOperationCompat" xml:space="preserve">
     <value>'{0}' must be used in an unsafe context because it has pointers in its signature</value>
+  </data>
+  <data name="ERR_UnsafeMemberOperationCompatConstructorConstraint" xml:space="preserve">
+    <value>An unsafe context is required because the target constructor of a 'new()' constraint '{0}' has pointers in its signature</value>
+    <comment>'new()' should not be localized.</comment>
   </data>
   <data name="ERR_CallerUnsafeOverridingSafe" xml:space="preserve">
     <value>Unsafe member '{0}' cannot override safe member '{1}'</value>

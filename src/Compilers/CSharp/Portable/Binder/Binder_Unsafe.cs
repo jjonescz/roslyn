@@ -32,18 +32,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal void ReportDiagnosticsIfUnsafeMemberAccess(DiagnosticBag diagnostics, Symbol symbol, SyntaxNodeOrToken node)
         {
-            var callerUnsafeMode = symbol.CallerUnsafeMode;
-            if (callerUnsafeMode != CallerUnsafeMode.None)
-            {
-                ReportUnsafeIfNotAllowed(node, diagnostics, disallowedUnder: MemorySafetyRules.Updated,
-                    customErrorCode: callerUnsafeMode switch
-                    {
-                        CallerUnsafeMode.Explicit => ErrorCode.ERR_UnsafeMemberOperation,
-                        CallerUnsafeMode.Implicit => ErrorCode.ERR_UnsafeMemberOperationCompat,
-                        _ => throw ExceptionUtilities.UnexpectedValue(callerUnsafeMode),
-                    },
-                    customArgs: [symbol]);
-            }
+            ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, symbol, node, forConstructorConstraint: false);
 
             switch (symbol)
             {
@@ -89,10 +78,26 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     if (ctor.ParameterCount == 0)
                     {
-                        @this.ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, ctor, node);
+                        @this.ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, ctor, node, forConstructorConstraint: true);
                         break;
                     }
                 }
+            }
+        }
+
+        private void ReportDiagnosticsIfUnsafeMemberAccess(DiagnosticBag diagnostics, Symbol symbol, SyntaxNodeOrToken node, bool forConstructorConstraint)
+        {
+            var callerUnsafeMode = symbol.CallerUnsafeMode;
+            if (callerUnsafeMode != CallerUnsafeMode.None)
+            {
+                ReportUnsafeIfNotAllowed(node, diagnostics, disallowedUnder: MemorySafetyRules.Updated,
+                    customErrorCode: callerUnsafeMode switch
+                    {
+                        CallerUnsafeMode.Explicit => forConstructorConstraint ? ErrorCode.ERR_UnsafeMemberOperationConstructorConstraint : ErrorCode.ERR_UnsafeMemberOperation,
+                        CallerUnsafeMode.Implicit => forConstructorConstraint ? ErrorCode.ERR_UnsafeMemberOperationCompatConstructorConstraint : ErrorCode.ERR_UnsafeMemberOperationCompat,
+                        _ => throw ExceptionUtilities.UnexpectedValue(callerUnsafeMode),
+                    },
+                    customArgs: [symbol]);
             }
         }
 
