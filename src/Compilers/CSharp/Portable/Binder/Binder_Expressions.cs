@@ -2058,7 +2058,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (symbol.Kind is not (SymbolKind.Event or SymbolKind.Property))
             {
                 ReportDiagnosticsIfObsolete(diagnostics, symbol, node, hasBaseReceiver: false);
-                AssertNotUnsafeMemberAccess(symbol); // PROTOTYPE: Support unsafe fields?
+                ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, symbol, node);
             }
 
             switch (symbol.Kind)
