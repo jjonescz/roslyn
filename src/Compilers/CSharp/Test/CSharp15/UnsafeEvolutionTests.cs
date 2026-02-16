@@ -6031,15 +6031,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             expectedSafeSymbols: ["C", "C.M", "D", "D..ctor"],
             expectedDiagnostics:
             [
-                // (2,1): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // (2,1): error CS9510: An unsafe context is required because the target constructor of a 'new()' constraint 'C.C()' is marked as 'RequiresUnsafe' or 'extern'
                 // C.M<C>();
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "C.M<C>()").WithArguments("C.C()").WithLocation(2, 1),
-                // (3,9): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperationConstructorConstraint, "C.M<C>()").WithArguments("C.C()").WithLocation(2, 1),
+                // (3,9): error CS9510: An unsafe context is required because the target constructor of a 'new()' constraint 'C.C()' is marked as 'RequiresUnsafe' or 'extern'
                 // _ = new D<C>();
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "D<C>").WithArguments("C.C()").WithLocation(3, 9),
-                // (4,9): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperationConstructorConstraint, "D<C>").WithArguments("C.C()").WithLocation(3, 9),
+                // (4,9): error CS9510: An unsafe context is required because the target constructor of a 'new()' constraint 'C.C()' is marked as 'RequiresUnsafe' or 'extern'
                 // _ = new X();
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "X").WithArguments("C.C()").WithLocation(4, 9),
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperationConstructorConstraint, "X").WithArguments("C.C()").WithLocation(4, 9),
             ]);
     }
 
@@ -6079,12 +6079,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (1,9): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // var c = new C();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "new C()").WithArguments("C.C()").WithLocation(1, 9),
-                // (2,5): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // (2,5): error CS9510: An unsafe context is required because the target constructor of a 'new()' constraint 'C.C()' is marked as 'RequiresUnsafe' or 'extern'
                 // _ = c.P1;
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.P1").WithArguments("C.C()").WithLocation(2, 5),
-                // (3,5): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperationConstructorConstraint, "c.P1").WithArguments("C.C()").WithLocation(2, 5),
+                // (3,5): error CS9510: An unsafe context is required because the target constructor of a 'new()' constraint 'C.C()' is marked as 'RequiresUnsafe' or 'extern'
                 // _ = C.P2;
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "C.P2").WithArguments("C.C()").WithLocation(3, 5),
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperationConstructorConstraint, "C.P2").WithArguments("C.C()").WithLocation(3, 5),
             ]);
     }
 

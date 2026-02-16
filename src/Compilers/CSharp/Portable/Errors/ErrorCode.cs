@@ -2485,5 +2485,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         ERR_RequiresUnsafeAttributeUnsupportedMemberTarget = 9507,
         WRN_RequiresUnsafeAttributeLegacyRules = 9508,
         WRN_UnsafeMeaningless = 9509,
+        ERR_UnsafeMemberOperationConstructorConstraint = 9510,
+        ERR_UnsafeMemberOperationCompatConstructorConstraint = 9511,
     }
 }

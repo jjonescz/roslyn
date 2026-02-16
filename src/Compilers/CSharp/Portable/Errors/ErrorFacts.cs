@@ -668,6 +668,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 or ErrorCode.ERR_RequiresUnsafeAttributeUnsupportedMemberTarget
                 or ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules
                 or ErrorCode.WRN_UnsafeMeaningless
+                or ErrorCode.ERR_UnsafeMemberOperationConstructorConstraint
+                or ErrorCode.ERR_UnsafeMemberOperationCompatConstructorConstraint
 
                 or ErrorCode.Unknown
                 or ErrorCode.ERR_NoMetadataFile
