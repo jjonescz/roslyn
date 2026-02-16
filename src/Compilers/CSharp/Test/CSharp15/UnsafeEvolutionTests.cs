@@ -6095,6 +6095,80 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Fact]
+    public void Member_Constructor_NewConstraint_MoreArguments()
+    {
+        CompileAndVerifyUnsafe(
+            lib: """
+                public class C
+                {
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public C() { }
+                }
+                """,
+            caller: """
+                M1<C, int, C>();
+                M1<int, C, int>();
+                M2<C, C, C>(null, null, null);
+
+                C c = null;
+                M2(c, c, c);
+
+                static void M1<T1, T2, T3>() where T2 : new() { }
+                static void M2<T1, T2, T3>(T1 t1, T2 t2, T3 t3) where T1 : new() where T3 : new() { }
+                """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
+            expectedUnsafeSymbols: ["C..ctor"],
+            expectedSafeSymbols: ["C"],
+            expectedDiagnostics:
+            [
+                // (2,1): error CS9510: An unsafe context is required because the target constructor of a 'new()' constraint 'C.C()' is marked as 'RequiresUnsafe' or 'extern'
+                // M1<int, C, int>();
+                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "M1<int, C, int>()").WithArguments("C.C()").WithLocation(2, 1),
+                // (3,1): error CS9510: An unsafe context is required because the target constructor of a 'new()' constraint 'C.C()' is marked as 'RequiresUnsafe' or 'extern'
+                // M2<C, C, C>(null, null, null);
+                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "M2<C, C, C>(null, null, null)").WithArguments("C.C()").WithLocation(3, 1),
+                // (3,1): error CS9510: An unsafe context is required because the target constructor of a 'new()' constraint 'C.C()' is marked as 'RequiresUnsafe' or 'extern'
+                // M2<C, C, C>(null, null, null);
+                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "M2<C, C, C>(null, null, null)").WithArguments("C.C()").WithLocation(3, 1),
+                // (6,1): error CS9510: An unsafe context is required because the target constructor of a 'new()' constraint 'C.C()' is marked as 'RequiresUnsafe' or 'extern'
+                // M2(c, c, c);
+                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "M2(c, c, c)").WithArguments("C.C()").WithLocation(6, 1),
+                // (6,1): error CS9510: An unsafe context is required because the target constructor of a 'new()' constraint 'C.C()' is marked as 'RequiresUnsafe' or 'extern'
+                // M2(c, c, c);
+                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "M2(c, c, c)").WithArguments("C.C()").WithLocation(6, 1),
+            ]);
+    }
+
+    [Fact]
+    public void Member_Constructor_NewConstraint_MoreConstructors()
+    {
+        CompileAndVerifyUnsafe(
+            lib: """
+                public class C1
+                {
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public C1(int x) { }
+                    public C1() { }
+                }
+                [method: System.Runtime.CompilerServices.RequiresUnsafe] public class C2();
+                """,
+            caller: """
+                M<C1>();
+                M<C2>();
+                static void M<T>() where T : new() { }
+                """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
+            expectedUnsafeSymbols: [Overload("C1..ctor", parameterCount: 1), "C2..ctor"],
+            expectedSafeSymbols: [Overload("C1..ctor", parameterCount: 0)],
+            expectedDiagnostics:
+            [
+                // (2,1): error CS9510: An unsafe context is required because the target constructor of a 'new()' constraint 'C2.C2()' is marked as 'RequiresUnsafe' or 'extern'
+                // M<C2>();
+                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "M<C2>()").WithArguments("C2.C2()").WithLocation(2, 1),
+            ]);
+    }
+
+    [Fact]
     public void Member_Destructor()
     {
         var comp = CreateCompilation(
