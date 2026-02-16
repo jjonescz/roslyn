@@ -6169,6 +6169,74 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Fact]
+    public void Member_Constructor_NewConstraint_Using()
+    {
+        var commonDiagnostics = new[]
+        {
+            // (2,14): warning CS9509: The 'unsafe' modifier does not have any effect here under the current rules.
+            // using static unsafe D2<C>;
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "unsafe").WithLocation(2, 14),
+            // (4,7): warning CS9509: The 'unsafe' modifier does not have any effect here under the current rules.
+            // using unsafe X2 = D2<C>;
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "unsafe").WithLocation(4, 7),
+        };
+
+        CompileAndVerifyUnsafe(
+            lib: """
+                public class C
+                {
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public C() { }
+                }
+                """,
+            caller: """
+                using static D1<C>;
+                using static unsafe D2<C>;
+                using X1 = D1<C>;
+                using unsafe X2 = D2<C>;
+
+                _ = new X1();
+                M1();
+                D1<C>.M1();
+
+                _ = new X2();
+                M2();
+                D2<C>.M2();
+
+                class D1<T> where T : new() { public static void M1() { } }
+                class D2<T> where T : new() { public static void M2() { } }
+                """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
+            expectedUnsafeSymbols: ["C..ctor"],
+            expectedSafeSymbols: ["C"],
+            // PROTOTYPE: There should be errors for the bare `M1()` and `M2()` calls.
+            // PROTOTYPE: There should be no errors for the `using` declarations.
+            expectedDiagnostics:
+            [
+                .. commonDiagnostics,
+                // (1,14): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D1<T>'
+                // using static D1<C>;
+                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "D1<C>").WithArguments("C.C()", "T", "D1<T>").WithLocation(1, 14),
+                // (2,21): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D2<T>'
+                // using static unsafe D2<C>;
+                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "D2<C>").WithArguments("C.C()", "T", "D2<T>").WithLocation(2, 21),
+                // (6,9): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D1<T>'
+                // _ = new X1();
+                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "X1").WithArguments("C.C()", "T", "D1<T>").WithLocation(6, 9),
+                // (8,1): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D1<T>'
+                // D1<C>.M1();
+                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "D1<C>").WithArguments("C.C()", "T", "D1<T>").WithLocation(8, 1),
+                // (10,9): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D2<T>'
+                // _ = new X2();
+                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "X2").WithArguments("C.C()", "T", "D2<T>").WithLocation(10, 9),
+                // (12,1): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D2<T>'
+                // D2<C>.M2();
+                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "D2<C>").WithArguments("C.C()", "T", "D2<T>").WithLocation(12, 1),
+            ],
+            expectedDiagnosticsWhenReferencingLegacyLib: commonDiagnostics);
+    }
+
+    [Fact]
     public void Member_Destructor()
     {
         var comp = CreateCompilation(
