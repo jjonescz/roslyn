@@ -660,8 +660,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 or ErrorCode.ERR_CallerUnsafeOverridingSafe
                 or ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe
                 or ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe
-                or ErrorCode.ERR_UnsafeMemberOperationConstructorConstraint
-                or ErrorCode.ERR_UnsafeMemberOperationCompatConstructorConstraint
+                or ErrorCode.ERR_UnsafeConstructorConstraint
 
                 or ErrorCode.Unknown
                 or ErrorCode.ERR_NoMetadataFile
