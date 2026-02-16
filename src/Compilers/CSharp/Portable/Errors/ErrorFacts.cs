@@ -211,6 +211,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             switch (code)
             {
                 case ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules:
+                case ErrorCode.WRN_UnsafeMeaningless:
                     // Warning level 11 is exclusively for warnings introduced in the compiler
                     // shipped with dotnet 11 (C# 15) and that can be reported for pre-existing code.
                     return 11;
@@ -666,6 +667,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 or ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe
                 or ErrorCode.ERR_RequiresUnsafeAttributeUnsupportedMemberTarget
                 or ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules
+                or ErrorCode.WRN_UnsafeMeaningless
 
                 or ErrorCode.Unknown
                 or ErrorCode.ERR_NoMetadataFile

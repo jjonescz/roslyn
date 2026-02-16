@@ -2484,5 +2484,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         ERR_CallerUnsafeExplicitlyImplementingSafe = 9506,
         ERR_RequiresUnsafeAttributeUnsupportedMemberTarget = 9507,
         WRN_RequiresUnsafeAttributeLegacyRules = 9508,
+        WRN_UnsafeMeaningless = 9509,
     }
 }
