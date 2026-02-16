@@ -90,11 +90,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             var callerUnsafeMode = symbol.CallerUnsafeMode;
             if (callerUnsafeMode != CallerUnsafeMode.None)
             {
+                Debug.Assert(callerUnsafeMode == CallerUnsafeMode.Explicit || !forConstructorConstraint);
                 ReportUnsafeIfNotAllowed(node, diagnostics, disallowedUnder: MemorySafetyRules.Updated,
                     customErrorCode: callerUnsafeMode switch
                     {
-                        CallerUnsafeMode.Explicit => forConstructorConstraint ? ErrorCode.ERR_UnsafeMemberOperationConstructorConstraint : ErrorCode.ERR_UnsafeMemberOperation,
-                        CallerUnsafeMode.Implicit => forConstructorConstraint ? ErrorCode.ERR_UnsafeMemberOperationCompatConstructorConstraint : ErrorCode.ERR_UnsafeMemberOperationCompat,
+                        CallerUnsafeMode.Explicit => forConstructorConstraint ? ErrorCode.ERR_UnsafeConstructorConstraint : ErrorCode.ERR_UnsafeMemberOperation,
+                        CallerUnsafeMode.Implicit => ErrorCode.ERR_UnsafeMemberOperationCompat,
                         _ => throw ExceptionUtilities.UnexpectedValue(callerUnsafeMode),
                     },
                     customArgs: [symbol]);
