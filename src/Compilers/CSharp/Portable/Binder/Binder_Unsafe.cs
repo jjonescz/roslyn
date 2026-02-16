@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
@@ -49,7 +50,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 if (typeParameter.HasConstructorConstraint &&
                                     typeArguments[i].Type is NamedTypeSymbol typeArgument)
                                 {
-                                    checkTypeArgumentWithConstructorConstraint(this, typeArgument, node, diagnostics);
+                                    checkTypeArgumentWithConstructorConstraint(this, typeParameter, typeArgument, symbol, node, diagnostics);
                                 }
                             }
                         }
@@ -65,27 +66,28 @@ namespace Microsoft.CodeAnalysis.CSharp
                             if (typeParameter.HasConstructorConstraint &&
                                 typeSymbol.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[i].Type is NamedTypeSymbol typeArgument)
                             {
-                                checkTypeArgumentWithConstructorConstraint(this, typeArgument, node, diagnostics);
+                                checkTypeArgumentWithConstructorConstraint(this, typeParameter, typeArgument, symbol, node, diagnostics);
                             }
                         }
                     }
                     break;
             }
 
-            static void checkTypeArgumentWithConstructorConstraint(Binder @this, NamedTypeSymbol typeArgument, SyntaxNodeOrToken node, DiagnosticBag diagnostics)
+            static void checkTypeArgumentWithConstructorConstraint(Binder @this, TypeParameterSymbol typeParameter, NamedTypeSymbol typeArgument, Symbol targetSymbol, SyntaxNodeOrToken node, DiagnosticBag diagnostics)
             {
                 foreach (var ctor in typeArgument.InstanceConstructors)
                 {
                     if (ctor.ParameterCount == 0)
                     {
-                        @this.ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, ctor, node, forConstructorConstraint: true);
+                        // An unsafe context is required for constructor '{0}' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter '{1}' in '{2}'
+                        @this.ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, ctor, node, forConstructorConstraint: true, additionalArgs: [typeParameter, targetSymbol.OriginalDefinition]);
                         break;
                     }
                 }
             }
         }
 
-        private void ReportDiagnosticsIfUnsafeMemberAccess(DiagnosticBag diagnostics, Symbol symbol, SyntaxNodeOrToken node, bool forConstructorConstraint)
+        private void ReportDiagnosticsIfUnsafeMemberAccess(DiagnosticBag diagnostics, Symbol symbol, SyntaxNodeOrToken node, bool forConstructorConstraint, ReadOnlySpan<object> additionalArgs = default)
         {
             var callerUnsafeMode = symbol.CallerUnsafeMode;
             if (callerUnsafeMode != CallerUnsafeMode.None)
@@ -98,7 +100,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         CallerUnsafeMode.Implicit => ErrorCode.ERR_UnsafeMemberOperationCompat,
                         _ => throw ExceptionUtilities.UnexpectedValue(callerUnsafeMode),
                     },
-                    customArgs: [symbol]);
+                    customArgs: [symbol, .. additionalArgs]);
             }
         }
 
