@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Diagnostics;
+using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 
 namespace Microsoft.CodeAnalysis.CSharp
@@ -23,6 +24,14 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal void ReportDiagnosticsIfUnsafeMemberAccess(BindingDiagnosticBag diagnostics, Symbol symbol, SyntaxNodeOrToken node)
         {
+            if (diagnostics.DiagnosticBag is { } bag)
+            {
+                ReportDiagnosticsIfUnsafeMemberAccess(bag, symbol, node);
+            }
+        }
+
+        internal void ReportDiagnosticsIfUnsafeMemberAccess(DiagnosticBag diagnostics, Symbol symbol, SyntaxNodeOrToken node)
+        {
             var callerUnsafeMode = symbol.CallerUnsafeMode;
             if (callerUnsafeMode != CallerUnsafeMode.None)
             {
@@ -35,10 +44,60 @@ namespace Microsoft.CodeAnalysis.CSharp
                     },
                     customArgs: [symbol]);
             }
+
+            switch (symbol)
+            {
+                case MethodSymbol methodSymbol:
+                    {
+                        var arity = methodSymbol.GetMemberArityIncludingExtension();
+                        if (arity != 0)
+                        {
+                            var typeParameters = methodSymbol.GetTypeParametersIncludingExtension();
+                            var typeArguments = methodSymbol.ContainingType.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics.Concat(methodSymbol.TypeArgumentsWithAnnotations);
+                            for (int i = 0; i < arity; i++)
+                            {
+                                var typeParameter = typeParameters[i];
+                                if (typeParameter.HasConstructorConstraint &&
+                                    typeArguments[i].Type is NamedTypeSymbol typeArgument)
+                                {
+                                    checkTypeArgumentWithConstructorConstraint(this, typeArgument, node, diagnostics);
+                                }
+                            }
+                        }
+                    }
+                    break;
+
+                case NamedTypeSymbol typeSymbol:
+                    {
+                        var arity = typeSymbol.TypeParameters.Length;
+                        for (int i = 0; i < arity; i++)
+                        {
+                            var typeParameter = typeSymbol.TypeParameters[i];
+                            if (typeParameter.HasConstructorConstraint &&
+                                typeSymbol.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[i].Type is NamedTypeSymbol typeArgument)
+                            {
+                                checkTypeArgumentWithConstructorConstraint(this, typeArgument, node, diagnostics);
+                            }
+                        }
+                    }
+                    break;
+            }
+
+            static void checkTypeArgumentWithConstructorConstraint(Binder @this, NamedTypeSymbol typeArgument, SyntaxNodeOrToken node, DiagnosticBag diagnostics)
+            {
+                foreach (var ctor in typeArgument.InstanceConstructors)
+                {
+                    if (ctor.ParameterCount == 0)
+                    {
+                        @this.ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, ctor, node);
+                        break;
+                    }
+                }
+            }
         }
 
         /// <summary>
-        /// If this fails, call <see cref="ReportDiagnosticsIfUnsafeMemberAccess"/> for the <paramref name="symbol"/> instead and add corresponding tests.
+        /// If this fails, call <see cref="ReportDiagnosticsIfUnsafeMemberAccess(BindingDiagnosticBag, Symbol, SyntaxNodeOrToken)"/> for the <paramref name="symbol"/> instead and add corresponding tests.
         /// </summary>
         [Conditional("DEBUG")]
         internal static void AssertNotUnsafeMemberAccess(Symbol symbol)
@@ -56,6 +115,24 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 Debug.Fail($"Symbol {symbol} has {nameof(symbol.Kind)}={symbol.Kind}.");
             }
+
+            if (symbol is NamedTypeSymbol { TypeParameters.Length: > 0 })
+            {
+                Debug.Fail($"Symbol {symbol} is a generic type.");
+            }
+        }
+
+        /// <inheritdoc cref="ReportUnsafeIfNotAllowed(SyntaxNodeOrToken, DiagnosticBag, TypeSymbol?, MemorySafetyRules, ErrorCode?, object[])"/>
+        internal bool ReportUnsafeIfNotAllowed(
+            SyntaxNodeOrToken node,
+            BindingDiagnosticBag diagnostics,
+            TypeSymbol? sizeOfTypeOpt = null,
+            MemorySafetyRules disallowedUnder = MemorySafetyRules.Legacy,
+            ErrorCode? customErrorCode = null,
+            object[]? customArgs = null)
+        {
+            return diagnostics.DiagnosticBag is { } bag &&
+                ReportUnsafeIfNotAllowed(node, bag, sizeOfTypeOpt, disallowedUnder, customErrorCode, customArgs);
         }
 
         /// <param name="disallowedUnder">
@@ -65,7 +142,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <returns>True if a diagnostic was reported</returns>
         internal bool ReportUnsafeIfNotAllowed(
             SyntaxNodeOrToken node,
-            BindingDiagnosticBag diagnostics,
+            DiagnosticBag diagnostics,
             TypeSymbol? sizeOfTypeOpt = null,
             MemorySafetyRules disallowedUnder = MemorySafetyRules.Legacy,
             ErrorCode? customErrorCode = null,
@@ -82,8 +159,15 @@ namespace Microsoft.CodeAnalysis.CSharp
             return true;
         }
 
-        /// <inheritdoc cref="ReportUnsafeIfNotAllowed(SyntaxNodeOrToken, BindingDiagnosticBag, TypeSymbol?, MemorySafetyRules, ErrorCode?, object[])"/>
+        /// <inheritdoc cref="ReportUnsafeIfNotAllowed(SyntaxNodeOrToken, DiagnosticBag, TypeSymbol?, MemorySafetyRules, ErrorCode?, object[])"/>
         internal bool ReportUnsafeIfNotAllowed(Location location, BindingDiagnosticBag diagnostics, MemorySafetyRules disallowedUnder = MemorySafetyRules.Legacy)
+        {
+            return diagnostics.DiagnosticBag is { } bag &&
+                ReportUnsafeIfNotAllowed(location, bag, disallowedUnder);
+        }
+
+        /// <inheritdoc cref="ReportUnsafeIfNotAllowed(SyntaxNodeOrToken, DiagnosticBag, TypeSymbol?, MemorySafetyRules, ErrorCode?, object[])"/>
+        internal bool ReportUnsafeIfNotAllowed(Location location, DiagnosticBag diagnostics, MemorySafetyRules disallowedUnder)
         {
             var diagnosticInfo = GetUnsafeDiagnosticInfo(sizeOfTypeOpt: null, disallowedUnder);
             if (diagnosticInfo == null)

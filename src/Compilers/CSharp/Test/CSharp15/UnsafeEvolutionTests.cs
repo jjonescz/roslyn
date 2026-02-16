@@ -5982,6 +5982,90 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Fact]
+    public void Member_Constructor_NewConstraint()
+    {
+        CompileAndVerifyUnsafe(
+            lib: """
+                public class C
+                {
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public C() { }
+                    public static void M<T>() where T : new() { }
+                }
+                public class D<T> where T : new();
+                """,
+            caller: """
+                using X = D<C>;
+                C.M<C>();
+                _ = new D<C>();
+                _ = new X();
+                unsafe { C.M<C>(); }
+                unsafe { _ = new D<C>(); }
+                unsafe { _ = new X(); }
+                """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
+            expectedUnsafeSymbols: ["C..ctor"],
+            expectedSafeSymbols: ["C", "C.M", "D", "D..ctor"],
+            expectedDiagnostics:
+            [
+                // (2,1): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // C.M<C>();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "C.M<C>()").WithArguments("C.C()").WithLocation(2, 1),
+                // (3,9): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // _ = new D<C>();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "D<C>").WithArguments("C.C()").WithLocation(3, 9),
+                // (4,9): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // _ = new X();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "X").WithArguments("C.C()").WithLocation(4, 9),
+            ]);
+    }
+
+    [Fact]
+    public void Member_Constructor_NewConstraint_ExtensionMember()
+    {
+        CompileAndVerifyUnsafe(
+            lib: """
+                public class C
+                {
+                    [System.Runtime.CompilerServices.RequiresUnsafe]
+                    public C() { }
+                }
+                """,
+            caller: """
+                var c = new C();
+                _ = c.P1;
+                _ = C.P2;
+
+                static class E
+                {
+                    extension<T>(T t) where T : new()
+                    {
+                        public int P1 => new T().GetHashCode();
+                    }
+                    extension<T>(T) where T : new()
+                    {
+                        public static int P2 => new T().GetHashCode();
+                    }
+                }
+                """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
+            expectedUnsafeSymbols: ["C..ctor"],
+            expectedSafeSymbols: ["C"],
+            expectedDiagnostics:
+            [
+                // (1,9): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var c = new C();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "new C()").WithArguments("C.C()").WithLocation(1, 9),
+                // (2,5): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // _ = c.P1;
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.P1").WithArguments("C.C()").WithLocation(2, 5),
+                // (3,5): error CS9502: 'C.C()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // _ = C.P2;
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "C.P2").WithArguments("C.C()").WithLocation(3, 5),
+            ]);
+    }
+
+    [Fact]
     public void Member_Destructor()
     {
         CompileAndVerifyUnsafe(

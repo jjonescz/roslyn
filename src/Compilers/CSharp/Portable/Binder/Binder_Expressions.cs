@@ -8084,7 +8084,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         }
 
                         ReportDiagnosticsIfObsolete(diagnostics, type, node, hasBaseReceiver: false);
-                        AssertNotUnsafeMemberAccess(type);
+                        ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, type, node);
 
                         return new BoundTypeExpression(node, null, type);
                     }
