@@ -6142,16 +6142,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Fact]
     public void Member_Constructor_NewConstraint_Using()
     {
-        var commonDiagnostics = new[]
-        {
-            // (2,14): warning CS9509: The 'unsafe' modifier does not have any effect here under the current rules.
-            // using static unsafe D2<C>;
-            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "unsafe").WithLocation(2, 14),
-            // (4,7): warning CS9509: The 'unsafe' modifier does not have any effect here under the current rules.
-            // using unsafe X2 = D2<C>;
-            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "unsafe").WithLocation(4, 7),
-        };
-
         CompileAndVerifyUnsafe(
             lib: """
                 public class C
@@ -6185,10 +6175,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             expectedUnsafeSymbols: ["C..ctor"],
             expectedSafeSymbols: ["C"],
             // PROTOTYPE: There should be errors for the `X1.M1()` and `X2.M2()` calls.
-            // PROTOTYPE: `unsafe` on the `using static` directive is no longer meaningless, so there shouldn't be a warning for it.
             expectedDiagnostics:
             [
-                .. commonDiagnostics,
                 // (1,14): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D1<T>'
                 // using static D1<C>;
                 Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "D1<C>").WithArguments("C.C()", "T", "D1<T>").WithLocation(1, 14),
@@ -6210,8 +6198,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (16,1): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D2<T>'
                 // D2<C>.M2();
                 Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "D2<C>").WithArguments("C.C()", "T", "D2<T>").WithLocation(16, 1),
-            ],
-            expectedDiagnosticsWhenReferencingLegacyLib: commonDiagnostics);
+            ]);
     }
 
     [Fact]
