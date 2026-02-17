@@ -347,7 +347,6 @@
                 case ErrorCode.WRN_InterceptsLocationAttributeUnsupportedSignature:
                 case ErrorCode.WRN_RedundantPattern:
                 case ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules:
-                case ErrorCode.WRN_UnsafeMeaningless:
                     return true;
                 default:
                     return false;

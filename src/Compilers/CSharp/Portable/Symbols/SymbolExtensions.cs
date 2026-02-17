@@ -276,29 +276,22 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return symbol.DeclaringCompilation.Options.AllowUnsafe;
         }
 
-        internal static void CheckUnsafeModifier(this Symbol symbol, DeclarationModifiers modifiers, bool meaninglessUnderUpdatedRules, BindingDiagnosticBag diagnostics)
+        internal static void CheckUnsafeModifier(this Symbol symbol, DeclarationModifiers modifiers, BindingDiagnosticBag diagnostics)
         {
-            symbol.CheckUnsafeModifier(modifiers, meaninglessUnderUpdatedRules, symbol.GetFirstLocation(), diagnostics);
+            symbol.CheckUnsafeModifier(modifiers, symbol.GetFirstLocation(), diagnostics);
         }
 
-        internal static void CheckUnsafeModifier(this Symbol symbol, DeclarationModifiers modifiers, bool meaninglessUnderUpdatedRules, Location errorLocation, BindingDiagnosticBag diagnostics)
-            => CheckUnsafeModifier(symbol, modifiers, meaninglessUnderUpdatedRules, errorLocation, diagnostics.DiagnosticBag);
+        internal static void CheckUnsafeModifier(this Symbol symbol, DeclarationModifiers modifiers, Location errorLocation, BindingDiagnosticBag diagnostics)
+            => CheckUnsafeModifier(symbol, modifiers, errorLocation, diagnostics.DiagnosticBag);
 
-        internal static void CheckUnsafeModifier(this Symbol symbol, DeclarationModifiers modifiers, bool meaninglessUnderUpdatedRules, Location errorLocation, DiagnosticBag? diagnostics)
+        internal static void CheckUnsafeModifier(this Symbol symbol, DeclarationModifiers modifiers, Location errorLocation, DiagnosticBag? diagnostics)
         {
             if (diagnostics != null &&
-                (modifiers & DeclarationModifiers.Unsafe) == DeclarationModifiers.Unsafe)
+                (modifiers & DeclarationModifiers.Unsafe) == DeclarationModifiers.Unsafe &&
+                !symbol.CompilationAllowsUnsafe())
             {
-                Debug.Assert(errorLocation != null);
-
-                if (!symbol.CompilationAllowsUnsafe())
-                {
-                    diagnostics.Add(ErrorCode.ERR_IllegalUnsafe, errorLocation);
-                }
-                else if (meaninglessUnderUpdatedRules && symbol.ContainingModule.UseUpdatedMemorySafetyRules)
-                {
-                    diagnostics.Add(ErrorCode.WRN_UnsafeMeaningless, errorLocation);
-                }
+                RoslynDebug.Assert(errorLocation != null);
+                diagnostics.Add(ErrorCode.ERR_IllegalUnsafe, errorLocation);
             }
         }
 

@@ -1012,22 +1012,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation(source, options: TestOptions.ReleaseExe.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(expectedDiagnostics);
 
-        var expectedWarnings = new[]
-        {
-            // (1,7): warning CS9509: The 'unsafe' modifier does not have any effect here under the current rules.
-            // using unsafe X = int*;
-            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "unsafe").WithLocation(1, 7),
-        };
-
-        CreateCompilation(source, options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules()).VerifyEmitDiagnostics(expectedWarnings);
+        CreateCompilation(source, options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules()).VerifyEmitDiagnostics();
 
         CreateCompilation(source,
             parseOptions: TestOptions.RegularNext,
-            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules()).VerifyEmitDiagnostics(expectedWarnings);
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules()).VerifyEmitDiagnostics();
 
         CreateCompilation(source,
             parseOptions: TestOptions.Regular14,
-            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules()).VerifyEmitDiagnostics(expectedWarnings);
+            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules()).VerifyEmitDiagnostics();
     }
 
     [Theory, CombinatorialData]
@@ -1809,28 +1802,21 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             .VerifyDiagnostics()
             .VerifyEmitDiagnostics(expectedDiagnostics);
 
-        var expectedWarnings = new[]
-        {
-            // (1,7): warning CS9509: The 'unsafe' modifier does not have any effect here under the current rules.
-            // using unsafe X = delegate*<void>;
-            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "unsafe").WithLocation(1, 7),
-        };
-
         CreateCompilation(source, options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
-            .VerifyDiagnostics(expectedWarnings)
-            .VerifyEmitDiagnostics([.. expectedWarnings, .. expectedDiagnostics]);
+            .VerifyDiagnostics()
+            .VerifyEmitDiagnostics(expectedDiagnostics);
 
         CreateCompilation(source,
             parseOptions: TestOptions.RegularNext,
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
-            .VerifyDiagnostics(expectedWarnings)
-            .VerifyEmitDiagnostics([.. expectedWarnings, .. expectedDiagnostics]);
+            .VerifyDiagnostics()
+            .VerifyEmitDiagnostics(expectedDiagnostics);
 
         CreateCompilation(source,
             parseOptions: TestOptions.Regular14,
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
-            .VerifyDiagnostics(expectedWarnings)
-            .VerifyEmitDiagnostics([.. expectedWarnings, .. expectedDiagnostics]);
+            .VerifyDiagnostics()
+            .VerifyEmitDiagnostics(expectedDiagnostics);
     }
 
     [Fact]
@@ -2622,58 +2608,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             // (3,26): error CS9501: stackalloc expression without an initializer inside SkipLocalsInit may only be used in an unsafe context
             //     System.Span<int> a = stackalloc int[5];
             Diagnostic(ErrorCode.ERR_UnsafeUninitializedStackAlloc, "stackalloc int[5]").WithLocation(3, 26));
-    }
-
-    [Theory, CombinatorialData]
-    public void Member_UnsafeModifier(
-        [CombinatorialValues(LanguageVersion.CSharp14, LanguageVersionFacts.CSharpNext, LanguageVersion.Preview)] LanguageVersion langVersion)
-    {
-        CSharpTestSource source =
-        [
-            """
-            #pragma warning disable CS8019 // unnecessary using
-            using static unsafe System.Console;
-            using unsafe X = int;
-            #pragma warning disable CS8321 // unused local function
-            void F() { }
-            class C
-            {
-                unsafe void M() { }
-                unsafe int P { get; set; }
-                unsafe event System.Action E { add { } remove { } }
-                unsafe int this[int i] { get => i; set { } }
-                unsafe C() { }
-                unsafe ~C() { }
-                unsafe static C() { }
-                public unsafe static C operator +(C c1, C c2) => c1;
-                public unsafe void operator +=(C c) { }
-            #pragma warning disable CS0169 // unused field
-                unsafe int F1;
-                unsafe int F2 = *(default(int*));
-            }
-            unsafe class U;
-            unsafe delegate void D();
-            """,
-            CompilerFeatureRequiredAttribute,
-        ];
-
-        var parseOptions = TestOptions.Regular.WithLanguageVersion(langVersion);
-
-        CreateCompilation(source, parseOptions: parseOptions, options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics();
-        CreateCompilation(source, parseOptions: parseOptions, options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules().WithWarningLevel(10)).VerifyDiagnostics();
-
-        var expectedDiagnostics = new[]
-        {
-            // (2,14): warning CS9509: The 'unsafe' modifier does not have any effect here under the current rules.
-            // using static unsafe System.Console;
-            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "unsafe").WithLocation(2, 14),
-            // (3,7): warning CS9509: The 'unsafe' modifier does not have any effect here under the current rules.
-            // using unsafe X = int;
-            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "unsafe").WithLocation(3, 7),
-        };
-
-        CreateCompilation(source, parseOptions: parseOptions, options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules().WithWarningLevel(11)).VerifyDiagnostics(expectedDiagnostics);
-        CreateCompilation(source, parseOptions: parseOptions, options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules()).VerifyDiagnostics(expectedDiagnostics);
     }
 
     [Fact]
@@ -6171,16 +6105,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Fact]
     public void Member_Constructor_NewConstraint_Using()
     {
-        var commonDiagnostics = new[]
-        {
-            // (2,14): warning CS9509: The 'unsafe' modifier does not have any effect here under the current rules.
-            // using static unsafe D2<C>;
-            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "unsafe").WithLocation(2, 14),
-            // (4,7): warning CS9509: The 'unsafe' modifier does not have any effect here under the current rules.
-            // using unsafe X2 = D2<C>;
-            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "unsafe").WithLocation(4, 7),
-        };
-
         CompileAndVerifyUnsafe(
             lib: """
                 public class C
@@ -6214,10 +6138,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             expectedUnsafeSymbols: ["C..ctor"],
             expectedSafeSymbols: ["C"],
             // PROTOTYPE: There should be errors for the `X1.M1()` and `X2.M2()` calls.
-            // PROTOTYPE: `unsafe` on the `using static` directive is no longer meaningless, so there shouldn't be a warning for it.
             expectedDiagnostics:
             [
-                .. commonDiagnostics,
                 // (1,14): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D1<T>'
                 // using static D1<C>;
                 Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "D1<C>").WithArguments("C.C()", "T", "D1<T>").WithLocation(1, 14),
@@ -6239,8 +6161,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (16,1): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D2<T>'
                 // D2<C>.M2();
                 Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "D2<C>").WithArguments("C.C()", "T", "D2<T>").WithLocation(16, 1),
-            ],
-            expectedDiagnosticsWhenReferencingLegacyLib: commonDiagnostics);
+            ]);
     }
 
     [Fact]

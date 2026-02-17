@@ -62,7 +62,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             Debug.Assert(diagnostics.DiagnosticBag is object);
 
-            this.CheckUnsafeModifier(DeclarationModifiers, meaninglessUnderUpdatedRules: false, diagnostics);
+            this.CheckUnsafeModifier(DeclarationModifiers, diagnostics);
 
             bool hasAnyBody = syntax.HasAnyBody();
 
