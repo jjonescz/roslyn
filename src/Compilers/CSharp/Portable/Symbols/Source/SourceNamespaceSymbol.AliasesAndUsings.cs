@@ -1005,8 +1005,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                         alias.Alias.CheckConstraints(diagnostics);
 
+                        Debug.Assert(alias.UsingDirective != null);
+
+                        if (alias.UsingDirective.UnsafeKeyword == default &&
+                            alias.Alias.Target is { } immediateTarget &&
+                            diagnostics.DiagnosticBag is { } bag)
+                        {
+                            compilation.GetBinder(alias.UsingDirective).ReportDiagnosticsIfUnsafeMemberAccess(bag, immediateTarget, alias.UsingDirective, forceCheckConstraints: true);
+                        }
+
                         semanticDiagnostics.AddRange(diagnostics.DiagnosticBag);
-                        recordImportDependencies(alias.UsingDirective!, target);
+                        recordImportDependencies(alias.UsingDirective, target);
                     }
                 }
 
