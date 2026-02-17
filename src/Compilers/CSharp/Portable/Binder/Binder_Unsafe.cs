@@ -31,46 +31,49 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
-        internal void ReportDiagnosticsIfUnsafeMemberAccess(DiagnosticBag diagnostics, Symbol symbol, SyntaxNodeOrToken node)
+        internal void ReportDiagnosticsIfUnsafeMemberAccess(DiagnosticBag diagnostics, Symbol symbol, SyntaxNodeOrToken node, bool forceCheckConstraints = false)
         {
             ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, symbol, node, forConstructorConstraint: false);
 
-            switch (symbol)
+            if (forceCheckConstraints || ShouldCheckConstraints)
             {
-                case MethodSymbol methodSymbol:
-                    {
-                        var arity = methodSymbol.GetMemberArityIncludingExtension();
-                        if (arity != 0)
+                switch (symbol)
+                {
+                    case MethodSymbol methodSymbol:
                         {
-                            var typeParameters = methodSymbol.GetTypeParametersIncludingExtension();
-                            var typeArguments = methodSymbol.ContainingType.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics.Concat(methodSymbol.TypeArgumentsWithAnnotations);
+                            var arity = methodSymbol.GetMemberArityIncludingExtension();
+                            if (arity != 0)
+                            {
+                                var typeParameters = methodSymbol.GetTypeParametersIncludingExtension();
+                                var typeArguments = methodSymbol.ContainingType.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics.Concat(methodSymbol.TypeArgumentsWithAnnotations);
+                                for (int i = 0; i < arity; i++)
+                                {
+                                    var typeParameter = typeParameters[i];
+                                    if (typeParameter.HasConstructorConstraint &&
+                                        typeArguments[i].Type is NamedTypeSymbol typeArgument)
+                                    {
+                                        checkTypeArgumentWithConstructorConstraint(this, typeParameter, typeArgument, symbol, node, diagnostics);
+                                    }
+                                }
+                            }
+                        }
+                        break;
+
+                    case NamedTypeSymbol typeSymbol:
+                        {
+                            var arity = typeSymbol.TypeParameters.Length;
                             for (int i = 0; i < arity; i++)
                             {
-                                var typeParameter = typeParameters[i];
+                                var typeParameter = typeSymbol.TypeParameters[i];
                                 if (typeParameter.HasConstructorConstraint &&
-                                    typeArguments[i].Type is NamedTypeSymbol typeArgument)
+                                    typeSymbol.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[i].Type is NamedTypeSymbol typeArgument)
                                 {
                                     checkTypeArgumentWithConstructorConstraint(this, typeParameter, typeArgument, symbol, node, diagnostics);
                                 }
                             }
                         }
-                    }
-                    break;
-
-                case NamedTypeSymbol typeSymbol:
-                    {
-                        var arity = typeSymbol.TypeParameters.Length;
-                        for (int i = 0; i < arity; i++)
-                        {
-                            var typeParameter = typeSymbol.TypeParameters[i];
-                            if (typeParameter.HasConstructorConstraint &&
-                                typeSymbol.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[i].Type is NamedTypeSymbol typeArgument)
-                            {
-                                checkTypeArgumentWithConstructorConstraint(this, typeParameter, typeArgument, symbol, node, diagnostics);
-                            }
-                        }
-                    }
-                    break;
+                        break;
+                }
             }
 
             static void checkTypeArgumentWithConstructorConstraint(Binder @this, TypeParameterSymbol typeParameter, NamedTypeSymbol typeArgument, Symbol targetSymbol, SyntaxNodeOrToken node, DiagnosticBag diagnostics)
