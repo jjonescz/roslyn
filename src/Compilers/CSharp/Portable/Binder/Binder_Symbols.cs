@@ -1148,7 +1148,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     type.VisitType((typePart, argTuple, isNested) =>
                     {
                         argTuple.Item1.ReportDiagnosticsIfObsolete(argTuple.diagnostics, typePart, argTuple.syntax, hasBaseReceiver: false);
-                        argTuple.Item1.ReportDiagnosticsIfUnsafeMemberAccess(argTuple.diagnostics, typePart, argTuple.syntax);
+                        // Unsafe member access is reported on the `using` declaration.
                         return false;
                     }, args);
                 }
