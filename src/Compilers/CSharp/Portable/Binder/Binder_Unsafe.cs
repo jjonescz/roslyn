@@ -35,45 +35,42 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, symbol, node, forConstructorConstraint: false);
 
-            if (ShouldCheckConstraints)
+            switch (symbol)
             {
-                switch (symbol)
-                {
-                    case MethodSymbol methodSymbol:
+                case MethodSymbol methodSymbol:
+                    {
+                        var arity = methodSymbol.GetMemberArityIncludingExtension();
+                        if (arity != 0)
                         {
-                            var arity = methodSymbol.GetMemberArityIncludingExtension();
-                            if (arity != 0)
-                            {
-                                var typeParameters = methodSymbol.GetTypeParametersIncludingExtension();
-                                var typeArguments = methodSymbol.ContainingType.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics.Concat(methodSymbol.TypeArgumentsWithAnnotations);
-                                for (int i = 0; i < arity; i++)
-                                {
-                                    var typeParameter = typeParameters[i];
-                                    if (typeParameter.HasConstructorConstraint &&
-                                        typeArguments[i].Type is NamedTypeSymbol typeArgument)
-                                    {
-                                        checkTypeArgumentWithConstructorConstraint(this, typeParameter, typeArgument, symbol, node, diagnostics);
-                                    }
-                                }
-                            }
-                        }
-                        break;
-
-                    case NamedTypeSymbol typeSymbol:
-                        {
-                            var arity = typeSymbol.TypeParameters.Length;
+                            var typeParameters = methodSymbol.GetTypeParametersIncludingExtension();
+                            var typeArguments = methodSymbol.ContainingType.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics.Concat(methodSymbol.TypeArgumentsWithAnnotations);
                             for (int i = 0; i < arity; i++)
                             {
-                                var typeParameter = typeSymbol.TypeParameters[i];
+                                var typeParameter = typeParameters[i];
                                 if (typeParameter.HasConstructorConstraint &&
-                                    typeSymbol.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[i].Type is NamedTypeSymbol typeArgument)
+                                    typeArguments[i].Type is NamedTypeSymbol typeArgument)
                                 {
                                     checkTypeArgumentWithConstructorConstraint(this, typeParameter, typeArgument, symbol, node, diagnostics);
                                 }
                             }
                         }
-                        break;
-                }
+                    }
+                    break;
+
+                case NamedTypeSymbol typeSymbol:
+                    {
+                        var arity = typeSymbol.TypeParameters.Length;
+                        for (int i = 0; i < arity; i++)
+                        {
+                            var typeParameter = typeSymbol.TypeParameters[i];
+                            if (typeParameter.HasConstructorConstraint &&
+                                typeSymbol.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[i].Type is NamedTypeSymbol typeArgument)
+                            {
+                                checkTypeArgumentWithConstructorConstraint(this, typeParameter, typeArgument, symbol, node, diagnostics);
+                            }
+                        }
+                    }
+                    break;
             }
 
             static void checkTypeArgumentWithConstructorConstraint(Binder @this, TypeParameterSymbol typeParameter, NamedTypeSymbol typeArgument, Symbol targetSymbol, SyntaxNodeOrToken node, DiagnosticBag diagnostics)
