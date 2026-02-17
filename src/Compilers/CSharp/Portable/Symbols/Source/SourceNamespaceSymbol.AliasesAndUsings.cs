@@ -823,7 +823,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                     else
                                     {
                                         declarationBinder.ReportDiagnosticsIfObsolete(diagnostics, importedType, usingDirective.NamespaceOrType, hasBaseReceiver: false);
-                                        declarationBinder.ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, importedType, usingDirective.NamespaceOrType);
+                                        declarationBinder.ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, importedType, usingDirective.NamespaceOrType, forceCheckConstraints: true);
 
                                         getOrCreateUsingsBuilder(ref usings, globalUsingNamespacesOrTypes).Add(new NamespaceOrTypeAndUsingDirective(importedType, usingDirective, directiveDiagnostics.DependenciesBag.ToImmutableArray()));
                                     }
