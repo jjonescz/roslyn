@@ -27,13 +27,22 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (diagnostics.DiagnosticBag is { } bag)
             {
-                ReportDiagnosticsIfUnsafeMemberAccess(bag, symbol, node);
+                ReportDiagnosticsIfUnsafeMemberAccess(bag, symbol, node, static node => node.GetLocation());
             }
         }
-
         internal void ReportDiagnosticsIfUnsafeMemberAccess(DiagnosticBag diagnostics, Symbol symbol, SyntaxNodeOrToken node, bool forceCheckConstraints = false)
         {
-            ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, symbol, node, forConstructorConstraint: false);
+            ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, symbol, node, static node => node.GetLocation(), forceCheckConstraints);
+        }
+
+        internal void ReportDiagnosticsIfUnsafeMemberAccess(DiagnosticBag diagnostics, Symbol symbol, Location? location, bool forceCheckConstraints = false)
+        {
+            ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, symbol, location, static l => l, forceCheckConstraints);
+        }
+
+        private void ReportDiagnosticsIfUnsafeMemberAccess<T>(DiagnosticBag diagnostics, Symbol symbol, T arg, Func<T, Location?> location, bool forceCheckConstraints = false)
+        {
+            ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, symbol, arg, location, forConstructorConstraint: false);
 
             if (forceCheckConstraints || ShouldCheckConstraints)
             {
@@ -52,7 +61,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                     if (typeParameter.HasConstructorConstraint &&
                                         typeArguments[i].Type is NamedTypeSymbol typeArgument)
                                     {
-                                        checkTypeArgumentWithConstructorConstraint(this, typeParameter, typeArgument, symbol, node, diagnostics);
+                                        checkTypeArgumentWithConstructorConstraint(this, typeParameter, typeArgument, symbol, arg, location, diagnostics);
                                     }
                                 }
                             }
@@ -68,7 +77,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 if (typeParameter.HasConstructorConstraint &&
                                     typeSymbol.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[i].Type is NamedTypeSymbol typeArgument)
                                 {
-                                    checkTypeArgumentWithConstructorConstraint(this, typeParameter, typeArgument, symbol, node, diagnostics);
+                                    checkTypeArgumentWithConstructorConstraint(this, typeParameter, typeArgument, symbol, arg, location, diagnostics);
                                 }
                             }
                         }
@@ -76,27 +85,27 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            static void checkTypeArgumentWithConstructorConstraint(Binder @this, TypeParameterSymbol typeParameter, NamedTypeSymbol typeArgument, Symbol targetSymbol, SyntaxNodeOrToken node, DiagnosticBag diagnostics)
+            static void checkTypeArgumentWithConstructorConstraint(Binder @this, TypeParameterSymbol typeParameter, NamedTypeSymbol typeArgument, Symbol targetSymbol, T arg, Func<T, Location?> location, DiagnosticBag diagnostics)
             {
                 foreach (var ctor in typeArgument.InstanceConstructors)
                 {
                     if (ctor.ParameterCount == 0)
                     {
                         // An unsafe context is required for constructor '{0}' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter '{1}' in '{2}'
-                        @this.ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, ctor, node, forConstructorConstraint: true, additionalArgs: [typeParameter, targetSymbol.OriginalDefinition]);
+                        @this.ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, ctor, arg, location, forConstructorConstraint: true, additionalArgs: [typeParameter, targetSymbol.OriginalDefinition]);
                         break;
                     }
                 }
             }
         }
 
-        private void ReportDiagnosticsIfUnsafeMemberAccess(DiagnosticBag diagnostics, Symbol symbol, SyntaxNodeOrToken node, bool forConstructorConstraint, ReadOnlySpan<object> additionalArgs = default)
+        private void ReportDiagnosticsIfUnsafeMemberAccess<T>(DiagnosticBag diagnostics, Symbol symbol, T arg, Func<T, Location?> location, bool forConstructorConstraint, ReadOnlySpan<object> additionalArgs = default)
         {
             var callerUnsafeMode = symbol.CallerUnsafeMode;
             if (callerUnsafeMode != CallerUnsafeMode.None)
             {
                 Debug.Assert(callerUnsafeMode == CallerUnsafeMode.Explicit || !forConstructorConstraint);
-                ReportUnsafeIfNotAllowed(node, diagnostics, disallowedUnder: MemorySafetyRules.Updated,
+                ReportUnsafeIfNotAllowed(arg, location, diagnostics, disallowedUnder: MemorySafetyRules.Updated,
                     customErrorCode: callerUnsafeMode switch
                     {
                         CallerUnsafeMode.Explicit => forConstructorConstraint ? ErrorCode.ERR_UnsafeConstructorConstraint : ErrorCode.ERR_UnsafeMemberOperation,
@@ -133,7 +142,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
-        /// <inheritdoc cref="ReportUnsafeIfNotAllowed(SyntaxNodeOrToken, DiagnosticBag, MemorySafetyRules, TypeSymbol?, ErrorCode?, object[])"/>
         internal bool ReportUnsafeIfNotAllowed(
             SyntaxNodeOrToken node,
             BindingDiagnosticBag diagnostics,
@@ -146,10 +154,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ReportUnsafeIfNotAllowed(node, bag, disallowedUnder, sizeOfTypeOpt, customErrorCode, customArgs);
         }
 
-        /// <param name="disallowedUnder">
-        /// Memory safety rules which the current location is disallowed under.
-        /// </param>
-        /// <returns>True if a diagnostic was reported</returns>
         internal bool ReportUnsafeIfNotAllowed(
             SyntaxNodeOrToken node,
             DiagnosticBag diagnostics,
@@ -159,33 +163,64 @@ namespace Microsoft.CodeAnalysis.CSharp
             object[]? customArgs = null)
         {
             Debug.Assert((node.Kind() == SyntaxKind.SizeOfExpression) == ((object?)sizeOfTypeOpt != null), "Should have a type for (only) sizeof expressions.");
+            return ReportUnsafeIfNotAllowed(
+                node,
+                static node => node.GetLocation(),
+                diagnostics,
+                disallowedUnder,
+                sizeOfTypeOpt,
+                customErrorCode,
+                customArgs);
+        }
+
+        internal bool ReportUnsafeIfNotAllowed(
+            Location? location,
+            BindingDiagnosticBag diagnostics,
+            MemorySafetyRules disallowedUnder,
+            ErrorCode? customErrorCode = null,
+            object[]? customArgs = null)
+        {
+            return diagnostics.DiagnosticBag is { } bag &&
+                ReportUnsafeIfNotAllowed(location, bag, disallowedUnder, customErrorCode, customArgs);
+        }
+
+        internal bool ReportUnsafeIfNotAllowed(
+            Location? location,
+            DiagnosticBag diagnostics,
+            MemorySafetyRules disallowedUnder,
+            ErrorCode? customErrorCode = null,
+            object[]? customArgs = null)
+        {
+            return ReportUnsafeIfNotAllowed(
+                location,
+                static l => l,
+                diagnostics,
+                disallowedUnder,
+                sizeOfTypeOpt: null,
+                customErrorCode,
+                customArgs);
+        }
+
+        /// <param name="disallowedUnder">
+        /// Memory safety rules which the current location is disallowed under.
+        /// </param>
+        /// <returns>True if a diagnostic was reported</returns>
+        private bool ReportUnsafeIfNotAllowed<T>(
+            T arg,
+            Func<T, Location?> location,
+            DiagnosticBag diagnostics,
+            MemorySafetyRules disallowedUnder,
+            TypeSymbol? sizeOfTypeOpt = null,
+            ErrorCode? customErrorCode = null,
+            object[]? customArgs = null)
+        {
             var diagnosticInfo = GetUnsafeDiagnosticInfo(disallowedUnder, sizeOfTypeOpt, customErrorCode, customArgs);
             if (diagnosticInfo == null)
             {
                 return false;
             }
 
-            diagnostics.Add(new CSDiagnostic(diagnosticInfo, node.GetLocation()));
-            return true;
-        }
-
-        /// <inheritdoc cref="ReportUnsafeIfNotAllowed(SyntaxNodeOrToken, DiagnosticBag, MemorySafetyRules, TypeSymbol?, ErrorCode?, object[])"/>
-        internal bool ReportUnsafeIfNotAllowed(Location location, BindingDiagnosticBag diagnostics, MemorySafetyRules disallowedUnder)
-        {
-            return diagnostics.DiagnosticBag is { } bag &&
-                ReportUnsafeIfNotAllowed(location, bag, disallowedUnder);
-        }
-
-        /// <inheritdoc cref="ReportUnsafeIfNotAllowed(SyntaxNodeOrToken, DiagnosticBag, MemorySafetyRules, TypeSymbol?, ErrorCode?, object[])"/>
-        internal bool ReportUnsafeIfNotAllowed(Location location, DiagnosticBag diagnostics, MemorySafetyRules disallowedUnder)
-        {
-            var diagnosticInfo = GetUnsafeDiagnosticInfo(disallowedUnder, sizeOfTypeOpt: null);
-            if (diagnosticInfo == null)
-            {
-                return false;
-            }
-
-            diagnostics.Add(new CSDiagnostic(diagnosticInfo, location));
+            diagnostics.Add(new CSDiagnostic(diagnosticInfo, location(arg)));
             return true;
         }
 

@@ -5971,9 +5971,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             expectedSafeSymbols: ["C", "C.M", "D", "D..ctor"],
             expectedDiagnostics:
             [
-                // (1,1): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D<T>'
+                // (1,7): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D<T>'
                 // using X = D<C>;
-                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "using X = D<C>;").WithArguments("C.C()", "T", "D<T>").WithLocation(1, 1),
+                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "X").WithArguments("C.C()", "T", "D<T>").WithLocation(1, 7),
                 // (2,1): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'C.M<T>()'
                 // C.M<C>();
                 Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "C.M<C>()").WithArguments("C.C()", "T", "C.M<T>()").WithLocation(2, 1),
@@ -6145,9 +6145,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (1,14): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D1<T>'
                 // using static D1<C>;
                 Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "D1<C>").WithArguments("C.C()", "T", "D1<T>").WithLocation(1, 14),
-                // (3,1): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D1<T>'
+                // (3,7): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D1<T>'
                 // using X1 = D1<C>;
-                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "using X1 = D1<C>;").WithArguments("C.C()", "T", "D1<T>").WithLocation(3, 1),
+                Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "X1").WithArguments("C.C()", "T", "D1<T>").WithLocation(3, 7),
                 // (6,9): error CS9510: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'D1<T>'
                 // _ = new X1();
                 Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "X1").WithArguments("C.C()", "T", "D1<T>").WithLocation(6, 9),

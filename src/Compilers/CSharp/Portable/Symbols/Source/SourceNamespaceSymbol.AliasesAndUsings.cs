@@ -1009,9 +1009,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                         if (alias.UsingDirective.UnsafeKeyword == default &&
                             alias.Alias.Target is { } immediateTarget &&
-                            diagnostics.DiagnosticBag is { } bag)
+                            diagnostics.DiagnosticBag is { } bag &&
+                            alias.Alias.TryGetFirstLocation() is { } location)
                         {
-                            compilation.GetBinder(alias.UsingDirective).ReportDiagnosticsIfUnsafeMemberAccess(bag, immediateTarget, alias.UsingDirective, forceCheckConstraints: true);
+                            compilation.GetBinder(alias.UsingDirective).ReportDiagnosticsIfUnsafeMemberAccess(bag, immediateTarget, location, forceCheckConstraints: true);
                         }
 
                         semanticDiagnostics.AddRange(diagnostics.DiagnosticBag);
