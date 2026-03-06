@@ -1324,7 +1324,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // Don't worry about double reporting (i.e. for both the argument and the parameter)
                 // because only one unsafe diagnostic is allowed per scope - the others are suppressed.
-                gotError = ReportUnsafeIfNotAllowed(node, diagnostics) || gotError;
+                gotError = ReportUnsafeIfNotAllowed(node, diagnostics, disallowedUnder: MemorySafetyRules.Legacy) || gotError;
             }
 
             bool hasBaseReceiver = receiver != null && receiver.Kind == BoundKind.BaseReference;
@@ -2403,7 +2403,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     methodGroup.LookupError,
                     methodGroup.Flags,
                     methodGroup.FunctionType,
-                    receiverOpt: ReplaceTypeOrValueReceiver(methodGroup.ReceiverOpt, useType: false, BindingDiagnosticBag.Discarded), //only change
+                    receiverOpt: ReplaceTypeOrValueReceiver(methodGroup.ReceiverOpt, useType: true, boundArgument.HasAnyErrors ? BindingDiagnosticBag.Discarded : diagnostics), //only change
                     methodGroup.ResultKind);
             }
             else if (boundArgument is BoundPropertyAccess propertyAccess)

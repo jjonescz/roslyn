@@ -145,20 +145,20 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal bool ReportUnsafeIfNotAllowed(
             SyntaxNodeOrToken node,
             BindingDiagnosticBag diagnostics,
+            MemorySafetyRules disallowedUnder,
             TypeSymbol? sizeOfTypeOpt = null,
-            MemorySafetyRules disallowedUnder = MemorySafetyRules.Legacy,
             ErrorCode? customErrorCode = null,
             object[]? customArgs = null)
         {
             return diagnostics.DiagnosticBag is { } bag &&
-                ReportUnsafeIfNotAllowed(node, bag, sizeOfTypeOpt, disallowedUnder, customErrorCode, customArgs);
+                ReportUnsafeIfNotAllowed(node, bag, disallowedUnder, sizeOfTypeOpt, customErrorCode, customArgs);
         }
 
         internal bool ReportUnsafeIfNotAllowed(
             SyntaxNodeOrToken node,
             DiagnosticBag diagnostics,
+            MemorySafetyRules disallowedUnder,
             TypeSymbol? sizeOfTypeOpt = null,
-            MemorySafetyRules disallowedUnder = MemorySafetyRules.Legacy,
             ErrorCode? customErrorCode = null,
             object[]? customArgs = null)
         {
@@ -167,8 +167,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 node,
                 static node => node.GetLocation(),
                 diagnostics,
-                sizeOfTypeOpt,
                 disallowedUnder,
+                sizeOfTypeOpt,
                 customErrorCode,
                 customArgs);
         }
@@ -176,7 +176,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal bool ReportUnsafeIfNotAllowed(
             Location? location,
             BindingDiagnosticBag diagnostics,
-            MemorySafetyRules disallowedUnder = MemorySafetyRules.Legacy,
+            MemorySafetyRules disallowedUnder,
             ErrorCode? customErrorCode = null,
             object[]? customArgs = null)
         {
@@ -187,7 +187,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal bool ReportUnsafeIfNotAllowed(
             Location? location,
             DiagnosticBag diagnostics,
-            MemorySafetyRules disallowedUnder = MemorySafetyRules.Legacy,
+            MemorySafetyRules disallowedUnder,
             ErrorCode? customErrorCode = null,
             object[]? customArgs = null)
         {
@@ -195,8 +195,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 location,
                 static l => l,
                 diagnostics,
-                sizeOfTypeOpt: null,
                 disallowedUnder,
+                sizeOfTypeOpt: null,
                 customErrorCode,
                 customArgs);
         }
@@ -210,12 +210,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             T arg,
             Func<T, Location?> location,
             DiagnosticBag diagnostics,
+            MemorySafetyRules disallowedUnder,
             TypeSymbol? sizeOfTypeOpt = null,
-            MemorySafetyRules disallowedUnder = MemorySafetyRules.Legacy,
             ErrorCode? customErrorCode = null,
             object[]? customArgs = null)
         {
-            var diagnosticInfo = GetUnsafeDiagnosticInfo(sizeOfTypeOpt, disallowedUnder, customErrorCode, customArgs);
+            var diagnosticInfo = GetUnsafeDiagnosticInfo(disallowedUnder, sizeOfTypeOpt, customErrorCode, customArgs);
             if (diagnosticInfo == null)
             {
                 return false;
@@ -226,8 +226,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
         private CSDiagnosticInfo? GetUnsafeDiagnosticInfo(
+            MemorySafetyRules disallowedUnder,
             TypeSymbol? sizeOfTypeOpt,
-            MemorySafetyRules disallowedUnder = MemorySafetyRules.Legacy,
             ErrorCode? customErrorCode = null,
             object[]? customArgs = null)
         {
@@ -248,7 +248,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                         return MessageID.IDS_FeatureUnsafeEvolution.GetFeatureAvailabilityDiagnosticInfo(this.Compilation);
                     }
 
-                    // PROTOTYPE: Update the error message to hint that one can enable updated memory safety rules.
                     return ((object?)sizeOfTypeOpt == null)
                         ? new CSDiagnosticInfo(ErrorCode.ERR_UnsafeNeeded)
                         : new CSDiagnosticInfo(ErrorCode.ERR_SizeofUnsafe, sizeOfTypeOpt);

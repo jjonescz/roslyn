@@ -469,7 +469,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     Debug.Assert(elementField is { });
 
                     diagnostics.ReportUseSite(elementField, syntax);
-                    AssertNotUnsafeMemberAccess(elementField); // PROTOTYPE: Support unsafe fields?
+                    AssertNotUnsafeMemberAccess(elementField); // https://github.com/dotnet/roslyn/issues/82546: Support unsafe fields?
 
                     if (destination.OriginalDefinition.Equals(Compilation.GetWellKnownType(WellKnownType.System_ReadOnlySpan_T), TypeCompareKind.AllIgnoreOptions))
                     {
@@ -2898,13 +2898,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             switch (conversion.Kind)
             {
                 case ConversionKind.StackAllocToPointerType:
-                    ReportUnsafeIfNotAllowed(syntax.Location, diagnostics);
+                    ReportUnsafeIfNotAllowed(syntax.Location, diagnostics, disallowedUnder: MemorySafetyRules.Legacy);
                     stackAllocType = new PointerTypeSymbol(TypeWithAnnotations.Create(elementType));
                     break;
                 case ConversionKind.StackAllocToSpanType:
                     // Under the updated memory safety rules, a stackalloc_expression is unsafe if being converted to Span/ROS,
                     // does not have an initializer, and is used within a member with SkipLocalsInitAttribute.
-                    // PROTOTYPE: Confirm this rule with LDM.
+                    // https://github.com/dotnet/roslyn/issues/82546: Confirm this rule with LDM.
                     if (boundStackAlloc.InitializerOpt is null &&
                         ContainingMemberOrLambda is MethodSymbol { AreLocalsZeroed: false })
                     {
@@ -3540,7 +3540,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             if ((selectedMethod.HasParameterContainingPointerType() || selectedMethod.ReturnType.ContainsPointerOrFunctionPointer())
-                && ReportUnsafeIfNotAllowed(syntax, diagnostics))
+                && ReportUnsafeIfNotAllowed(syntax, diagnostics, disallowedUnder: MemorySafetyRules.Legacy))
             {
                 return true;
             }

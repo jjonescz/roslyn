@@ -618,7 +618,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             get { return false; }
         }
 
-        // PROTOTYPE: add a public API for this (probably just expose a bool)
+        // https://github.com/dotnet/roslyn/issues/82546: add a public API for this (probably just expose a bool)
         /// <summary>
         /// Whether this member is considered unsafe under the updated memory safety rules.
         /// See <see cref="CSharp.CallerUnsafeMode"/> for more details.
@@ -1695,13 +1695,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                     builder.AddValue(((ParameterSymbol)this).TypeWithAnnotations);
                     break;
                 case SymbolKind.TypeParameter:
-                    if (this is SourceTypeParameterSymbol typeParameter)
+                    var typeParameter = (TypeParameterSymbol)this;
+                    builder.AddValue(typeParameter.GetSynthesizedNullableAttributeValue());
+                    foreach (var constraintType in typeParameter.ConstraintTypesNoUseSiteDiagnostics)
                     {
-                        builder.AddValue(typeParameter.GetSynthesizedNullableAttributeValue());
-                        foreach (var constraintType in typeParameter.ConstraintTypesNoUseSiteDiagnostics)
-                        {
-                            builder.AddValue(constraintType);
-                        }
+                        builder.AddValue(constraintType);
                     }
                     break;
             }

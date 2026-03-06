@@ -690,10 +690,11 @@ namespace System.Runtime.CompilerServices
             }
             """;
 
-        // PROTOTYPE: Confirm the attribute shape in BCL API review.
+        // https://github.com/dotnet/roslyn/issues/82546: Confirm the attribute shape in BCL API review.
         protected static readonly string RequiresUnsafeAttributeDefinition = """
             namespace System.Runtime.CompilerServices
             {
+                [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Event | AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
                 public sealed class RequiresUnsafeAttribute : Attribute { }
             }
             """;
@@ -1310,8 +1311,11 @@ class ExpressionPrinter : System.Linq.Expressions.ExpressionVisitor
         internal const string RuntimeAsyncMethodGenerationAttributeDefinition = """
             namespace System.Runtime.CompilerServices;
 
+            #pragma warning disable CS9113 // Unread primary constructor parameter
+
             [AttributeUsage(AttributeTargets.Method)]
             public class RuntimeAsyncMethodGenerationAttribute(bool runtimeAsync) : Attribute();
+            #pragma warning restore CS9113 // Unread primary constructor parameter
             """;
 
         protected static T GetSyntax<T>(SyntaxTree tree, string text, bool descendIntoTrivia = false)
