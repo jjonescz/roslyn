@@ -30,6 +30,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ReportDiagnosticsIfUnsafeMemberAccess(bag, symbol, node, static node => node.GetLocation());
             }
         }
+
         internal void ReportDiagnosticsIfUnsafeMemberAccess(DiagnosticBag diagnostics, Symbol symbol, SyntaxNodeOrToken node, bool forceCheckConstraints = false)
         {
             ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, symbol, node, static node => node.GetLocation(), forceCheckConstraints);
