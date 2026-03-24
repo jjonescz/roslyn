@@ -125,6 +125,7 @@
          LangVersion="$(LangVersion)"
          LinkResources="@(LinkResource)"
          MainEntryPoint="$(StartupObject)"
+         MemorySafetyRules="$(MemorySafetyRules)"
          ModuleAssemblyName="$(ModuleAssemblyName)"
          NoConfig="true"
          NoLogo="$(NoLogo)"

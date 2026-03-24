@@ -165,6 +165,12 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             get { return (string?)_store[nameof(Nullable)]; }
         }
 
+        public int MemorySafetyRules
+        {
+            set { _store[nameof(MemorySafetyRules)] = value; }
+            get { return _store.GetOrDefault(nameof(MemorySafetyRules), 0); }
+        }
+
         #endregion
 
         #region Tool Members
@@ -237,6 +243,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             commandLine.AppendSwitchIfNotNull("/preferreduilang:", PreferredUILang);
             commandLine.AppendPlusOrMinusSwitch("/highentropyva", _store, nameof(HighEntropyVA));
             commandLine.AppendSwitchIfNotNull("/nullable:", Nullable);
+            commandLine.AppendSwitchWithInteger("/memorysafetyrules:", _store, nameof(MemorySafetyRules));
             commandLine.AppendWhenTrue("/nosdkpath", _store, nameof(DisableSdkPath));
 
             // If not design time build and the globalSessionGuid property was set then add a -globalsessionguid:<guid>

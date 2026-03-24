@@ -122,6 +122,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var noWarns = new Dictionary<string, ReportDiagnostic>();
             var warnAsErrors = new Dictionary<string, ReportDiagnostic>();
             int warningLevel = Diagnostic.DefaultWarningLevel;
+            int memorySafetyRules = 0;
             bool highEntropyVA = false;
             bool printFullPaths = false;
             string? moduleAssemblyName = null;
@@ -995,6 +996,20 @@ namespace Microsoft.CodeAnalysis.CSharp
                             }
                             continue;
 
+                        case "memorysafetyrules":
+                            value = RemoveQuotesAndSlashes(valueMemory);
+
+                            if (string.IsNullOrEmpty(value) ||
+                                !int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var newMemorySafetyRules))
+                            {
+                                AddDiagnostic(diagnostics, ErrorCode.ERR_SwitchNeedsNumber, name);
+                            }
+                            else
+                            {
+                                memorySafetyRules = newMemorySafetyRules;
+                            }
+                            continue;
+
                         case "unsafe":
                         case "unsafe+":
                             if (valueMemory is not null)
@@ -1534,6 +1549,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 platform: platform,
                 generalDiagnosticOption: generalDiagnosticOption,
                 warningLevel: warningLevel,
+                memorySafetyRules: memorySafetyRules,
                 specificDiagnosticOptions: diagnosticOptions,
                 reportSuppressedDiagnostics: reportSuppressedDiagnostics,
                 publicSign: publicSign

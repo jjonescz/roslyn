@@ -4147,6 +4147,7 @@
 -warn:&lt;n&gt;                     Set warning level (0 or higher) (Short form: -w)
 -nowarn:&lt;warn list&gt;           Disable specific warning messages
                               (use "nullable" for all nullability warnings)
+-memorysafetyrules:&lt;n&gt;        Specify the level of memory safety rules to enforce (0 or 2).
 -ruleset:&lt;file&gt;               Specify a ruleset file that disables specific
                               diagnostics.
 -errorlog:&lt;file&gt;[,version=&lt;sarif_version&gt;]
@@ -4233,7 +4234,7 @@
                               assembly by all dependencies, and annotate foreign assembly
                               accessibility errors with what assembly they came from.
 </source>
-        <target state="translated">
+        <target state="needs-review-translation">
                              Параметры компилятора Visual C# 
 
                        - ВЫХОДНЫЕ ФАЙЛЫ - 
