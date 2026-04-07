@@ -226,9 +226,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 (!isSpecified || specifiedWarnAsErrorMinus))
             {
                 // 4. Editor config options (syntax tree level)
+                // 4b. Editor config options (any tree fallback for locationless diagnostics)
                 // 5. Global analyzer config options (compilation level)
                 // Do not apply config options if it is bumping a warning to an error and "/warnaserror-:DiagnosticId" was specified on the command line.
                 if ((tree != null && syntaxTreeOptions.TryGetDiagnosticValue(tree, id, cancellationToken, out var reportFromSyntaxTreeOptions) ||
+                    tree == null && syntaxTreeOptions.TryGetDiagnosticValueFromAnyTree(id, cancellationToken, out reportFromSyntaxTreeOptions) ||
                     syntaxTreeOptions.TryGetGlobalDiagnosticValue(id, cancellationToken, out reportFromSyntaxTreeOptions)) &&
                     !(specifiedWarnAsErrorMinus && severity == DiagnosticSeverity.Warning && reportFromSyntaxTreeOptions == ReportDiagnostic.Error))
                 {

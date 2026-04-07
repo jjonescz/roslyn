@@ -175,10 +175,12 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
                (Not isSpecified OrElse specifiedWarnAsErrorMinus) Then
 
                 ' 4. Editor config options (syntax tree level)
+                ' 4b. Editor config options (any tree fallback for locationless diagnostics)
                 ' 5. Global analyzer config options (compilation level)
                 ' Do not apply config options if it is bumping a warning to an error and "/warnaserror-:DiagnosticId" was specified on the command line.
                 Dim reportFromSyntaxTreeOptions As ReportDiagnostic
                 If ((tree IsNot Nothing AndAlso syntaxTreeOptions.TryGetDiagnosticValue(tree, id, cancellationToken, reportFromSyntaxTreeOptions)) OrElse
+                     (tree Is Nothing AndAlso syntaxTreeOptions.TryGetDiagnosticValueFromAnyTree(id, cancellationToken, reportFromSyntaxTreeOptions)) OrElse
                      syntaxTreeOptions.TryGetGlobalDiagnosticValue(id, cancellationToken, reportFromSyntaxTreeOptions)) AndAlso
                     Not (specifiedWarnAsErrorMinus AndAlso severity = DiagnosticSeverity.Warning AndAlso reportFromSyntaxTreeOptions = ReportDiagnostic.Error) Then
                     isSpecified = True

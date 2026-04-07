@@ -1214,6 +1214,64 @@ class C { }
         }
 
         [Fact]
+        [WorkItem("https://github.com/dotnet/roslyn/issues/83047")]
+        public void Diagnostics_Respect_EditorConfig_For_Locationless_Diagnostics()
+        {
+            var source = @"
+class C { }
+";
+            var parseOptions = TestOptions.Regular;
+            Compilation compilation = CreateCompilation(source, options: TestOptions.DebugDllThrowing, parseOptions: parseOptions);
+            compilation.VerifyDiagnostics();
+
+            var tree = compilation.SyntaxTrees.Single();
+
+            // Generator reports a warning diagnostic with Location.None (no source location)
+            CallbackGenerator gen = new CallbackGenerator((c) => { }, (c) =>
+            {
+                c.ReportDiagnostic(CSDiagnostic.Create("GEN001", "generators", "message", DiagnosticSeverity.Warning, DiagnosticSeverity.Warning, true, 2));
+            });
+
+            var options = ((CSharpCompilationOptions)compilation.Options);
+
+            // Without any editorconfig, the diagnostic is reported
+            verifyDiagnosticsWithOptions(options,
+                Diagnostic("GEN001").WithLocation(1, 1));
+
+            // Per-tree (editorconfig) options applied to all trees can suppress locationless diagnostics.
+            // Use CompilerSyntaxTreeOptionsProvider to simulate real .editorconfig behavior,
+            // which resolves options for ALL trees in the compilation.
+            verifyDiagnosticsWithOptions(options.WithSyntaxTreeOptionsProvider(
+                createProviderForAllTrees(compilation, "GEN001", ReportDiagnostic.Suppress)));
+
+            // Per-tree (editorconfig) options applied to all trees can upgrade locationless diagnostics to errors
+            verifyDiagnosticsWithOptions(options.WithSyntaxTreeOptionsProvider(
+                createProviderForAllTrees(compilation, "GEN001", ReportDiagnostic.Error)),
+                Diagnostic("GEN001").WithLocation(1, 1).WithWarningAsError(true));
+
+            void verifyDiagnosticsWithOptions(CompilationOptions options, params DiagnosticDescription[] expected)
+            {
+                GeneratorDriver driver = CSharpGeneratorDriver.Create(ImmutableArray.Create(gen), parseOptions: parseOptions);
+                var updatedCompilation = compilation.WithOptions(options);
+
+                driver.RunGeneratorsAndUpdateCompilation(updatedCompilation, out var outputCompilation, out var diagnostics);
+                outputCompilation.VerifyDiagnostics();
+                diagnostics.Verify(expected);
+            }
+
+            static CompilerSyntaxTreeOptionsProvider createProviderForAllTrees(Compilation compilation, string diagnosticId, ReportDiagnostic severity)
+            {
+                var trees = compilation.SyntaxTrees.ToArray();
+                var treeOptions = ImmutableDictionary<string, ReportDiagnostic>.Empty.Add(diagnosticId, severity);
+                var analyzerOptions = ImmutableDictionary<string, string>.Empty;
+                var result = new AnalyzerConfigOptionsResult(treeOptions, analyzerOptions, ImmutableArray<Diagnostic>.Empty);
+                var results = ImmutableArray.CreateRange(trees.Select(_ => result));
+                var globalResult = default(AnalyzerConfigOptionsResult);
+                return new CompilerSyntaxTreeOptionsProvider(trees, results, globalResult);
+            }
+        }
+
+        [Fact]
         public void Diagnostics_Respect_Pragma_Suppression()
         {
             var gen001 = CSDiagnostic.Create("GEN001", "generators", "message", DiagnosticSeverity.Warning, DiagnosticSeverity.Warning, true, 2);

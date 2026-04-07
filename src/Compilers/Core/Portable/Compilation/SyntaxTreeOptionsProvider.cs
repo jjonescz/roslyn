@@ -24,6 +24,17 @@ namespace Microsoft.CodeAnalysis
         /// Get diagnostic severity set globally for a given diagnostic identifier
         /// </summary>
         public abstract bool TryGetGlobalDiagnosticValue(string diagnosticId, CancellationToken cancellationToken, out ReportDiagnostic severity);
+
+        /// <summary>
+        /// Try to get diagnostic severity from any available tree's options.
+        /// Used as a fallback when a diagnostic has no source tree (e.g., <see cref="Location.None"/>),
+        /// so that per-tree (editorconfig) diagnostic options can still be applied.
+        /// </summary>
+        internal virtual bool TryGetDiagnosticValueFromAnyTree(string diagnosticId, CancellationToken cancellationToken, out ReportDiagnostic severity)
+        {
+            severity = ReportDiagnostic.Default;
+            return false;
+        }
     }
 
     internal sealed class CompilerSyntaxTreeOptionsProvider : SyntaxTreeOptionsProvider
@@ -92,6 +103,36 @@ namespace Microsoft.CodeAnalysis
             }
             severity = ReportDiagnostic.Default;
             return false;
+        }
+
+        internal override bool TryGetDiagnosticValueFromAnyTree(string diagnosticId, CancellationToken _, out ReportDiagnostic severity)
+        {
+            severity = ReportDiagnostic.Default;
+            bool found = false;
+            foreach (var kvp in _options)
+            {
+                if (kvp.Value.DiagnosticOptions.TryGetValue(diagnosticId, out var treeSeverity))
+                {
+                    if (!found)
+                    {
+                        severity = treeSeverity;
+                        found = true;
+                    }
+                    else if (severity != treeSeverity)
+                    {
+                        // Trees disagree on severity
+                        severity = ReportDiagnostic.Default;
+                        return false;
+                    }
+                }
+                else
+                {
+                    // Not all trees have this option
+                    severity = ReportDiagnostic.Default;
+                    return false;
+                }
+            }
+            return found;
         }
     }
 }
