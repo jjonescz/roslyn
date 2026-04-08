@@ -348,7 +348,9 @@
     <Project Path="src/VisualStudio/DevKit/Impl/Microsoft.VisualStudio.LanguageServices.DevKit.csproj" />
     <Project Path="src/VisualStudio/LiveShare/Impl/Microsoft.VisualStudio.LanguageServices.LiveShare.csproj" />
     <Project Path="src/VisualStudio/LiveShare/Test/Microsoft.VisualStudio.LanguageServices.LiveShare.UnitTests.csproj" />
-    <Project Path="src/VisualStudio/Setup.Dependencies/Roslyn.VisualStudio.Setup.Dependencies.csproj" />
+    <Project Path="src/VisualStudio/Setup.Dependencies/Roslyn.VisualStudio.Setup.Dependencies.csproj">
+      <Build Solution="Debug-*|*" Project="false" />
+    </Project>
     <Project Path="src/VisualStudio/Setup.ServiceHub/arm64/Roslyn.VisualStudio.ServiceHub.Setup.arm64.csproj" />
     <Project Path="src/VisualStudio/Setup.ServiceHub/x64/Roslyn.VisualStudio.ServiceHub.Setup.x64.csproj" />
     <Project Path="src/VisualStudio/Setup/Roslyn.VisualStudio.Setup.csproj" />
@@ -365,7 +367,9 @@
     <Project Path="src/VisualStudio/ExternalAccess/FSharpTest/Microsoft.CodeAnalysis.ExternalAccess.FSharp.UnitTests.csproj" />
   </Folder>
   <Folder Name="/VisualStudio/Insertion/">
-    <Project Path="src/Setup/DevDivInsertionFiles/DevDivInsertionFiles.csproj" />
+    <Project Path="src/Setup/DevDivInsertionFiles/DevDivInsertionFiles.csproj">
+      <Build Solution="Debug-*|*" Project="false" />
+    </Project>
   </Folder>
   <Folder Name="/VisualStudio/IntegrationTest/">
     <Project Path="src/VisualStudio/IntegrationTest/New.IntegrationTests/Microsoft.VisualStudio.LanguageServices.New.IntegrationTests.csproj">

@@ -4,7 +4,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>Roslyn.VisualStudio.Setup.Dependencies</RootNamespace>
-    <TargetFrameworks>$(NetRoslyn);$(NetRoslynFramework)</TargetFrameworks>
+    <TargetFramework>net472</TargetFramework>
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
     <IsShipping>false</IsShipping>
 
