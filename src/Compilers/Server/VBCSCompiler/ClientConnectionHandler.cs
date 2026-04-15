@@ -72,6 +72,18 @@ namespace Microsoft.CodeAnalysis.CompilerServer
                         cancellationToken).ConfigureAwait(false);
                 }
 
+                if (request.Arguments.Count == 1 && request.Arguments[0].ArgumentId == BuildProtocolConstants.ArgumentId.PurgeCache)
+                {
+                    var tracker = CompilerServerHost.CacheTracker;
+                    var result = tracker?.PurgeUnusedEntries(Logger) ?? "Cache tracking is not active on this server.";
+                    return await WriteBuildResponseAsync(
+                        clientConnection,
+                        request.RequestId,
+                        new CompletedBuildResponse(CommonCompiler.Succeeded, utf8output: false, result),
+                        CompletionData.RequestCompleted,
+                        cancellationToken).ConfigureAwait(false);
+                }
+
                 if (!allowCompilationRequests)
                 {
                     return await WriteBuildResponseAsync(

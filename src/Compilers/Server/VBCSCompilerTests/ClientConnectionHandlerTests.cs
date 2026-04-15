@@ -180,5 +180,41 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
 
             clientClosedMre.Set();
         }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task PurgeCacheRequest(bool allowCompilationRequests)
+        {
+            var hitCompilation = false;
+            var tracker = new CompilationCacheTracker();
+            var compilerServerHost = new TestableCompilerServerHost(
+                delegate
+                {
+                    hitCompilation = true;
+                    throw new Exception("");
+                },
+                cacheTracker: tracker);
+
+            BuildResponse? response = null;
+            var clientConnectionHandler = new ClientConnectionHandler(compilerServerHost);
+            var clientConnection = new TestableClientConnection()
+            {
+                ReadBuildRequestFunc = _ => Task.FromResult(BuildRequest.CreatePurgeCache()),
+                WriteBuildResponseFunc = (r, _) =>
+                {
+                    response = r;
+                    return Task.CompletedTask;
+                }
+            };
+
+            var completionData = await clientConnectionHandler.ProcessAsync(
+                Task.FromResult<IClientConnection>(clientConnection),
+                allowCompilationRequests: allowCompilationRequests);
+
+            Assert.False(hitCompilation);
+            Assert.Equal(CompletionData.RequestCompleted, completionData);
+            var completedResponse = Assert.IsType<CompletedBuildResponse>(response);
+            Assert.Contains("No cache paths have been observed", completedResponse.Output);
+        }
     }
 }

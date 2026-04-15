@@ -450,6 +450,68 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
         }
 
         [Fact]
+        public void TryRestoreCachedResult_RecordsEntryInTracker()
+        {
+            var cacheDir = Temp.CreateDirectory().Path;
+            var tracker = new CompilationCacheTracker();
+            var cache = CreateCache(cacheDir, tracker);
+            var dllName = "Tracked.dll";
+            var hashKey = "tracked_hash";
+            var outputDir = Temp.CreateDirectory().Path;
+
+            var entryDir = Path.Combine(cacheDir, dllName, hashKey);
+            Directory.CreateDirectory(entryDir);
+            File.WriteAllBytes(Path.Combine(entryDir, "assembly"), [1, 2, 3]);
+
+            var outputFiles = new CompilationOutputFiles
+            {
+                AssemblyPath = Path.Combine(outputDir, dllName),
+            };
+
+            var result = cache.TryRestoreCachedResult(dllName, hashKey, outputFiles, _logger);
+            Assert.True(result);
+
+            // Create an unused entry
+            var unusedDir = Path.Combine(cacheDir, "Other.dll", "other_hash");
+            Directory.CreateDirectory(unusedDir);
+            File.WriteAllBytes(Path.Combine(unusedDir, "assembly"), [4, 5]);
+
+            // Purge should delete the unused entry but keep the tracked one
+            var purgeResult = tracker.PurgeUnusedEntries(_logger);
+            Assert.Contains("Deleted: 1", purgeResult);
+            Assert.Contains("Kept: 1", purgeResult);
+            Assert.True(Directory.Exists(entryDir));
+            Assert.False(Directory.Exists(unusedDir));
+        }
+
+        [Fact]
+        public void TryStoreResult_RecordsEntryInTracker()
+        {
+            var cacheDir = Temp.CreateDirectory().Path;
+            var tracker = new CompilationCacheTracker();
+            var cache = CreateCache(cacheDir, tracker);
+            var dllName = "Stored.dll";
+            var hashKey = CompilationCache.ComputeHashKey("stored key");
+
+            var outputDir = Temp.CreateDirectory().Path;
+            var assemblyPath = Path.Combine(outputDir, dllName);
+            File.WriteAllBytes(assemblyPath, [10, 20]);
+
+            var outputFiles = new CompilationOutputFiles { AssemblyPath = assemblyPath };
+            cache.TryStoreResult(dllName, hashKey, outputFiles, "stored key", _logger);
+
+            // Create an unused entry
+            var unusedDir = Path.Combine(cacheDir, "Other.dll", "other_hash");
+            Directory.CreateDirectory(unusedDir);
+            File.WriteAllBytes(Path.Combine(unusedDir, "assembly"), [4, 5]);
+
+            // Purge should delete the unused entry but keep the stored one
+            var purgeResult = tracker.PurgeUnusedEntries(_logger);
+            Assert.Contains("Deleted: 1", purgeResult);
+            Assert.Contains("Kept: 1", purgeResult);
+        }
+
+        [Fact]
         public void GetDeterministicKey_DiffersWithSourceLink()
         {
             var compilation = CSharpCompilation.Create(
@@ -501,6 +563,15 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
             return CompilationCache.TryCreate(
                 ParseArguments([$"/features:{CompilerOptionParseUtilities.UseGlobalCacheFeatureFlag}={cachePath}", "test.cs"]),
                 EmptyCompilerServerLogger.Instance)
+                ?? throw new InvalidOperationException("Failed to create cache");
+        }
+
+        private static CompilationCache CreateCache(string cachePath, CompilationCacheTracker tracker)
+        {
+            return CompilationCache.TryCreate(
+                ParseArguments([$"/features:{CompilerOptionParseUtilities.UseGlobalCacheFeatureFlag}={cachePath}", "test.cs"]),
+                EmptyCompilerServerLogger.Instance,
+                tracker)
                 ?? throw new InvalidOperationException("Failed to create cache");
         }
 

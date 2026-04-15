@@ -115,6 +115,12 @@ namespace Microsoft.CodeAnalysis.CommandLine
             return new BuildRequest(RequestLanguage.CSharpCompile, GetCommitHash() ?? "", requestArgs);
         }
 
+        public static BuildRequest CreatePurgeCache()
+        {
+            var requestArgs = new[] { new Argument(ArgumentId.PurgeCache, argumentIndex: 0, value: "") };
+            return new BuildRequest(RequestLanguage.CSharpCompile, GetCommitHash() ?? "", requestArgs);
+        }
+
         /// <summary>
         /// Read a Request from the given stream.
         /// 
@@ -548,6 +554,9 @@ namespace Microsoft.CodeAnalysis.CommandLine
 
             // Request a server shutdown from the client
             Shutdown,
+
+            // Request the server to purge unused cache entries
+            PurgeCache,
 
             // The directory to use for temporary operations.
             TempDirectory,

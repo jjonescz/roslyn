@@ -43,6 +43,8 @@ namespace Microsoft.CodeAnalysis.CompilerServer
     {
         public IAnalyzerAssemblyLoaderInternal AnalyzerAssemblyLoader { get; }
 
+        public CompilationCacheTracker? CacheTracker { get; } = new CompilationCacheTracker();
+
         public static Func<string, MetadataReferenceProperties, PortableExecutableReference> SharedAssemblyReferenceProvider { get; } = (path, properties) => new CachingMetadataReference(path, properties);
 
         /// <summary>
@@ -87,7 +89,8 @@ namespace Microsoft.CodeAnalysis.CompilerServer
                         libDirectory: request.LibDirectory,
                         analyzerLoader: AnalyzerAssemblyLoader,
                         _driverCache,
-                        logger: Logger);
+                        logger: Logger,
+                        cacheTracker: CacheTracker);
                     return true;
                 case LanguageNames.VisualBasic:
                     compiler = new VisualBasicCompilerServer(
@@ -97,7 +100,8 @@ namespace Microsoft.CodeAnalysis.CompilerServer
                         libDirectory: request.LibDirectory,
                         analyzerLoader: AnalyzerAssemblyLoader,
                         _driverCache,
-                        logger: Logger);
+                        logger: Logger,
+                        cacheTracker: CacheTracker);
                     return true;
                 default:
                     compiler = null;

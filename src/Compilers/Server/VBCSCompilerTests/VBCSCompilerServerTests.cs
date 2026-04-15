@@ -407,12 +407,13 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
         {
             private string _pipeName;
             private bool _shutdown;
+            private bool _purgeCache;
             private TimeSpan? _timeout;
             private string _logFilePath;
 
             private bool Parse(params string[] args)
             {
-                return BuildServerController.ParseCommandLine(args, out _pipeName, out _shutdown, out _timeout, out _logFilePath);
+                return BuildServerController.ParseCommandLine(args, out _pipeName, out _shutdown, out _purgeCache, out _timeout, out _logFilePath);
             }
 
             [Fact]
@@ -421,6 +422,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
                 Assert.True(Parse());
                 Assert.Null(_pipeName);
                 Assert.False(_shutdown);
+                Assert.False(_purgeCache);
                 Assert.Null(_timeout);
                 Assert.Null(_logFilePath);
             }
@@ -447,6 +449,23 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
                 Assert.True(Parse("-pipename:test", "-shutdown"));
                 Assert.Equal("test", _pipeName);
                 Assert.True(_shutdown);
+            }
+
+            [Fact]
+            public void PurgeCache()
+            {
+                Assert.True(Parse("-purgecache"));
+                Assert.Null(_pipeName);
+                Assert.True(_purgeCache);
+                Assert.False(_shutdown);
+            }
+
+            [Fact]
+            public void PipeAndPurgeCache()
+            {
+                Assert.True(Parse("-pipename:test", "-purgecache"));
+                Assert.Equal("test", _pipeName);
+                Assert.True(_purgeCache);
             }
 
             [Fact]

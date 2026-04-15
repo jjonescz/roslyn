@@ -55,17 +55,19 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         private const string XmlDocFileName = "xmldoc";
 
         private readonly string _cachePath;
+        private readonly CompilationCacheTracker? _tracker;
 
-        private CompilationCache(string cachePath)
+        private CompilationCache(string cachePath, CompilationCacheTracker? tracker)
         {
             _cachePath = cachePath;
+            _tracker = tracker;
         }
 
         /// <summary>
         /// Creates a <see cref="CompilationCache"/> when the compiler request enables the
         /// <c>use-global-cache</c> experiment; otherwise returns <see langword="null"/>.
         /// </summary>
-        internal static CompilationCache? TryCreate(CommandLineArguments arguments, ICompilerServerLogger logger)
+        internal static CompilationCache? TryCreate(CommandLineArguments arguments, ICompilerServerLogger logger, CompilationCacheTracker? tracker = null)
         {
             var cachePath = GetCachePath(arguments.ParseOptions.Features, logger);
             if (cachePath is null)
@@ -74,7 +76,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             }
 
             logger.Log($"Compilation cache enabled at: {cachePath}");
-            return new CompilationCache(cachePath);
+            return new CompilationCache(cachePath, tracker);
         }
 
         private static string? GetCachePath(IReadOnlyDictionary<string, string> features, ICompilerServerLogger logger)
@@ -162,6 +164,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
                 }
 
                 logger.Log($"Cache hit: {dllName} [{hashKey}]");
+                _tracker?.RecordUsedEntry(_cachePath, dllName, hashKey);
                 File.Copy(cachedAssemblyPath, outputFiles.AssemblyPath, overwrite: true);
                 copyIfNeeded(entryDir, PdbFileName, outputFiles.PdbPath);
                 copyIfNeeded(entryDir, RefAssemblyFileName, outputFiles.RefAssemblyPath);
@@ -307,6 +310,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
                 Directory.Move(stagingDir, cacheDir);
                 stagingDir = null;
 
+                _tracker?.RecordUsedEntry(_cachePath, dllName, hashKey);
                 logger.Log($"Cache stored: {dllName} [{hashKey}]");
             }
             catch (Exception ex)

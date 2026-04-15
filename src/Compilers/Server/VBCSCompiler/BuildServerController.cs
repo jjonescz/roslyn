@@ -32,14 +32,16 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             _logger = logger;
         }
 
-        internal int Run(string? pipeName, bool shutdown, TimeSpan? keepAlive)
+        internal int Run(string? pipeName, bool shutdown, bool purgeCache, TimeSpan? keepAlive)
         {
             var cancellationTokenSource = new CancellationTokenSource();
             Console.CancelKeyPress += (sender, e) => { cancellationTokenSource.Cancel(); };
 
-            return shutdown
-                ? RunShutdown(pipeName, cancellationToken: cancellationTokenSource.Token)
-                : RunServer(pipeName, keepAlive: keepAlive, cancellationToken: cancellationTokenSource.Token);
+            if (shutdown)
+                return RunShutdown(pipeName, cancellationToken: cancellationTokenSource.Token);
+            if (purgeCache)
+                return RunPurgeCache(pipeName, cancellationToken: cancellationTokenSource.Token);
+            return RunServer(pipeName, keepAlive: keepAlive, cancellationToken: cancellationTokenSource.Token);
         }
 
         internal static TimeSpan GetDefaultKeepAlive(ICompilerServerLogger logger, NameValueCollection? appSettings = null)
@@ -151,6 +153,9 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         internal int RunShutdown(string? pipeName, int? timeoutOverride = null, CancellationToken cancellationToken = default) =>
             RunShutdownAsync(pipeName, waitForProcess: true, timeoutOverride, cancellationToken).GetAwaiter().GetResult();
 
+        internal int RunPurgeCache(string? pipeName, int? timeoutOverride = null, CancellationToken cancellationToken = default) =>
+            RunPurgeCacheAsync(pipeName, timeoutOverride, cancellationToken).GetAwaiter().GetResult();
+
         internal async Task<int> RunShutdownAsync(string? pipeName, bool waitForProcess, int? timeoutOverride, CancellationToken cancellationToken = default)
         {
             pipeName ??= GetDefaultPipeName();
@@ -168,6 +173,28 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             return success ? CommonCompiler.Succeeded : CommonCompiler.Failed;
         }
 
+        internal async Task<int> RunPurgeCacheAsync(string? pipeName, int? timeoutOverride, CancellationToken cancellationToken = default)
+        {
+            pipeName ??= GetDefaultPipeName();
+            if (pipeName is null)
+            {
+                throw new Exception("Cannot calculate pipe name");
+            }
+
+            var (success, output) = await BuildServerConnection.RunServerPurgeCacheRequestAsync(
+                pipeName,
+                timeoutOverride,
+                _logger,
+                cancellationToken).ConfigureAwait(false);
+
+            if (output is not null)
+            {
+                Console.WriteLine(output);
+            }
+
+            return success ? CommonCompiler.Succeeded : CommonCompiler.Failed;
+        }
+
         /// <summary>
         /// Parses the command-line arguments for the build server.
         /// </summary>
@@ -178,12 +205,14 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         ///   <item><description><c>-timeout:&lt;seconds&gt;</c> — keep-alive in seconds; <c>0</c> means infinite (no timeout).</description></item>
         ///   <item><description><c>-log:&lt;path&gt;</c> — path to the log file.</description></item>
         ///   <item><description><c>-shutdown</c> — request the server to shut down.</description></item>
+        ///   <item><description><c>-purgecache</c> — request the server to purge unused cache entries.</description></item>
         /// </list>
         /// </remarks>
-        internal static bool ParseCommandLine(string[] args, out string? pipeName, out bool shutdown, out TimeSpan? timeout, out string? logFilePath)
+        internal static bool ParseCommandLine(string[] args, out string? pipeName, out bool shutdown, out bool purgeCache, out TimeSpan? timeout, out string? logFilePath)
         {
             pipeName = null;
             shutdown = false;
+            purgeCache = false;
             timeout = null;
             logFilePath = null;
 
@@ -221,6 +250,10 @@ namespace Microsoft.CodeAnalysis.CompilerServer
                 else if (arg == "-shutdown")
                 {
                     shutdown = true;
+                }
+                else if (arg == "-purgecache")
+                {
+                    purgeCache = true;
                 }
                 else
                 {

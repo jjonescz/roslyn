@@ -165,6 +165,41 @@ namespace Microsoft.CodeAnalysis.CommandLine
             }
         }
 
+        /// <summary>
+        /// Sends a purge-cache request to the running server. Returns a tuple of
+        /// (success, output) where output contains the server's purge summary.
+        /// </summary>
+        internal static async Task<(bool Success, string? Output)> RunServerPurgeCacheRequestAsync(
+            string pipeName,
+            int? timeoutOverride,
+            ICompilerServerLogger logger,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var request = BuildRequest.CreatePurgeCache();
+
+                var response = await RunServerBuildRequestAsync(
+                    request,
+                    pipeName,
+                    timeoutOverride,
+                    tryCreateServerFunc: (_, _) => false,
+                    logger,
+                    cancellationToken).ConfigureAwait(false);
+
+                if (response is CompletedBuildResponse completedResponse)
+                {
+                    return (completedResponse.ReturnCode == 0, completedResponse.Output);
+                }
+
+                return (false, $"Unexpected response from server: {response.Type}");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to communicate with server: {ex.Message}");
+            }
+        }
+
         internal static Task<BuildResponse> RunServerBuildRequestAsync(
             BuildRequest buildRequest,
             string pipeName,
