@@ -4,9 +4,8 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
-using Microsoft.Win32.SafeHandles;
 
 namespace Microsoft.CodeAnalysis.Utilities;
 
@@ -19,8 +18,10 @@ namespace Microsoft.CodeAnalysis.Utilities;
 internal static class PathCanonicalization
 {
     /// <summary>
-    /// Attempts to resolve the canonical filesystem path for the given file or directory path.
-    /// On Windows, this uses GetFinalPathNameByHandle to obtain the actual casing from the filesystem.
+    /// Attempts to resolve the canonical filesystem casing for the given file or directory path.
+    /// On Windows, this walks the path components and uses <c>FindFirstFile</c> to obtain
+    /// the actual casing from the filesystem for each component. Unlike <c>GetFinalPathNameByHandle</c>,
+    /// this preserves the original volume/drive letter (important for subst drives and junctions).
     /// On non-Windows platforms, returns the path unchanged (filesystems are typically case-sensitive).
     /// If the file does not exist or the operation fails, returns the original path.
     /// </summary>
@@ -32,74 +33,78 @@ internal static class PathCanonicalization
             return path;
         }
 
-        return GetCanonicalPathWindows(path);
+        return GetCanonicalCasingWindows(path);
     }
 
-    private static string GetCanonicalPathWindows(string path)
+    private static string GetCanonicalCasingWindows(string path)
     {
-        using var handle = CreateFileW(
-            lpFileName: path,
-            dwDesiredAccess: FILE_READ_ATTRIBUTES,
-            dwShareMode: FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-            lpSecurityAttributes: IntPtr.Zero,
-            dwCreationDisposition: OPEN_EXISTING,
-            dwFlagsAndAttributes: FILE_FLAG_BACKUP_SEMANTICS,
-            hTemplateFile: IntPtr.Zero);
-
-        if (handle.IsInvalid)
+        // Normalize the path to remove relative segments (. and ..) before walking components.
+        try
+        {
+            path = Path.GetFullPath(path);
+        }
+        catch
         {
             return path;
         }
 
-        const uint flags = FILE_NAME_NORMALIZED | VOLUME_NAME_DOS;
-        var needed = GetFinalPathNameByHandleW(hFile: handle, lpszFilePath: null, cchFilePath: 0, dwFlags: flags);
-        if (needed == 0)
+        // Extract the root (e.g., "C:\", "\\server\share\") — we preserve its original casing.
+        var root = Path.GetPathRoot(path);
+        if (string.IsNullOrEmpty(root))
         {
             return path;
         }
 
-        var sb = new StringBuilder((int)needed + 1);
-        var len = GetFinalPathNameByHandleW(hFile: handle, lpszFilePath: sb, cchFilePath: (uint)sb.Capacity, dwFlags: flags);
-        if (len == 0)
+        // Walk the remaining path components, resolving each one's actual casing via FindFirstFile.
+        var remaining = path.Substring(root.Length);
+        if (remaining.Length == 0)
         {
             return path;
         }
 
-        return TrimExtendedPrefix(sb.ToString());
+        var components = remaining.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+        var current = root;
+
+        foreach (var component in components)
+        {
+            var searchPath = Path.Combine(current, component);
+            var findData = new WIN32_FIND_DATAW();
+            var findHandle = FindFirstFileW(searchPath, ref findData);
+            if (findHandle == INVALID_HANDLE_VALUE)
+            {
+                // Component doesn't exist on disk — return original path.
+                return path;
+            }
+
+            FindClose(findHandle);
+            current = Path.Combine(current, findData.cFileName);
+        }
+
+        return current;
     }
 
-    private static string TrimExtendedPrefix(string s)
+    private static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct WIN32_FIND_DATAW
     {
-        if (s.StartsWith(@"\\?\UNC\", StringComparison.Ordinal))
-            return @"\\" + s.Substring(8);
-        if (s.StartsWith(@"\\?\", StringComparison.Ordinal))
-            return s.Substring(4);
-        return s;
+        public uint dwFileAttributes;
+        public System.Runtime.InteropServices.ComTypes.FILETIME ftCreationTime;
+        public System.Runtime.InteropServices.ComTypes.FILETIME ftLastAccessTime;
+        public System.Runtime.InteropServices.ComTypes.FILETIME ftLastWriteTime;
+        public uint nFileSizeHigh;
+        public uint nFileSizeLow;
+        public uint dwReserved0;
+        public uint dwReserved1;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+        public string cFileName;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 14)]
+        public string cAlternateFileName;
     }
-
-    private const uint FILE_READ_ATTRIBUTES = 0x0080;
-    private const uint FILE_SHARE_READ = 0x00000001;
-    private const uint FILE_SHARE_WRITE = 0x00000002;
-    private const uint FILE_SHARE_DELETE = 0x00000004;
-    private const uint OPEN_EXISTING = 3;
-    private const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
-    private const uint VOLUME_NAME_DOS = 0x0;
-    private const uint FILE_NAME_NORMALIZED = 0x0;
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern SafeFileHandle CreateFileW(
-        string lpFileName,
-        uint dwDesiredAccess,
-        uint dwShareMode,
-        IntPtr lpSecurityAttributes,
-        uint dwCreationDisposition,
-        uint dwFlagsAndAttributes,
-        IntPtr hTemplateFile);
+    private static extern IntPtr FindFirstFileW(string lpFileName, ref WIN32_FIND_DATAW lpFindFileData);
 
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern uint GetFinalPathNameByHandleW(
-        SafeFileHandle hFile,
-        StringBuilder? lpszFilePath,
-        uint cchFilePath,
-        uint dwFlags);
+    [DllImport("kernel32.dll")]
+    private static extern bool FindClose(IntPtr hFindFile);
 }
