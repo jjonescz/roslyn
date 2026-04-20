@@ -75,25 +75,27 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             CreateCompilation(caller, [libUpdatedRef],
                 targetFramework: targetFramework,
                 parseOptions: parseOptions,
-                options: optionsExe.AddSpecificDiagnosticOptions(GetIdForErrorCode(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules), ReportDiagnostic.Suppress))
+                options: optionsExe)
                 .VerifyDiagnostics(expectedDiagnosticsForLegacyCaller ?? []);
         }
 
         var libLegacy = CompileAndVerify([lib, .. additionalSources],
             targetFramework: targetFramework,
             parseOptions: parseOptions,
-            options: optionsDll.AddSpecificDiagnosticOptions(GetIdForErrorCode(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules), ReportDiagnostic.Suppress),
+            options: optionsDll,
             verify: verify,
             symbolValidator: module =>
             {
                 VerifyMemorySafetyRulesAttribute(module, includesAttributeDefinition: false, includesAttributeUse: false);
+                // Under legacy rules, `unsafe` keyword does not make members requires-unsafe.
                 VerifyRequiresUnsafeAttribute(
                     module,
-                    expectedUnsafeSymbols: expectedUnsafeSymbols,
-                    expectedSafeSymbols: expectedSafeSymbols,
-                    expectedNoAttributeInSource: expectedNoAttributeInSource,
-                    expectedNoAttribute: expectedNoAttributeUnderLegacyRules,
-                    expectedUnsafeMode: CallerUnsafeMode.None);
+                    expectedUnsafeSymbols: [],
+                    expectedSafeSymbols:
+                    [
+                        .. skipSymbolsInSource is [..] ? expectedUnsafeSymbols.Except(skipSymbolsInSource).ToArray() : expectedUnsafeSymbols,
+                        .. skipSymbolsInSource is [..] ? expectedSafeSymbols.Except(skipSymbolsInSource).ToArray() : expectedSafeSymbols,
+                    ]);
             })
             .VerifyDiagnostics()
             .GetImageReference();
@@ -108,7 +110,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation(caller, [libLegacy],
             targetFramework: targetFramework,
             parseOptions: parseOptions,
-            options: optionsExe.AddSpecificDiagnosticOptions(GetIdForErrorCode(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules), ReportDiagnostic.Suppress))
+            options: optionsExe)
             .VerifyEmitDiagnostics(expectedDiagnosticsForLegacyCaller ?? []);
 
         void symbolValidator(ModuleSymbol module)
@@ -123,7 +125,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 module,
                 expectedUnsafeSymbols: exceptSymbolsSkippedInSource(expectedUnsafeSymbols),
                 expectedSafeSymbols: exceptSymbolsSkippedInSource(expectedSafeSymbols),
-                expectedNoAttributeInSource: exceptSymbolsSkippedInSource(expectedNoAttributeInSource),
+                // The attribute is synthesized during emit, so source modules don't have it in GetAttributes().
+                expectedNoAttributeInSource: exceptSymbolsSkippedInSource(isSource
+                    ? [.. expectedUnsafeSymbols ?? [], .. expectedNoAttributeInSource ?? []]
+                    : expectedNoAttributeInSource),
                 expectedUnsafeMode: expectedUnsafeMode);
 
             [return: NotNullIfNotNull(nameof(original))]
@@ -285,6 +290,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             Assert.True(seenSymbols.Add(symbol), $"Symbol '{symbol.ToTestDisplayString()}' specified multiple times.");
 
+            Assert.True(module is not SourceModuleSymbol || !hasAttribute || !expectedNoAttributeInSourceSymbols.Contains(symbol),
+                $"Unexpected '{symbol.ToTestDisplayString()}' with the attribute in {nameof(expectedNoAttributeInSource)}.");
             Assert.True(shouldBeUnsafe || !expectedNoAttributeInSourceSymbols.Contains(symbol),
                 $"Unexpected safe '{symbol.ToTestDisplayString()}' in {nameof(expectedNoAttributeInSource)}.");
         }
@@ -2753,7 +2760,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
         CreateCompilation([source, IsExternalInitTypeDefinition], options: TestOptions.UnsafeReleaseExe).VerifyDiagnostics(expectedDiagnostics);
 
-        CreateCompilation([source, IsExternalInitTypeDefinition], options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules().WithWarningLevel(10)).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation([source, IsExternalInitTypeDefinition, RequiresUnsafeAttributeDefinition], options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules().WithWarningLevel(10)).VerifyDiagnostics(expectedDiagnostics);
 
         expectedDiagnostics =
         [
@@ -2765,25 +2772,55 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "D").WithLocation(12, 22),
         ];
 
-        CreateCompilation([source, IsExternalInitTypeDefinition], options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules()).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation([source, IsExternalInitTypeDefinition, RequiresUnsafeAttributeDefinition], options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules()).VerifyDiagnostics(expectedDiagnostics);
 
-        CreateCompilation([source, IsExternalInitTypeDefinition], options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules().WithWarningLevel(11)).VerifyDiagnostics(expectedDiagnostics);
+        CreateCompilation([source, IsExternalInitTypeDefinition, RequiresUnsafeAttributeDefinition], options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules().WithWarningLevel(11)).VerifyDiagnostics(expectedDiagnostics);
 
-        CreateCompilation([source, IsExternalInitTypeDefinition],
+        CreateCompilation([source, IsExternalInitTypeDefinition, RequiresUnsafeAttributeDefinition],
             parseOptions: TestOptions.RegularNext,
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules()).VerifyDiagnostics(expectedDiagnostics);
 
-        CreateCompilation([source, IsExternalInitTypeDefinition],
+        CreateCompilation([source, IsExternalInitTypeDefinition, RequiresUnsafeAttributeDefinition],
             parseOptions: TestOptions.Regular14,
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules()).VerifyDiagnostics(
             // error CS8630: Invalid 'MemorySafetyRules' value: '2' for C# 14.0. Please use language version 'preview' or greater.
             Diagnostic(ErrorCode.ERR_CompilationOptionNotAvailable).WithArguments("MemorySafetyRules", "2", "14.0", "preview").WithLocation(1, 1),
+            // (6,13): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // unsafe void F() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "F").WithArguments("updated memory safety rules").WithLocation(6, 13),
             // (10,13): error CS0106: The modifier 'unsafe' is not valid for this item
             // unsafe enum E { A }
             Diagnostic(ErrorCode.ERR_BadMemberFlag, "E").WithArguments("unsafe").WithLocation(10, 13),
             // (12,22): warning CS9377: The 'unsafe' modifier does not have any effect here under the current memory safety rules.
             // unsafe delegate void D();
-            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "D").WithLocation(12, 22));
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "D").WithLocation(12, 22),
+            // (15,12): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe X() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "X").WithArguments("updated memory safety rules").WithLocation(15, 12),
+            // (18,17): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe void M() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "M").WithArguments("updated memory safety rules").WithLocation(18, 17),
+            // (19,16): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe int P { get; set; }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "P").WithArguments("updated memory safety rules").WithLocation(19, 16),
+            // (19,20): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe int P { get; set; }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "get").WithArguments("updated memory safety rules").WithLocation(19, 20),
+            // (19,25): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe int P { get; set; }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "set").WithArguments("updated memory safety rules").WithLocation(19, 25),
+            // (20,32): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe event System.Action E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "E").WithArguments("updated memory safety rules").WithLocation(20, 32),
+            // (20,36): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe event System.Action E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "add").WithArguments("updated memory safety rules").WithLocation(20, 36),
+            // (20,44): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe event System.Action E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "remove").WithArguments("updated memory safety rules").WithLocation(20, 44),
+            // (21,44): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     public static unsafe implicit operator int(X x) => 0;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "int").WithArguments("updated memory safety rules").WithLocation(21, 44));
     }
 
     [Fact]
@@ -2793,22 +2830,22 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         [
             """
             #pragma warning disable CS8321 // unused local function
-            [System.Diagnostics.CodeAnalysis.RequiresUnsafe] void F() { }
+            unsafe void F() { }
             class C
             {
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe] void M() { }
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe] int P { get; set; }
+                unsafe void M() { }
+                unsafe int P { get; set; }
 
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe] event System.Action E { add { } remove { } }
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe] int this[int i] { get => i; set { } }
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe] C() { }
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe] public static C operator +(C c1, C c2) => c1;
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe] public void operator +=(C c) { }
+                unsafe event System.Action E { add { } remove { } }
+                unsafe int this[int i] { get => i; set { } }
+                unsafe C() { }
+                unsafe public static C operator +(C c1, C c2) => c1;
+                unsafe public void operator +=(C c) { }
             #pragma warning disable CS0169 // unused field
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe] int F;
+                unsafe int F;
             }
-            [System.Diagnostics.CodeAnalysis.RequiresUnsafe] class U;
-            [System.Diagnostics.CodeAnalysis.RequiresUnsafe] delegate void D();
+            unsafe class U;
+            unsafe delegate void D();
             """,
             CompilerFeatureRequiredAttribute,
             """
@@ -2831,14 +2868,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             "C.op_Addition",
             "C.op_AdditionAssignment",
         ];
-        string[] symbolsWithAttribute = safeSymbols.Except(["C"]).Concat(unsafeSymbols).ToArray();
 
         foreach (var parseOptions in new[] { TestOptions.RegularPreview, TestOptions.RegularNext, TestOptions.Regular14 })
         {
             CompileAndVerify(source,
                 parseOptions: parseOptions,
-                options: TestOptions.UnsafeReleaseExe.WithMetadataImportOptions(MetadataImportOptions.All)
-                    .WithSpecificDiagnosticOptions(GetIdForErrorCode(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules), ReportDiagnostic.Suppress),
+                options: TestOptions.UnsafeReleaseExe.WithMetadataImportOptions(MetadataImportOptions.All),
                 symbolValidator: m =>
                 {
                     VerifyMemorySafetyRulesAttribute(m, includesAttributeDefinition: false, includesAttributeUse: false);
@@ -2846,7 +2881,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                         m,
                         expectedUnsafeSymbols: [],
                         expectedSafeSymbols: [.. safeSymbols, .. unsafeSymbols],
-                        expectedAttribute: symbolsWithAttribute);
+                        expectedAttribute: []);
                 })
                 .VerifyDiagnostics();
         }
@@ -2863,9 +2898,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                         m,
                         expectedUnsafeSymbols: [.. unsafeSymbols],
                         expectedSafeSymbols: [.. safeSymbols],
-                        expectedAttribute: symbolsWithAttribute);
+                        expectedAttribute: [.. unsafeSymbols]);
                 })
-                .VerifyDiagnostics();
+                .VerifyDiagnostics(
+                // (17,22): warning CS9377: The 'unsafe' modifier does not have any effect here under the current memory safety rules.
+                // unsafe delegate void D();
+                Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "D").WithLocation(17, 22));
         }
 
         CreateCompilation(source,
@@ -2874,30 +2912,51 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             .VerifyDiagnostics(
             // error CS8630: Invalid 'MemorySafetyRules' value: '2' for C# 14.0. Please use language version 'preview' or greater.
             Diagnostic(ErrorCode.ERR_CompilationOptionNotAvailable).WithArguments("MemorySafetyRules", "2", "14.0", "preview").WithLocation(1, 1),
-            // (2,2): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            // [System.Diagnostics.CodeAnalysis.RequiresUnsafe] void F() { }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(2, 2),
-            // (5,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe] void M() { }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(5, 6),
-            // (6,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe] int P { get; set; }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(6, 6),
-            // (8,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe] event System.Action E { add { } remove { } }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(8, 6),
-            // (9,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe] int this[int i] { get => i; set { } }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(9, 6),
-            // (10,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe] C() { }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(10, 6),
-            // (11,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe] public static C operator +(C c1, C c2) => c1;
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(11, 6),
-            // (12,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe] public void operator +=(C c) { }
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(12, 6));
+            // (2,13): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // unsafe void F() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "F").WithArguments("updated memory safety rules").WithLocation(2, 13),
+            // (5,17): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe void M() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "M").WithArguments("updated memory safety rules").WithLocation(5, 17),
+            // (6,16): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe int P { get; set; }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "P").WithArguments("updated memory safety rules").WithLocation(6, 16),
+            // (6,20): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe int P { get; set; }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "get").WithArguments("updated memory safety rules").WithLocation(6, 20),
+            // (6,25): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe int P { get; set; }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "set").WithArguments("updated memory safety rules").WithLocation(6, 25),
+            // (8,32): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe event System.Action E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "E").WithArguments("updated memory safety rules").WithLocation(8, 32),
+            // (8,36): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe event System.Action E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "add").WithArguments("updated memory safety rules").WithLocation(8, 36),
+            // (8,44): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe event System.Action E { add { } remove { } }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "remove").WithArguments("updated memory safety rules").WithLocation(8, 44),
+            // (9,16): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe int this[int i] { get => i; set { } }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "this").WithArguments("updated memory safety rules").WithLocation(9, 16),
+            // (9,30): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe int this[int i] { get => i; set { } }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "get").WithArguments("updated memory safety rules").WithLocation(9, 30),
+            // (9,40): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe int this[int i] { get => i; set { } }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "set").WithArguments("updated memory safety rules").WithLocation(9, 40),
+            // (10,12): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe C() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "C").WithArguments("updated memory safety rules").WithLocation(10, 12),
+            // (11,37): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe public static C operator +(C c1, C c2) => c1;
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "+").WithArguments("updated memory safety rules").WithLocation(11, 37),
+            // (12,33): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe public void operator +=(C c) { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "+=").WithArguments("updated memory safety rules").WithLocation(12, 33),
+            // (17,22): warning CS9377: The 'unsafe' modifier does not have any effect here under the current memory safety rules.
+            // unsafe delegate void D();
+            Diagnostic(ErrorCode.WRN_UnsafeMeaningless, "D").WithLocation(17, 22));
     }
 
     [Theory, CombinatorialData]
@@ -2910,15 +2969,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         bool callerUnsafeBlock,
         bool? compilationReference)
     {
-        var requiresUnsafeAttribute = apiUnsafe && apiUpdatedRules
-            ? "[System.Diagnostics.CodeAnalysis.RequiresUnsafe]"
+        var unsafeModifier = apiUnsafe && apiUpdatedRules
+            ? "unsafe"
             : "";
 
         var api = $$"""
             public class C
             {
-                {{requiresUnsafeAttribute}}
-                public void M() => System.Console.Write(111);
+                {{unsafeModifier}} public void M() => System.Console.Write(111);
             }
             """;
 
@@ -2935,7 +2993,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         if (compilationReference is { } useCompilationReference)
         {
             var apiCompilation = CreateCompilation(
-                [api, .. (apiUnsafe && apiUpdatedRules ? new[] { RequiresUnsafeAttributeDefinition } : [])],
+                [api, .. unsafeModifier != "" ? new[] { RequiresUnsafeAttributeDefinition } : []],
                 options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules(apiUpdatedRules))
                 .VerifyDiagnostics();
             var apiReference = AsReference(apiCompilation, useCompilationReference);
@@ -2951,7 +3009,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             }
 
             comp = CreateCompilation(
-                [api, caller, .. (apiUnsafe && apiUpdatedRules ? new[] { RequiresUnsafeAttributeDefinition } : [])],
+                [api, caller, .. unsafeModifier != "" ? new[] { RequiresUnsafeAttributeDefinition } : []],
                 parseOptions: TestOptions.Regular.WithLanguageVersion(callerLangVersion),
                 options: TestOptions.ReleaseExe.WithAllowUnsafe(callerAllowUnsafe).WithUpdatedMemorySafetyRules(callerUpdatedRules));
         }
@@ -2962,6 +3020,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (2,1): error CS0227: Unsafe code may only appear if compiling with /unsafe
                 // unsafe { c.M(); }
                 Diagnostic(ErrorCode.ERR_IllegalUnsafe, "unsafe").WithLocation(2, 1));
+        }
+
+        if (!callerAllowUnsafe && compilationReference is null && unsafeModifier != "")
+        {
+            expectedDiagnostics.Add(
+                // (3,24): error CS0227: Unsafe code may only appear if compiling with /unsafe
+                //     unsafe public void M() => System.Console.Write(111);
+                Diagnostic(ErrorCode.ERR_IllegalUnsafe, "M").WithLocation(3, 24));
         }
 
         if (apiUnsafe && apiUpdatedRules && callerUpdatedRules && !callerUnsafeBlock)
@@ -2982,21 +3048,19 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             }
         }
 
-        // When compiling API and caller together (no compilationReference), the [RequiresUnsafe] attribute
-        // in source also triggers FeatureInPreview if using older language version
-        if (compilationReference is null && apiUnsafe && apiUpdatedRules && callerLangVersion < LanguageVersionFacts.CSharpNext)
-        {
-            expectedDiagnostics.Add(
-                // (3,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-                //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(3, 6));
-        }
-
         if (callerUpdatedRules && callerLangVersion < LanguageVersionFacts.CSharpNext)
         {
             expectedDiagnostics.Add(
                 // error CS8630: Invalid 'MemorySafetyRules' value: '2' for C# 14.0. Please use language version 'preview' or greater.
                 Diagnostic(ErrorCode.ERR_CompilationOptionNotAvailable).WithArguments("MemorySafetyRules", "2", "14.0", "preview").WithLocation(1, 1));
+
+            if (compilationReference is null && unsafeModifier != "")
+            {
+                expectedDiagnostics.Add(
+                    // (3,24): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                    //     unsafe public void M() => System.Console.Write(111);
+                    Diagnostic(ErrorCode.ERR_FeatureInPreview, "M").WithArguments("updated memory safety rules").WithLocation(3, 24));
+            }
         }
 
         comp.VerifyDiagnostics([.. expectedDiagnostics]);
@@ -3015,8 +3079,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public static void M() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public static void M(int x) { }
+                    unsafe public static void M(int x) { }
                 }
                 """,
             caller: """
@@ -3044,8 +3107,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public void M1() { unsafe { M2(); } }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void M2() { }
+                    unsafe public void M2() { }
                 }
                 """,
             caller: """
@@ -3071,8 +3133,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public static void M() { }
+                    unsafe public static void M() { }
                 }
                 """,
             caller: """
@@ -3091,13 +3152,11 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public static class E
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public static void M1(this int x) { }
+                    unsafe public static void M1(this int x) { }
 
                     extension(int x)
                     {
-                        [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                        public void M2() { }
+                        unsafe public void M2() { }
                     }
                 }
                 """,
@@ -3144,8 +3203,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     {
                         yield return 1;
                     }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void M3() { }
+                    unsafe public void M3() { }
                 }
                 """,
             caller: """
@@ -3173,8 +3231,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public static class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public static void M() { }
+                    unsafe public static void M() { }
                 }
                 """,
             caller: """
@@ -3205,8 +3262,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public static class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public static void M() { }
+                    unsafe public static void M() { }
                 }
                 """,
             caller: """
@@ -3248,8 +3304,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public static class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public static void M() { }
+                    unsafe public static void M() { }
                 }
                 """,
             caller: """
@@ -3281,8 +3336,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 static class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public static void M() => System.Console.WriteLine("ran");
+                    unsafe public static void M() => System.Console.WriteLine("ran");
                 }
                 """,
                 RequiresUnsafeAttributeDefinition,
@@ -3302,8 +3356,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public static class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public static void M() { }
+                    unsafe public static void M() { }
                 }
                 """,
             caller: """
@@ -3344,8 +3397,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class A : System.Attribute
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void F(int x) { }
+                    unsafe public void F(int x) { }
                 }
                 """,
             caller: """
@@ -3377,8 +3429,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public interface I
                 {
                     void M1();
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    void M2();
+                    unsafe void M2();
                 }
                 """,
             caller: """
@@ -3405,8 +3456,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             public class B
             {
                 public virtual void M1() { }
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public virtual void M2() { }
+                unsafe public virtual void M2() { }
             }
             """;
 
@@ -3415,8 +3465,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             class C : B
             {
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public override void M1() { }
+                unsafe public override void M1() { }
                 public override void M2() { }
             }
             """;
@@ -3426,9 +3475,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             // (1,1): error CS9362: 'C.M1()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
             // new C().M1();
             Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "new C().M1()").WithArguments("C.M1()").WithLocation(1, 1),
-            // (6,26): error CS9364: Unsafe member 'C.M1()' cannot override safe member 'B.M1()'
-            //     public override void M1() { }
-            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C.M1()", "B.M1()").WithLocation(6, 26),
+            // (5,33): error CS9364: Unsafe member 'C.M1()' cannot override safe member 'B.M1()'
+            //     unsafe public override void M1() { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C.M1()", "B.M1()").WithLocation(5, 33),
         };
 
         CompileAndVerifyUnsafe(
@@ -3451,15 +3500,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             .VerifyDiagnostics(
             // error CS8630: Invalid 'MemorySafetyRules' value: '2' for C# 14.0. Please use language version 'preview' or greater.
             Diagnostic(ErrorCode.ERR_CompilationOptionNotAvailable).WithArguments("MemorySafetyRules", "2", "14.0", "preview").WithLocation(1, 1),
-            // (4,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(4, 6),
-            // (5,6): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithArguments("updated memory safety rules").WithLocation(5, 6),
-            // (6,26): error CS9364: Unsafe member 'C.M1()' cannot override safe member 'B.M1()'
-            //     public override void M1() { }
-            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C.M1()", "B.M1()").WithLocation(6, 26),
+            // (4,32): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe public virtual void M2() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "M2").WithArguments("updated memory safety rules").WithLocation(4, 32),
+            // (5,33): error CS9364: Unsafe member 'C.M1()' cannot override safe member 'B.M1()'
+            //     unsafe public override void M1() { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C.M1()", "B.M1()").WithLocation(5, 33),
+            // (5,33): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     unsafe public override void M1() { }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "M1").WithArguments("updated memory safety rules").WithLocation(5, 33),
             // (1,1): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
             // new C().M1();
             Diagnostic(ErrorCode.ERR_FeatureInPreview, "new C().M1()").WithArguments("updated memory safety rules").WithLocation(1, 1));
@@ -3472,12 +3521,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class B
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public virtual void M1() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public virtual void M2() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public virtual void M3() { }
+                    unsafe public virtual void M1() { }
+                    unsafe public virtual void M2() { }
+                    unsafe public virtual void M3() { }
                     public virtual void M4() { }
                     public virtual void M5() { }
                     public virtual void M6() { }
@@ -3485,13 +3531,11 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 public class C : B
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override void M1() { }
+                    unsafe public override void M1() { }
                     public new virtual void M2() { }
                     public override void M3() { }
                     public override void M4() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public new virtual void M5() { }
+                    unsafe public new virtual void M5() { }
                 }
                 """,
             caller: """
@@ -3513,18 +3557,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 class D2 : C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override void M1() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override void M2() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override void M3() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override void M4() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override void M5() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override void M6() { }
+                    unsafe public override void M1() { }
+                    unsafe public override void M2() { }
+                    unsafe public override void M3() { }
+                    unsafe public override void M4() { }
+                    unsafe public override void M5() { }
+                    unsafe public override void M6() { }
                 }
 
                 class D3 : C;
@@ -3567,15 +3605,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (14,31): error CS9362: 'C.M1()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 //     public void BaseCalls() { base.M1(); base.M2(); base.M3(); base.M4(); base.M6(); }
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "base.M1()").WithArguments("C.M1()").WithLocation(14, 31),
-                // (22,26): error CS9364: Unsafe member 'D2.M2()' cannot override safe member 'C.M2()'
-                //     public override void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M2").WithArguments("D2.M2()", "C.M2()").WithLocation(22, 26),
-                // (26,26): error CS9364: Unsafe member 'D2.M4()' cannot override safe member 'B.M4()'
-                //     public override void M4() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M4").WithArguments("D2.M4()", "B.M4()").WithLocation(26, 26),
-                // (30,26): error CS9364: Unsafe member 'D2.M6()' cannot override safe member 'B.M6()'
-                //     public override void M6() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M6").WithArguments("D2.M6()", "B.M6()").WithLocation(30, 26),
+                // (20,33): error CS9364: Unsafe member 'D2.M2()' cannot override safe member 'C.M2()'
+                //     unsafe public override void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M2").WithArguments("D2.M2()", "C.M2()").WithLocation(20, 33),
+                // (22,33): error CS9364: Unsafe member 'D2.M4()' cannot override safe member 'B.M4()'
+                //     unsafe public override void M4() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M4").WithArguments("D2.M4()", "B.M4()").WithLocation(22, 33),
+                // (24,33): error CS9364: Unsafe member 'D2.M6()' cannot override safe member 'B.M6()'
+                //     unsafe public override void M6() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M6").WithArguments("D2.M6()", "B.M6()").WithLocation(24, 33),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
@@ -3597,24 +3635,24 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (2,65): error CS9362: 'D2.M6()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M6()").WithArguments("D2.M6()").WithLocation(2, 65),
-                // (20,26): error CS9364: Unsafe member 'D2.M1()' cannot override safe member 'B.M1()'
-                //     public override void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("D2.M1()", "B.M1()").WithLocation(20, 26),
-                // (22,26): error CS9364: Unsafe member 'D2.M2()' cannot override safe member 'C.M2()'
-                //     public override void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M2").WithArguments("D2.M2()", "C.M2()").WithLocation(22, 26),
-                // (24,26): error CS9364: Unsafe member 'D2.M3()' cannot override safe member 'B.M3()'
-                //     public override void M3() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M3").WithArguments("D2.M3()", "B.M3()").WithLocation(24, 26),
-                // (26,26): error CS9364: Unsafe member 'D2.M4()' cannot override safe member 'B.M4()'
-                //     public override void M4() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M4").WithArguments("D2.M4()", "B.M4()").WithLocation(26, 26),
-                // (28,26): error CS9364: Unsafe member 'D2.M5()' cannot override safe member 'C.M5()'
-                //     public override void M5() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M5").WithArguments("D2.M5()", "C.M5()").WithLocation(28, 26),
-                // (30,26): error CS9364: Unsafe member 'D2.M6()' cannot override safe member 'B.M6()'
-                //     public override void M6() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M6").WithArguments("D2.M6()", "B.M6()").WithLocation(30, 26),
+                // (19,33): error CS9364: Unsafe member 'D2.M1()' cannot override safe member 'B.M1()'
+                //     unsafe public override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("D2.M1()", "B.M1()").WithLocation(19, 33),
+                // (20,33): error CS9364: Unsafe member 'D2.M2()' cannot override safe member 'C.M2()'
+                //     unsafe public override void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M2").WithArguments("D2.M2()", "C.M2()").WithLocation(20, 33),
+                // (21,33): error CS9364: Unsafe member 'D2.M3()' cannot override safe member 'B.M3()'
+                //     unsafe public override void M3() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M3").WithArguments("D2.M3()", "B.M3()").WithLocation(21, 33),
+                // (22,33): error CS9364: Unsafe member 'D2.M4()' cannot override safe member 'B.M4()'
+                //     unsafe public override void M4() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M4").WithArguments("D2.M4()", "B.M4()").WithLocation(22, 33),
+                // (23,33): error CS9364: Unsafe member 'D2.M5()' cannot override safe member 'C.M5()'
+                //     unsafe public override void M5() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M5").WithArguments("D2.M5()", "C.M5()").WithLocation(23, 33),
+                // (24,33): error CS9364: Unsafe member 'D2.M6()' cannot override safe member 'B.M6()'
+                //     unsafe public override void M6() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M6").WithArguments("D2.M6()", "B.M6()").WithLocation(24, 33),
             ]);
     }
 
@@ -3688,8 +3726,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             }
             class C2 : B
             {
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public override void M() { }
+                unsafe public override void M() { }
             }
             """,
             [refA],
@@ -3701,9 +3738,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             // (6,1): error CS9362: 'B.M()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
             // b.M();
             Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "b.M()").WithArguments("B.M()").WithLocation(6, 1),
-            // (17,26): error CS9364: Unsafe member 'C2.M()' cannot override safe member 'A.M()'
-            //     public override void M() { }
-            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M").WithArguments("C2.M()", "A.M()").WithLocation(17, 26));
+            // (16,33): error CS9364: Unsafe member 'C2.M()' cannot override safe member 'A.M()'
+            //     unsafe public override void M() { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M").WithArguments("C2.M()", "A.M()").WithLocation(16, 33));
     }
 
     [Fact]
@@ -3713,16 +3750,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public interface I1
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    void M1();
+                    unsafe void M1();
                     void M2();
                 }
 
                 public interface I2
                 {
                     void M1();
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    void M2();
+                    unsafe void M2();
                 }
 
                 public class C1 : I1
@@ -3748,34 +3783,26 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 public class C3 : I1
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void M1() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void M2() { }
+                    unsafe public void M1() { }
+                    unsafe public void M2() { }
                 }
 
                 public class C4 : I1
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    void I1.M1() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    void I1.M2() { }
+                    unsafe void I1.M1() { }
+                    unsafe void I1.M2() { }
                 }
 
                 public class C5 : I1, I2
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void M1() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void M2() { }
+                    unsafe public void M1() { }
+                    unsafe public void M2() { }
                 }
 
                 public class C6 : I2, I1
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void M1() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void M2() { }
+                    unsafe public void M1() { }
+                    unsafe public void M2() { }
                 }
 
                 public class C7 : I1, I2
@@ -3801,63 +3828,63 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (7,1): error CS9362: 'I2.M2()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // i2.M2();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "i2.M2()").WithArguments("I2.M2()").WithLocation(7, 1),
-                // (14,17): error CS9365: Unsafe member 'C3.M2()' cannot implicitly implement safe member 'I1.M2()'
-                //     public void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C3.M2()", "I1.M2()").WithLocation(14, 17),
-                // (22,13): error CS9366: Unsafe member 'C4.I1.M2()' cannot implement safe member 'I1.M2()'
-                //     void I1.M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M2").WithArguments("C4.I1.M2()", "I1.M2()").WithLocation(22, 13),
-                // (28,17): error CS9365: Unsafe member 'C5.M1()' cannot implicitly implement safe member 'I2.M1()'
-                //     public void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C5.M1()", "I2.M1()").WithLocation(28, 17),
-                // (30,17): error CS9365: Unsafe member 'C5.M2()' cannot implicitly implement safe member 'I1.M2()'
-                //     public void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C5.M2()", "I1.M2()").WithLocation(30, 17),
-                // (36,17): error CS9365: Unsafe member 'C6.M1()' cannot implicitly implement safe member 'I2.M1()'
-                //     public void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C6.M1()", "I2.M1()").WithLocation(36, 17),
-                // (38,17): error CS9365: Unsafe member 'C6.M2()' cannot implicitly implement safe member 'I1.M2()'
-                //     public void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C6.M2()", "I1.M2()").WithLocation(38, 17),
+                // (12,24): error CS9365: Unsafe member 'C3.M2()' cannot implicitly implement safe member 'I1.M2()'
+                //     unsafe public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C3.M2()", "I1.M2()").WithLocation(12, 24),
+                // (18,20): error CS9366: Unsafe member 'C4.I1.M2()' cannot implement safe member 'I1.M2()'
+                //     unsafe void I1.M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M2").WithArguments("C4.I1.M2()", "I1.M2()").WithLocation(18, 20),
+                // (23,24): error CS9365: Unsafe member 'C5.M1()' cannot implicitly implement safe member 'I2.M1()'
+                //     unsafe public void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C5.M1()", "I2.M1()").WithLocation(23, 24),
+                // (24,24): error CS9365: Unsafe member 'C5.M2()' cannot implicitly implement safe member 'I1.M2()'
+                //     unsafe public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C5.M2()", "I1.M2()").WithLocation(24, 24),
+                // (29,24): error CS9365: Unsafe member 'C6.M1()' cannot implicitly implement safe member 'I2.M1()'
+                //     unsafe public void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C6.M1()", "I2.M1()").WithLocation(29, 24),
+                // (30,24): error CS9365: Unsafe member 'C6.M2()' cannot implicitly implement safe member 'I1.M2()'
+                //     unsafe public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C6.M2()", "I1.M2()").WithLocation(30, 24),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
-                // (12,17): error CS9365: Unsafe member 'C3.M1()' cannot implicitly implement safe member 'I1.M1()'
-                //     public void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C3.M1()", "I1.M1()").WithLocation(12, 17),
-                // (14,17): error CS9365: Unsafe member 'C3.M2()' cannot implicitly implement safe member 'I1.M2()'
-                //     public void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C3.M2()", "I1.M2()").WithLocation(14, 17),
-                // (20,13): error CS9366: Unsafe member 'C4.I1.M1()' cannot implement safe member 'I1.M1()'
-                //     void I1.M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M1").WithArguments("C4.I1.M1()", "I1.M1()").WithLocation(20, 13),
-                // (22,13): error CS9366: Unsafe member 'C4.I1.M2()' cannot implement safe member 'I1.M2()'
-                //     void I1.M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M2").WithArguments("C4.I1.M2()", "I1.M2()").WithLocation(22, 13),
-                // (28,17): error CS9365: Unsafe member 'C5.M1()' cannot implicitly implement safe member 'I1.M1()'
-                //     public void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C5.M1()", "I1.M1()").WithLocation(28, 17),
-                // (28,17): error CS9365: Unsafe member 'C5.M1()' cannot implicitly implement safe member 'I2.M1()'
-                //     public void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C5.M1()", "I2.M1()").WithLocation(28, 17),
-                // (30,17): error CS9365: Unsafe member 'C5.M2()' cannot implicitly implement safe member 'I1.M2()'
-                //     public void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C5.M2()", "I1.M2()").WithLocation(30, 17),
-                // (30,17): error CS9365: Unsafe member 'C5.M2()' cannot implicitly implement safe member 'I2.M2()'
-                //     public void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C5.M2()", "I2.M2()").WithLocation(30, 17),
-                // (36,17): error CS9365: Unsafe member 'C6.M1()' cannot implicitly implement safe member 'I2.M1()'
-                //     public void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C6.M1()", "I2.M1()").WithLocation(36, 17),
-                // (36,17): error CS9365: Unsafe member 'C6.M1()' cannot implicitly implement safe member 'I1.M1()'
-                //     public void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C6.M1()", "I1.M1()").WithLocation(36, 17),
-                // (38,17): error CS9365: Unsafe member 'C6.M2()' cannot implicitly implement safe member 'I2.M2()'
-                //     public void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C6.M2()", "I2.M2()").WithLocation(38, 17),
-                // (38,17): error CS9365: Unsafe member 'C6.M2()' cannot implicitly implement safe member 'I1.M2()'
-                //     public void M2() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C6.M2()", "I1.M2()").WithLocation(38, 17),
+                // (11,24): error CS9365: Unsafe member 'C3.M1()' cannot implicitly implement safe member 'I1.M1()'
+                //     unsafe public void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C3.M1()", "I1.M1()").WithLocation(11, 24),
+                // (12,24): error CS9365: Unsafe member 'C3.M2()' cannot implicitly implement safe member 'I1.M2()'
+                //     unsafe public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C3.M2()", "I1.M2()").WithLocation(12, 24),
+                // (17,20): error CS9366: Unsafe member 'C4.I1.M1()' cannot implement safe member 'I1.M1()'
+                //     unsafe void I1.M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M1").WithArguments("C4.I1.M1()", "I1.M1()").WithLocation(17, 20),
+                // (18,20): error CS9366: Unsafe member 'C4.I1.M2()' cannot implement safe member 'I1.M2()'
+                //     unsafe void I1.M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M2").WithArguments("C4.I1.M2()", "I1.M2()").WithLocation(18, 20),
+                // (23,24): error CS9365: Unsafe member 'C5.M1()' cannot implicitly implement safe member 'I1.M1()'
+                //     unsafe public void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C5.M1()", "I1.M1()").WithLocation(23, 24),
+                // (23,24): error CS9365: Unsafe member 'C5.M1()' cannot implicitly implement safe member 'I2.M1()'
+                //     unsafe public void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C5.M1()", "I2.M1()").WithLocation(23, 24),
+                // (24,24): error CS9365: Unsafe member 'C5.M2()' cannot implicitly implement safe member 'I1.M2()'
+                //     unsafe public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C5.M2()", "I1.M2()").WithLocation(24, 24),
+                // (24,24): error CS9365: Unsafe member 'C5.M2()' cannot implicitly implement safe member 'I2.M2()'
+                //     unsafe public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C5.M2()", "I2.M2()").WithLocation(24, 24),
+                // (29,24): error CS9365: Unsafe member 'C6.M1()' cannot implicitly implement safe member 'I2.M1()'
+                //     unsafe public void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C6.M1()", "I2.M1()").WithLocation(29, 24),
+                // (29,24): error CS9365: Unsafe member 'C6.M1()' cannot implicitly implement safe member 'I1.M1()'
+                //     unsafe public void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C6.M1()", "I1.M1()").WithLocation(29, 24),
+                // (30,24): error CS9365: Unsafe member 'C6.M2()' cannot implicitly implement safe member 'I2.M2()'
+                //     unsafe public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C6.M2()", "I2.M2()").WithLocation(30, 24),
+                // (30,24): error CS9365: Unsafe member 'C6.M2()' cannot implicitly implement safe member 'I1.M2()'
+                //     unsafe public void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C6.M2()", "I1.M2()").WithLocation(30, 24),
             ]);
     }
 
@@ -3869,8 +3896,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class B<T>
                 {
                     public void M1(T x) { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void M2(T x) { }
+                    unsafe public void M2(T x) { }
                 }
                 """,
             caller: """
@@ -3884,8 +3910,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 interface I
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    void M1(D x);
+                    unsafe void M1(D x);
                 }
                 """,
             additionalSources: [RequiresUnsafeAttributeDefinition],
@@ -3907,15 +3932,13 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public interface I
                 {
                     void M1();
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    void M2();
+                    unsafe void M2();
                 }
 
                 public class B1 : I
                 {
                     public virtual void M1() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public virtual void M2() { }
+                    unsafe public virtual void M2() { }
                 }
                 """,
             caller: """
@@ -3931,22 +3954,19 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 class B2 : I
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public virtual void M1() { }
+                    unsafe public virtual void M1() { }
                     public virtual void M2() { }
                 }
 
                 class C1 : B1
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override void M1() { }
+                    unsafe public override void M1() { }
                     public override void M2() { }
                 }
 
                 class C2 : B1, I
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override void M1() { }
+                    unsafe public override void M1() { }
                     public override void M2() { }
                 }
                 """,
@@ -3964,36 +3984,36 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (9,1): error CS9362: 'I.M2()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // i.M2();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "i.M2()").WithArguments("I.M2()").WithLocation(9, 1),
-                // (14,25): error CS9365: Unsafe member 'B2.M1()' cannot implicitly implement safe member 'I.M1()'
-                //     public virtual void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("B2.M1()", "I.M1()").WithLocation(14, 25),
-                // (21,26): error CS9364: Unsafe member 'C1.M1()' cannot override safe member 'B1.M1()'
-                //     public override void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C1.M1()", "B1.M1()").WithLocation(21, 26),
-                // (28,26): error CS9364: Unsafe member 'C2.M1()' cannot override safe member 'B1.M1()'
-                //     public override void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C2.M1()", "B1.M1()").WithLocation(28, 26),
-                // (28,26): error CS9365: Unsafe member 'C2.M1()' cannot implicitly implement safe member 'I.M1()'
-                //     public override void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C2.M1()", "I.M1()").WithLocation(28, 26),
+                // (13,32): error CS9365: Unsafe member 'B2.M1()' cannot implicitly implement safe member 'I.M1()'
+                //     unsafe public virtual void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("B2.M1()", "I.M1()").WithLocation(13, 32),
+                // (19,33): error CS9364: Unsafe member 'C1.M1()' cannot override safe member 'B1.M1()'
+                //     unsafe public override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C1.M1()", "B1.M1()").WithLocation(19, 33),
+                // (25,33): error CS9364: Unsafe member 'C2.M1()' cannot override safe member 'B1.M1()'
+                //     unsafe public override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C2.M1()", "B1.M1()").WithLocation(25, 33),
+                // (25,33): error CS9365: Unsafe member 'C2.M1()' cannot implicitly implement safe member 'I.M1()'
+                //     unsafe public override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C2.M1()", "I.M1()").WithLocation(25, 33),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
                 // (2,1): error CS9362: 'C1.M1()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // c1.M1();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c1.M1()").WithArguments("C1.M1()").WithLocation(2, 1),
-                // (14,25): error CS9365: Unsafe member 'B2.M1()' cannot implicitly implement safe member 'I.M1()'
-                //     public virtual void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("B2.M1()", "I.M1()").WithLocation(14, 25),
-                // (21,26): error CS9364: Unsafe member 'C1.M1()' cannot override safe member 'B1.M1()'
-                //     public override void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C1.M1()", "B1.M1()").WithLocation(21, 26),
-                // (28,26): error CS9364: Unsafe member 'C2.M1()' cannot override safe member 'B1.M1()'
-                //     public override void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C2.M1()", "B1.M1()").WithLocation(28, 26),
-                // (28,26): error CS9365: Unsafe member 'C2.M1()' cannot implicitly implement safe member 'I.M1()'
-                //     public override void M1() { }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C2.M1()", "I.M1()").WithLocation(28, 26),
+                // (13,32): error CS9365: Unsafe member 'B2.M1()' cannot implicitly implement safe member 'I.M1()'
+                //     unsafe public virtual void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("B2.M1()", "I.M1()").WithLocation(13, 32),
+                // (19,33): error CS9364: Unsafe member 'C1.M1()' cannot override safe member 'B1.M1()'
+                //     unsafe public override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C1.M1()", "B1.M1()").WithLocation(19, 33),
+                // (25,33): error CS9364: Unsafe member 'C2.M1()' cannot override safe member 'B1.M1()'
+                //     unsafe public override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("C2.M1()", "B1.M1()").WithLocation(25, 33),
+                // (25,33): error CS9365: Unsafe member 'C2.M1()' cannot implicitly implement safe member 'I.M1()'
+                //     unsafe public override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C2.M1()", "I.M1()").WithLocation(25, 33),
             ]);
     }
 
@@ -4008,12 +4028,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             // (7,17): warning CS0108: 'C1.M1()' hides inherited member 'B.M1()'. Use the new keyword if hiding was intended.
             //     public void M1() { }
             Diagnostic(ErrorCode.WRN_NewRequired, "M1").WithArguments("C1.M1()", "B.M1()").WithLocation(7, 17),
-            // (9,17): warning CS0108: 'C1.M2()' hides inherited member 'B.M2()'. Use the new keyword if hiding was intended.
-            //     public void M2() { }
-            Diagnostic(ErrorCode.WRN_NewRequired, "M2").WithArguments("C1.M2()", "B.M2()").WithLocation(9, 17),
-            // (16,17): error CS0111: Type 'C2' already defines a member called 'M1' with the same parameter types
-            //     public void M1() { }
-            Diagnostic(ErrorCode.ERR_MemberAlreadyExists, "M1").WithArguments("M1", "C2").WithLocation(16, 17),
+            // (8,24): warning CS0108: 'C1.M2()' hides inherited member 'B.M2()'. Use the new keyword if hiding was intended.
+            //     unsafe public void M2() { }
+            Diagnostic(ErrorCode.WRN_NewRequired, "M2").WithArguments("C1.M2()", "B.M2()").WithLocation(8, 24),
+            // (14,24): error CS0111: Type 'C2' already defines a member called 'M1' with the same parameter types
+            //     unsafe public void M1() { }
+            Diagnostic(ErrorCode.ERR_MemberAlreadyExists, "M1").WithArguments("M1", "C2").WithLocation(14, 24),
         ];
 
         DiagnosticDescription[] updatedCallerDiagnostics =
@@ -4028,8 +4048,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class B
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void M1() { }
+                    unsafe public void M1() { }
                     public void M2() { }
                 }
                 """,
@@ -4041,15 +4060,13 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 class C1 : B
                 {
                     public void M1() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void M2() { }
+                    unsafe public void M2() { }
                 }
 
                 class C2
                 {
                     public void M1() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void M1() { }
+                    unsafe public void M1() { }
                 }
                 """,
             additionalSources: [RequiresUnsafeAttributeDefinition],
@@ -4069,24 +4086,21 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             public class C : INotifyCompletion
             {
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public bool IsCompleted => false;
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public C GetAwaiter() => this;
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public void GetResult() { }
+                unsafe public bool IsCompleted => false;
+                unsafe public C GetAwaiter() => this;
+                unsafe public void GetResult() { }
                 {{onCompletedAttribute}}
                 public void OnCompleted(Action continuation) { }
             }
             """;
 
         CreateCompilation(
-            [getLib("[System.Diagnostics.CodeAnalysis.RequiresUnsafe]"), RequiresUnsafeAttributeDefinition],
+            [getLib("unsafe"), RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
-            // (13,17): error CS9365: Unsafe member 'C.OnCompleted(Action)' cannot implicitly implement safe member 'INotifyCompletion.OnCompleted(Action)'
-            //     public void OnCompleted(Action continuation) { }
-            Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "OnCompleted").WithArguments("C.OnCompleted(System.Action)", "System.Runtime.CompilerServices.INotifyCompletion.OnCompleted(System.Action)").WithLocation(13, 17));
+            // (10,17): error CS9365: Unsafe member 'C.OnCompleted(Action)' cannot implicitly implement safe member 'INotifyCompletion.OnCompleted(Action)'
+            //     unsafe public void OnCompleted(Action continuation) { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "OnCompleted").WithArguments("C.OnCompleted(System.Action)", "System.Runtime.CompilerServices.INotifyCompletion.OnCompleted(System.Action)").WithLocation(10, 17));
 
         var lib = getLib("");
 
@@ -4159,8 +4173,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public interface INotifyCompletion;
                 public static class AsyncHelpers
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public static void AwaitAwaiter<TAwaiter>(TAwaiter awaiter) where TAwaiter : INotifyCompletion { }
+                    unsafe public static void AwaitAwaiter<TAwaiter>(TAwaiter awaiter) where TAwaiter : INotifyCompletion { }
                 }
             }
             namespace System.Threading.Tasks
@@ -4230,8 +4243,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 [CollectionBuilder(typeof(C), nameof(Create))]
                 public class C : IEnumerable<int>
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public static C Create(ReadOnlySpan<int> s) => new C();
+                    unsafe public static C Create(ReadOnlySpan<int> s) => new C();
                     public IEnumerator<int> GetEnumerator() => throw null;
                     IEnumerator IEnumerable.GetEnumerator() => throw null;
                 }
@@ -4269,6 +4281,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (12,1): error CS9362: 'C.Create(ReadOnlySpan<int>)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // M3(1, 2, 3);
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M3(1, 2, 3)").WithArguments("C.Create(System.ReadOnlySpan<int>)").WithLocation(12, 1),
+                // (12,1): error CS9362: 'M3(params C)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // M3(1, 2, 3);
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M3(1, 2, 3)").WithArguments("M3(params C)").WithLocation(12, 1),
+            ],
+            expectedDiagnosticsWhenReferencingLegacyLib:
+            [
+                // (12,1): error CS9362: 'M3(params C)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // M3(1, 2, 3);
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M3(1, 2, 3)").WithArguments("M3(params C)").WithLocation(12, 1),
             ]);
     }
 
@@ -4286,8 +4307,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C : IEnumerable<int>
                 {
                     public static C Create(ReadOnlySpan<int> s) => new C();
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public IEnumerator<int> GetEnumerator() => null;
+                    unsafe public IEnumerator<int> GetEnumerator() => null;
                     IEnumerator<int> IEnumerable<int>.GetEnumerator() => null;
                     IEnumerator IEnumerable.GetEnumerator() => null;
                 }
@@ -4314,8 +4334,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 public class C : IEnumerable<int>
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C() { }
+                    unsafe public C() { }
                     public void Add(int x) { }
                     public IEnumerator<int> GetEnumerator() => throw null;
                     IEnumerator IEnumerable.GetEnumerator() => throw null;
@@ -4353,6 +4372,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (12,1): error CS9362: 'C.C()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // M3(1, 2, 3);
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M3(1, 2, 3)").WithArguments("C.C()").WithLocation(12, 1),
+                // (12,1): error CS9362: 'M3(params C)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // M3(1, 2, 3);
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M3(1, 2, 3)").WithArguments("M3(params C)").WithLocation(12, 1),
+            ],
+            expectedDiagnosticsWhenReferencingLegacyLib:
+            [
+                // (12,1): error CS9362: 'M3(params C)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // M3(1, 2, 3);
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M3(1, 2, 3)").WithArguments("M3(params C)").WithLocation(12, 1),
             ]);
     }
 
@@ -4366,8 +4394,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 public class C : IEnumerable<int>
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C(int i) { }
+                    unsafe public C(int i) { }
                     public void Add(int x) { }
                     public IEnumerator<int> GetEnumerator() => throw null;
                     IEnumerator IEnumerable.GetEnumerator() => throw null;
@@ -4398,8 +4425,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 public class C : IEnumerable<int>
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void Add(int x) { }
+                    unsafe public void Add(int x) { }
                     public IEnumerator<int> GetEnumerator() => throw null;
                     IEnumerator IEnumerable.GetEnumerator() => throw null;
                 }
@@ -4474,6 +4500,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (6,16): error CS9362: 'C.Add(int)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // static void M1(params C c) { }
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "params C c").WithArguments("C.Add(int)").WithLocation(6, 16),
+                // (18,1): error CS9362: 'M3(params C)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // M3(1, 2, 3);
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M3(1, 2, 3)").WithArguments("M3(params C)").WithLocation(18, 1),
                 // (18,4): error CS9362: 'C.Add(int)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // M3(1, 2, 3);
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "1").WithArguments("C.Add(int)").WithLocation(18, 4),
@@ -4483,6 +4512,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (18,10): error CS9362: 'C.Add(int)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // M3(1, 2, 3);
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "3").WithArguments("C.Add(int)").WithLocation(18, 10),
+            ],
+            expectedDiagnosticsWhenReferencingLegacyLib:
+            [
+                // (18,1): error CS9362: 'M3(params C)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // M3(1, 2, 3);
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M3(1, 2, 3)").WithArguments("M3(params C)").WithLocation(18, 1),
             ]);
     }
 
@@ -4496,8 +4531,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 public class C : IEnumerable<int>
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public IEnumerator<int> GetEnumerator() => null;
+                    unsafe public IEnumerator<int> GetEnumerator() => null;
                     IEnumerator<int> IEnumerable<int>.GetEnumerator() => null;
                     IEnumerator IEnumerable.GetEnumerator() => null;
                 }
@@ -4528,12 +4562,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C : IEnumerable<int>
                 {
                     public void Add(int x) { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C GetEnumerator() => this;
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public bool MoveNext() => false;
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public int Current => 0;
+                    unsafe public C GetEnumerator() => this;
+                    unsafe public bool MoveNext() => false;
+                    unsafe public int Current => 0;
                     IEnumerator<int> IEnumerable<int>.GetEnumerator() => null;
                     IEnumerator IEnumerable.GetEnumerator() => null;
                 }
@@ -4567,8 +4598,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public C GetEnumerator() => this;
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public bool MoveNext() => false;
+                    unsafe public bool MoveNext() => false;
                     public int Current => 0;
                 }
                 """,
@@ -4598,8 +4628,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 {
                     public C GetEnumerator() => this;
                     public bool MoveNext() => false;
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public int Current {{getter}}
+                    unsafe public int Current {{getter}}
                 }
                 """,
             caller: """
@@ -4626,7 +4655,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 {
                     public C GetEnumerator() => this;
                     public bool MoveNext() => false;
-                    public int Current { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get => 0; }
+                    public int Current { unsafe get => 0; }
                 }
                 """,
             caller: """
@@ -4653,7 +4682,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 {
                     public C GetEnumerator() => this;
                     public bool MoveNext() => false;
-                    public int Current { get => 0; [System.Diagnostics.CodeAnalysis.RequiresUnsafe] set { } }
+                    public int Current { get => 0; unsafe set { } }
                 }
                 """,
             caller: """
@@ -4675,15 +4704,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public C GetEnumerator() => this;
                 public bool MoveNext() => false;
                 public int Current => 0;
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public void Dispose() { }
+                unsafe public void Dispose() { }
             }
             """, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
-            // (7,17): error CS9365: Unsafe member 'C.Dispose()' cannot implicitly implement safe member 'IDisposable.Dispose()'
-            //     public unsafe void Dispose() { }
-            Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "Dispose").WithArguments("C.Dispose()", "System.IDisposable.Dispose()").WithLocation(7, 17));
+            // (6,24): error CS9365: Unsafe member 'C.Dispose()' cannot implicitly implement safe member 'IDisposable.Dispose()'
+            //     unsafe public void Dispose() { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "Dispose").WithArguments("C.Dispose()", "System.IDisposable.Dispose()").WithLocation(6, 24));
     }
 
     [Fact]
@@ -4718,8 +4746,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     public enum AttributeTargets;
                     public interface IDisposable
                     {
-                        [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                        void Dispose();
+                        unsafe void Dispose();
                     }
                 }
 
@@ -4786,8 +4813,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     public S GetEnumerator() => this;
                     public bool MoveNext() => false;
                     public int Current => 0;
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void Dispose() { }
+                    unsafe public void Dispose() { }
                 }
                 """,
             caller: """
@@ -4822,8 +4848,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     public C GetAsyncEnumerator() => this;
                     public Task<bool> MoveNextAsync() => null;
                     public int Current => 0;
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public Task DisposeAsync() => null;
+                    unsafe public Task DisposeAsync() => null;
                 }
                 """,
             caller: """
@@ -4850,7 +4875,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CompileAndVerifyUnsafe(
             lib: """
                 public class C1 { public ref int GetPinnableReference() => throw null; }
-                public class C2 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] public ref int GetPinnableReference() => throw null; }
+                public class C2 { unsafe public ref int GetPinnableReference() => throw null; }
                 """,
             caller: """
                 fixed (int* p = new C1()) { }
@@ -4890,8 +4915,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void Deconstruct(out int x, out int y) { x = y = 0; }
+                    unsafe public void Deconstruct(out int x, out int y) { x = y = 0; }
                 }
                 """,
             caller: """
@@ -4917,12 +4941,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 namespace System.Threading;
                 public class Lock
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public Scope EnterScope() => new();
+                    unsafe public Scope EnterScope() => new();
                     public ref struct Scope
                     {
-                        [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                        public void Dispose() { }
+                        unsafe public void Dispose() { }
                     }
                 }
                 """,
@@ -4953,10 +4975,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 namespace System.Runtime.CompilerServices;
                 public interface ITuple
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    int Length { get; }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    object this[int index] { get; }
+                    unsafe int Length { get; }
+                    unsafe object this[int index] { get; }
                 }
                 """,
             caller: """
@@ -4986,12 +5006,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 [System.Runtime.CompilerServices.InterpolatedStringHandler]
                 public struct C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C(int literalLength, int formattedCount) { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void AppendLiteral(string s) { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void AppendFormatted<T>(T t) { }
+                    unsafe public C(int literalLength, int formattedCount) { }
+                    unsafe public void AppendLiteral(string s) { }
+                    unsafe public void AppendFormatted<T>(T t) { }
                 }
                 """,
             caller: """
@@ -5018,8 +5035,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
     [Theory, CombinatorialData]
     public void Member_Interceptor(
-        [CombinatorialValues("[System.Diagnostics.CodeAnalysis.RequiresUnsafe]", "")] string unsafe1,
-        [CombinatorialValues("[System.Diagnostics.CodeAnalysis.RequiresUnsafe]", "")] string unsafe2)
+        [CombinatorialValues("unsafe", "")] string unsafe1,
+        [CombinatorialValues("unsafe", "")] string unsafe2)
     {
         var source = ($$"""
             C.M();
@@ -5065,8 +5082,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
             public static class C
             {
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public static IEnumerable<int> M()
+                unsafe public static IEnumerable<int> M()
                 {
                     yield return 1;
                 }
@@ -5108,8 +5124,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             M1();
             M2();
             unsafe { M1(); }
-            [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            static void M1() { }
+            unsafe static void M1() { }
             static void M2() { }
             """;
         CreateCompilation([source, RequiresUnsafeAttributeDefinition],
@@ -5130,9 +5145,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         CreateCompilation([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
-            // (1,12): error CS9367: RequiresUnsafeAttribute cannot be applied to this symbol.
+            // (1,12): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
             // var lam = [System.Diagnostics.CodeAnalysis.RequiresUnsafe] () => { };
-            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeUnsupportedMemberTarget, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(1, 12));
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(1, 12));
     }
 
     [Fact]
@@ -5178,8 +5193,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public int P1 { get; set; }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public int P2 { get; set; }
+                    unsafe public int P2 { get; set; }
                 }
                 """,
             caller: """
@@ -5210,8 +5224,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public int P { get; set; }
+                    unsafe public int P { get; set; }
                 }
                 """,
             caller: """
@@ -5240,10 +5253,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C P1 { get; set; }
-                    public C P2 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
-                    public C P3 { get; [System.Diagnostics.CodeAnalysis.RequiresUnsafe] set; }
+                    unsafe public C P1 { get; set; }
+                    public C P2 { unsafe get; set; }
+                    public C P3 { get; unsafe set; }
                     public C P4 { get; set; }
                 }
                 """,
@@ -5292,10 +5304,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public int this[int i] => 0;
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public int Length => 0;
+                    unsafe public int this[int i] => 0;
+                    unsafe public int Length => 0;
                 }
                 """,
             caller: """
@@ -5335,8 +5345,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     extension(int x)
                     {
                         public int P1 { get => x; set { } }
-                        [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                        public int P2 { get => x; set { } }
+                        unsafe public int P2 { get => x; set { } }
                     }
                 }
                 """,
@@ -5377,8 +5386,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public record C(int P1, int P2)
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public int P2 { get; set; } = P2;
+                    unsafe public int P2 { get; set; } = P2;
                 }
                 """,
             caller: """
@@ -5407,8 +5415,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var lib = """
             public class C
             {
-                public int P1 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
-                public int P2 { get; [System.Diagnostics.CodeAnalysis.RequiresUnsafe] set; }
+                public int P1 { unsafe get; set; }
+                public int P2 { get; unsafe set; }
             }
             """;
 
@@ -5434,19 +5442,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.P2").WithArguments("C.P2.set").WithLocation(3, 1),
             ]);
 
-        var expectedDiagnostics = new[]
-        {
-            // (3,22): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
-            //     public int P1 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(3, 22),
-            // (4,27): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
-            //     public int P2 { get; [System.Diagnostics.CodeAnalysis.RequiresUnsafe] set; }
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(4, 27),
-        };
-
-        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.Regular14).VerifyEmitDiagnostics(expectedDiagnostics);
-        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics(expectedDiagnostics);
-        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularPreview).VerifyEmitDiagnostics(expectedDiagnostics);
+        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.Regular14).VerifyEmitDiagnostics(
+            // (3,21): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     public int P1 { unsafe get; set; }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "unsafe").WithArguments("updated memory safety rules").WithLocation(3, 21),
+            // (4,26): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     public int P2 { get; unsafe set; }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "unsafe").WithArguments("updated memory safety rules").WithLocation(4, 26));
+        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
+        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularPreview).VerifyEmitDiagnostics();
     }
 
     [Fact]
@@ -5629,8 +5633,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 """
                 class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    int P1 => field;
+                    unsafe int P1 => field;
 
                     [field: System.Diagnostics.CodeAnalysis.RequiresUnsafe]
                     int P2 => field;
@@ -5640,9 +5643,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             ],
             options: TestOptions.ReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
-            // (6,13): error CS0592: Attribute 'System.Diagnostics.CodeAnalysis.RequiresUnsafe' is not valid on this declaration type. It is only valid on 'constructor, method, property, indexer, event' declarations.
+            // (3,16): error CS0227: Unsafe code may only appear if compiling with /unsafe
+            //     unsafe int P1 => field;
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "P1").WithLocation(3, 16),
+            // (5,13): error CS0592: Attribute 'System.Diagnostics.CodeAnalysis.RequiresUnsafe' is not valid on this declaration type. It is only valid on 'constructor, method, property, indexer, event' declarations.
             //     [field: System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_AttributeOnBadSymbolType, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithArguments("System.Diagnostics.CodeAnalysis.RequiresUnsafe", "constructor, method, property, indexer, event").WithLocation(6, 13));
+            Diagnostic(ErrorCode.ERR_AttributeOnBadSymbolType, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithArguments("System.Diagnostics.CodeAnalysis.RequiresUnsafe", "constructor, method, property, indexer, event").WithLocation(5, 13));
     }
 
     [Fact]
@@ -5653,10 +5659,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class A : System.Attribute
                 {
                     public int P1 { get; set; }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public int P2 { get; set; }
-                    public int P3 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
-                    public int P4 { get; [System.Diagnostics.CodeAnalysis.RequiresUnsafe] set; }
+                    unsafe public int P2 { get; set; }
+                    public int P3 { unsafe get; set; }
+                    public int P4 { get; unsafe set; }
                     public unsafe int F;
                 }
                 """,
@@ -5700,9 +5705,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class B
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public virtual int P1 { get; set; }
-                    public virtual int P2 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
+                    unsafe public virtual int P1 { get; set; }
+                    public virtual int P2 { unsafe get; set; }
                     public virtual int P3 { get; set; }
                 }
                 """,
@@ -5715,18 +5719,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 class C1 : B
                 {
                     public override int P1 { get; set; }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override int P2 { get; set; }
-                    public override int P3 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
+                    unsafe public override int P2 { get; set; }
+                    public override int P3 { unsafe get; set; }
                 }
 
                 class C2 : B
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override int P1 { get; set; }
-                    public override int P2 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override int P3 { get; set; }
+                    unsafe public override int P1 { get; set; }
+                    public override int P2 { unsafe get; set; }
+                    unsafe public override int P3 { get; set; }
                 }
                 """,
             additionalSources: [RequiresUnsafeAttributeDefinition],
@@ -5743,18 +5744,18 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (4,8): error CS9362: 'C1.P3.get' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // c.P3 = c.P3 + 123;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.P3").WithArguments("C1.P3.get").WithLocation(4, 8),
-                // (10,35): error CS9364: Unsafe member 'C1.P2.set' cannot override safe member 'B.P2.set'
-                //     public override int P2 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C1.P2.set", "B.P2.set").WithLocation(10, 35),
-                // (11,79): error CS9364: Unsafe member 'C1.P3.get' cannot override safe member 'B.P3.get'
-                //     public override int P3 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C1.P3.get", "B.P3.get").WithLocation(11, 79),
-                // (20,30): error CS9364: Unsafe member 'C2.P3.get' cannot override safe member 'B.P3.get'
-                //     public override int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P3.get", "B.P3.get").WithLocation(20, 30),
-                // (20,35): error CS9364: Unsafe member 'C2.P3.set' cannot override safe member 'B.P3.set'
-                //     public override int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C2.P3.set", "B.P3.set").WithLocation(20, 35),
+                // (9,42): error CS9364: Unsafe member 'C1.P2.set' cannot override safe member 'B.P2.set'
+                //     unsafe public override int P2 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C1.P2.set", "B.P2.set").WithLocation(9, 42),
+                // (10,37): error CS9364: Unsafe member 'C1.P3.get' cannot override safe member 'B.P3.get'
+                //     public override int P3 { unsafe get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C1.P3.get", "B.P3.get").WithLocation(10, 37),
+                // (17,37): error CS9364: Unsafe member 'C2.P3.get' cannot override safe member 'B.P3.get'
+                //     unsafe public override int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P3.get", "B.P3.get").WithLocation(17, 37),
+                // (17,42): error CS9364: Unsafe member 'C2.P3.set' cannot override safe member 'B.P3.set'
+                //     unsafe public override int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C2.P3.set", "B.P3.set").WithLocation(17, 42),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
@@ -5767,30 +5768,30 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (4,8): error CS9362: 'C1.P3.get' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // c.P3 = c.P3 + 123;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.P3").WithArguments("C1.P3.get").WithLocation(4, 8),
-                // (10,30): error CS9364: Unsafe member 'C1.P2.get' cannot override safe member 'B.P2.get'
-                //     public override int P2 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C1.P2.get", "B.P2.get").WithLocation(10, 30),
-                // (10,35): error CS9364: Unsafe member 'C1.P2.set' cannot override safe member 'B.P2.set'
-                //     public override int P2 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C1.P2.set", "B.P2.set").WithLocation(10, 35),
-                // (11,79): error CS9364: Unsafe member 'C1.P3.get' cannot override safe member 'B.P3.get'
-                //     public override int P3 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C1.P3.get", "B.P3.get").WithLocation(11, 79),
-                // (17,30): error CS9364: Unsafe member 'C2.P1.get' cannot override safe member 'B.P1.get'
-                //     public override int P1 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P1.get", "B.P1.get").WithLocation(17, 30),
-                // (17,35): error CS9364: Unsafe member 'C2.P1.set' cannot override safe member 'B.P1.set'
-                //     public override int P1 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C2.P1.set", "B.P1.set").WithLocation(17, 35),
-                // (18,79): error CS9364: Unsafe member 'C2.P2.get' cannot override safe member 'B.P2.get'
-                //     public override int P2 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P2.get", "B.P2.get").WithLocation(18, 79),
-                // (20,30): error CS9364: Unsafe member 'C2.P3.get' cannot override safe member 'B.P3.get'
-                //     public override int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P3.get", "B.P3.get").WithLocation(20, 30),
-                // (20,35): error CS9364: Unsafe member 'C2.P3.set' cannot override safe member 'B.P3.set'
-                //     public override int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C2.P3.set", "B.P3.set").WithLocation(20, 35),
+                // (9,37): error CS9364: Unsafe member 'C1.P2.get' cannot override safe member 'B.P2.get'
+                //     unsafe public override int P2 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C1.P2.get", "B.P2.get").WithLocation(9, 37),
+                // (9,42): error CS9364: Unsafe member 'C1.P2.set' cannot override safe member 'B.P2.set'
+                //     unsafe public override int P2 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C1.P2.set", "B.P2.set").WithLocation(9, 42),
+                // (10,37): error CS9364: Unsafe member 'C1.P3.get' cannot override safe member 'B.P3.get'
+                //     public override int P3 { unsafe get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C1.P3.get", "B.P3.get").WithLocation(10, 37),
+                // (15,37): error CS9364: Unsafe member 'C2.P1.get' cannot override safe member 'B.P1.get'
+                //     unsafe public override int P1 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P1.get", "B.P1.get").WithLocation(15, 37),
+                // (15,42): error CS9364: Unsafe member 'C2.P1.set' cannot override safe member 'B.P1.set'
+                //     unsafe public override int P1 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C2.P1.set", "B.P1.set").WithLocation(15, 42),
+                // (16,37): error CS9364: Unsafe member 'C2.P2.get' cannot override safe member 'B.P2.get'
+                //     public override int P2 { unsafe get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P2.get", "B.P2.get").WithLocation(16, 37),
+                // (17,37): error CS9364: Unsafe member 'C2.P3.get' cannot override safe member 'B.P3.get'
+                //     unsafe public override int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "get").WithArguments("C2.P3.get", "B.P3.get").WithLocation(17, 37),
+                // (17,42): error CS9364: Unsafe member 'C2.P3.set' cannot override safe member 'B.P3.set'
+                //     unsafe public override int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "set").WithArguments("C2.P3.set", "B.P3.set").WithLocation(17, 42),
             ]);
     }
 
@@ -5801,9 +5802,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public interface I
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    int P1 { get; set; }
-                    int P2 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
+                    unsafe int P1 { get; set; }
+                    int P2 { unsafe get; set; }
                     int P3 { get; set; }
                 }
                 """,
@@ -5816,18 +5816,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 class C1 : I
                 {
                     public int P1 { get; set; }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public int P2 { get; set; }
-                    public int P3 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
+                    unsafe public int P2 { get; set; }
+                    public int P3 { unsafe get; set; }
                 }
 
                 class C2 : I
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public int P1 { get; set; }
-                    public int P2 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public int P3 { get; set; }
+                    unsafe public int P1 { get; set; }
+                    public int P2 { unsafe get; set; }
+                    unsafe public int P3 { get; set; }
                 }
                 """,
             additionalSources: [RequiresUnsafeAttributeDefinition],
@@ -5844,45 +5841,45 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (3,8): error CS9362: 'I.P2.get' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // i.P2 = i.P2 + 123;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "i.P2").WithArguments("I.P2.get").WithLocation(3, 8),
-                // (10,26): error CS9365: Unsafe member 'C1.P2.set' cannot implicitly implement safe member 'I.P2.set'
-                //     public int P2 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C1.P2.set", "I.P2.set").WithLocation(10, 26),
-                // (11,70): error CS9365: Unsafe member 'C1.P3.get' cannot implicitly implement safe member 'I.P3.get'
-                //     public int P3 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C1.P3.get", "I.P3.get").WithLocation(11, 70),
-                // (20,21): error CS9365: Unsafe member 'C2.P3.get' cannot implicitly implement safe member 'I.P3.get'
-                //     public int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P3.get", "I.P3.get").WithLocation(20, 21),
-                // (20,26): error CS9365: Unsafe member 'C2.P3.set' cannot implicitly implement safe member 'I.P3.set'
-                //     public int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C2.P3.set", "I.P3.set").WithLocation(20, 26),
+                // (9,33): error CS9365: Unsafe member 'C1.P2.set' cannot implicitly implement safe member 'I.P2.set'
+                //     unsafe public int P2 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C1.P2.set", "I.P2.set").WithLocation(9, 33),
+                // (10,28): error CS9365: Unsafe member 'C1.P3.get' cannot implicitly implement safe member 'I.P3.get'
+                //     public int P3 { unsafe get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C1.P3.get", "I.P3.get").WithLocation(10, 28),
+                // (17,28): error CS9365: Unsafe member 'C2.P3.get' cannot implicitly implement safe member 'I.P3.get'
+                //     unsafe public int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P3.get", "I.P3.get").WithLocation(17, 28),
+                // (17,33): error CS9365: Unsafe member 'C2.P3.set' cannot implicitly implement safe member 'I.P3.set'
+                //     unsafe public int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C2.P3.set", "I.P3.set").WithLocation(17, 33),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
-                // (10,21): error CS9365: Unsafe member 'C1.P2.get' cannot implicitly implement safe member 'I.P2.get'
-                //     public int P2 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C1.P2.get", "I.P2.get").WithLocation(10, 21),
-                // (10,26): error CS9365: Unsafe member 'C1.P2.set' cannot implicitly implement safe member 'I.P2.set'
-                //     public int P2 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C1.P2.set", "I.P2.set").WithLocation(10, 26),
-                // (11,70): error CS9365: Unsafe member 'C1.P3.get' cannot implicitly implement safe member 'I.P3.get'
-                //     public int P3 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C1.P3.get", "I.P3.get").WithLocation(11, 70),
-                // (17,21): error CS9365: Unsafe member 'C2.P1.get' cannot implicitly implement safe member 'I.P1.get'
-                //     public int P1 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P1.get", "I.P1.get").WithLocation(17, 21),
-                // (17,26): error CS9365: Unsafe member 'C2.P1.set' cannot implicitly implement safe member 'I.P1.set'
-                //     public int P1 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C2.P1.set", "I.P1.set").WithLocation(17, 26),
-                // (18,70): error CS9365: Unsafe member 'C2.P2.get' cannot implicitly implement safe member 'I.P2.get'
-                //     public int P2 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P2.get", "I.P2.get").WithLocation(18, 70),
-                // (20,21): error CS9365: Unsafe member 'C2.P3.get' cannot implicitly implement safe member 'I.P3.get'
-                //     public int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P3.get", "I.P3.get").WithLocation(20, 21),
-                // (20,26): error CS9365: Unsafe member 'C2.P3.set' cannot implicitly implement safe member 'I.P3.set'
-                //     public int P3 { get; set; }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C2.P3.set", "I.P3.set").WithLocation(20, 26),
+                // (9,28): error CS9365: Unsafe member 'C1.P2.get' cannot implicitly implement safe member 'I.P2.get'
+                //     unsafe public int P2 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C1.P2.get", "I.P2.get").WithLocation(9, 28),
+                // (9,33): error CS9365: Unsafe member 'C1.P2.set' cannot implicitly implement safe member 'I.P2.set'
+                //     unsafe public int P2 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C1.P2.set", "I.P2.set").WithLocation(9, 33),
+                // (10,28): error CS9365: Unsafe member 'C1.P3.get' cannot implicitly implement safe member 'I.P3.get'
+                //     public int P3 { unsafe get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C1.P3.get", "I.P3.get").WithLocation(10, 28),
+                // (15,28): error CS9365: Unsafe member 'C2.P1.get' cannot implicitly implement safe member 'I.P1.get'
+                //     unsafe public int P1 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P1.get", "I.P1.get").WithLocation(15, 28),
+                // (15,33): error CS9365: Unsafe member 'C2.P1.set' cannot implicitly implement safe member 'I.P1.set'
+                //     unsafe public int P1 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C2.P1.set", "I.P1.set").WithLocation(15, 33),
+                // (16,28): error CS9365: Unsafe member 'C2.P2.get' cannot implicitly implement safe member 'I.P2.get'
+                //     public int P2 { unsafe get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P2.get", "I.P2.get").WithLocation(16, 28),
+                // (17,28): error CS9365: Unsafe member 'C2.P3.get' cannot implicitly implement safe member 'I.P3.get'
+                //     unsafe public int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "get").WithArguments("C2.P3.get", "I.P3.get").WithLocation(17, 28),
+                // (17,33): error CS9365: Unsafe member 'C2.P3.set' cannot implicitly implement safe member 'I.P3.set'
+                //     unsafe public int P3 { get; set; }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "set").WithArguments("C2.P3.set", "I.P3.set").WithLocation(17, 33),
             ]);
     }
 
@@ -5897,8 +5894,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 }
                 public class C2
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public int this[int i] { get => i; set { } }
+                    unsafe public int this[int i] { get => i; set { } }
                 }
                 """,
             caller: """
@@ -5929,8 +5925,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public int this[int i] { get => i; set { } }
+                    unsafe public int this[int i] { get => i; set { } }
                 }
                 """,
             caller: """
@@ -5957,9 +5952,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     {
         CompileAndVerifyUnsafe(
             lib: """
-                public class C1 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] public object this[int i] { get => null; set { } } }
-                public class C2 { public object this[int i] { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get => null; set { } } }
-                public class C3 { public object this[int i] { get => null; [System.Diagnostics.CodeAnalysis.RequiresUnsafe] set { } } }
+                public class C1 { unsafe public object this[int i] { get => null; set { } } }
+                public class C2 { public object this[int i] { unsafe get => null; set { } } }
+                public class C3 { public object this[int i] { get => null; unsafe set { } } }
                 public class C4 { public object this[int i] { get => null; set { } } }
                 """,
             caller: """
@@ -5997,11 +5992,11 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var lib = """
             public class C1
             {
-                public int this[int i] { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get => i; set { } }
+                public int this[int i] { unsafe get => i; set { } }
             }
             public class C2
             {
-                public int this[int i] { get => i; [System.Diagnostics.CodeAnalysis.RequiresUnsafe] set { } }
+                public int this[int i] { get => i; unsafe set { } }
             }
             """;
 
@@ -6028,18 +6023,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c2[0]").WithArguments("C2.this[int].set").WithLocation(4, 1),
             ]);
 
-        var expectedDiagnostics = new[]
-        {
-            // (3,31): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
-            //     public int this[int i] { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] get => i; set { } }
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(3, 31),
-            // (7,41): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
-            //     public int this[int i] { get => i; [System.Diagnostics.CodeAnalysis.RequiresUnsafe] set { } }
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(7, 41),
-        };
-
-        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics(expectedDiagnostics);
-        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularPreview).VerifyEmitDiagnostics(expectedDiagnostics);
+        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
+        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularPreview).VerifyEmitDiagnostics();
     }
 
     [Fact]
@@ -6209,7 +6194,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             // (3,30): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
             //     public int this[int i] { unsafe get => i; set { } }
             Diagnostic(ErrorCode.ERR_FeatureInPreview, "unsafe").WithArguments("updated memory safety rules").WithLocation(3, 30),
-            // (4,41): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            // (4,51): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
             //     public int this[int i, int j] { get => i + j; unsafe set { } }
             Diagnostic(ErrorCode.ERR_FeatureInPreview, "unsafe").WithArguments("updated memory safety rules").WithLocation(4, 51));
     }
@@ -6222,8 +6207,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public event System.Action E1 { add { } remove { } }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public event System.Action E2 { add { } remove { } }
+                    unsafe public event System.Action E2 { add { } remove { } }
                 }
                 """,
             caller: """
@@ -6246,7 +6230,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             class C
             {
                 event System.Action E1, E2;
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe] event System.Action E3, E4;
+                unsafe event System.Action E3, E4;
                 void M()
                 {
                     E1();
@@ -6286,31 +6270,21 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Fact]
     public void Member_Event_Accessors()
     {
-        CompileAndVerifyUnsafe(
-            lib: """
-                public class C
-                {
-                    public event System.Action E1 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] add { } remove { } }
-                    public event System.Action E2 { add { } [System.Diagnostics.CodeAnalysis.RequiresUnsafe] remove { } }
-                }
-                """,
-            caller: """
-                var c = new C();
-                c.E1 += null; c.E1 -= null;
-                c.E2 += null; c.E2 -= null;
-                """,
-            additionalSources: [RequiresUnsafeAttributeDefinition],
-            expectedUnsafeSymbols: ["C.add_E1", "C.remove_E2"],
-            expectedSafeSymbols: ["C.E1", "C.remove_E1", "C.E2", "C.add_E2"],
-            expectedDiagnostics:
-            [
-                // (2,6): error CS9362: 'C.E1.add' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
-                // c.E1 += null; c.E1 -= null;
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "+=").WithArguments("C.E1.add").WithLocation(2, 6),
-                // (3,20): error CS9362: 'C.E2.remove' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
-                // c.E2 += null; c.E2 -= null;
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "-=").WithArguments("C.E2.remove").WithLocation(3, 20),
-            ]);
+        CreateCompilation("""
+            public class C
+            {
+                public event System.Action E1 { unsafe add { } remove { } }
+                public event System.Action E2 { add { } unsafe remove { } }
+            }
+            """,
+            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (3,37): error CS1609: Modifiers cannot be placed on event accessor declarations
+            //     public event System.Action E1 { unsafe add { } remove { } }
+            Diagnostic(ErrorCode.ERR_NoModifiersOnAccessor, "unsafe").WithLocation(3, 37),
+            // (4,45): error CS1609: Modifiers cannot be placed on event accessor declarations
+            //     public event System.Action E2 { add { } unsafe remove { } }
+            Diagnostic(ErrorCode.ERR_NoModifiersOnAccessor, "unsafe").WithLocation(4, 45));
     }
 
     [Fact]
@@ -6341,10 +6315,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 #pragma warning disable CS0067 // unused event
                 public class B
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public virtual event System.Action E1;
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public virtual event System.Action E2 { add { } remove { } }
+                    unsafe public virtual event System.Action E1;
+                    unsafe public virtual event System.Action E2 { add { } remove { } }
                     public virtual event System.Action E3;
                     public virtual event System.Action E4 { add { } remove { } }
                 }
@@ -6362,18 +6334,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 {
                     public override event System.Action E1;
                     public override event System.Action E2 { add { } remove { } }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override event System.Action E3;
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override event System.Action E4 { add { } remove { } }
+                    unsafe public override event System.Action E3;
+                    unsafe public override event System.Action E4 { add { } remove { } }
                 }
 
                 class C2 : B
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override event System.Action E1;
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public override event System.Action E2 { add { } remove { } }
+                    unsafe public override event System.Action E1;
+                    unsafe public override event System.Action E2 { add { } remove { } }
                     public override event System.Action E3;
                     public override event System.Action E4 { add { } remove { } }
                 }
@@ -6389,12 +6357,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (5,6): error CS9362: 'C1.E4.add' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // c.E4 += null;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "+=").WithArguments("C1.E4.add").WithLocation(5, 6),
-                // (14,41): error CS9364: Unsafe member 'C1.E3' cannot override safe member 'B.E3'
-                //     public override event System.Action E3;
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E3").WithArguments("C1.E3", "B.E3").WithLocation(14, 41),
-                // (16,41): error CS9364: Unsafe member 'C1.E4' cannot override safe member 'B.E4'
-                //     public override event System.Action E4 { add { } remove { } }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E4").WithArguments("C1.E4", "B.E4").WithLocation(16, 41),
+                // (13,48): error CS9364: Unsafe member 'C1.E3' cannot override safe member 'B.E3'
+                //     unsafe public override event System.Action E3;
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E3").WithArguments("C1.E3", "B.E3").WithLocation(13, 48),
+                // (14,48): error CS9364: Unsafe member 'C1.E4' cannot override safe member 'B.E4'
+                //     unsafe public override event System.Action E4 { add { } remove { } }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E4").WithArguments("C1.E4", "B.E4").WithLocation(14, 48),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
@@ -6404,18 +6372,18 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (5,6): error CS9362: 'C1.E4.add' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // c.E4 += null;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "+=").WithArguments("C1.E4.add").WithLocation(5, 6),
-                // (14,41): error CS9364: Unsafe member 'C1.E3' cannot override safe member 'B.E3'
-                //     public override event System.Action E3;
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E3").WithArguments("C1.E3", "B.E3").WithLocation(14, 41),
-                // (16,41): error CS9364: Unsafe member 'C1.E4' cannot override safe member 'B.E4'
-                //     public override event System.Action E4 { add { } remove { } }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E4").WithArguments("C1.E4", "B.E4").WithLocation(16, 41),
-                // (22,41): error CS9364: Unsafe member 'C2.E1' cannot override safe member 'B.E1'
-                //     public override event System.Action E1;
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E1").WithArguments("C2.E1", "B.E1").WithLocation(22, 41),
-                // (24,41): error CS9364: Unsafe member 'C2.E2' cannot override safe member 'B.E2'
-                //     public override event System.Action E2 { add { } remove { } }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E2").WithArguments("C2.E2", "B.E2").WithLocation(24, 41),
+                // (13,48): error CS9364: Unsafe member 'C1.E3' cannot override safe member 'B.E3'
+                //     unsafe public override event System.Action E3;
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E3").WithArguments("C1.E3", "B.E3").WithLocation(13, 48),
+                // (14,48): error CS9364: Unsafe member 'C1.E4' cannot override safe member 'B.E4'
+                //     unsafe public override event System.Action E4 { add { } remove { } }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E4").WithArguments("C1.E4", "B.E4").WithLocation(14, 48),
+                // (19,48): error CS9364: Unsafe member 'C2.E1' cannot override safe member 'B.E1'
+                //     unsafe public override event System.Action E1;
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E1").WithArguments("C2.E1", "B.E1").WithLocation(19, 48),
+                // (20,48): error CS9364: Unsafe member 'C2.E2' cannot override safe member 'B.E2'
+                //     unsafe public override event System.Action E2 { add { } remove { } }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "E2").WithArguments("C2.E2", "B.E2").WithLocation(20, 48),
             ]);
     }
 
@@ -6426,8 +6394,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public interface I
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    event System.Action E1;
+                    unsafe event System.Action E1;
                     event System.Action E2;
                 }
                 """,
@@ -6441,28 +6408,24 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 class C1 : I
                 {
                     public event System.Action E1;
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public event System.Action E2;
+                    unsafe public event System.Action E2;
                 }
 
                 class C2 : I
                 {
                     public event System.Action E1 { add { } remove { } }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public event System.Action E2 { add { } remove { } }
+                    unsafe public event System.Action E2 { add { } remove { } }
                 }
 
                 class C3 : I
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public event System.Action E1;
+                    unsafe public event System.Action E1;
                     public event System.Action E2;
                 }
 
                 class C4 : I
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public event System.Action E1 { add { } remove { } }
+                    unsafe public event System.Action E1 { add { } remove { } }
                     public event System.Action E2 { add { } remove { } }
                 }
                 """,
@@ -6474,27 +6437,27 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (2,6): error CS9362: 'I.E1.add' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // i.E1 += null;
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "+=").WithArguments("I.E1.add").WithLocation(2, 6),
-                // (11,32): error CS9365: Unsafe member 'C1.E2' cannot implicitly implement safe member 'I.E2'
-                //     public event System.Action E2;
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C1.E2", "I.E2").WithLocation(11, 32),
-                // (18,32): error CS9365: Unsafe member 'C2.E2' cannot implicitly implement safe member 'I.E2'
-                //     public event System.Action E2 { add { } remove { } }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C2.E2", "I.E2").WithLocation(18, 32),
+                // (10,39): error CS9365: Unsafe member 'C1.E2' cannot implicitly implement safe member 'I.E2'
+                //     unsafe public event System.Action E2;
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C1.E2", "I.E2").WithLocation(10, 39),
+                // (16,39): error CS9365: Unsafe member 'C2.E2' cannot implicitly implement safe member 'I.E2'
+                //     unsafe public event System.Action E2 { add { } remove { } }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C2.E2", "I.E2").WithLocation(16, 39),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
-                // (11,32): error CS9365: Unsafe member 'C1.E2' cannot implicitly implement safe member 'I.E2'
-                //     public event System.Action E2;
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C1.E2", "I.E2").WithLocation(11, 32),
-                // (18,32): error CS9365: Unsafe member 'C2.E2' cannot implicitly implement safe member 'I.E2'
-                //     public event System.Action E2 { add { } remove { } }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C2.E2", "I.E2").WithLocation(18, 32),
-                // (24,32): error CS9365: Unsafe member 'C3.E1' cannot implicitly implement safe member 'I.E1'
-                //     public event System.Action E1;
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E1").WithArguments("C3.E1", "I.E1").WithLocation(24, 32),
-                // (31,32): error CS9365: Unsafe member 'C4.E1' cannot implicitly implement safe member 'I.E1'
-                //     public event System.Action E1 { add { } remove { } }
-                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E1").WithArguments("C4.E1", "I.E1").WithLocation(31, 32),
+                // (10,39): error CS9365: Unsafe member 'C1.E2' cannot implicitly implement safe member 'I.E2'
+                //     unsafe public event System.Action E2;
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C1.E2", "I.E2").WithLocation(10, 39),
+                // (16,39): error CS9365: Unsafe member 'C2.E2' cannot implicitly implement safe member 'I.E2'
+                //     unsafe public event System.Action E2 { add { } remove { } }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E2").WithArguments("C2.E2", "I.E2").WithLocation(16, 39),
+                // (21,39): error CS9365: Unsafe member 'C3.E1' cannot implicitly implement safe member 'I.E1'
+                //     unsafe public event System.Action E1;
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E1").WithArguments("C3.E1", "I.E1").WithLocation(21, 39),
+                // (27,39): error CS9365: Unsafe member 'C4.E1' cannot implicitly implement safe member 'I.E1'
+                //     unsafe public event System.Action E1 { add { } remove { } }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "E1").WithArguments("C4.E1", "I.E1").WithLocation(27, 39),
             ]);
     }
 
@@ -6506,14 +6469,13 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public C(int i) { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C() { }
+                    unsafe public C() { }
                 }
                 public unsafe class C2(int x)
                 {
                     int _x = x;
                 }
-                [method: System.Diagnostics.CodeAnalysis.RequiresUnsafe] public class C3();
+                public class C3 { unsafe public C3() { } }
                 """,
             caller: """
                 _ = new C(0);
@@ -6544,8 +6506,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class B
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public B() { }
+                    unsafe public B() { }
                 }
                 """,
             caller: """
@@ -6576,10 +6537,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
                 class C5 : B
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C5() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C5(int x) : base() { }
+                    unsafe public C5() { }
+                    unsafe public C5(int x) : base() { }
                 }
                 """,
             additionalSources: [RequiresUnsafeAttributeDefinition],
@@ -6602,14 +6561,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (16,14): error CS9362: 'B.B()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // class D1() : B();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "B()").WithArguments("B.B()").WithLocation(16, 14),
-                // (28,5): error CS9362: 'B.B()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
-                //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                //     public C5() { }
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, @"[System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-    public C5() { }").WithArguments("B.B()").WithLocation(28, 5),
-                // (31,22): error CS9362: 'B.B()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
-                //     public C5(int x) : base() { }
-                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, ": base()").WithArguments("B.B()").WithLocation(31, 22),
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
@@ -6626,23 +6577,18 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             class C
             {
                 public C() { }
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public C(int x) { }
+                unsafe public C(int x) { }
                 public C(string s) : this() { }
                 public C(C c) : this(0) { }
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public C(int[] a) : this(0) { }
+                unsafe public C(int[] a) : this(0) { }
             }
             """;
         CreateCompilation([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
-            // (7,19): error CS9362: 'C.C(int)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+            // (6,19): error CS9362: 'C.C(int)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
             //     public C(C c) : this(0) { }
-            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, ": this(0)").WithArguments("C.C(int)").WithLocation(7, 19),
-            // (9,23): error CS9362: 'C.C(int)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
-            //     public C(int[] a) : this(0) { }
-            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, ": this(0)").WithArguments("C.C(int)").WithLocation(9, 23));
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, ": this(0)").WithArguments("C.C(int)").WithLocation(6, 19));
     }
 
     [Fact]
@@ -6662,9 +6608,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             ],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
-            // (4,6): error CS9367: RequiresUnsafeAttribute cannot be applied to this symbol.
+            // (4,6): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
             //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeUnsupportedMemberTarget, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(4, 6));
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(4, 6));
     }
 
     [Fact]
@@ -6674,8 +6620,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class A : System.Attribute
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public A() { }
+                    unsafe public A() { }
                     public A(int x) { }
                 }
                 """,
@@ -6704,8 +6649,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C() { }
+                    unsafe public C() { }
                     public static void M<T>() where T : new() { }
                 }
                 public class D<T> where T : new();
@@ -6743,8 +6687,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C() { }
+                    unsafe public C() { }
                 }
                 """,
             caller: """
@@ -6788,8 +6731,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C() { }
+                    unsafe public C() { }
                 }
                 """,
             caller: """
@@ -6833,11 +6775,13 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C1
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C1(int x) { }
+                    unsafe public C1(int x) { }
                     public C1() { }
                 }
-                [method: System.Diagnostics.CodeAnalysis.RequiresUnsafe] public class C2();
+                public class C2
+                {
+                    unsafe public C2() { }
+                }
                 """,
             caller: """
                 M<C1>();
@@ -6846,7 +6790,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 """,
             additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: [Overload("C1..ctor", parameterCount: 1), "C2..ctor"],
-            expectedSafeSymbols: [Overload("C1..ctor", parameterCount: 0)],
+            expectedSafeSymbols: ["C1", Overload("C1..ctor", parameterCount: 0), "C2"],
             expectedDiagnostics:
             [
                 // (2,1): error CS9376: An unsafe context is required for constructor 'C2.C2()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'M<T>()'
@@ -6862,8 +6806,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C() { }
+                    unsafe public C() { }
                 }
                 """,
             caller: """
@@ -6914,8 +6857,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C() { }
+                    unsafe public C() { }
                 }
                 namespace N
                 {
@@ -6947,8 +6889,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C() { }
+                    unsafe public C() { }
                 }
                 public class D<T> where T : new()
                 {
@@ -6980,8 +6921,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C() { }
+                    unsafe public C() { }
                 }
                 public class D
                 {
@@ -7013,8 +6953,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public C() { }
+                    unsafe public C() { }
                 }
                 public struct S<T> where T : new();
                 """,
@@ -7036,12 +6975,45 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             expectedSafeSymbols: ["C", "S", "S..ctor"],
             expectedDiagnostics:
             [
+                // (2,9): error CS9362: 'M(S<C>)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var s = M(new S<C>());
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M(new S<C>())").WithArguments("M(S<C>)").WithLocation(2, 9),
                 // (2,15): error CS9376: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'S<T>'
                 // var s = M(new S<C>());
                 Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "S<C>").WithArguments("C.C()", "T", "S<T>").WithLocation(2, 15),
+                // (3,1): error CS9362: 'M(S<C>)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // M(new());
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M(new())").WithArguments("M(S<C>)").WithLocation(3, 1),
+                // (4,1): error CS9362: 'M(S<C>)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // M(default);
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M(default)").WithArguments("M(S<C>)").WithLocation(4, 1),
+                // (5,1): error CS9362: 'M(S<C>)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // M(default(S<C>));
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M(default(S<C>))").WithArguments("M(S<C>)").WithLocation(5, 1),
                 // (5,11): error CS9376: An unsafe context is required for constructor 'C.C()' marked as 'RequiresUnsafe' or 'extern' to satisfy the 'new()' constraint of type parameter 'T' in 'S<T>'
                 // M(default(S<C>));
                 Diagnostic(ErrorCode.ERR_UnsafeConstructorConstraint, "S<C>").WithArguments("C.C()", "T", "S<T>").WithLocation(5, 11),
+                // (6,1): error CS9362: 'M(S<C>)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // M(s with { });
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M(s with { })").WithArguments("M(S<C>)").WithLocation(6, 1),
+            ],
+            expectedDiagnosticsWhenReferencingLegacyLib:
+            [
+                // (2,9): error CS9362: 'M(S<C>)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var s = M(new S<C>());
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M(new S<C>())").WithArguments("M(S<C>)").WithLocation(2, 9),
+                // (3,1): error CS9362: 'M(S<C>)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // M(new());
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M(new())").WithArguments("M(S<C>)").WithLocation(3, 1),
+                // (4,1): error CS9362: 'M(S<C>)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // M(default);
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M(default)").WithArguments("M(S<C>)").WithLocation(4, 1),
+                // (5,1): error CS9362: 'M(S<C>)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // M(default(S<C>));
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M(default(S<C>))").WithArguments("M(S<C>)").WithLocation(5, 1),
+                // (6,1): error CS9362: 'M(S<C>)' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // M(s with { });
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "M(s with { })").WithArguments("M(S<C>)").WithLocation(6, 1),
             ]);
     }
 
@@ -7066,9 +7038,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             ],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
-            // (3,6): error CS9367: RequiresUnsafeAttribute cannot be applied to this symbol.
+            // (3,6): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
             //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeUnsupportedMemberTarget, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(3, 6),
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(3, 6),
             // (5,16): error CS0245: Destructors and object.Finalize cannot be called directly. Consider calling IDisposable.Dispose if available.
             //     void M() { Finalize(); }
             Diagnostic(ErrorCode.ERR_CallingFinalizeDeprecated, "Finalize()").WithLocation(5, 16));
@@ -7088,8 +7060,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public static C operator +(C c1, C c2) => c1;
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public static C operator -(C c1, C c2) => c1;
+                    unsafe public static C operator -(C c1, C c2) => c1;
                 }
                 """,
             caller: """
@@ -7120,8 +7091,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     extension(C)
                     {
                         public static C operator +(C c1, C c2) => c1;
-                        [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                        public static C operator -(C c1, C c2) => c1;
+                        unsafe public static C operator -(C c1, C c2) => c1;
                     }
                 }
                 """,
@@ -7156,8 +7126,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public void operator +=(C c) { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void operator -=(C c) { }
+                    unsafe public void operator -=(C c) { }
                 }
                 """,
             caller: """
@@ -7188,8 +7157,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     extension(C c1)
                     {
                         public void operator +=(C c2) { }
-                        [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                        public void operator -=(C c2) { }
+                        unsafe public void operator -=(C c2) { }
                     }
                 }
                 """,
@@ -7224,8 +7192,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public void operator ++() { }
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public void operator --() { }
+                    unsafe public void operator --() { }
                 }
                 """,
             caller: """
@@ -7253,8 +7220,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 public class C
                 {
                     public static implicit operator int(C c) => 0;
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public static implicit operator string(C c) => "";
+                    unsafe public static implicit operator string(C c) => "";
                 }
                 """,
             caller: """
@@ -7342,8 +7308,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             lib: """
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public static int M() => 0;
+                    unsafe public static int M() => 0;
                 }
                 """,
             caller: """
@@ -7769,7 +7734,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             .VerifyDiagnostics();
         var libRef = AsReference(lib, useCompilationReference);
 
-        CreateCompilation("""
+        CreateCompilation(["""
             var d1 = new D1(); d1.M1(); d1.M2(); d1.M3(); d1.M4(); d1.M5(); d1.M6();
             var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
             var d3 = new D3(); d3.M1(); d3.M2(); d3.M3(); d3.M4(); d3.M5(); d3.M6();
@@ -7797,10 +7762,28 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             }
 
             class D3 : C;
-            """,
+            """, RequiresUnsafeAttributeDefinition],
             [libRef],
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
+            // (2,20): error CS9362: 'D2.M1()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+            // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M1()").WithArguments("D2.M1()").WithLocation(2, 20),
+            // (2,29): error CS9362: 'D2.M2()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+            // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M2()").WithArguments("D2.M2()").WithLocation(2, 29),
+            // (2,38): error CS9362: 'D2.M3()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+            // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M3()").WithArguments("D2.M3()").WithLocation(2, 38),
+            // (2,47): error CS9362: 'D2.M4()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+            // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M4()").WithArguments("D2.M4()").WithLocation(2, 47),
+            // (2,56): error CS9362: 'D2.M5()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+            // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M5()").WithArguments("D2.M5()").WithLocation(2, 56),
+            // (2,65): error CS9362: 'D2.M6()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+            // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M6()").WithArguments("D2.M6()").WithLocation(2, 65),
             // (3,20): error CS9363: 'C.M1()' must be used in an unsafe context because it has pointers in its signature
             // var d3 = new D3(); d3.M1(); d3.M2(); d3.M3(); d3.M4(); d3.M5(); d3.M6();
             Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "d3.M1()").WithArguments("C.M1()").WithLocation(3, 20),
@@ -7827,7 +7810,16 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "base.M2()").WithArguments("C.M2()").WithLocation(14, 42),
             // (14,53): error CS9363: 'B.M3()' must be used in an unsafe context because it has pointers in its signature
             //     public void BaseCalls() { base.M1(); base.M2(); base.M3(); base.M4(); base.M5(); base.M6(); }
-            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "base.M3()").WithArguments("B.M3()").WithLocation(14, 53));
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "base.M3()").WithArguments("B.M3()").WithLocation(14, 53),
+            // (22,33): error CS9364: Unsafe member 'D2.M4()' cannot override safe member 'B.M4()'
+            //     public unsafe override void M4() { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M4").WithArguments("D2.M4()", "B.M4()").WithLocation(22, 33),
+            // (23,33): error CS9364: Unsafe member 'D2.M5()' cannot override safe member 'C.M5()'
+            //     public unsafe override void M5() { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M5").WithArguments("D2.M5()", "C.M5()").WithLocation(23, 33),
+            // (24,33): error CS9364: Unsafe member 'D2.M6()' cannot override safe member 'B.M6()'
+            //     public unsafe override void M6() { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M6").WithArguments("D2.M6()", "B.M6()").WithLocation(24, 33));
     }
 
     [Theory, CombinatorialData]
@@ -7874,13 +7866,19 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             }
             """;
 
-        CreateCompilation(source,
+        CreateCompilation([source, RequiresUnsafeAttributeDefinition],
             [libRef],
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
             // (2,1): error CS9363: 'I.M1()' must be used in an unsafe context because it has pointers in its signature
             // i.M1();
-            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "i.M1()").WithArguments("I.M1()").WithLocation(2, 1));
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "i.M1()").WithArguments("I.M1()").WithLocation(2, 1),
+            // (20,24): error CS9365: Unsafe member 'C3.M2()' cannot implicitly implement safe member 'I.M2()'
+            //     public unsafe void M2() { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C3.M2()", "I.M2()").WithLocation(20, 24),
+            // (26,19): error CS9366: Unsafe member 'C4.I.M2()' cannot implement safe member 'I.M2()'
+            //     unsafe void I.M2() { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M2").WithArguments("C4.I.M2()", "I.M2()").WithLocation(26, 19));
 
         CreateCompilation(source,
             [libRef],
@@ -7941,10 +7939,22 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             }
             """;
 
-        CreateCompilation(source,
+        CreateCompilation([source, RequiresUnsafeAttributeDefinition],
             [libRef],
             options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
-            .VerifyDiagnostics();
+            .VerifyDiagnostics(
+            // (19,26): error CS9365: Unsafe member 'C3.M1()' cannot implicitly implement safe member 'I<int*[]>.M1()'
+            //     public unsafe int*[] M1() => null;
+            Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C3.M1()", "I<int*[]>.M1()").WithLocation(19, 26),
+            // (20,24): error CS9365: Unsafe member 'C3.M2()' cannot implicitly implement safe member 'I<int*[]>.M2()'
+            //     public unsafe void M2() { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C3.M2()", "I<int*[]>.M2()").WithLocation(20, 24),
+            // (25,29): error CS9366: Unsafe member 'C4.I<int*[]>.M1()' cannot implement safe member 'I<int*[]>.M1()'
+            //     unsafe int*[] I<int*[]>.M1() => null;
+            Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M1").WithArguments("C4.I<int*[]>.M1()", "I<int*[]>.M1()").WithLocation(25, 29),
+            // (26,27): error CS9366: Unsafe member 'C4.I<int*[]>.M2()' cannot implement safe member 'I<int*[]>.M2()'
+            //     unsafe void I<int*[]>.M2() { }
+            Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M2").WithArguments("C4.I<int*[]>.M2()", "I<int*[]>.M2()").WithLocation(26, 27));
 
         CreateCompilation(source,
             [libRef],
@@ -8552,10 +8562,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     {
         CompileAndVerifyUnsafe(
             lib: """
+                #pragma warning disable CS0626 // extern without attributes
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public extern void M();
+                    unsafe public extern void M();
                 }
                 """,
             caller: """
@@ -8649,6 +8659,24 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             expectedNoAttributeUnderLegacyRules: unsafeSymbols,
             expectedDiagnostics:
             [
+                // (3,20): error CS9362: 'D2.M1()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M1()").WithArguments("D2.M1()").WithLocation(3, 20),
+                // (3,29): error CS9362: 'D2.M2()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M2()").WithArguments("D2.M2()").WithLocation(3, 29),
+                // (3,38): error CS9362: 'D2.M3()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M3()").WithArguments("D2.M3()").WithLocation(3, 38),
+                // (3,47): error CS9362: 'D2.M4()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M4()").WithArguments("D2.M4()").WithLocation(3, 47),
+                // (3,56): error CS9362: 'D2.M5()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M5()").WithArguments("D2.M5()").WithLocation(3, 56),
+                // (3,65): error CS9362: 'D2.M6()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M6()").WithArguments("D2.M6()").WithLocation(3, 65),
                 // (4,20): error CS9362: 'D3.M1()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // var d3 = new D3(); d3.M1(); d3.M2(); d3.M3(); d3.M4(); d3.M5(); d3.M6();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d3.M1()").WithArguments("D3.M1()").WithLocation(4, 20),
@@ -8715,6 +8743,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (24,75): error CS9362: 'C.M5()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 //     public void BaseCalls() { base.M1(); base.M2(); base.M3(); base.M4(); base.M5(); base.M6(); }
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "base.M5()").WithArguments("C.M5()").WithLocation(24, 75),
+                // (32,33): error CS9364: Unsafe member 'D2.M4()' cannot override safe member 'B.M4()'
+                //     public unsafe override void M4() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M4").WithArguments("D2.M4()", "B.M4()").WithLocation(32, 33),
+                // (34,33): error CS9364: Unsafe member 'D2.M6()' cannot override safe member 'B.M6()'
+                //     public unsafe override void M6() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M6").WithArguments("D2.M6()", "B.M6()").WithLocation(34, 33),
                 // (42,33): error CS9364: Unsafe member 'D3.M4()' cannot override safe member 'B.M4()'
                 //     public extern override void M4();
                 Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M4").WithArguments("D3.M4()", "B.M4()").WithLocation(42, 33),
@@ -8724,6 +8758,24 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
+                // (3,20): error CS9362: 'D2.M1()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M1()").WithArguments("D2.M1()").WithLocation(3, 20),
+                // (3,29): error CS9362: 'D2.M2()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M2()").WithArguments("D2.M2()").WithLocation(3, 29),
+                // (3,38): error CS9362: 'D2.M3()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M3()").WithArguments("D2.M3()").WithLocation(3, 38),
+                // (3,47): error CS9362: 'D2.M4()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M4()").WithArguments("D2.M4()").WithLocation(3, 47),
+                // (3,56): error CS9362: 'D2.M5()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M5()").WithArguments("D2.M5()").WithLocation(3, 56),
+                // (3,65): error CS9362: 'D2.M6()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
+                // var d2 = new D2(); d2.M1(); d2.M2(); d2.M3(); d2.M4(); d2.M5(); d2.M6();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d2.M6()").WithArguments("D2.M6()").WithLocation(3, 65),
                 // (4,20): error CS9362: 'D3.M1()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // var d3 = new D3(); d3.M1(); d3.M2(); d3.M3(); d3.M4(); d3.M5(); d3.M6();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "d3.M1()").WithArguments("D3.M1()").WithLocation(4, 20),
@@ -8784,6 +8836,18 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (24,75): error CS9362: 'C.M5()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 //     public void BaseCalls() { base.M1(); base.M2(); base.M3(); base.M4(); base.M5(); base.M6(); }
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "base.M5()").WithArguments("C.M5()").WithLocation(24, 75),
+                // (29,33): error CS9364: Unsafe member 'D2.M1()' cannot override safe member 'B.M1()'
+                //     public unsafe override void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("D2.M1()", "B.M1()").WithLocation(29, 33),
+                // (31,33): error CS9364: Unsafe member 'D2.M3()' cannot override safe member 'B.M3()'
+                //     public unsafe override void M3() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M3").WithArguments("D2.M3()", "B.M3()").WithLocation(31, 33),
+                // (32,33): error CS9364: Unsafe member 'D2.M4()' cannot override safe member 'B.M4()'
+                //     public unsafe override void M4() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M4").WithArguments("D2.M4()", "B.M4()").WithLocation(32, 33),
+                // (34,33): error CS9364: Unsafe member 'D2.M6()' cannot override safe member 'B.M6()'
+                //     public unsafe override void M6() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M6").WithArguments("D2.M6()", "B.M6()").WithLocation(34, 33),
                 // (39,33): error CS9364: Unsafe member 'D3.M1()' cannot override safe member 'B.M1()'
                 //     public extern override void M1();
                 Diagnostic(ErrorCode.ERR_CallerUnsafeOverridingSafe, "M1").WithArguments("D3.M1()", "B.M1()").WithLocation(39, 33),
@@ -8865,6 +8929,12 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 // (3,1): error CS9362: 'I.M1()' must be used in an unsafe context because it is marked as 'RequiresUnsafe' or 'extern'
                 // i.M1();
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "i.M1()").WithArguments("I.M1()").WithLocation(3, 1),
+                // (21,24): error CS9365: Unsafe member 'C3.M2()' cannot implicitly implement safe member 'I.M2()'
+                //     public unsafe void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C3.M2()", "I.M2()").WithLocation(21, 24),
+                // (27,19): error CS9366: Unsafe member 'C4.I.M2()' cannot implement safe member 'I.M2()'
+                //     unsafe void I.M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M2").WithArguments("C4.I.M2()", "I.M2()").WithLocation(27, 19),
                 // (33,24): error CS9365: Unsafe member 'C5.M2()' cannot implicitly implement safe member 'I.M2()'
                 //     public extern void M2();
                 Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C5.M2()", "I.M2()").WithLocation(33, 24),
@@ -8874,6 +8944,18 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             ],
             expectedDiagnosticsWhenReferencingLegacyLib:
             [
+                // (20,24): error CS9365: Unsafe member 'C3.M1()' cannot implicitly implement safe member 'I.M1()'
+                //     public unsafe void M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C3.M1()", "I.M1()").WithLocation(20, 24),
+                // (21,24): error CS9365: Unsafe member 'C3.M2()' cannot implicitly implement safe member 'I.M2()'
+                //     public unsafe void M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M2").WithArguments("C3.M2()", "I.M2()").WithLocation(21, 24),
+                // (26,19): error CS9366: Unsafe member 'C4.I.M1()' cannot implement safe member 'I.M1()'
+                //     unsafe void I.M1() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M1").WithArguments("C4.I.M1()", "I.M1()").WithLocation(26, 19),
+                // (27,19): error CS9366: Unsafe member 'C4.I.M2()' cannot implement safe member 'I.M2()'
+                //     unsafe void I.M2() { }
+                Diagnostic(ErrorCode.ERR_CallerUnsafeExplicitlyImplementingSafe, "M2").WithArguments("C4.I.M2()", "I.M2()").WithLocation(27, 19),
                 // (32,24): error CS9365: Unsafe member 'C5.M1()' cannot implicitly implement safe member 'I.M1()'
                 //     public extern void M1();
                 Diagnostic(ErrorCode.ERR_CallerUnsafeImplicitlyImplementingSafe, "M1").WithArguments("C5.M1()", "I.M1()").WithLocation(32, 24),
@@ -9149,9 +9231,8 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 #pragma warning disable CS0626 // extern without attributes
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public extern int P1 { set; }
-                    public extern int P2 { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] set; }
+                    unsafe public extern int P1 { set; }
+                    public extern int P2 { unsafe set; }
                 }
                 """,
             caller: """
@@ -9352,12 +9433,11 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 #pragma warning disable CS0626 // extern without attributes
                 public class C1
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public extern int this[int i] { set; }
+                    unsafe public extern int this[int i] { set; }
                 }
                 public class C2
                 {
-                    public extern int this[int i] { [System.Diagnostics.CodeAnalysis.RequiresUnsafe] set; }
+                    public extern int this[int i] { unsafe set; }
                 }
                 """,
             caller: """
@@ -9542,8 +9622,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 #pragma warning disable CS0626 // extern without attributes
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public static extern event System.Action E;
+                    unsafe public static extern event System.Action E;
                 }
                 """,
             caller: """
@@ -9712,10 +9791,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     {
         CompileAndVerifyUnsafe(
             lib: """
+                #pragma warning disable CS0824 // extern constructor
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public extern C();
+                    unsafe public extern C();
                 }
                 """,
             caller: """
@@ -9882,10 +9961,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     {
         CompileAndVerifyUnsafe(
             lib: """
+                #pragma warning disable CS0626 // extern without attributes
                 public class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    public extern void operator +=(C c);
+                    unsafe public extern void operator +=(C c);
                 }
                 """,
             caller: """
@@ -9905,192 +9984,15 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     }
 
     [Fact]
-    public void RequiresUnsafeAttribute_Applied()
-    {
-        var source = """
-            class C
-            {
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                void M1() { }
-                void M2() { }
-            }
-            """;
-
-        var expectedDiagnostics = new[]
-        {
-            // (3,6): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(3, 6),
-        };
-
-        CreateCompilation([source, RequiresUnsafeAttributeDefinition],
-            options: TestOptions.UnsafeReleaseDll.WithWarningLevel(10))
-            .VerifyEmitDiagnostics();
-        CreateCompilation([source, RequiresUnsafeAttributeDefinition],
-            options: TestOptions.UnsafeReleaseDll.WithWarningLevel(11))
-            .VerifyEmitDiagnostics(expectedDiagnostics);
-
-        CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
-            options: TestOptions.UnsafeReleaseDll.WithMetadataImportOptions(MetadataImportOptions.All),
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(
-                m,
-                expectedUnsafeSymbols: ["C.M1"],
-                expectedSafeSymbols: ["C", "C.M2"],
-                expectedUnsafeMode: CallerUnsafeMode.None))
-            .VerifyDiagnostics(expectedDiagnostics);
-
-        var ref1 = CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
-            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules().WithMetadataImportOptions(MetadataImportOptions.All),
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(
-                m,
-                expectedUnsafeSymbols: ["C.M1"],
-                expectedSafeSymbols: ["C", "C.M2"]))
-            .VerifyDiagnostics()
-            .GetImageReference();
-
-        CompileAndVerify("", [ref1],
-            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules().WithMetadataImportOptions(MetadataImportOptions.All),
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(
-                m,
-                expectedUnsafeSymbols: [],
-                expectedSafeSymbols: []))
-            .VerifyDiagnostics();
-
-        var source2 = """
-            class B
-            {
-                void M3() { }
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                void M4() { }
-            }
-            """;
-
-        CompileAndVerify(source2, [ref1],
-            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules().WithMetadataImportOptions(MetadataImportOptions.All),
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(
-                m,
-                expectedUnsafeSymbols: ["B.M4"],
-                expectedSafeSymbols: ["B", "B.M3"]))
-            .VerifyDiagnostics();
-
-        CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithMetadataImportOptions(MetadataImportOptions.All),
-            verify: Verification.Skipped,
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(
-                m,
-                expectedUnsafeSymbols: ["C.M1"],
-                expectedSafeSymbols: ["C", "C.M2"],
-                expectedUnsafeMode: CallerUnsafeMode.None))
-            .VerifyDiagnostics(expectedDiagnostics);
-
-        CreateCompilation([source, MemorySafetyRulesAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyDiagnostics(
-            // (3,38): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Diagnostics.CodeAnalysis' (are you missing an assembly reference?)
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Diagnostics.CodeAnalysis").WithLocation(3, 38),
-            // (3,38): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Diagnostics.CodeAnalysis' (are you missing an assembly reference?)
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Diagnostics.CodeAnalysis").WithLocation(3, 38));
-    }
-
-    [Fact]
-    public void RequiresUnsafeAttribute_NotApplied()
+    public void RequiresUnsafeAttribute_NotSynthesized()
     {
         var source = """
             public class C
             {
-                public void M() { }
+                public unsafe void M() { }
             }
             """;
-
-        CompileAndVerify(source,
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(
-                m,
-                expectedUnsafeSymbols: [],
-                expectedSafeSymbols: ["C", "C.M"]))
-            .VerifyDiagnostics();
-
-        CompileAndVerify(source,
-            options: TestOptions.ReleaseDll.WithUpdatedMemorySafetyRules(),
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(
-                m,
-                expectedUnsafeSymbols: [],
-                expectedSafeSymbols: ["C", "C.M"]))
-            .VerifyDiagnostics();
-
-        CompileAndVerify([source, MemorySafetyRulesAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithUpdatedMemorySafetyRules(),
-            verify: Verification.Skipped,
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(
-                m,
-                expectedUnsafeSymbols: [],
-                expectedSafeSymbols: ["C", "C.M"]))
-            .VerifyDiagnostics();
-    }
-
-    [Fact]
-    public void RequiresUnsafeAttribute_LocalFunction()
-    {
-        var source = """
-            #pragma warning disable CS8321 // Local function is declared but never used
-            class C
-            {
-                void M()
-                {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    void M1() { }
-                    void M2() { }
-                }
-            }
-            """;
-
-        var m1 = "C.<M>g__M1|0_0";
-        var m2 = "C.<M>g__M2|0_1";
-
-        var expectedDiagnostics = new[]
-        {
-            // (6,10): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
-            //         [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(6, 10),
-        };
-
-        CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
-            options: TestOptions.UnsafeReleaseDll.WithMetadataImportOptions(MetadataImportOptions.All),
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(
-                m,
-                expectedUnsafeSymbols: [m1],
-                expectedSafeSymbols: [m2],
-                expectedUnsafeMode: CallerUnsafeMode.None))
-            .VerifyDiagnostics(expectedDiagnostics);
-
-        CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
-            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules().WithMetadataImportOptions(MetadataImportOptions.All),
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(
-                m,
-                expectedUnsafeSymbols: [m1],
-                expectedSafeSymbols: [m2]))
-            .VerifyDiagnostics();
-
-        CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithMetadataImportOptions(MetadataImportOptions.All),
-            verify: Verification.Skipped,
-            symbolValidator: m => VerifyRequiresUnsafeAttribute(
-                m,
-                expectedUnsafeSymbols: [m1],
-                expectedSafeSymbols: [m2],
-                expectedUnsafeMode: CallerUnsafeMode.None))
-            .VerifyDiagnostics(expectedDiagnostics);
-
-        CreateCompilation([source, MemorySafetyRulesAttributeDefinition],
-            options: TestOptions.ReleaseModule.WithAllowUnsafe(true).WithUpdatedMemorySafetyRules())
-            .VerifyEmitDiagnostics(
-            // (6,42): error CS0234: The type or namespace name 'RequiresUnsafeAttribute' does not exist in the namespace 'System.Diagnostics.CodeAnalysis' (are you missing an assembly reference?)
-            //         [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafeAttribute", "System.Diagnostics.CodeAnalysis").WithLocation(6, 42),
-            // (6,42): error CS0234: The type or namespace name 'RequiresUnsafe' does not exist in the namespace 'System.Diagnostics.CodeAnalysis' (are you missing an assembly reference?)
-            //         [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_DottedTypeNameNotFoundInNS, "RequiresUnsafe").WithArguments("RequiresUnsafe", "System.Diagnostics.CodeAnalysis").WithLocation(6, 42));
+        // TODO: Test Regular14, Preview, Next.
     }
 
     [Fact]
@@ -10102,8 +10004,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             using System.Reflection;
             public class A
             {
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public void M1() { }
+                unsafe public void M1() { }
                 public void M2() { }
                 public static void RequiresUnsafe(MethodInfo method)
                 {
@@ -10120,8 +10021,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var sourceB = """
             class B : A
             {
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public void M3() { }
+                unsafe public void M3() { }
                 public void M4() { }
                 static void Main()
                 {
@@ -10144,22 +10044,17 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var source = """
             public class C
             {
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public void M() { }
+                unsafe public void M() { }
             }
             """;
 
-        CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
+        CompileAndVerify(source,
             options: TestOptions.UnsafeReleaseDll,
             symbolValidator: m => VerifyRequiresUnsafeAttribute(
                 m,
-                expectedUnsafeSymbols: ["C.M"],
-                expectedSafeSymbols: ["C"],
-                expectedUnsafeMode: CallerUnsafeMode.None))
-            .VerifyDiagnostics(
-            // (3,6): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(3, 6));
+                expectedUnsafeSymbols: [],
+                expectedSafeSymbols: ["C", "C.M"]))
+            .VerifyDiagnostics();
 
         CompileAndVerify([source, RequiresUnsafeAttributeDefinition],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules(),
@@ -10185,8 +10080,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var source = """
             public class C
             {
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public void M() { }
+                unsafe public void M() { }
             }
             """;
 
@@ -10211,26 +10105,22 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         var source = """
             public class C
             {
-                [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                public void M() { }
+                unsafe public void M() { }
             }
             """;
 
         // Ambiguous attribute definitions from references.
         CreateCompilation(source, [ref1, ref2],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
-            .VerifyDiagnostics(
-            // (3,38): error CS0433: The type 'RequiresUnsafeAttribute' exists in both 'lib1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null' and 'lib2, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_SameFullNameAggAgg, "RequiresUnsafe").WithArguments("lib1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null", "System.Diagnostics.CodeAnalysis.RequiresUnsafeAttribute", "lib2, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null").WithLocation(3, 38));
+            .VerifyEmitDiagnostics(
+            // (3,24): error CS0656: Missing compiler required member 'System.Diagnostics.CodeAnalysis.RequiresUnsafeAttribute..ctor'
+            //     unsafe public void M() { }
+            Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "M").WithArguments("System.Diagnostics.CodeAnalysis.RequiresUnsafeAttribute", ".ctor").WithLocation(3, 24));
 
         // Also defined in source.
         var lib = CreateCompilation([source, RequiresUnsafeAttributeDefinition], [ref1, ref2],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
-            .VerifyDiagnostics(
-            // (3,38): warning CS0436: The type 'RequiresUnsafeAttribute' in '' conflicts with the imported type 'RequiresUnsafeAttribute' in 'lib1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'. Using the type defined in ''.
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.WRN_SameFullNameThisAggAgg, "RequiresUnsafe").WithArguments("", "System.Diagnostics.CodeAnalysis.RequiresUnsafeAttribute", "lib1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null", "System.Diagnostics.CodeAnalysis.RequiresUnsafeAttribute").WithLocation(3, 38));
+            .VerifyDiagnostics();
 
         CreateCompilation("""
             new C().M();
@@ -10498,53 +10388,57 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             CompilerFeatureRequiredAttribute,
         ];
 
-        var commonErrors = new[]
+        var sourceErrors = new[]
         {
-            // (14,6): error CS9367: RequiresUnsafeAttribute cannot be applied to this symbol.
-            //     [RequiresUnsafeAttribute] ~C() { }
-            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeUnsupportedMemberTarget, "RequiresUnsafeAttribute").WithLocation(14, 6),
-            // (15,6): error CS9367: RequiresUnsafeAttribute cannot be applied to this symbol.
-            //     [RequiresUnsafeAttribute] static C() { }
-            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeUnsupportedMemberTarget, "RequiresUnsafeAttribute").WithLocation(15, 6),
-            // (23,27): error CS9367: RequiresUnsafeAttribute cannot be applied to this symbol.
-            //     void L() { var lam = [RequiresUnsafeAttribute] () => { }; }
-            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeUnsupportedMemberTarget, "RequiresUnsafeAttribute").WithLocation(23, 27),
-        };
-
-        var commonWarnings = new[]
-        {
-            // (4,6): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
+            // (4,6): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
             //     [RequiresUnsafeAttribute] void M() { }
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "RequiresUnsafeAttribute").WithLocation(4, 6),
-            // (7,15): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "RequiresUnsafeAttribute").WithLocation(4, 6),
+            // (5,6): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
+            //     [RequiresUnsafeAttribute] int P1 { get; set; }
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "RequiresUnsafeAttribute").WithLocation(5, 6),
+            // (7,15): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
             //     int P3 { [RequiresUnsafeAttribute] get; [RequiresUnsafeAttribute] set; }
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "RequiresUnsafeAttribute").WithLocation(7, 15),
-            // (7,46): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "RequiresUnsafeAttribute").WithLocation(7, 15),
+            // (7,46): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
             //     int P3 { [RequiresUnsafeAttribute] get; [RequiresUnsafeAttribute] set; }
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "RequiresUnsafeAttribute").WithLocation(7, 46),
-            // (11,31): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "RequiresUnsafeAttribute").WithLocation(7, 46),
+            // (9,6): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
+            //     [RequiresUnsafeAttribute] event System.Action E1;
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "RequiresUnsafeAttribute").WithLocation(9, 6),
+            // (11,31): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
             //     event System.Action E3 { [RequiresUnsafeAttribute] add { } [RequiresUnsafeAttribute] remove { } }
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "RequiresUnsafeAttribute").WithLocation(11, 31),
-            // (11,65): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "RequiresUnsafeAttribute").WithLocation(11, 31),
+            // (11,65): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
             //     event System.Action E3 { [RequiresUnsafeAttribute] add { } [RequiresUnsafeAttribute] remove { } }
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "RequiresUnsafeAttribute").WithLocation(11, 65),
-            // (13,6): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "RequiresUnsafeAttribute").WithLocation(11, 65),
+            // (12,6): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
+            //     [RequiresUnsafeAttribute] int this[int i] { get => i; set { } }
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "RequiresUnsafeAttribute").WithLocation(12, 6),
+            // (13,6): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
             //     [RequiresUnsafeAttribute] C() { }
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "RequiresUnsafeAttribute").WithLocation(13, 6),
-            // (16,6): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "RequiresUnsafeAttribute").WithLocation(13, 6),
+            // (16,6): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
             //     [RequiresUnsafeAttribute] public static C operator +(C c1, C c2) => c1;
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "RequiresUnsafeAttribute").WithLocation(16, 6),
-            // (17,6): warning CS9368: RequiresUnsafeAttribute is only valid under the updated memory safety rules.
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "RequiresUnsafeAttribute").WithLocation(16, 6),
+            // (17,6): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
             //     [RequiresUnsafeAttribute] public void operator +=(C c) { }
-            Diagnostic(ErrorCode.WRN_RequiresUnsafeAttributeLegacyRules, "RequiresUnsafeAttribute").WithLocation(17, 6),
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "RequiresUnsafeAttribute").WithLocation(17, 6),
+            // (14,6): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
+            //     [RequiresUnsafeAttribute] ~C() { }
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "RequiresUnsafeAttribute").WithLocation(14, 6),
+            // (15,6): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
+            //     [RequiresUnsafeAttribute] static C() { }
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "RequiresUnsafeAttribute").WithLocation(15, 6),
+            // (23,27): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
+            //     void L() { var lam = [RequiresUnsafeAttribute] () => { }; }
+            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "RequiresUnsafeAttribute").WithLocation(23, 27),
         };
 
         CreateCompilation(source, [ref1],
             options: TestOptions.ReleaseDll.WithUpdatedMemorySafetyRules(updatedRules))
             .VerifyDiagnostics(
             [
-                .. commonErrors,
-                .. (updatedRules ? default(ReadOnlySpan<DiagnosticDescription>) : commonWarnings),
+                .. sourceErrors,
             ]);
 
         var comp2 = CreateCompilation(RequiresUnsafeAttributeDefinition).VerifyDiagnostics();
@@ -10554,8 +10448,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             options: TestOptions.ReleaseDll.WithUpdatedMemorySafetyRules(updatedRules))
             .VerifyDiagnostics(
             [
-                .. commonErrors,
-                .. (updatedRules ? default(ReadOnlySpan<DiagnosticDescription>) : commonWarnings),
+                .. sourceErrors,
                 // (3,12): error CS0592: Attribute 'RequiresUnsafeAttribute' is not valid on this declaration type. It is only valid on 'constructor, method, property, indexer, event' declarations.
                 // [assembly: RequiresUnsafeAttribute]
                 Diagnostic(ErrorCode.ERR_AttributeOnBadSymbolType, "RequiresUnsafeAttribute").WithArguments("RequiresUnsafeAttribute", "constructor, method, property, indexer, event").WithLocation(3, 12),
@@ -10597,14 +10490,13 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     {
         CompileAndVerifyUnsafe(
             lib: """
-                using System.Diagnostics.CodeAnalysis;
                 public partial class C
                 {
-                    [RequiresUnsafe] public partial int M1();
-                    public partial int M1() => 0;
-            
-                    public partial int M2();
-                    [RequiresUnsafe] public partial int M2() => 0;
+                    unsafe public partial int M1();
+                    unsafe public partial int M1() => 0;
+
+                    unsafe public partial int M2();
+                    unsafe public partial int M2() => 0;
                 }
                 """,
             caller: """
@@ -10625,22 +10517,19 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c.M2()").WithArguments("C.M2()").WithLocation(3, 1),
             ]);
 
+        // Both partial declarations agree on `unsafe`.
         CreateCompilation(
             [
                 """
-                using System.Diagnostics.CodeAnalysis;
                 partial class C
                 {
-                    [RequiresUnsafe] public partial int M();
-                    [RequiresUnsafe] public partial int M() => 0;
+                    unsafe public partial int M();
+                    unsafe public partial int M() => 0;
                 }
                 """,
                 RequiresUnsafeAttributeDefinition,
             ],
-            options: TestOptions.ReleaseDll.WithUpdatedMemorySafetyRules())
-            .VerifyDiagnostics(
-            // (5,6): error CS0579: Duplicate 'RequiresUnsafe' attribute
-            //     [RequiresUnsafe] public partial int M() => 0;
-            Diagnostic(ErrorCode.ERR_DuplicateAttribute, "RequiresUnsafe").WithArguments("RequiresUnsafe").WithLocation(5, 6));
+            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics();
     }
 }

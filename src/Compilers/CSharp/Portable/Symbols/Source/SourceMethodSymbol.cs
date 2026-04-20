@@ -100,8 +100,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// </summary>
         internal abstract bool IsUnsafe { get; }
 
-        internal bool HasRequiresUnsafeAttribute => GetDecodedWellKnownAttributeData()?.HasRequiresUnsafeAttribute == true;
-
         internal sealed override CallerUnsafeMode CallerUnsafeMode
         {
             get
@@ -110,7 +108,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 {
                     Debug.Assert(AssociatedSymbol?.CallerUnsafeMode != CallerUnsafeMode.Implicit);
 
-                    return HasRequiresUnsafeAttribute || IsExtern || AssociatedSymbol?.CallerUnsafeMode == CallerUnsafeMode.Explicit
+                    if (this.MethodKind is MethodKind.AnonymousFunction or MethodKind.Destructor or MethodKind.LambdaMethod or MethodKind.StaticConstructor)
+                    {
+                        return CallerUnsafeMode.None;
+                    }
+
+                    return IsUnsafe || IsExtern || AssociatedSymbol?.CallerUnsafeMode == CallerUnsafeMode.Explicit
                         ? CallerUnsafeMode.Explicit
                         : CallerUnsafeMode.None;
                 }
@@ -125,8 +128,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get
             {
                 return ContainingModule.UseUpdatedMemorySafetyRules &&
-                    !HasRequiresUnsafeAttribute &&
-                    (IsExtern || AssociatedSymbol?.IsExtern == true);
+                    CallerUnsafeMode == CallerUnsafeMode.Explicit;
             }
         }
 
@@ -152,7 +154,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             var compilation = target.DeclaringCompilation;
 
-            if (target is SourceMethodSymbol { NeedsSynthesizedRequiresUnsafeAttribute: true })
+            if (target is SourceMethodSymbol { NeedsSynthesizedRequiresUnsafeAttribute: true } ||
+                target is SourceExtensionImplementationMethodSymbol { ContainingModule.UseUpdatedMemorySafetyRules: true, CallerUnsafeMode: CallerUnsafeMode.Explicit })
             {
                 Debug.Assert(target.CallerUnsafeMode == CallerUnsafeMode.Explicit);
                 AddSynthesizedAttribute(ref attributes, compilation.TrySynthesizeAttribute(WellKnownMember.System_Diagnostics_CodeAnalysis_RequiresUnsafeAttribute__ctor));
