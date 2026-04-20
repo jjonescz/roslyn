@@ -1380,15 +1380,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return (PropertyWellKnownAttributeData)attributesBag.DecodedWellKnownAttributeData;
         }
 
-        internal bool HasRequiresUnsafeAttribute => GetDecodedWellKnownAttributeData()?.HasRequiresUnsafeAttribute == true;
-
         private bool NeedsSynthesizedRequiresUnsafeAttribute
         {
             get
             {
                 return ContainingModule.UseUpdatedMemorySafetyRules &&
-                    !HasRequiresUnsafeAttribute &&
-                    IsExtern;
+                    CallerUnsafeMode == CallerUnsafeMode.Explicit;
             }
         }
 
@@ -1650,8 +1647,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
             else if (attribute.IsTargetAttribute(AttributeDescription.RequiresUnsafeAttribute))
             {
-                if (ContainingModule.UseUpdatedMemorySafetyRules) MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, arguments.AttributeSyntaxOpt);
-                arguments.GetOrCreateData<PropertyWellKnownAttributeData>().HasRequiresUnsafeAttribute = true;
+                diagnostics.Add(ErrorCode.ERR_RequiresUnsafeAttributeInSource, arguments.AttributeSyntaxOpt.Location);
             }
             else if (attribute.IsTargetAttribute(AttributeDescription.OverloadResolutionPriorityAttribute))
             {
