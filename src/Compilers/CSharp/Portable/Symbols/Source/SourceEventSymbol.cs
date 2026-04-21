@@ -403,9 +403,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 AddSynthesizedAttribute(ref attributes, moduleBuilder.SynthesizeNullableAttributeIfNecessary(this, containingType.GetNullableContextValue(), type));
             }
 
-            if (NeedsSynthesizedRequiresUnsafeAttribute)
+            if (CallerUnsafeMode == CallerUnsafeMode.Explicit)
             {
-                Debug.Assert(CallerUnsafeMode == CallerUnsafeMode.Explicit);
                 AddSynthesizedAttribute(ref attributes, compilation.TrySynthesizeAttribute(WellKnownMember.System_Diagnostics_CodeAnalysis_RequiresUnsafeAttribute__ctor));
             }
         }
@@ -480,15 +479,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                 return Type.ContainsPointerOrFunctionPointer()
                     ? CallerUnsafeMode.Implicit : CallerUnsafeMode.None;
-            }
-        }
-
-        private bool NeedsSynthesizedRequiresUnsafeAttribute
-        {
-            get
-            {
-                return ContainingModule.UseUpdatedMemorySafetyRules &&
-                    CallerUnsafeMode == CallerUnsafeMode.Explicit;
             }
         }
 
@@ -881,9 +871,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 compilation.EnsureNullableAttributeExists(diagnostics, location, modifyCompilation: true);
             }
 
-            if (NeedsSynthesizedRequiresUnsafeAttribute)
+            if (CallerUnsafeMode == CallerUnsafeMode.Explicit)
             {
-                Debug.Assert(CallerUnsafeMode == CallerUnsafeMode.Explicit);
                 MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, compilation, location);
                 Binder.GetWellKnownTypeMember(compilation, WellKnownMember.System_Diagnostics_CodeAnalysis_RequiresUnsafeAttribute__ctor, diagnostics, location);
             }

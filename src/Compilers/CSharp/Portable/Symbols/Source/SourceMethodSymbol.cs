@@ -123,15 +123,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        protected bool NeedsSynthesizedRequiresUnsafeAttribute
-        {
-            get
-            {
-                return ContainingModule.UseUpdatedMemorySafetyRules &&
-                    CallerUnsafeMode == CallerUnsafeMode.Explicit;
-            }
-        }
-
         internal override bool HasAsyncMethodBuilderAttribute(out TypeSymbol? builderArgument)
         {
             return SourceMemberContainerTypeSymbol.HasAsyncMethodBuilderAttribute(this, out builderArgument);
@@ -154,10 +145,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             var compilation = target.DeclaringCompilation;
 
-            if (target is SourceMethodSymbol { NeedsSynthesizedRequiresUnsafeAttribute: true } ||
-                target is SourceExtensionImplementationMethodSymbol { ContainingModule.UseUpdatedMemorySafetyRules: true, CallerUnsafeMode: CallerUnsafeMode.Explicit })
+            if (target.CallerUnsafeMode == CallerUnsafeMode.Explicit)
             {
-                Debug.Assert(target.CallerUnsafeMode == CallerUnsafeMode.Explicit);
                 AddSynthesizedAttribute(ref attributes, compilation.TrySynthesizeAttribute(WellKnownMember.System_Diagnostics_CodeAnalysis_RequiresUnsafeAttribute__ctor));
             }
 

@@ -1046,9 +1046,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 compilation.EnsureIsReadOnlyAttributeExists(diagnostics, typeLocation, modifyCompilation: true);
             }
 
-            if (NeedsSynthesizedRequiresUnsafeAttribute)
+            if (CallerUnsafeMode == CallerUnsafeMode.Explicit)
             {
-                Debug.Assert(CallerUnsafeMode == CallerUnsafeMode.Explicit);
                 MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, compilation, location);
                 Binder.GetWellKnownTypeMember(compilation, WellKnownMember.System_Diagnostics_CodeAnalysis_RequiresUnsafeAttribute__ctor, diagnostics, location);
             }
@@ -1380,15 +1379,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return (PropertyWellKnownAttributeData)attributesBag.DecodedWellKnownAttributeData;
         }
 
-        private bool NeedsSynthesizedRequiresUnsafeAttribute
-        {
-            get
-            {
-                return ContainingModule.UseUpdatedMemorySafetyRules &&
-                    CallerUnsafeMode == CallerUnsafeMode.Explicit;
-            }
-        }
-
         /// <summary>
         /// Returns data decoded from special early bound well-known attributes applied to the symbol or null if there are no applied attributes.
         /// </summary>
@@ -1440,9 +1430,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 AddSynthesizedAttribute(ref attributes, moduleBuilder.SynthesizeIsReadOnlyAttribute(this));
             }
 
-            if (NeedsSynthesizedRequiresUnsafeAttribute)
+            if (CallerUnsafeMode == CallerUnsafeMode.Explicit)
             {
-                Debug.Assert(CallerUnsafeMode == CallerUnsafeMode.Explicit);
                 AddSynthesizedAttribute(ref attributes, compilation.TrySynthesizeAttribute(WellKnownMember.System_Diagnostics_CodeAnalysis_RequiresUnsafeAttribute__ctor));
             }
 

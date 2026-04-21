@@ -128,9 +128,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             var compilation = DeclaringCompilation;
             var location = Syntax.Identifier.GetLocation();
 
-            if (NeedsSynthesizedRequiresUnsafeAttribute)
+            if (CallerUnsafeMode == CallerUnsafeMode.Explicit)
             {
-                Debug.Assert(CallerUnsafeMode == CallerUnsafeMode.Explicit);
                 MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(addTo, compilation, location);
                 Binder.GetWellKnownTypeMember(compilation, WellKnownMember.System_Diagnostics_CodeAnalysis_RequiresUnsafeAttribute__ctor, addTo, location);
             }
