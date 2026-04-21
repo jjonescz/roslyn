@@ -100,6 +100,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// </summary>
         internal abstract bool IsUnsafe { get; }
 
+        /// <summary>
+        /// Whether the method can require callers to be in an unsafe context
+        /// (i.e., can have <see cref="CallerUnsafeMode.Explicit"/>).
+        /// </summary>
+        internal abstract bool CanBeCallerUnsafe { get; }
+
         internal sealed override CallerUnsafeMode CallerUnsafeMode
         {
             get
@@ -108,7 +114,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 {
                     Debug.Assert(AssociatedSymbol?.CallerUnsafeMode != CallerUnsafeMode.Implicit);
 
-                    if (this.MethodKind is MethodKind.AnonymousFunction or MethodKind.Destructor or MethodKind.LambdaMethod or MethodKind.StaticConstructor)
+                    if (!CanBeCallerUnsafe)
                     {
                         return CallerUnsafeMode.None;
                     }
