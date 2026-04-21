@@ -1048,8 +1048,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (CallerUnsafeMode == CallerUnsafeMode.Explicit)
             {
-                MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, compilation, location);
-                Binder.GetWellKnownTypeMember(compilation, WellKnownMember.System_Diagnostics_CodeAnalysis_RequiresUnsafeAttribute__ctor, diagnostics, location);
+                var unsafeKeyword = (CSharpSyntaxNode as MemberDeclarationSyntax)?.Modifiers.FirstOrDefault(SyntaxKind.UnsafeKeyword) ?? default;
+                var unsafeLocation = unsafeKeyword != default ? unsafeKeyword.GetLocation() : location;
+                MessageID.IDS_FeatureUnsafeEvolution.CheckFeatureAvailability(diagnostics, compilation, unsafeLocation);
+                Binder.GetWellKnownTypeMember(compilation, WellKnownMember.System_Diagnostics_CodeAnalysis_RequiresUnsafeAttribute__ctor, diagnostics, unsafeLocation);
             }
 
             ParameterHelpers.EnsureRefKindAttributesExist(compilation, Parameters, diagnostics, modifyCompilation: true);
