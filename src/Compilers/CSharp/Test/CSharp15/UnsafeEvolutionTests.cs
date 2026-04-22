@@ -6,7 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection.Metadata;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
+using Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities;
@@ -30,8 +32,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         ReadOnlySpan<string> additionalSources = default,
         Verification verify = default,
         CallerUnsafeMode expectedUnsafeMode = CallerUnsafeMode.Explicit,
-        object[]? expectedNoAttributeInSource = null,
-        object[]? expectedNoAttributeUnderLegacyRules = null,
         object[]? skipSymbolsInSource = null,
         CSharpParseOptions? parseOptions = null,
         CSharpCompilationOptions? optionsDll = null,
@@ -141,10 +141,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 module,
                 expectedUnsafeSymbols: exceptSymbolsSkippedInSource(expectedUnsafeSymbols),
                 expectedSafeSymbols: exceptSymbolsSkippedInSource(expectedSafeSymbols),
-                // The attribute is synthesized during emit, so source modules don't have it in GetAttributes().
-                expectedNoAttributeInSource: exceptSymbolsSkippedInSource(isSource
-                    ? [.. expectedUnsafeSymbols ?? [], .. expectedNoAttributeInSource ?? []]
-                    : expectedNoAttributeInSource),
                 expectedUnsafeMode: expectedUnsafeMode);
 
             [return: NotNullIfNotNull(nameof(original))]
@@ -260,16 +256,10 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         ModuleSymbol module,
         ReadOnlySpan<object> expectedUnsafeSymbols,
         ReadOnlySpan<object> expectedSafeSymbols,
-        object[]? expectedNoAttributeInSource = null,
-        object[]? expectedNoAttribute = null,
-        object[]? expectedAttribute = null,
+        object[]? expectedAttributeInGetAttributes = null,
         CallerUnsafeMode expectedUnsafeMode = CallerUnsafeMode.Explicit)
     {
         const string Name = "RequiresUnsafeAttribute";
-
-        var expectedNoAttributeInSourceSymbols = (expectedNoAttributeInSource ?? []).SelectAsArray(getSymbol);
-        var expectedNoAttributeSymbols = (expectedNoAttribute ?? []).SelectAsArray(getSymbol);
-        var expectedAttributeSymbols = (expectedAttribute ?? []).SelectAsArray(getSymbol);
 
         var seenSymbols = new HashSet<Symbol>();
 
@@ -283,10 +273,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verifySymbol(symbol, shouldBeUnsafe: false);
         }
 
-        Assert.All(expectedNoAttributeInSourceSymbols, s => Assert.True(seenSymbols.Contains(s)));
-        Assert.All(expectedNoAttributeSymbols, s => Assert.True(seenSymbols.Contains(s)));
-        Assert.All(expectedAttributeSymbols, s => Assert.True(seenSymbols.Contains(s)));
-
         void verifySymbol(object symbolGetter, bool shouldBeUnsafe)
         {
             var symbol = getSymbol(symbolGetter);
@@ -294,22 +280,38 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             var symbolExpectedUnsafeMode = shouldBeUnsafe ? expectedUnsafeMode : CallerUnsafeMode.None;
             Assert.True(symbolExpectedUnsafeMode == symbol.CallerUnsafeMode, $"Expected {symbol.GetType().Name} '{symbol.ToTestDisplayString()}' to have {nameof(CallerUnsafeMode)}.{symbolExpectedUnsafeMode} (got {symbol.CallerUnsafeMode}).");
 
-            var attribute = symbol.GetAttributes().SingleOrDefault(a => a.AttributeClass?.Name == Name);
-            var associatedAttribute = (symbol as MethodSymbol)?.AssociatedSymbol?.GetAttributes().SingleOrDefault(a => a.AttributeClass?.Name == Name);
-            var hasAttribute = attribute is not null || associatedAttribute is not null;
-            var shouldHaveAttribute = expectedAttributeSymbols.Contains(symbol) ||
-                (shouldBeUnsafe && expectedUnsafeMode != CallerUnsafeMode.Implicit &&
-                (module is not SourceModuleSymbol || !expectedNoAttributeInSourceSymbols.Contains(symbol)) &&
-                !expectedNoAttributeSymbols.Contains(symbol));
-            Assert.True(shouldHaveAttribute == hasAttribute,
-                $"{(shouldHaveAttribute ? "Expected" : "Did not expect")} {symbol.GetType().Name} '{symbol.ToTestDisplayString()}' or its associated symbol to have the attribute.");
+            var expectAttributeInGetAttributes = expectedAttributeInGetAttributes?.Contains(symbolGetter) == true;
+            var hasAttributeInGetAttributes = symbol.GetAttributes().Any(a => a.AttributeClass?.Name == Name);
+            Assert.True(expectAttributeInGetAttributes == hasAttributeInGetAttributes,
+                $"{(expectAttributeInGetAttributes ? "Expected" : "Did not expect")} {symbol.GetType().Name} '{symbol.ToTestDisplayString()}' to have the attribute in GetAttributes().");
+
+            // For PE symbols, the attribute should be present in raw metadata when expected.
+            if (module is PEModuleSymbol peModule)
+            {
+                verifyAttributeInMetadata(symbol, shouldBeUnsafe && expectedUnsafeMode == CallerUnsafeMode.Explicit);
+                if (symbol is PEMethodSymbol { AssociatedSymbol: Symbol associatedSymbol })
+                    verifyAttributeInMetadata(associatedSymbol, associatedSymbol.CallerUnsafeMode == CallerUnsafeMode.Explicit);
+
+                void verifyAttributeInMetadata(Symbol s, bool shouldHave)
+                {
+                    EntityHandle? handle = s switch
+                    {
+                        PEMethodSymbol m => (EntityHandle?)m.Handle,
+                        PEPropertySymbol p => p.Handle,
+                        PEEventSymbol e => e.Handle,
+                        _ => null,
+                    };
+
+                    if (handle is { } h)
+                    {
+                        var hasAttributeInMetadata = peModule.Module.HasAttribute(h, AttributeDescription.RequiresUnsafeAttribute);
+                        Assert.True(shouldHave == hasAttributeInMetadata,
+                            $"{(shouldHave ? "Expected" : "Did not expect")} {s.GetType().Name} '{s.ToTestDisplayString()}' to have the attribute in metadata.");
+                    }
+                }
+            }
 
             Assert.True(seenSymbols.Add(symbol), $"Symbol '{symbol.ToTestDisplayString()}' specified multiple times.");
-
-            Assert.True(module is not SourceModuleSymbol || !hasAttribute || !expectedNoAttributeInSourceSymbols.Contains(symbol),
-                $"Unexpected '{symbol.ToTestDisplayString()}' with the attribute in {nameof(expectedNoAttributeInSource)}.");
-            Assert.True(shouldBeUnsafe || !expectedNoAttributeInSourceSymbols.Contains(symbol),
-                $"Unexpected safe '{symbol.ToTestDisplayString()}' in {nameof(expectedNoAttributeInSource)}.");
         }
 
         Symbol getSymbol(object symbolGetter)
@@ -3576,8 +3578,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     VerifyRequiresUnsafeAttribute(
                         m,
                         expectedUnsafeSymbols: [],
-                        expectedSafeSymbols: [.. safeSymbols, .. unsafeSymbols],
-                        expectedAttribute: []);
+                        expectedSafeSymbols: [.. safeSymbols, .. unsafeSymbols]);
                 })
                 .VerifyDiagnostics();
         }
@@ -3593,8 +3594,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                     VerifyRequiresUnsafeAttribute(
                         m,
                         expectedUnsafeSymbols: [.. unsafeSymbols],
-                        expectedSafeSymbols: [.. safeSymbols],
-                        expectedAttribute: [.. unsafeSymbols]);
+                        expectedSafeSymbols: [.. safeSymbols]);
                 })
                 .VerifyDiagnostics(
                 // (17,22): warning CS9377: The 'unsafe' modifier does not have any effect here under the current memory safety rules.
@@ -6057,7 +6057,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             additionalSources: [RequiresUnsafeAttributeDefinition],
             expectedUnsafeSymbols: [ExtensionMember("E", "P2"), "E.get_P2", ExtensionMember("E", "get_P2"), "E.set_P2", ExtensionMember("E", "set_P2")],
             expectedSafeSymbols: [ExtensionMember("E", "P1"), "E.get_P1", ExtensionMember("E", "get_P1"), "E.set_P1", ExtensionMember("E", "set_P1")],
-            expectedNoAttributeInSource: ["E.get_P2", "E.set_P2"],
             expectedDiagnostics:
             [
                 // (3,1): error CS9362: 'E.extension(int).P2.set' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
@@ -7715,7 +7714,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             comp.SourceModule,
             expectedUnsafeSymbols: [],
             expectedSafeSymbols: ["C.Finalize"],
-            expectedAttribute: ["C.Finalize"]);
+            expectedAttributeInGetAttributes: ["C.Finalize"]);
     }
 
     [Fact]
@@ -9256,8 +9255,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             expectedUnsafeSymbols: unsafeSymbols,
             expectedSafeSymbols: ["C", "C.M1"],
-            expectedNoAttributeInSource: unsafeSymbols,
-            expectedNoAttributeUnderLegacyRules: unsafeSymbols,
             expectedDiagnostics: commonDiagnostics);
 
         CreateCompilation([libSource, callerSource],
@@ -9343,8 +9340,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
                 expectedUnsafeSymbols: ["C.M"],
-                expectedSafeSymbols: ["C"],
-                expectedNoAttributeInSource: ["C.M"]);
+                expectedSafeSymbols: ["C"]);
         }
 
         CreateCompilation(getLibSource("extern")).VerifyDiagnostics();
@@ -9485,8 +9481,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             expectedUnsafeSymbols: unsafeSymbols,
             expectedSafeSymbols: ["B", "B.M4", "B.M5", "B.M6"],
-            expectedNoAttributeInSource: unsafeSymbols,
-            expectedNoAttributeUnderLegacyRules: unsafeSymbols,
             expectedDiagnostics:
             [
                 // (3,20): error CS9362: 'D2.M1()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
@@ -9752,8 +9746,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             expectedUnsafeSymbols: ["I.M1"],
             expectedSafeSymbols: ["I", "I.M2"],
-            expectedNoAttributeInSource: ["I.M1"],
-            expectedNoAttributeUnderLegacyRules: ["I.M1"],
             expectedDiagnostics:
             [
                 // (3,1): error CS9362: 'I.M1()' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
@@ -9830,8 +9822,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             expectedUnsafeSymbols: unsafeSymbols,
             expectedSafeSymbols: ["C"],
-            expectedNoAttributeInSource: unsafeSymbols,
-            expectedNoAttributeUnderLegacyRules: unsafeSymbols,
             skipSymbolsInSource: unsafeSymbols,
             expectedDiagnostics: []);
 
@@ -9913,8 +9903,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             expectedUnsafeSymbols: unsafeSymbols,
             expectedSafeSymbols: ["C", "C.P1", "C.set_P1"],
-            expectedNoAttributeInSource: unsafeSymbols,
-            expectedNoAttributeUnderLegacyRules: unsafeSymbols,
             expectedDiagnostics: commonDiagnostics);
 
         CreateCompilation([libSource, callerSource],
@@ -10017,8 +10005,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
                 expectedUnsafeSymbols: ["C.P", "C.set_P"],
-                expectedSafeSymbols: ["C"],
-                expectedNoAttributeInSource: ["C.P", "C.set_P"]);
+                expectedSafeSymbols: ["C"]);
         }
 
         CreateCompilation(getLibSource("extern")).VerifyDiagnostics();
@@ -10082,8 +10069,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             expectedUnsafeSymbols: ["C.P1", "C.set_P1", "C.P2", "C.set_P2"],
             expectedSafeSymbols: ["C"],
-            expectedNoAttributeInSource: ["C.P2"],
-            expectedNoAttributeUnderLegacyRules: ["C.P2"],
             expectedDiagnostics:
             [
                 // (2,1): error CS9362: 'C.P1.set' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
@@ -10130,8 +10115,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             expectedUnsafeSymbols: unsafeSymbols,
             expectedSafeSymbols: ["C"],
-            expectedNoAttributeInSource: unsafeSymbols,
-            expectedNoAttributeUnderLegacyRules: unsafeSymbols,
             expectedDiagnostics: commonDiagnostics);
 
         CreateCompilation([libSource, callerSource],
@@ -10224,8 +10207,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
                 expectedUnsafeSymbols: unsafeSymbols,
-                expectedSafeSymbols: ["C"],
-                expectedNoAttributeInSource: unsafeSymbols);
+                expectedSafeSymbols: ["C"]);
         }
 
         CreateCompilation(getLibSource("extern")).VerifyDiagnostics();
@@ -10294,8 +10276,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             expectedUnsafeSymbols: ["C1.this[]", "C1.set_Item", "C2.this[]", "C2.set_Item"],
             expectedSafeSymbols: ["C1", "C2"],
-            expectedNoAttributeInSource: ["C2.this[]"],
-            expectedNoAttributeUnderLegacyRules: ["C2.this[]"],
             expectedDiagnostics:
             [
                 // (1,1): error CS9362: 'C1.this[int].set' must be used in an unsafe context because it is marked as 'unsafe' or 'extern'
@@ -10339,8 +10319,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             expectedUnsafeSymbols: unsafeSymbols,
             expectedSafeSymbols: ["C"],
-            expectedNoAttributeInSource: unsafeSymbols,
-            expectedNoAttributeUnderLegacyRules: unsafeSymbols,
             expectedDiagnostics: commonDiagnostics);
 
         CreateCompilation([libSource, callerSource],
@@ -10429,8 +10407,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
                 expectedUnsafeSymbols: unsafeSymbols,
-                expectedSafeSymbols: ["C"],
-                expectedNoAttributeInSource: unsafeSymbols);
+                expectedSafeSymbols: ["C"]);
         }
 
         // When compiling the lib under legacy rules, extern members are not unsafe, but members with pointers are.
@@ -10521,8 +10498,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             expectedUnsafeSymbols: unsafeSymbols,
             expectedSafeSymbols: ["C"],
-            expectedNoAttributeInSource: unsafeSymbols,
-            expectedNoAttributeUnderLegacyRules: unsafeSymbols,
             expectedDiagnostics: commonDiagnostics);
 
         CreateCompilation([libSource, callerSource],
@@ -10596,8 +10571,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
                 expectedUnsafeSymbols: ["C..ctor"],
-                expectedSafeSymbols: ["C"],
-                expectedNoAttributeInSource: ["C..ctor"]);
+                expectedSafeSymbols: ["C"]);
         }
 
         CreateCompilation(getLibSource("extern")).VerifyDiagnostics();
@@ -10698,8 +10672,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             verify: Verification.Skipped,
             expectedUnsafeSymbols: unsafeSymbols,
             expectedSafeSymbols: ["C"],
-            expectedNoAttributeInSource: unsafeSymbols,
-            expectedNoAttributeUnderLegacyRules: unsafeSymbols,
             expectedDiagnostics: commonDiagnostics);
 
         CreateCompilation([libSource, callerSource, CompilerFeatureRequiredAttribute],
@@ -10774,8 +10746,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             VerifyRequiresUnsafeAttribute(
                 libAssemblySymbol.Modules.Single(),
                 expectedUnsafeSymbols: ["C.op_AdditionAssignment"],
-                expectedSafeSymbols: ["C"],
-                expectedNoAttributeInSource: ["C.op_AdditionAssignment"]);
+                expectedSafeSymbols: ["C"]);
         }
 
         CreateCompilation([getLibSource("extern"), CompilerFeatureRequiredAttribute]).VerifyDiagnostics();
