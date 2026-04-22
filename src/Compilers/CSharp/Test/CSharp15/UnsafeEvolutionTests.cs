@@ -256,7 +256,6 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
         ModuleSymbol module,
         ReadOnlySpan<object> expectedUnsafeSymbols,
         ReadOnlySpan<object> expectedSafeSymbols,
-        object[]? expectedAttributeInGetAttributes = null,
         CallerUnsafeMode expectedUnsafeMode = CallerUnsafeMode.Explicit)
     {
         const string Name = "RequiresUnsafeAttribute";
@@ -280,10 +279,9 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             var symbolExpectedUnsafeMode = shouldBeUnsafe ? expectedUnsafeMode : CallerUnsafeMode.None;
             Assert.True(symbolExpectedUnsafeMode == symbol.CallerUnsafeMode, $"Expected {symbol.GetType().Name} '{symbol.ToTestDisplayString()}' to have {nameof(CallerUnsafeMode)}.{symbolExpectedUnsafeMode} (got {symbol.CallerUnsafeMode}).");
 
-            var expectAttributeInGetAttributes = expectedAttributeInGetAttributes?.Contains(symbolGetter) == true;
             var hasAttributeInGetAttributes = symbol.GetAttributes().Any(a => a.AttributeClass?.Name == Name);
-            Assert.True(expectAttributeInGetAttributes == hasAttributeInGetAttributes,
-                $"{(expectAttributeInGetAttributes ? "Expected" : "Did not expect")} {symbol.GetType().Name} '{symbol.ToTestDisplayString()}' to have the attribute in GetAttributes().");
+            Assert.False(hasAttributeInGetAttributes,
+                $"Did not expect {symbol.GetType().Name} '{symbol.ToTestDisplayString()}' to have the attribute in GetAttributes().");
 
             // For PE symbols, the attribute should be present in raw metadata when expected.
             if (module is PEModuleSymbol peModule)
@@ -5835,15 +5833,30 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     public void Member_Lambda()
     {
         var source = """
-            var lam = [System.Diagnostics.CodeAnalysis.RequiresUnsafe] () => { };
+            System.Action lam = unsafe () => { };
             lam();
             """;
-        CreateCompilation([source, RequiresUnsafeAttributeDefinition],
-            options: TestOptions.UnsafeReleaseExe.WithUpdatedMemorySafetyRules())
+        CreateCompilation(source,
+            options: TestOptions.UnsafeReleaseExe)
             .VerifyDiagnostics(
-            // (1,12): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
-            // var lam = [System.Diagnostics.CodeAnalysis.RequiresUnsafe] () => { };
-            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(1, 12));
+            // (1,21): error CS1525: Invalid expression term 'unsafe'
+            // System.Action lam = unsafe () => { };
+            Diagnostic(ErrorCode.ERR_InvalidExprTerm, "unsafe").WithArguments("unsafe").WithLocation(1, 21),
+            // (1,21): error CS1002: ; expected
+            // System.Action lam = unsafe () => { };
+            Diagnostic(ErrorCode.ERR_SemicolonExpected, "unsafe").WithLocation(1, 21),
+            // (1,29): error CS8124: Tuple must contain at least two elements.
+            // System.Action lam = unsafe () => { };
+            Diagnostic(ErrorCode.ERR_TupleTooFewElements, ")").WithLocation(1, 29),
+            // (1,31): error CS1001: Identifier expected
+            // System.Action lam = unsafe () => { };
+            Diagnostic(ErrorCode.ERR_IdentifierExpected, "=>").WithLocation(1, 31),
+            // (1,34): error CS1525: Invalid expression term '{'
+            // System.Action lam = unsafe () => { };
+            Diagnostic(ErrorCode.ERR_InvalidExprTerm, "{").WithArguments("{").WithLocation(1, 34),
+            // (1,34): error CS1002: ; expected
+            // System.Action lam = unsafe () => { };
+            Diagnostic(ErrorCode.ERR_SemicolonExpected, "{").WithLocation(1, 34));
     }
 
     [Fact]
@@ -6309,26 +6322,17 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     public void Member_Property_Field()
     {
         CreateCompilation(
-            [
-                """
-                class C
-                {
-                    unsafe int P1 => field;
-
-                    [field: System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    int P2 => field;
-                }
-                """,
-                RequiresUnsafeAttributeDefinition,
-            ],
-            options: TestOptions.ReleaseDll.WithUpdatedMemorySafetyRules())
+            """
+            class C
+            {
+                unsafe int P => field;
+            }
+            """,
+            options: TestOptions.ReleaseDll)
             .VerifyDiagnostics(
             // (3,16): error CS0227: Unsafe code may only appear if compiling with /unsafe
-            //     unsafe int P1 => field;
-            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "P1").WithLocation(3, 16),
-            // (5,13): error CS0592: Attribute 'System.Diagnostics.CodeAnalysis.RequiresUnsafe' is not valid on this declaration type. It is only valid on 'constructor, method, property, indexer, event' declarations.
-            //     [field: System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_AttributeOnBadSymbolType, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithArguments("System.Diagnostics.CodeAnalysis.RequiresUnsafe", "constructor, method, property, indexer, event").WithLocation(5, 13));
+            //     unsafe int P => field;
+            Diagnostic(ErrorCode.ERR_IllegalUnsafe, "P").WithLocation(3, 16));
     }
 
     [Fact]
@@ -6703,6 +6707,13 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "c2[0]").WithArguments("C2.this[int].set").WithLocation(4, 1),
             ]);
 
+        CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.Regular14).VerifyEmitDiagnostics(
+            // (3,30): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     public int this[int i] { unsafe get => i; set { } }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "unsafe").WithArguments("updated memory safety rules").WithLocation(3, 30),
+            // (7,40): error CS8652: The feature 'updated memory safety rules' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+            //     public int this[int i] { get => i; unsafe set { } }
+            Diagnostic(ErrorCode.ERR_FeatureInPreview, "unsafe").WithArguments("updated memory safety rules").WithLocation(7, 40));
         CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularNext).VerifyEmitDiagnostics();
         CreateCompilation([lib, RequiresUnsafeAttributeDefinition], parseOptions: TestOptions.RegularPreview).VerifyEmitDiagnostics();
     }
@@ -7259,23 +7270,22 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
     [Fact]
     public void Member_Constructor_Static()
     {
-        CreateCompilation(
-            [
-                """
+        CompileAndVerifyUnsafe(
+            lib: """
                 public class C
                 {
                     public static readonly int F = 42;
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    static C() { }
+                    unsafe static C() { }
                 }
                 """,
-                RequiresUnsafeAttributeDefinition,
-            ],
-            options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
-            .VerifyDiagnostics(
-            // (4,6): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(4, 6));
+            caller: """
+                _ = C.F;
+                """,
+            additionalSources: [RequiresUnsafeAttributeDefinition],
+            optionsDll: TestOptions.UnsafeReleaseDll.WithMetadataImportOptions(MetadataImportOptions.All),
+            expectedUnsafeSymbols: [],
+            expectedSafeSymbols: ["C", "C..cctor"],
+            expectedDiagnostics: []);
     }
 
     [Fact]
@@ -7690,8 +7700,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 """
                 class C
                 {
-                    [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-                    ~C() { }
+                    unsafe ~C() { }
                     void M() { Finalize(); }
                 }
                 class D : C
@@ -7703,18 +7712,14 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             ],
             options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics(
-            // (3,6): error CS9379: Do not use 'RequiresUnsafeAttribute' in source; use the 'unsafe' modifier instead.
-            //     [System.Diagnostics.CodeAnalysis.RequiresUnsafe]
-            Diagnostic(ErrorCode.ERR_RequiresUnsafeAttributeInSource, "System.Diagnostics.CodeAnalysis.RequiresUnsafe").WithLocation(3, 6),
-            // (5,16): error CS0245: Destructors and object.Finalize cannot be called directly. Consider calling IDisposable.Dispose if available.
+            // (4,16): error CS0245: Destructors and object.Finalize cannot be called directly. Consider calling IDisposable.Dispose if available.
             //     void M() { Finalize(); }
-            Diagnostic(ErrorCode.ERR_CallingFinalizeDeprecated, "Finalize()").WithLocation(5, 16));
+            Diagnostic(ErrorCode.ERR_CallingFinalizeDeprecated, "Finalize()").WithLocation(4, 16));
 
         VerifyRequiresUnsafeAttribute(
             comp.SourceModule,
             expectedUnsafeSymbols: [],
-            expectedSafeSymbols: ["C.Finalize"],
-            expectedAttributeInGetAttributes: ["C.Finalize"]);
+            expectedSafeSymbols: ["C.Finalize"]);
     }
 
     [Fact]
