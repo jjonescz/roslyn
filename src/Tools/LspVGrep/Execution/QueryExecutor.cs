@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using LspVGrepTool.Models;
 
 namespace LspVGrepTool.Execution;
@@ -6,9 +6,11 @@ namespace LspVGrepTool.Execution;
 internal sealed class QueryExecutor
 {
     private readonly IReadOnlyDictionary<string, IReadOnlyList<IQueryAlgorithm>> _algorithmsByQueryType;
+    private readonly Action<string> _log;
 
-    public QueryExecutor(IEnumerable<IQueryAlgorithm> algorithms)
+    public QueryExecutor(IEnumerable<IQueryAlgorithm> algorithms, Action<string>? log = null)
     {
+        _log = log ?? (_ => { });
         _algorithmsByQueryType = algorithms
             .GroupBy(algorithm => algorithm.QueryType, StringComparer.Ordinal)
             .ToDictionary(
@@ -25,17 +27,19 @@ internal sealed class QueryExecutor
     {
         var queryReports = new List<QueryExecutionReport>(queries.Count);
 
-        foreach (var query in queries)
+        for (var queryIndex = 0; queryIndex < queries.Count; queryIndex++)
         {
+            var query = queries[queryIndex];
             if (!_algorithmsByQueryType.TryGetValue(query.Type, out var algorithms) || algorithms.Count == 0)
             {
                 throw new InvalidOperationException($"No algorithms are registered for query type '{query.Type}'.");
             }
 
+            _log($"Query {queryIndex + 1}/{queries.Count}: {query.Type} ({FormatFields(query)}).");
             var results = new List<AlgorithmExecutionResult>(algorithms.Count);
             foreach (var algorithm in algorithms)
             {
-                var result = await ExecuteAlgorithmAsync(algorithm, query, context, cancellationToken);
+                var result = await ExecuteAlgorithmAsync(algorithm, query, context, _log, cancellationToken);
                 results.Add(result);
             }
 
@@ -55,21 +59,29 @@ internal sealed class QueryExecutor
         IQueryAlgorithm algorithm,
         QueryRequest query,
         QueryExecutionContext context,
+        Action<string> log,
         CancellationToken cancellationToken)
     {
+        log($"  Starting {algorithm.Name}.");
+
         try
         {
             var stopwatch = Stopwatch.StartNew();
             var result = await algorithm.ExecuteAsync(query, context, cancellationToken);
             stopwatch.Stop();
+            log($"  Finished {algorithm.Name}: {result.Outcome} in {Program.FormatDuration(stopwatch.Elapsed)}.");
             return result with { ElapsedTime = stopwatch.Elapsed };
         }
         catch (Exception exception)
         {
+            log($"  Failed {algorithm.Name}: {exception.GetType().Name}: {exception.Message}");
             return new AlgorithmExecutionResult(
                 algorithm.Name,
                 AlgorithmOutcome.Failed,
                 exception.ToString());
         }
     }
+
+    private static string FormatFields(QueryRequest query) =>
+        string.Join(", ", query.GetDisplayFields().Select(static field => $"{field.Key}: {field.Value}"));
 }
