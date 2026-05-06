@@ -1,0 +1,3 @@
+[*.cs]
+# IDE0073: File header does not match expected text
+dotnet_diagnostic.IDE0073.severity = none
