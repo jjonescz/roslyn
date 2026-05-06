@@ -10,10 +10,12 @@ internal sealed class QueryExecutor
 
     private readonly IReadOnlyDictionary<string, IReadOnlyList<IQueryAlgorithm>> _algorithmsByQueryType;
     private readonly Action<string> _log;
+    private readonly Action<string> _logProgress;
 
-    public QueryExecutor(IEnumerable<IQueryAlgorithm> algorithms, Action<string>? log = null)
+    public QueryExecutor(IEnumerable<IQueryAlgorithm> algorithms, Action<string>? log = null, Action<string>? logProgress = null)
     {
         _log = log ?? (_ => { });
+        _logProgress = logProgress ?? (_ => { });
         _algorithmsByQueryType = algorithms
             .GroupBy(algorithm => algorithm.QueryType, StringComparer.Ordinal)
             .ToDictionary(
@@ -29,6 +31,7 @@ internal sealed class QueryExecutor
         TimeSpan? workspaceLoadTime,
         CancellationToken cancellationToken)
     {
+        var executionStopwatch = Stopwatch.StartNew();
         var queryReports = new List<QueryExecutionReport>(queries.Count);
 
         for (var queryIndex = 0; queryIndex < queries.Count; queryIndex++)
@@ -39,7 +42,8 @@ internal sealed class QueryExecutor
                 throw new InvalidOperationException($"No algorithms are registered for query type '{query.Type}'.");
             }
 
-            _log($"Query {queryIndex + 1}/{queries.Count}: {query.Type} ({FormatFields(query)}).");
+            var queryDescription = $"Query {queryIndex + 1}/{queries.Count}: {query.Type} ({FormatFields(query)})";
+            _logProgress($"{queryDescription}; starting.");
             var results = new List<AlgorithmExecutionResult>(algorithms.Sum(GetRunCount));
             foreach (var algorithm in algorithms)
             {
@@ -47,13 +51,16 @@ internal sealed class QueryExecutor
                 for (var runIndex = 0; runIndex < runCount; runIndex++)
                 {
                     var displayName = GetDisplayName(algorithm, runIndex, runCount);
-                    var result = await ExecuteAlgorithmAsync(algorithm, displayName, query, context, _log, cancellationToken);
+                    var result = await ExecuteAlgorithmAsync(algorithm, displayName, query, context, queryDescription, _log, _logProgress, cancellationToken);
                     results.Add(result);
                 }
             }
 
             queryReports.Add(new QueryExecutionReport(query.Type, query.GetDisplayFields(), results));
         }
+
+        executionStopwatch.Stop();
+        _log($"Completed {queries.Count} queries in {Program.FormatDuration(executionStopwatch.Elapsed)}.");
 
         var workspace = context.TryGetLoadedWorkspace();
         return new ToolReport(
@@ -72,22 +79,24 @@ internal sealed class QueryExecutor
         string displayName,
         QueryRequest query,
         QueryExecutionContext context,
+        string queryDescription,
         Action<string> log,
+        Action<string> logProgress,
         CancellationToken cancellationToken)
     {
-        log($"  Starting {displayName}.");
+        logProgress($"{queryDescription}; running {displayName}.");
 
         try
         {
             var stopwatch = Stopwatch.StartNew();
             var result = await algorithm.ExecuteAsync(query, context, cancellationToken);
             stopwatch.Stop();
-            log($"  Finished {displayName}: {result.Outcome} in {Program.FormatDuration(stopwatch.Elapsed)}.");
+            logProgress($"{queryDescription}; finished {displayName}: {result.Outcome} in {Program.FormatDuration(stopwatch.Elapsed)}.");
             return result with { AlgorithmName = displayName, ElapsedTime = stopwatch.Elapsed };
         }
         catch (Exception exception)
         {
-            log($"  Failed {displayName}: {exception.GetType().Name}: {exception.Message}");
+            log($"{queryDescription}; failed {displayName}: {exception.GetType().Name}: {exception.Message}");
             return new AlgorithmExecutionResult(
                 displayName,
                 AlgorithmOutcome.Failed,

@@ -65,7 +65,7 @@ internal static class Program
         };
 
         Log($"Running {queries.Count} queries with {algorithms.Length} algorithms registered.");
-        var executor = new QueryExecutor(algorithms, Log);
+        var executor = new QueryExecutor(algorithms, Log, LogProgress);
         var report = await executor.ExecuteAsync(queries, context, repositoryCommitHash, workspaceStopwatch.Elapsed, CancellationToken.None);
 
         var outputPath = ResolveOutputPath(inputPath, input.Output);
