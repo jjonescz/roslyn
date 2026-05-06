@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Text;
-using System.Text.Json;
 using LspVGrepTool.Algorithms;
 using LspVGrepTool.Execution;
 using LspVGrepTool.Infrastructure;
@@ -73,7 +72,13 @@ internal static class Program
         Log($"Rendering report to '{outputPath}'.");
         var html = HtmlReportRenderer.Render(report);
         await File.WriteAllTextAsync(outputPath, html, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), CancellationToken.None);
-        Log("Report written.");
+        Log("HTML report written.");
+
+        var jsonOutputPath = ResolveJsonOutputPath(outputPath);
+        Log($"Rendering summary JSON to '{jsonOutputPath}'.");
+        var json = JsonReportRenderer.Render(report);
+        await File.WriteAllTextAsync(jsonOutputPath, json, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), CancellationToken.None);
+        Log("Summary JSON written.");
 
         Console.WriteLine(outputPath);
         return 0;
@@ -140,5 +145,12 @@ internal static class Program
         return Path.IsPathRooted(fileName)
             ? fileName
             : Path.Combine(inputDirectory, fileName);
+    }
+
+    private static string ResolveJsonOutputPath(string outputPath)
+    {
+        var directory = Path.GetDirectoryName(outputPath);
+        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(outputPath);
+        return Path.Combine(directory ?? string.Empty, fileNameWithoutExtension + ".summary.json");
     }
 }
