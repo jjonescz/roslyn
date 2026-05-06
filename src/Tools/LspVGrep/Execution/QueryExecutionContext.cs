@@ -10,19 +10,23 @@ internal sealed class QueryExecutionContext : IDisposable
 
     public QueryExecutionContext(
         string directoryPath,
+        bool useLscache,
         RoslynWorkspaceProvider workspaceProvider,
         ExternalSearchRunner externalSearchRunner)
     {
         DirectoryPath = directoryPath;
+        UseLscache = useLscache;
         _workspaceProvider = workspaceProvider;
         _externalSearchRunner = externalSearchRunner;
     }
 
     public string DirectoryPath { get; }
 
+    public bool UseLscache { get; }
+
     public async Task<WorkspaceLoadResult> GetWorkspaceAsync(CancellationToken cancellationToken)
     {
-        _workspaceLoadTask ??= _workspaceProvider.LoadAsync(DirectoryPath, cancellationToken);
+        _workspaceLoadTask ??= _workspaceProvider.LoadAsync(DirectoryPath, UseLscache, cancellationToken);
         return await _workspaceLoadTask;
     }
 

@@ -28,10 +28,13 @@ internal static class Program
         var input = await InputLoader.LoadAsync(inputPath, CancellationToken.None);
         var queries = QueryRequestFactory.Create(input);
         var resolvedDirectory = ResolveTargetDirectory(inputPath, input.Directory!);
+        var useLscache = input.UseLscache ?? true;
         Log($"Loaded {queries.Count} queries for '{resolvedDirectory}'.");
+        Log($"LS cache workspace hydration is {(useLscache ? "enabled" : "disabled")}.");
 
         using var context = new QueryExecutionContext(
             resolvedDirectory,
+            useLscache,
             new RoslynWorkspaceProvider(Log, LogProgress),
             new ExternalSearchRunner());
 

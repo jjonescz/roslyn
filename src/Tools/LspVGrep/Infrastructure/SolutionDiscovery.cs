@@ -6,7 +6,8 @@ internal enum RoslynLoadTargetKind
 {
     Solution,
     Project,
-    MultipleProjects
+    MultipleProjects,
+    LsCache
 }
 
 internal sealed record RoslynLoadTarget(RoslynLoadTargetKind Kind, IReadOnlyList<string> Paths)

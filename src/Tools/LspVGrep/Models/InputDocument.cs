@@ -11,6 +11,9 @@ internal sealed class InputDocument
     [JsonPropertyName("output")]
     public string? Output { get; init; }
 
+    [JsonPropertyName("useLscache")]
+    public bool? UseLscache { get; init; }
+
     [JsonPropertyName("queries")]
     public List<QueryDefinitionDto>? Queries { get; init; }
 }
