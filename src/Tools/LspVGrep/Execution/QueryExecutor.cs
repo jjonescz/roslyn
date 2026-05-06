@@ -5,6 +5,8 @@ namespace LspVGrepTool.Execution;
 
 internal sealed class QueryExecutor
 {
+    private const int RoslynAlgorithmRunCount = 2;
+
     private readonly IReadOnlyDictionary<string, IReadOnlyList<IQueryAlgorithm>> _algorithmsByQueryType;
     private readonly Action<string> _log;
 
@@ -36,11 +38,16 @@ internal sealed class QueryExecutor
             }
 
             _log($"Query {queryIndex + 1}/{queries.Count}: {query.Type} ({FormatFields(query)}).");
-            var results = new List<AlgorithmExecutionResult>(algorithms.Count);
+            var results = new List<AlgorithmExecutionResult>(algorithms.Sum(GetRunCount));
             foreach (var algorithm in algorithms)
             {
-                var result = await ExecuteAlgorithmAsync(algorithm, query, context, _log, cancellationToken);
-                results.Add(result);
+                var runCount = GetRunCount(algorithm);
+                for (var runIndex = 0; runIndex < runCount; runIndex++)
+                {
+                    var displayName = GetDisplayName(algorithm, runIndex, runCount);
+                    var result = await ExecuteAlgorithmAsync(algorithm, displayName, query, context, _log, cancellationToken);
+                    results.Add(result);
+                }
             }
 
             queryReports.Add(new QueryExecutionReport(query.Type, query.GetDisplayFields(), results));
@@ -57,30 +64,42 @@ internal sealed class QueryExecutor
 
     private static async Task<AlgorithmExecutionResult> ExecuteAlgorithmAsync(
         IQueryAlgorithm algorithm,
+        string displayName,
         QueryRequest query,
         QueryExecutionContext context,
         Action<string> log,
         CancellationToken cancellationToken)
     {
-        log($"  Starting {algorithm.Name}.");
+        log($"  Starting {displayName}.");
 
         try
         {
             var stopwatch = Stopwatch.StartNew();
             var result = await algorithm.ExecuteAsync(query, context, cancellationToken);
             stopwatch.Stop();
-            log($"  Finished {algorithm.Name}: {result.Outcome} in {Program.FormatDuration(stopwatch.Elapsed)}.");
-            return result with { ElapsedTime = stopwatch.Elapsed };
+            log($"  Finished {displayName}: {result.Outcome} in {Program.FormatDuration(stopwatch.Elapsed)}.");
+            return result with { AlgorithmName = displayName, ElapsedTime = stopwatch.Elapsed };
         }
         catch (Exception exception)
         {
-            log($"  Failed {algorithm.Name}: {exception.GetType().Name}: {exception.Message}");
+            log($"  Failed {displayName}: {exception.GetType().Name}: {exception.Message}");
             return new AlgorithmExecutionResult(
-                algorithm.Name,
+                displayName,
                 AlgorithmOutcome.Failed,
                 exception.ToString());
         }
     }
+
+    private static int GetRunCount(IQueryAlgorithm algorithm) =>
+        IsRoslynAlgorithm(algorithm) ? RoslynAlgorithmRunCount : 1;
+
+    private static bool IsRoslynAlgorithm(IQueryAlgorithm algorithm) =>
+        algorithm.Name.Contains("roslyn", StringComparison.OrdinalIgnoreCase);
+
+    private static string GetDisplayName(IQueryAlgorithm algorithm, int runIndex, int runCount) =>
+        runCount == 1
+            ? algorithm.Name
+            : $"{algorithm.Name} (pass {runIndex + 1})";
 
     private static string FormatFields(QueryRequest query) =>
         string.Join(", ", query.GetDisplayFields().Select(static field => $"{field.Key}: {field.Value}"));
