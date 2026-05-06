@@ -151,6 +151,6 @@ internal static class Program
     {
         var directory = Path.GetDirectoryName(outputPath);
         var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(outputPath);
-        return Path.Combine(directory ?? string.Empty, fileNameWithoutExtension + ".summary.json");
+        return Path.Combine(directory ?? string.Empty, fileNameWithoutExtension + ".json");
     }
 }
