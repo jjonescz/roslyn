@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LspVGrep Combined Report</title>
+  <style>
+    :root { color-scheme: light; font-family: "Segoe UI", system-ui, sans-serif; }
+    body { margin: 0; background: #f7f8fa; color: #1f2937; }
+    main { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    h1 { margin: 0 0 4px; font-size: 28px; font-weight: 650; }
+    .meta { color: #5f6b7a; margin-bottom: 20px; }
+    .panel { background: #fff; border: 1px solid #d9dee7; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; }
+    .filters label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px; background: #fff; font-size: 13px; }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .toolbar h2 { margin: 0; font-size: 18px; }
+    button { border: 1px solid #b8c2d1; border-radius: 6px; background: #fff; color: #1f2937; padding: 6px 10px; cursor: pointer; }
+    button:hover { background: #eef2f7; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; text-align: left; vertical-align: top; }
+    th { background: #f1f5f9; font-weight: 650; position: sticky; top: 0; z-index: 1; }
+    td.numeric { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .muted { color: #667085; }
+    .table-wrap { max-height: 520px; overflow: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
+    .chart { display: grid; gap: 12px; }
+    .chart-row { display: grid; grid-template-columns: minmax(180px, 280px) 1fr; gap: 12px; align-items: center; }
+    .chart-label { font-size: 12px; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bar-group { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; align-items: end; min-height: 44px; }
+    .bar { min-width: 0; border-radius: 4px; color: #fff; font-size: 11px; line-height: 1.2; padding: 4px; box-sizing: border-box; display: flex; align-items: end; justify-content: center; text-align: center; overflow: hidden; }
+    .load { background: #2563eb; }
+    .grep { background: #16a34a; }
+    .cold { background: #dc2626; }
+    .warm { background: #7c3aed; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; color: #475569; font-size: 12px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>LspVGrep Combined Report</h1>
+  <div class="meta">Generated 2026-05-06 15:15:00Z from 2 reports.</div>
+
+  <section class="panel">
+    <div class="toolbar">
+      <h2>Queries</h2>
+      <div>
+        <button id="selectAll" type="button">Select all</button>
+        <button id="selectNone" type="button">Select none</button>
+      </div>
+    </div>
+    <div id="queryFilters" class="filters"></div>
+  </section>
+
+  <section class="panel">
+    <div class="toolbar">
+      <h2>Timings</h2>
+      <div class="legend">
+        <span><i class="swatch load"></i>Load</span>
+        <span><i class="swatch grep"></i>Grep</span>
+        <span><i class="swatch cold"></i>LSP cold</span>
+        <span><i class="swatch warm"></i>LSP warm</span>
+      </div>
+    </div>
+    <div id="chart" class="chart"></div>
+  </section>
+
+  <section class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Repository</th>
+            <th>Query</th>
+            <th>Commit</th>
+            <th>LS cache</th>
+            <th>Solution load</th>
+            <th>Grep</th>
+            <th>LSP cold</th>
+            <th>LSP warm</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<script>
+const allRows = [{"repository":"msbuild","directory":"D:\\msbuild","commit":"d6f0b0696ea3013f946c09866cdc17776ce90412","lsCacheEnabled":true,"lsCacheUsed":false,"query":"find-derived-types (name: Task)","solutionLoadMilliseconds":31733.7877,"grepMilliseconds":3351.4456,"lspColdMilliseconds":249.8845,"lspWarmMilliseconds":6.7646},{"repository":"msbuild","directory":"D:\\msbuild","commit":"d6f0b0696ea3013f946c09866cdc17776ce90412","lsCacheEnabled":true,"lsCacheUsed":false,"query":"find-interface-implementation (name: ITask)","solutionLoadMilliseconds":31733.7877,"grepMilliseconds":3357.8804,"lspColdMilliseconds":47.9094,"lspWarmMilliseconds":10.794},{"repository":"msbuild","directory":"D:\\msbuild","commit":"d6f0b0696ea3013f946c09866cdc17776ce90412","lsCacheEnabled":true,"lsCacheUsed":false,"query":"find-member-definition (name: Build)","solutionLoadMilliseconds":31733.7877,"grepMilliseconds":4929.9535,"lspColdMilliseconds":86.465,"lspWarmMilliseconds":46.5014},{"repository":"msbuild","directory":"D:\\msbuild","commit":"d6f0b0696ea3013f946c09866cdc17776ce90412","lsCacheEnabled":true,"lsCacheUsed":false,"query":"find-member-definition (name: Execute)","solutionLoadMilliseconds":31733.7877,"grepMilliseconds":5246.621,"lspColdMilliseconds":169.6368,"lspWarmMilliseconds":91.629},{"repository":"msbuild","directory":"D:\\msbuild","commit":"d6f0b0696ea3013f946c09866cdc17776ce90412","lsCacheEnabled":true,"lsCacheUsed":false,"query":"find-type-definition (name: BuildManager)","solutionLoadMilliseconds":31733.7877,"grepMilliseconds":3704.9723,"lspColdMilliseconds":198.1409,"lspWarmMilliseconds":182.8203},{"repository":"msbuild","directory":"D:\\msbuild","commit":"d6f0b0696ea3013f946c09866cdc17776ce90412","lsCacheEnabled":true,"lsCacheUsed":false,"query":"find-type-definition (name: Project)","solutionLoadMilliseconds":31733.7877,"grepMilliseconds":3757.4123,"lspColdMilliseconds":2893.9829,"lspWarmMilliseconds":277.887},{"repository":"msbuild","directory":"D:\\msbuild","commit":"d6f0b0696ea3013f946c09866cdc17776ce90412","lsCacheEnabled":true,"lsCacheUsed":false,"query":"find-type-definition (name: ProjectInstance)","solutionLoadMilliseconds":31733.7877,"grepMilliseconds":3328.4579,"lspColdMilliseconds":168.1617,"lspWarmMilliseconds":129.1873},{"repository":"msbuild","directory":"D:\\msbuild","commit":"d6f0b0696ea3013f946c09866cdc17776ce90412","lsCacheEnabled":true,"lsCacheUsed":false,"query":"find-type-definition (name: TaskItem)","solutionLoadMilliseconds":31733.7877,"grepMilliseconds":3379.8145,"lspColdMilliseconds":200.9156,"lspWarmMilliseconds":174.7038},{"repository":"roslyn-B","directory":"D:\\roslyn-B","commit":"4e1e0d79aa3324ab2ab2b5ddffd01af417c4589b","lsCacheEnabled":true,"lsCacheUsed":true,"query":"find-derived-types (name: BoundNode)","solutionLoadMilliseconds":43448.5182,"grepMilliseconds":12044.5928,"lspColdMilliseconds":665.9024,"lspWarmMilliseconds":15.3169},{"repository":"roslyn-B","directory":"D:\\roslyn-B","commit":"4e1e0d79aa3324ab2ab2b5ddffd01af417c4589b","lsCacheEnabled":true,"lsCacheUsed":true,"query":"find-interface-implementation (name: ISymbol)","solutionLoadMilliseconds":43448.5182,"grepMilliseconds":11070.0194,"lspColdMilliseconds":6213.404,"lspWarmMilliseconds":43.9164},{"repository":"roslyn-B","directory":"D:\\roslyn-B","commit":"4e1e0d79aa3324ab2ab2b5ddffd01af417c4589b","lsCacheEnabled":true,"lsCacheUsed":true,"query":"find-member-definition (name: EmitAsync)","solutionLoadMilliseconds":43448.5182,"grepMilliseconds":19635.8272,"lspColdMilliseconds":132.5211,"lspWarmMilliseconds":153.0251},{"repository":"roslyn-B","directory":"D:\\roslyn-B","commit":"4e1e0d79aa3324ab2ab2b5ddffd01af417c4589b","lsCacheEnabled":true,"lsCacheUsed":true,"query":"find-member-definition (name: GetHashCode)","solutionLoadMilliseconds":43448.5182,"grepMilliseconds":20648.0871,"lspColdMilliseconds":797.9376,"lspWarmMilliseconds":319.6436},{"repository":"roslyn-B","directory":"D:\\roslyn-B","commit":"4e1e0d79aa3324ab2ab2b5ddffd01af417c4589b","lsCacheEnabled":true,"lsCacheUsed":true,"query":"find-type-definition (name: Compilation)","solutionLoadMilliseconds":43448.5182,"grepMilliseconds":13249.0333,"lspColdMilliseconds":2408.1095,"lspWarmMilliseconds":1479.374},{"repository":"roslyn-B","directory":"D:\\roslyn-B","commit":"4e1e0d79aa3324ab2ab2b5ddffd01af417c4589b","lsCacheEnabled":true,"lsCacheUsed":true,"query":"find-type-definition (name: ISymbol)","solutionLoadMilliseconds":43448.5182,"grepMilliseconds":13840.0458,"lspColdMilliseconds":3227.3721,"lspWarmMilliseconds":1917.9532},{"repository":"roslyn-B","directory":"D:\\roslyn-B","commit":"4e1e0d79aa3324ab2ab2b5ddffd01af417c4589b","lsCacheEnabled":true,"lsCacheUsed":true,"query":"find-type-definition (name: SyntaxKind)","solutionLoadMilliseconds":43448.5182,"grepMilliseconds":13568.5412,"lspColdMilliseconds":5020.8656,"lspWarmMilliseconds":3048.6818},{"repository":"roslyn-B","directory":"D:\\roslyn-B","commit":"4e1e0d79aa3324ab2ab2b5ddffd01af417c4589b","lsCacheEnabled":true,"lsCacheUsed":true,"query":"find-type-definition (name: SyntaxNode)","solutionLoadMilliseconds":43448.5182,"grepMilliseconds":11945.3745,"lspColdMilliseconds":13862.0252,"lspWarmMilliseconds":1547.3071}];
+const queryFilters = document.getElementById('queryFilters');
+const rowsBody = document.getElementById('rows');
+const chart = document.getElementById('chart');
+
+const queries = [...new Set(allRows.map(row => row.query))].sort((left, right) => left.localeCompare(right));
+for (const query of queries) {
+  const label = document.createElement('label');
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.value = query;
+  checkbox.checked = true;
+  checkbox.addEventListener('change', render);
+  label.append(checkbox, document.createTextNode(query));
+  queryFilters.append(label);
+}
+
+document.getElementById('selectAll').addEventListener('click', () => setAll(true));
+document.getElementById('selectNone').addEventListener('click', () => setAll(false));
+
+function setAll(value) {
+  for (const checkbox of queryFilters.querySelectorAll('input')) {
+    checkbox.checked = value;
+  }
+
+  render();
+}
+
+function selectedQueries() {
+  return new Set([...queryFilters.querySelectorAll('input:checked')].map(checkbox => checkbox.value));
+}
+
+function render() {
+  const selected = selectedQueries();
+  const visibleRows = allRows.filter(row => selected.has(row.query));
+  renderTable(visibleRows);
+  renderChart(visibleRows);
+}
+
+function renderTable(visibleRows) {
+  rowsBody.textContent = '';
+  for (const row of visibleRows) {
+    const tr = document.createElement('tr');
+    tr.append(
+      cell(row.repository),
+      cell(row.query),
+      cell(row.commit ? row.commit.substring(0, 12) : ''),
+      cell(formatLsCache(row)),
+      numericCell(formatMs(row.solutionLoadMilliseconds)),
+      numericCell(formatMs(row.grepMilliseconds)),
+      numericCell(formatMs(row.lspColdMilliseconds)),
+      numericCell(formatMs(row.lspWarmMilliseconds)));
+    rowsBody.append(tr);
+  }
+}
+
+function renderChart(visibleRows) {
+  chart.textContent = '';
+  const values = visibleRows.flatMap(row => [row.solutionLoadMilliseconds, row.grepMilliseconds, row.lspColdMilliseconds, row.lspWarmMilliseconds]).filter(value => value !== null && value !== undefined && value > 0);
+  const max = Math.max(1, ...values.map(value => Math.log10(value + 1)));
+  for (const row of visibleRows) {
+    const chartRow = document.createElement('div');
+    chartRow.className = 'chart-row';
+    const label = document.createElement('div');
+    label.className = 'chart-label';
+    label.title = `${row.repository} - ${row.query}`;
+    label.textContent = `${row.repository} - ${row.query}`;
+    const group = document.createElement('div');
+    group.className = 'bar-group';
+    group.append(
+      bar(row.solutionLoadMilliseconds, max, 'bar load'),
+      bar(row.grepMilliseconds, max, 'bar grep'),
+      bar(row.lspColdMilliseconds, max, 'bar cold'),
+      bar(row.lspWarmMilliseconds, max, 'bar warm'));
+    chartRow.append(label, group);
+    chart.append(chartRow);
+  }
+}
+
+function bar(value, max, className) {
+  const div = document.createElement('div');
+  div.className = className;
+  if (value === null || value === undefined) {
+    div.style.height = '8px';
+    div.textContent = '';
+    div.title = 'No data';
+    div.style.opacity = '0.18';
+    return div;
+  }
+
+  const scaled = Math.log10(value + 1) / max;
+  div.style.height = `${Math.max(10, Math.round(scaled * 64))}px`;
+  div.textContent = formatMs(value);
+  div.title = formatMs(value);
+  return div;
+}
+
+function cell(text) {
+  const td = document.createElement('td');
+  td.textContent = text ?? '';
+  return td;
+}
+
+function numericCell(text) {
+  const td = cell(text);
+  td.className = 'numeric';
+  return td;
+}
+
+function formatMs(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  return value >= 1000
+    ? `${(value / 1000).toFixed(1)}s`
+    : `${Math.round(value)}ms`;
+}
+
+function formatLsCache(row) {
+  if (row.lsCacheUsed) {
+    return 'used';
+  }
+
+  if (row.lsCacheEnabled) {
+    return 'not used';
+  }
+
+  return 'disabled';
+}
+
+render();
+</script>
+</body>
+</html>
