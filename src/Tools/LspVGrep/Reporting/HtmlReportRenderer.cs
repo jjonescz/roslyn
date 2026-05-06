@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using LspVGrepTool.Models;
 
@@ -34,6 +34,10 @@ internal static class HtmlReportRenderer
         builder.AppendLine("<body>");
         builder.AppendLine("  <h1>LspVGrepTool Report</h1>");
         builder.AppendLine($"  <p><strong>Directory:</strong> {Encode(report.Directory)}</p>");
+        if (!string.IsNullOrWhiteSpace(report.RepositoryCommitHash))
+        {
+            builder.AppendLine($"  <p><strong>Commit:</strong> {Encode(report.RepositoryCommitHash)}</p>");
+        }
 
         if (!string.IsNullOrWhiteSpace(report.RoslynTargetPath) && !string.IsNullOrWhiteSpace(report.RoslynTargetKind))
         {

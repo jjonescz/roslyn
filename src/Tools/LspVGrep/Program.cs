@@ -32,6 +32,11 @@ internal static class Program
         Log($"Loaded {queries.Count} queries for '{resolvedDirectory}'.");
         Log($"LS cache workspace hydration is {(useLscache ? "enabled" : "disabled")}.");
 
+        var repositoryCommitHash = await GitRepositoryInfo.GetCommitHashAsync(resolvedDirectory, CancellationToken.None);
+        Log(repositoryCommitHash is null
+            ? "No Git commit hash was found for the inspected directory."
+            : $"Inspected repository commit: {repositoryCommitHash}.");
+
         using var context = new QueryExecutionContext(
             resolvedDirectory,
             useLscache,
@@ -62,7 +67,7 @@ internal static class Program
 
         Log($"Running {queries.Count} queries with {algorithms.Length} algorithms registered.");
         var executor = new QueryExecutor(algorithms, Log);
-        var report = await executor.ExecuteAsync(queries, context, workspaceStopwatch.Elapsed, CancellationToken.None);
+        var report = await executor.ExecuteAsync(queries, context, repositoryCommitHash, workspaceStopwatch.Elapsed, CancellationToken.None);
 
         var outputPath = ResolveOutputPath(inputPath, input.Output);
         Log($"Rendering report to '{outputPath}'.");

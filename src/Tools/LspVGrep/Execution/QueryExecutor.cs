@@ -24,6 +24,7 @@ internal sealed class QueryExecutor
     public async Task<ToolReport> ExecuteAsync(
         IReadOnlyList<QueryRequest> queries,
         QueryExecutionContext context,
+        string? repositoryCommitHash,
         TimeSpan? workspaceLoadTime,
         CancellationToken cancellationToken)
     {
@@ -56,6 +57,7 @@ internal sealed class QueryExecutor
         var workspace = context.TryGetLoadedWorkspace();
         return new ToolReport(
             context.DirectoryPath,
+            repositoryCommitHash,
             workspace?.TargetPath,
             workspace?.TargetKind.ToString(),
             workspaceLoadTime,

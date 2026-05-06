@@ -1,7 +1,8 @@
-namespace LspVGrepTool.Models;
+﻿namespace LspVGrepTool.Models;
 
 internal sealed record ToolReport(
     string Directory,
+    string? RepositoryCommitHash,
     string? RoslynTargetPath,
     string? RoslynTargetKind,
     TimeSpan? RoslynLoadTime,
