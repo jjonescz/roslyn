@@ -3,6 +3,7 @@
 internal sealed record ToolReport(
     string Directory,
     string? RepositoryCommitHash,
+    long? SourceLineCount,
     bool LsCacheEnabled,
     bool LsCacheUsed,
     string? RoslynTargetPath,

@@ -17,7 +17,8 @@ internal static class CombinedReportRenderer
     {
         var rows = reports
             .SelectMany(CreateRows)
-            .OrderBy(static row => row.Repository, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(static row => row.SourceLineCount ?? -1)
+            .ThenBy(static row => row.Repository, StringComparer.OrdinalIgnoreCase)
             .ThenBy(static row => row.Query, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -100,7 +101,7 @@ internal static class CombinedReportRenderer
           <tr>
             <th>Repository</th>
             <th>Query</th>
-            <th>Commit</th>
+            <th>kLOC</th>
             <th>LS cache</th>
             <th>Solution load</th>
             <th>Grep</th>
@@ -160,7 +161,7 @@ function renderTable(visibleRows) {
     tr.append(
       cell(row.repository),
       cell(row.query),
-      cell(row.commit ? row.commit.substring(0, 12) : ''),
+      numericCell(formatKloc(row.sourceLineCount)),
       cell(formatLsCache(row)),
       numericCell(formatMs(row.solutionLoadMilliseconds)),
       numericCell(formatMs(row.grepMilliseconds)),
@@ -223,6 +224,14 @@ function numericCell(text) {
   return td;
 }
 
+function formatKloc(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  return `${(value / 1000).toFixed(1)}`;
+}
+
 function formatMs(value) {
   if (value === null || value === undefined) {
     return '';
@@ -271,7 +280,7 @@ render();
             yield return new CombinedReportRow(
                 repository,
                 report.Directory,
-                report.RepositoryCommitHash,
+                report.SourceLineCount,
                 report.LsCache?.Enabled,
                 report.LsCache?.Used,
                 FormatQuery(query),
@@ -325,7 +334,7 @@ render();
     private sealed record CombinedReportRow(
         string Repository,
         string Directory,
-        string? Commit,
+        long? SourceLineCount,
         bool? LsCacheEnabled,
         bool? LsCacheUsed,
         string Query,

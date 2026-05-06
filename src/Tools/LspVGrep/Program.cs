@@ -100,6 +100,10 @@ internal static class Program
             ? "No Git commit hash was found for the inspected directory."
             : $"Inspected repository commit: {repositoryCommitHash}.");
 
+        Log("Counting source lines.");
+        var sourceLineCount = await SourceLineCounter.CountAsync(resolvedDirectory, cancellationToken);
+        Log($"Counted {sourceLineCount:N0} non-empty source lines ({sourceLineCount / 1000.0:F1} kLOC).");
+
         using var context = new QueryExecutionContext(
             resolvedDirectory,
             useLscache,
@@ -130,7 +134,7 @@ internal static class Program
 
         Log($"Running {queries.Count} queries with {algorithms.Length} algorithms registered.");
         var executor = new QueryExecutor(algorithms, Log, LogProgress);
-        var report = await executor.ExecuteAsync(queries, context, repositoryCommitHash, workspaceStopwatch.Elapsed, cancellationToken);
+        var report = await executor.ExecuteAsync(queries, context, repositoryCommitHash, sourceLineCount, workspaceStopwatch.Elapsed, cancellationToken);
 
         var outputPath = ResolveOutputPath(inputPath, input.Output);
         Log($"Rendering report to '{outputPath}'.");
