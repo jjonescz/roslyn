@@ -11,6 +11,10 @@ namespace LspVGrepTool;
 
 internal static class Program
 {
+    private static readonly object s_logGate = new();
+    private static int s_progressLineLength;
+    private static bool s_progressLineActive;
+
     public static async Task<int> Main(string[] args)
     {
         if (args.Length != 1)
@@ -28,7 +32,7 @@ internal static class Program
 
         using var context = new QueryExecutionContext(
             resolvedDirectory,
-            new RoslynWorkspaceProvider(Log),
+            new RoslynWorkspaceProvider(Log, LogProgress),
             new ExternalSearchRunner());
 
         // Eagerly load workspace so timing is separate from individual algorithm runs.
@@ -69,7 +73,39 @@ internal static class Program
 
     private static void Log(string message)
     {
-        Console.Error.WriteLine($"[{DateTimeOffset.Now:HH:mm:ss}] {message}");
+        lock (s_logGate)
+        {
+            ClearProgressLineIfNeeded();
+            Console.Error.WriteLine($"[{DateTimeOffset.Now:HH:mm:ss}] {message}");
+        }
+    }
+
+    private static void LogProgress(string message)
+    {
+        if (Console.IsErrorRedirected)
+            return;
+
+        lock (s_logGate)
+        {
+            var text = $"[{DateTimeOffset.Now:HH:mm:ss}] {message}";
+            var padding = s_progressLineLength > text.Length
+                ? new string(' ', s_progressLineLength - text.Length)
+                : string.Empty;
+
+            Console.Error.Write($"\r{text}{padding}");
+            s_progressLineLength = Math.Max(s_progressLineLength, text.Length);
+            s_progressLineActive = true;
+        }
+    }
+
+    private static void ClearProgressLineIfNeeded()
+    {
+        if (!s_progressLineActive)
+            return;
+
+        Console.Error.Write($"\r{new string(' ', s_progressLineLength)}\r");
+        s_progressLineLength = 0;
+        s_progressLineActive = false;
     }
 
     internal static string FormatDuration(TimeSpan elapsed) =>

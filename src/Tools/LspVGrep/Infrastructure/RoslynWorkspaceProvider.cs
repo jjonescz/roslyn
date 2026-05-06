@@ -13,11 +13,13 @@ internal sealed record WorkspaceLoadResult(
 internal sealed class RoslynWorkspaceProvider : IDisposable
 {
     private readonly Action<string> _log;
+    private readonly Action<string> _logProgress;
     private MSBuildWorkspace? _workspace;
 
-    public RoslynWorkspaceProvider(Action<string>? log = null)
+    public RoslynWorkspaceProvider(Action<string>? log = null, Action<string>? logProgress = null)
     {
         _log = log ?? (_ => { });
+        _logProgress = logProgress ?? (_ => { });
     }
 
     public async Task<WorkspaceLoadResult> LoadAsync(string directoryPath, CancellationToken cancellationToken)
@@ -86,7 +88,7 @@ internal sealed class RoslynWorkspaceProvider : IDisposable
             ? string.Empty
             : $" ({progress.TargetFramework})";
 
-        _log($"  {progress.Operation} {progress.FilePath}{targetFramework} in {Program.FormatDuration(progress.ElapsedTime)}.");
+        _logProgress($"Loading project: {progress.Operation} {Path.GetFileName(progress.FilePath)}{targetFramework} in {Program.FormatDuration(progress.ElapsedTime)}.");
     }
 
     private static Solution RemoveUnresolvedAnalyzerReferences(Solution solution)
