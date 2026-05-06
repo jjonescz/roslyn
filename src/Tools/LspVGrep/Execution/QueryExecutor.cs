@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using LspVGrepTool.Infrastructure;
 using LspVGrepTool.Models;
 
 namespace LspVGrepTool.Execution;
@@ -58,6 +59,8 @@ internal sealed class QueryExecutor
         return new ToolReport(
             context.DirectoryPath,
             repositoryCommitHash,
+            context.UseLscache,
+            workspace?.TargetKind == RoslynLoadTargetKind.LsCache,
             workspace?.TargetPath,
             workspace?.TargetKind.ToString(),
             workspaceLoadTime,

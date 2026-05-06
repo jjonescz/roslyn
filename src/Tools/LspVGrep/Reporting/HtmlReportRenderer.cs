@@ -39,6 +39,8 @@ internal static class HtmlReportRenderer
             builder.AppendLine($"  <p><strong>Commit:</strong> {Encode(report.RepositoryCommitHash)}</p>");
         }
 
+        builder.AppendLine($"  <p><strong>LS cache:</strong> {FormatLsCacheUsage(report)}</p>");
+
         if (!string.IsNullOrWhiteSpace(report.RoslynTargetPath) && !string.IsNullOrWhiteSpace(report.RoslynTargetKind))
         {
             var loadTime = report.RoslynLoadTime.HasValue
@@ -98,6 +100,16 @@ internal static class HtmlReportRenderer
     }
 
     private static string Encode(string value) => WebUtility.HtmlEncode(value);
+
+    private static string FormatLsCacheUsage(ToolReport report)
+    {
+        if (report.LsCacheUsed)
+            return "used (enabled)";
+
+        return report.LsCacheEnabled
+            ? "not used (enabled)"
+            : "not used (disabled)";
+    }
 
     private const int MaxDisplayLines = 10;
     private static int s_expandCounter;

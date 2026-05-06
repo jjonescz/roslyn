@@ -18,6 +18,11 @@ internal static class JsonReportRenderer
             generatedAtUtc = DateTimeOffset.UtcNow,
             directory = report.Directory,
             repositoryCommitHash = report.RepositoryCommitHash,
+            lscache = new
+            {
+                enabled = report.LsCacheEnabled,
+                used = report.LsCacheUsed
+            },
             roslynTarget = CreateRoslynTarget(report),
             queries = report.Queries.Select(query => new
             {
