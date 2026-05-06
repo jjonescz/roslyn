@@ -306,6 +306,7 @@
     <Project Path="src/Tools/GenerateRulesMissingDocumentation/GenerateRulesMissingDocumentation.csproj" />
     <Project Path="src/Tools/IdeBenchmarks/IdeBenchmarks.csproj" />
     <Project Path="src/Tools/IdeCoreBenchmarks/IdeCoreBenchmarks.csproj" />
+    <Project Path="src/Tools/LspVGrep/LspVGrepTool.csproj" />
     <Project Path="src/Tools/PrepareTests/PrepareTests.csproj" />
     <Project Path="src/Tools/Replay/Replay.csproj" />
     <Project Path="src/Tools/Source/CompilerGeneratorTools/Source/BoundTreeGenerator/CompilersBoundTreeGenerator.csproj" />
