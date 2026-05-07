@@ -61,8 +61,7 @@ internal static class CombinedReportRenderer
     .point { stroke: #fff; stroke-width: 1.5; }
     .plot-empty { color: #667085; padding: 24px 0; }
     .grep { background: #16a34a; }
-    .cold { background: #dc2626; }
-    .warm { background: #7c3aed; }
+    .lsp { background: #7c3aed; }
     .legend { display: flex; flex-wrap: wrap; gap: 12px; color: #475569; font-size: 12px; }
     .legend span { display: inline-flex; align-items: center; gap: 6px; }
     .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
@@ -89,8 +88,7 @@ internal static class CombinedReportRenderer
       <h2>Median Search Time by Repository Size</h2>
       <div class="legend">
         <span><i class="swatch grep"></i>Grep</span>
-        <span><i class="swatch cold"></i>LSP cold</span>
-        <span><i class="swatch warm"></i>LSP warm</span>
+        <span><i class="swatch lsp"></i>LSP</span>
       </div>
     </div>
     <div id="chart" class="plot-wrap"></div>
@@ -108,8 +106,7 @@ internal static class CombinedReportRenderer
             <th class="numeric">LSP results</th>
             <th class="numeric">Solution load</th>
             <th class="numeric">Grep</th>
-            <th class="numeric">LSP cold</th>
-            <th class="numeric">LSP warm</th>
+            <th class="numeric">LSP</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -124,8 +121,7 @@ const rowsBody = document.getElementById('rows');
 const chart = document.getElementById('chart');
 const seriesDefinitions = [
   { label: 'Grep', field: 'grepMilliseconds', color: '#16a34a' },
-  { label: 'LSP cold', field: 'lspColdMilliseconds', color: '#dc2626' },
-  { label: 'LSP warm', field: 'lspWarmMilliseconds', color: '#7c3aed' }
+  { label: 'LSP', field: 'lspMilliseconds', color: '#7c3aed' }
 ];
 const svgNamespace = 'http://www.w3.org/2000/svg';
 
@@ -175,8 +171,7 @@ function renderTable(visibleRows) {
       numericCell(formatCount(row.lspResultCount)),
       numericCell(formatMs(row.solutionLoadMilliseconds)),
       numericCell(formatMs(row.grepMilliseconds)),
-      numericCell(formatMs(row.lspColdMilliseconds)),
-      numericCell(formatMs(row.lspWarmMilliseconds)));
+      numericCell(formatMs(row.lspMilliseconds)));
     rowsBody.append(tr);
   }
 }
@@ -422,8 +417,8 @@ render();
                 .ToList();
 
             var grep = SelectGrepAlgorithm(successfulAlgorithms);
-            var lspCold = SelectLspAlgorithm(successfulAlgorithms, pass: 1);
             var lspWarm = SelectLspAlgorithm(successfulAlgorithms, pass: 2);
+            var lsp = lspWarm ?? SelectLspAlgorithm(successfulAlgorithms, pass: 1);
 
             yield return new CombinedReportRow(
                 repository,
@@ -431,11 +426,10 @@ render();
                 report.SourceLineCount,
                 FormatQuery(query),
                 grep?.LineCount,
-                (lspWarm ?? lspCold)?.LineCount,
+              lsp?.LineCount,
                 report.RoslynTarget?.LoadTimeMilliseconds,
                 grep?.ElapsedMilliseconds,
-                lspCold?.ElapsedMilliseconds,
-                lspWarm?.ElapsedMilliseconds);
+              lsp?.ElapsedMilliseconds);
         }
     }
 
@@ -494,6 +488,5 @@ render();
         int? LspResultCount,
         double? SolutionLoadMilliseconds,
         double? GrepMilliseconds,
-        double? LspColdMilliseconds,
-        double? LspWarmMilliseconds);
+        double? LspMilliseconds);
 }
