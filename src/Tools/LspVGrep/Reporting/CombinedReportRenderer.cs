@@ -17,7 +17,7 @@ internal static class CombinedReportRenderer
     {
         var rows = reports
             .SelectMany(CreateRows)
-            .OrderByDescending(static row => row.SourceLineCount ?? -1)
+            .OrderBy(static row => row.SourceLineCount ?? long.MaxValue)
             .ThenBy(static row => row.Repository, StringComparer.OrdinalIgnoreCase)
             .ThenBy(static row => row.Query, StringComparer.OrdinalIgnoreCase)
             .ToList();
