@@ -62,6 +62,7 @@ internal static class CombinedReportRenderer
     .plot-empty { color: #667085; padding: 24px 0; }
     .grep { background: #16a34a; }
     .lsp { background: #7c3aed; }
+    .lsp-load { background: #ea580c; }
     .legend { display: flex; flex-wrap: wrap; gap: 12px; color: #475569; font-size: 12px; }
     .legend span { display: inline-flex; align-items: center; gap: 6px; }
     .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
@@ -89,6 +90,7 @@ internal static class CombinedReportRenderer
       <div class="legend">
         <span><i class="swatch grep"></i>Grep</span>
         <span><i class="swatch lsp"></i>LSP</span>
+        <span><i class="swatch lsp-load"></i>LSP + solution load</span>
       </div>
     </div>
     <div id="chart" class="plot-wrap"></div>
@@ -121,7 +123,8 @@ const rowsBody = document.getElementById('rows');
 const chart = document.getElementById('chart');
 const seriesDefinitions = [
   { label: 'Grep', field: 'grepMilliseconds', color: '#16a34a' },
-  { label: 'LSP', field: 'lspMilliseconds', color: '#7c3aed' }
+  { label: 'LSP', field: 'lspMilliseconds', color: '#7c3aed' },
+  { label: 'LSP + solution load', field: 'lspWithSolutionLoadMilliseconds', color: '#ea580c' }
 ];
 const svgNamespace = 'http://www.w3.org/2000/svg';
 
@@ -419,6 +422,9 @@ render();
             var grep = SelectGrepAlgorithm(successfulAlgorithms);
             var lspWarm = SelectLspAlgorithm(successfulAlgorithms, pass: 2);
             var lsp = lspWarm ?? SelectLspAlgorithm(successfulAlgorithms, pass: 1);
+            var lspWithSolutionLoad = report.RoslynTarget?.LoadTimeMilliseconds is { } loadMilliseconds && lsp?.ElapsedMilliseconds is { } lspMilliseconds
+                ? loadMilliseconds + lspMilliseconds
+                : (double?)null;
 
             yield return new CombinedReportRow(
                 repository,
@@ -426,10 +432,11 @@ render();
                 report.SourceLineCount,
                 FormatQuery(query),
                 grep?.LineCount,
-              lsp?.LineCount,
+                lsp?.LineCount,
                 report.RoslynTarget?.LoadTimeMilliseconds,
                 grep?.ElapsedMilliseconds,
-              lsp?.ElapsedMilliseconds);
+                lsp?.ElapsedMilliseconds,
+                lspWithSolutionLoad);
         }
     }
 
@@ -488,5 +495,6 @@ render();
         int? LspResultCount,
         double? SolutionLoadMilliseconds,
         double? GrepMilliseconds,
-        double? LspMilliseconds);
+        double? LspMilliseconds,
+        double? LspWithSolutionLoadMilliseconds);
 }
