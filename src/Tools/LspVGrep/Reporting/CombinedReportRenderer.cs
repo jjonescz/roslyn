@@ -134,11 +134,30 @@ internal static class CombinedReportRenderer
       </table>
     </div>
   </section>
+
+  <section class="panel">
+    <div class="toolbar">
+      <h2>Algorithm Selection</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Query type</th>
+            <th>Grep</th>
+            <th>LSP</th>
+          </tr>
+        </thead>
+        <tbody id="selectionRows"></tbody>
+      </table>
+    </div>
+  </section>
 </main>
 <script>
 const allRows = ROWS_JSON;
 const queryFilters = document.getElementById('queryFilters');
 const rowsBody = document.getElementById('rows');
+const selectionRowsBody = document.getElementById('selectionRows');
 const chart = document.getElementById('chart');
 const fineQueryFilterButton = document.getElementById('fineQueryFilter');
 const coarseQueryFilterButton = document.getElementById('coarseQueryFilter');
@@ -226,6 +245,46 @@ function renderTable(visibleRows) {
       numericCell(formatMs(row.lspMilliseconds)));
     rowsBody.append(tr);
   }
+}
+
+function renderAlgorithmSelectionTable() {
+  selectionRowsBody.textContent = '';
+  for (const row of getAlgorithmSelectionRows()) {
+    const tr = document.createElement('tr');
+    tr.append(
+      cell(row.queryType),
+      cell(row.grepAlgorithms.join(', ')),
+      cell(row.lspAlgorithms.join(', ')));
+    selectionRowsBody.append(tr);
+  }
+}
+
+function getAlgorithmSelectionRows() {
+  const byQueryType = new Map();
+  for (const row of allRows) {
+    const queryType = row.queryType ?? row.query;
+    let item = byQueryType.get(queryType);
+    if (item === undefined) {
+      item = { queryType, grepAlgorithms: new Set(), lspAlgorithms: new Set() };
+      byQueryType.set(queryType, item);
+    }
+
+    if (row.grepAlgorithmName) {
+      item.grepAlgorithms.add(row.grepAlgorithmName);
+    }
+
+    if (row.lspAlgorithmName) {
+      item.lspAlgorithms.add(row.lspAlgorithmName);
+    }
+  }
+
+  return [...byQueryType.values()]
+    .map(item => ({
+      queryType: item.queryType,
+      grepAlgorithms: [...item.grepAlgorithms].sort((left, right) => left.localeCompare(right)),
+      lspAlgorithms: [...item.lspAlgorithms].sort((left, right) => left.localeCompare(right))
+    }))
+    .sort((left, right) => left.queryType.localeCompare(right.queryType));
 }
 
 function renderChart(visibleRows) {
@@ -457,6 +516,7 @@ function formatMs(value) {
 }
 
 renderQueryFilters();
+renderAlgorithmSelectionTable();
 render();
 </script>
 </body>
@@ -489,6 +549,8 @@ render();
                 report.SourceLineCount,
                 FormatQuery(query),
                 query.Type,
+                grep?.Name,
+                lsp?.Name,
                 grep?.LineCount,
                 lsp?.LineCount,
                 report.RoslynTarget?.LoadTimeMilliseconds,
@@ -550,6 +612,8 @@ render();
         long? SourceLineCount,
         string Query,
         string QueryType,
+        string? GrepAlgorithmName,
+        string? LspAlgorithmName,
         int? GrepResultCount,
         int? LspResultCount,
         double? SolutionLoadMilliseconds,
