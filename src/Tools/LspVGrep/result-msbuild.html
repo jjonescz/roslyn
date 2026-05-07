@@ -6,8 +6,18 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 2rem; color: #1f2937; }
     h1, h2, h3 { margin-bottom: 0.5rem; }
-    .query { border: 1px solid #d1d5db; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
-    .algorithm { border-top: 1px solid #e5e7eb; padding-top: 1rem; margin-top: 1rem; }
+    .actions { display: flex; gap: 0.5rem; margin: 1rem 0; }
+    button { border: 1px solid #b8c2d1; border-radius: 6px; background: #fff; color: #1f2937; padding: 0.35rem 0.65rem; cursor: pointer; }
+    button:hover { background: #eef2f7; }
+    details { background: #fff; }
+    summary { cursor: pointer; }
+    .query { border: 1px solid #d1d5db; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem; }
+    .query[open] > summary { border-bottom: 1px solid #e5e7eb; margin-bottom: 0.75rem; padding-bottom: 0.75rem; }
+    .algorithm { border-top: 1px solid #e5e7eb; padding-top: 0.75rem; margin-top: 0.75rem; }
+    .algorithm[open] > summary { margin-bottom: 0.5rem; }
+    .summary-title { font-weight: 700; }
+    .summary-meta { color: #4b5563; margin-left: 0.75rem; font-size: 0.92rem; }
+    .algorithm-details { margin: 0.5rem 0; color: #4b5563; }
     .status { font-weight: bold; }
     .status-failed { color: #b91c1c; }
     .status-succeeded { color: #047857; }
@@ -24,22 +34,27 @@
   <p><strong>Directory:</strong> D:\msbuild</p>
   <p><strong>Commit:</strong> d6f0b0696ea3013f946c09866cdc17776ce90412</p>
   <p><strong>LS cache:</strong> not used (enabled)</p>
-  <p><strong>Roslyn target:</strong> Solution - D:\msbuild\MSBuild.slnx (loaded in 62.4s)</p>
+  <p><strong>Roslyn target:</strong> Solution - D:\msbuild\MSBuild.slnx (loaded in 26.2s)</p>
+  <div class="actions">
+    <button type="button" data-action="expand-all">Expand all</button>
+    <button type="button" data-action="collapse-algorithms">Collapse algorithms</button>
+    <button type="button" data-action="collapse-all">Collapse all</button>
+  </div>
   <section>
-    <article class="query">
-      <h2>find-type-definition</h2>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: Project)</span><span class="summary-meta">8 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>Project</dd>
       </dl>
-      <section class="algorithm">
-        <h3>find-type-definition-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 197 | <strong>Lines:</strong> 2 | <strong>Time:</strong> 3.3s | string search for &#39;(class|record|struct|interface|enum) Project&#39;</p>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 197 | Lines: 2 | Time: 3.6s</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) Project&#39;</p>
         <pre>D:\msbuild\src\Build\Definition\Project.cs:50: public class Project : ILinkableObject
 D:\msbuild\src\Samples\XmlFileLogger\ObjectModel\Project.cs:18: internal sealed class Project : LogProcessNode</pre>
-      </section>
-      <section class="algorithm">
-        <h3>find-type-definition-grep-nameonly</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2012380 | <strong>Lines:</strong> 15199 | <strong>Time:</strong> 4.2s | string search for &#39;Project&#39;</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2012380 | Lines: 15199 | Time: 4.9s</span></summary>
+        <p class="algorithm-details">string search for &#39;Project&#39;</p>
         <pre id="expand-0-short">D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:54: //       The rationale for this is that we can detect during design-time builds in the Evaluator (which populates this) that the project cache will be used so that we don&#39;t
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:55: //       need to evaluate the project at build time just to figure that out, which would regress perf for scenarios which don&#39;t use the project cache.
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:189: /// Mapping of unnamed project instances to the file names assigned to them.
@@ -15250,22 +15265,22 @@ D:\msbuild\src\Utilities.UnitTests\ToolTask_Tests.cs:1447: // Assert: empty-stri
 D:\msbuild\src\Utilities.UnitTests\ToolTask_Tests.cs:1449: &quot;Empty-string from GetWorkingDirectory() should not override the project directory from TaskEnvironment&quot;);
 D:\msbuild\src\Utilities.UnitTests\ToolTask_Tests.cs:1485: // Arrange: create a temp file in the project directory, use relative path for deletion.
 D:\msbuild\src\Utilities.UnitTests\ToolTask_Tests.cs:1526: // Assert: WorkingDirectory should be set to project directory</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 205 | <strong>Lines:</strong> 2 | <strong>Time:</strong> 5.4s | called SymbolFinder.FindDeclarationsAsync(project, &#39;Project&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 205 | Lines: 2 | Time: 6.0s</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Project&#39;, SymbolFilter.Type)</p>
         <pre>Microsoft.Build.Evaluation.Project - D:\msbuild\src\Build\Definition\Project.cs(50,18)
 Microsoft.Build.Logging.StructuredLogger.Project - D:\msbuild\src\Samples\XmlFileLogger\ObjectModel\Project.cs(18,27)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 205 | <strong>Lines:</strong> 2 | <strong>Time:</strong> 26ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Project&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 205 | Lines: 2 | Time: 23ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Project&#39;, SymbolFilter.Type)</p>
         <pre>Microsoft.Build.Evaluation.Project - D:\msbuild\src\Build\Definition\Project.cs(50,18)
 Microsoft.Build.Logging.StructuredLogger.Project - D:\msbuild\src\Samples\XmlFileLogger\ObjectModel\Project.cs(18,27)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-with-pattern (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 56931 | <strong>Lines:</strong> 362 | <strong>Time:</strong> 2.3s | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 56931 | Lines: 362 | Time: 2.3s</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;, SymbolFilter.Type)</p>
         <pre id="expand-1-short">MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
 Microsoft.Build.BackEnd.Logging.ProjectFullKey - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(592,20)
 Microsoft.Build.BackEnd.Logging.ProjectLoggingContext - D:\msbuild\src\Build\BackEnd\Components\Logging\ProjectLoggingContext.cs(21,20)
@@ -15639,10 +15654,10 @@ Microsoft.Build.UnitTests.TransientTestProjectWithFiles - D:\msbuild\src\UnitTes
 Microsoft.Build.UnitTests.XMakeAppTests.IgnoreProjectExtensionsHelper - D:\msbuild\src\MSBuild.UnitTests\XMake_Tests.cs(2019,31)
 Microsoft.Build.UnitTests.XamlDataDrivenToolTask_Tests.ProjectFileTests - D:\msbuild\src\Tasks.UnitTests\XamlDataDrivenToolTask_Tests.cs(236,18)
 System.Text.RegularExpressions.Generated.CrackProjectLineRegex_17 - D:\msbuild\artifacts\obj\Microsoft.Build\Debug\net10.0\System.Text.RegularExpressions.Generator\System.Text.RegularExpressions.Generator.RegexGenerator\RegexGenerator.g.cs(6180,23)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-with-pattern (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 56931 | <strong>Lines:</strong> 362 | <strong>Time:</strong> 17ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 56931 | Lines: 362 | Time: 18ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;, SymbolFilter.Type)</p>
         <pre id="expand-2-short">MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
 Microsoft.Build.BackEnd.Logging.ProjectFullKey - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(592,20)
 Microsoft.Build.BackEnd.Logging.ProjectLoggingContext - D:\msbuild\src\Build\BackEnd\Components\Logging\ProjectLoggingContext.cs(21,20)
@@ -16016,10 +16031,10 @@ Microsoft.Build.UnitTests.TransientTestProjectWithFiles - D:\msbuild\src\UnitTes
 Microsoft.Build.UnitTests.XMakeAppTests.IgnoreProjectExtensionsHelper - D:\msbuild\src\MSBuild.UnitTests\XMake_Tests.cs(2019,31)
 Microsoft.Build.UnitTests.XamlDataDrivenToolTask_Tests.ProjectFileTests - D:\msbuild\src\Tasks.UnitTests\XamlDataDrivenToolTask_Tests.cs(236,18)
 System.Text.RegularExpressions.Generated.CrackProjectLineRegex_17 - D:\msbuild\artifacts\obj\Microsoft.Build\Debug\net10.0\System.Text.RegularExpressions.Generator\System.Text.RegularExpressions.Generator.RegexGenerator\RegexGenerator.g.cs(6180,23)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-workspaceSymbol (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 56931 | <strong>Lines:</strong> 362 | <strong>Time:</strong> 2.4s | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;) without SymbolFilter</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 56931 | Lines: 362 | Time: 2.4s</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;) without SymbolFilter</p>
         <pre id="expand-3-short">MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
 Microsoft.Build.BackEnd.Logging.ProjectFullKey - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(592,20)
 Microsoft.Build.BackEnd.Logging.ProjectLoggingContext - D:\msbuild\src\Build\BackEnd\Components\Logging\ProjectLoggingContext.cs(21,20)
@@ -16393,10 +16408,10 @@ Microsoft.Build.UnitTests.TransientTestProjectWithFiles - D:\msbuild\src\UnitTes
 Microsoft.Build.UnitTests.XMakeAppTests.IgnoreProjectExtensionsHelper - D:\msbuild\src\MSBuild.UnitTests\XMake_Tests.cs(2019,31)
 Microsoft.Build.UnitTests.XamlDataDrivenToolTask_Tests.ProjectFileTests - D:\msbuild\src\Tasks.UnitTests\XamlDataDrivenToolTask_Tests.cs(236,18)
 System.Text.RegularExpressions.Generated.CrackProjectLineRegex_17 - D:\msbuild\artifacts\obj\Microsoft.Build\Debug\net10.0\System.Text.RegularExpressions.Generator\System.Text.RegularExpressions.Generator.RegexGenerator\RegexGenerator.g.cs(6180,23)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-workspaceSymbol (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 56931 | <strong>Lines:</strong> 362 | <strong>Time:</strong> 151ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;) without SymbolFilter</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 56931 | Lines: 362 | Time: 151ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;) without SymbolFilter</p>
         <pre id="expand-4-short">MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
 Microsoft.Build.BackEnd.Logging.ProjectFullKey - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(592,20)
 Microsoft.Build.BackEnd.Logging.ProjectLoggingContext - D:\msbuild\src\Build\BackEnd\Components\Logging\ProjectLoggingContext.cs(21,20)
@@ -16770,21 +16785,21 @@ Microsoft.Build.UnitTests.TransientTestProjectWithFiles - D:\msbuild\src\UnitTes
 Microsoft.Build.UnitTests.XMakeAppTests.IgnoreProjectExtensionsHelper - D:\msbuild\src\MSBuild.UnitTests\XMake_Tests.cs(2019,31)
 Microsoft.Build.UnitTests.XamlDataDrivenToolTask_Tests.ProjectFileTests - D:\msbuild\src\Tasks.UnitTests\XamlDataDrivenToolTask_Tests.cs(236,18)
 System.Text.RegularExpressions.Generated.CrackProjectLineRegex_17 - D:\msbuild\artifacts\obj\Microsoft.Build\Debug\net10.0\System.Text.RegularExpressions.Generator\System.Text.RegularExpressions.Generator.RegexGenerator\RegexGenerator.g.cs(6180,23)</pre>
-      </section>
-    </article>
-    <article class="query">
-      <h2>find-type-definition</h2>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: ProjectInstance)</span><span class="summary-meta">8 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>ProjectInstance</dd>
       </dl>
-      <section class="algorithm">
-        <h3>find-type-definition-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 295 | <strong>Lines:</strong> 1 | <strong>Time:</strong> 2.7s | string search for &#39;(class|record|struct|interface|enum) ProjectInstance&#39;</p>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 295 | Lines: 1 | Time: 3.0s</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) ProjectInstance&#39;</p>
         <pre>D:\msbuild\src\Build\Instance\ProjectInstance.cs:79: public class ProjectInstance : IPropertyProvider&lt;ProjectPropertyInstance&gt;, IItemProvider&lt;ProjectItemInstance&gt;, IEvaluatorData&lt;ProjectPropertyInstance, ProjectItemInstance, ProjectMetadataInstance, ProjectItemDefinitionInstance&gt;, ITranslatable</pre>
-      </section>
-      <section class="algorithm">
-        <h3>find-type-definition-grep-nameonly</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 168223 | <strong>Lines:</strong> 1090 | <strong>Time:</strong> 2.5s | string search for &#39;ProjectInstance&#39;</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 168223 | Lines: 1090 | Time: 2.5s</span></summary>
+        <p class="algorithm-details">string search for &#39;ProjectInstance&#39;</p>
         <pre id="expand-5-short">D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:191: private readonly Dictionary&lt;ProjectInstance, string&gt; _unnamedProjectInstanceToNames;
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:306: _unnamedProjectInstanceToNames = new Dictionary&lt;ProjectInstance, string&gt;();
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:921: /// This methods requests the BuildManager to find a matching ProjectInstance in its cache of previously-built projects.
@@ -17886,20 +17901,20 @@ D:\msbuild\src\Utilities.UnitTests\MuxLogger_Tests.cs:200: ProjectInstance proje
 D:\msbuild\src\Utilities.UnitTests\MuxLogger_Tests.cs:201: ProjectInstance project2 = projectFromString2.Project.CreateProjectInstance();
 D:\msbuild\src\Utilities.UnitTests\MuxLogger_Tests.cs:256: ProjectInstance project = (projectFromString.Project).CreateProjectInstance();
 D:\msbuild\src\Utilities.UnitTests\MuxLogger_Tests.cs:305: ProjectInstance project = (projectFromString.Project).CreateProjectInstance();</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 99 | <strong>Lines:</strong> 1 | <strong>Time:</strong> 95ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 99 | Lines: 1 | Time: 25ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
         <pre>Microsoft.Build.Execution.ProjectInstance - D:\msbuild\src\Build\Instance\ProjectInstance.cs(79,18)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 99 | <strong>Lines:</strong> 1 | <strong>Time:</strong> 20ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 99 | Lines: 1 | Time: 91ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
         <pre>Microsoft.Build.Execution.ProjectInstance - D:\msbuild\src\Build\Instance\ProjectInstance.cs(79,18)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-with-pattern (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 6898 | <strong>Lines:</strong> 47 | <strong>Time:</strong> 15ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 6898 | Lines: 47 | Time: 16ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
         <pre id="expand-6-short">Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectPropertyGroupTaskPropertyInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectPropertyGroupTaskPropertyInstance_Internal_Tests.cs(16,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTargetInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTargetInstance_Internal_Tests.cs(17,18)
@@ -17958,10 +17973,10 @@ Microsoft.Build.UnitTests.OM.Instance.ProjectTaskInstance_Tests - D:\msbuild\src
 Microsoft.Build.UnitTests.OM.Instance.ProjectTaskOutputItemInstance_Tests - D:\msbuild\src\Build.OM.UnitTests\Instance\ProjectTaskOutputItemInstance_Tests.cs(16,18)
 Microsoft.Build.UnitTests.OM.Instance.ProjectTaskOutputPropertyInstance_Tests - D:\msbuild\src\Build.OM.UnitTests\Instance\ProjectTaskOutputPropertyInstance_Tests.cs(16,18)
 Microsoft.Build.UnitTests.ObjectModelHelpers.ProjectItemInstanceTestItemAdapter - D:\msbuild\src\UnitTests.Shared\ObjectModelHelpers.cs(226,29)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-with-pattern (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 6898 | <strong>Lines:</strong> 47 | <strong>Time:</strong> 16ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 6898 | Lines: 47 | Time: 18ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
         <pre id="expand-7-short">Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectPropertyGroupTaskPropertyInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectPropertyGroupTaskPropertyInstance_Internal_Tests.cs(16,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTargetInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTargetInstance_Internal_Tests.cs(17,18)
@@ -18020,10 +18035,10 @@ Microsoft.Build.UnitTests.OM.Instance.ProjectTaskInstance_Tests - D:\msbuild\src
 Microsoft.Build.UnitTests.OM.Instance.ProjectTaskOutputItemInstance_Tests - D:\msbuild\src\Build.OM.UnitTests\Instance\ProjectTaskOutputItemInstance_Tests.cs(16,18)
 Microsoft.Build.UnitTests.OM.Instance.ProjectTaskOutputPropertyInstance_Tests - D:\msbuild\src\Build.OM.UnitTests\Instance\ProjectTaskOutputPropertyInstance_Tests.cs(16,18)
 Microsoft.Build.UnitTests.ObjectModelHelpers.ProjectItemInstanceTestItemAdapter - D:\msbuild\src\UnitTests.Shared\ObjectModelHelpers.cs(226,29)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-workspaceSymbol (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 6898 | <strong>Lines:</strong> 47 | <strong>Time:</strong> 146ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;) without SymbolFilter</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 6898 | Lines: 47 | Time: 150ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;) without SymbolFilter</p>
         <pre id="expand-8-short">Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectPropertyGroupTaskPropertyInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectPropertyGroupTaskPropertyInstance_Internal_Tests.cs(16,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTargetInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTargetInstance_Internal_Tests.cs(17,18)
@@ -18082,10 +18097,10 @@ Microsoft.Build.UnitTests.OM.Instance.ProjectTaskInstance_Tests - D:\msbuild\src
 Microsoft.Build.UnitTests.OM.Instance.ProjectTaskOutputItemInstance_Tests - D:\msbuild\src\Build.OM.UnitTests\Instance\ProjectTaskOutputItemInstance_Tests.cs(16,18)
 Microsoft.Build.UnitTests.OM.Instance.ProjectTaskOutputPropertyInstance_Tests - D:\msbuild\src\Build.OM.UnitTests\Instance\ProjectTaskOutputPropertyInstance_Tests.cs(16,18)
 Microsoft.Build.UnitTests.ObjectModelHelpers.ProjectItemInstanceTestItemAdapter - D:\msbuild\src\UnitTests.Shared\ObjectModelHelpers.cs(226,29)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-workspaceSymbol (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 6898 | <strong>Lines:</strong> 47 | <strong>Time:</strong> 120ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;) without SymbolFilter</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 6898 | Lines: 47 | Time: 122ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;) without SymbolFilter</p>
         <pre id="expand-9-short">Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectPropertyGroupTaskPropertyInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectPropertyGroupTaskPropertyInstance_Internal_Tests.cs(16,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTargetInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTargetInstance_Internal_Tests.cs(17,18)
@@ -18144,24 +18159,24 @@ Microsoft.Build.UnitTests.OM.Instance.ProjectTaskInstance_Tests - D:\msbuild\src
 Microsoft.Build.UnitTests.OM.Instance.ProjectTaskOutputItemInstance_Tests - D:\msbuild\src\Build.OM.UnitTests\Instance\ProjectTaskOutputItemInstance_Tests.cs(16,18)
 Microsoft.Build.UnitTests.OM.Instance.ProjectTaskOutputPropertyInstance_Tests - D:\msbuild\src\Build.OM.UnitTests\Instance\ProjectTaskOutputPropertyInstance_Tests.cs(16,18)
 Microsoft.Build.UnitTests.ObjectModelHelpers.ProjectItemInstanceTestItemAdapter - D:\msbuild\src\UnitTests.Shared\ObjectModelHelpers.cs(226,29)</pre>
-      </section>
-    </article>
-    <article class="query">
-      <h2>find-type-definition</h2>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: TaskItem)</span><span class="summary-meta">8 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>TaskItem</dd>
       </dl>
-      <section class="algorithm">
-        <h3>find-type-definition-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 370 | <strong>Lines:</strong> 4 | <strong>Time:</strong> 2.9s | string search for &#39;(class|record|struct|interface|enum) TaskItem&#39;</p>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 370 | Lines: 4 | Time: 3.0s</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) TaskItem&#39;</p>
         <pre>D:\msbuild\src\Build\Instance\ProjectItemInstance.cs:781: internal sealed class TaskItem :
 D:\msbuild\src\Tasks.UnitTests\CommandLineGenerator_Tests.cs:158: private sealed class TaskItem : ITaskItem
 D:\msbuild\src\ThreadSafeTaskAnalyzer.Tests\TestHelpers.cs:62: public class TaskItem : ITaskItem
 D:\msbuild\src\Utilities\TaskItem.cs:36: public sealed class TaskItem :</pre>
-      </section>
-      <section class="algorithm">
-        <h3>find-type-definition-grep-nameonly</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 396070 | <strong>Lines:</strong> 2931 | <strong>Time:</strong> 2.8s | string search for &#39;TaskItem&#39;</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 396070 | Lines: 2931 | Time: 2.9s</span></summary>
+        <p class="algorithm-details">string search for &#39;TaskItem&#39;</p>
         <pre id="expand-10-short">D:\msbuild\src\Build\BackEnd\Components\Communications\LogMessagePacket.cs:13: using TaskItem = Microsoft.Build.Execution.ProjectItemInstance.TaskItem;
 D:\msbuild\src\Build\BackEnd\Components\Communications\LogMessagePacket.cs:240: if (kvp.item is ITaskItem taskItem)
 D:\msbuild\src\Build\BackEnd\Components\Communications\LogMessagePacket.cs:242: writer.Write(taskItem.ItemSpec);
@@ -21104,24 +21119,24 @@ D:\msbuild\src\Utilities.UnitTests\TrackedDependencies\TrackedDependenciesTests.
 D:\msbuild\src\Utilities.UnitTests\TrackedDependencies\TrackedDependenciesTests.cs:3479: DependencyTestHelper.ItemArray(new TaskItem(Path.Combine(&quot;TestFiles&quot;, &quot;one.tlog&quot;))),
 D:\msbuild\src\Utilities.UnitTests\TrackedDependencies\TrackedDependenciesTests.cs:3501: DependencyTestHelper.ItemArray(new TaskItem(Path.Combine(&quot;TestFiles&quot;, &quot;one.write.tlog&quot;))),
 D:\msbuild\src\Utilities.UnitTests\TrackedDependencies\TrackedDependenciesTests.cs:3515: DependencyTestHelper.ItemArray(new TaskItem(Path.Combine(&quot;TestFiles&quot;, &quot;one.write.tlog&quot;))),</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 333 | <strong>Lines:</strong> 3 | <strong>Time:</strong> 28ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 333 | Lines: 3 | Time: 25ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
         <pre>Microsoft.Build.Execution.ProjectItemInstance.TaskItem - D:\msbuild\src\Build\Instance\ProjectItemInstance.cs(781,31)
 Microsoft.Build.UnitTests.CommandLineGenerator_Tests.TaskItem - D:\msbuild\src\Tasks.UnitTests\CommandLineGenerator_Tests.cs(158,30)
 Microsoft.Build.Utilities.TaskItem - D:\msbuild\src\Utilities\TaskItem.cs(36,25)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 333 | <strong>Lines:</strong> 3 | <strong>Time:</strong> 21ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 333 | Lines: 3 | Time: 22ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
         <pre>Microsoft.Build.Execution.ProjectItemInstance.TaskItem - D:\msbuild\src\Build\Instance\ProjectItemInstance.cs(781,31)
 Microsoft.Build.UnitTests.CommandLineGenerator_Tests.TaskItem - D:\msbuild\src\Tasks.UnitTests\CommandLineGenerator_Tests.cs(158,30)
 Microsoft.Build.Utilities.TaskItem - D:\msbuild\src\Utilities\TaskItem.cs(36,25)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-with-pattern (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 4251 | <strong>Lines:</strong> 32 | <strong>Time:</strong> 19ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 4251 | Lines: 32 | Time: 22ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
         <pre id="expand-11-short">Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
 Microsoft.Build.BackEnd.TaskParameter.TaskParameterTaskItem - D:\msbuild\src\Shared\TaskParameter.cs(538,23)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
@@ -21165,10 +21180,10 @@ Microsoft.Build.UnitTests.TaskParameter_Tests.RemoteTaskItemFactory - D:\msbuild
 Microsoft.Build.UnitTests.XslTransformation_Tests.TestTaskItemWithNullSpec - D:\msbuild\src\Tasks.UnitTests\XslTransformation_Tests.cs(1342,30)
 Microsoft.Build.Utilities.DependencyTableCache.TaskItemItemSpecIgnoreCaseComparer - D:\msbuild\src\Utilities\TrackedDependencies\DependencyTableCache.cs(198,23)
 Microsoft.Build.Utilities.TaskItem - D:\msbuild\src\Utilities\TaskItem.cs(36,25)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-with-pattern (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 4251 | <strong>Lines:</strong> 32 | <strong>Time:</strong> 17ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 4251 | Lines: 32 | Time: 19ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
         <pre id="expand-12-short">Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
 Microsoft.Build.BackEnd.TaskParameter.TaskParameterTaskItem - D:\msbuild\src\Shared\TaskParameter.cs(538,23)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
@@ -21212,10 +21227,10 @@ Microsoft.Build.UnitTests.TaskParameter_Tests.RemoteTaskItemFactory - D:\msbuild
 Microsoft.Build.UnitTests.XslTransformation_Tests.TestTaskItemWithNullSpec - D:\msbuild\src\Tasks.UnitTests\XslTransformation_Tests.cs(1342,30)
 Microsoft.Build.Utilities.DependencyTableCache.TaskItemItemSpecIgnoreCaseComparer - D:\msbuild\src\Utilities\TrackedDependencies\DependencyTableCache.cs(198,23)
 Microsoft.Build.Utilities.TaskItem - D:\msbuild\src\Utilities\TaskItem.cs(36,25)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-workspaceSymbol (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 4251 | <strong>Lines:</strong> 32 | <strong>Time:</strong> 198ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;) without SymbolFilter</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 4251 | Lines: 32 | Time: 249ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;) without SymbolFilter</p>
         <pre id="expand-13-short">Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
 Microsoft.Build.BackEnd.TaskParameter.TaskParameterTaskItem - D:\msbuild\src\Shared\TaskParameter.cs(538,23)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
@@ -21259,10 +21274,10 @@ Microsoft.Build.UnitTests.TaskParameter_Tests.RemoteTaskItemFactory - D:\msbuild
 Microsoft.Build.UnitTests.XslTransformation_Tests.TestTaskItemWithNullSpec - D:\msbuild\src\Tasks.UnitTests\XslTransformation_Tests.cs(1342,30)
 Microsoft.Build.Utilities.DependencyTableCache.TaskItemItemSpecIgnoreCaseComparer - D:\msbuild\src\Utilities\TrackedDependencies\DependencyTableCache.cs(198,23)
 Microsoft.Build.Utilities.TaskItem - D:\msbuild\src\Utilities\TaskItem.cs(36,25)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-workspaceSymbol (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 4251 | <strong>Lines:</strong> 32 | <strong>Time:</strong> 172ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;) without SymbolFilter</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 4251 | Lines: 32 | Time: 234ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;) without SymbolFilter</p>
         <pre id="expand-14-short">Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
 Microsoft.Build.BackEnd.TaskParameter.TaskParameterTaskItem - D:\msbuild\src\Shared\TaskParameter.cs(538,23)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
@@ -21306,16 +21321,16 @@ Microsoft.Build.UnitTests.TaskParameter_Tests.RemoteTaskItemFactory - D:\msbuild
 Microsoft.Build.UnitTests.XslTransformation_Tests.TestTaskItemWithNullSpec - D:\msbuild\src\Tasks.UnitTests\XslTransformation_Tests.cs(1342,30)
 Microsoft.Build.Utilities.DependencyTableCache.TaskItemItemSpecIgnoreCaseComparer - D:\msbuild\src\Utilities\TrackedDependencies\DependencyTableCache.cs(198,23)
 Microsoft.Build.Utilities.TaskItem - D:\msbuild\src\Utilities\TaskItem.cs(36,25)</pre>
-      </section>
-    </article>
-    <article class="query">
-      <h2>find-derived-types</h2>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-derived-types (name: Task)</span><span class="summary-meta">3 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>Task</dd>
       </dl>
-      <section class="algorithm">
-        <h3>find-derived-types-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 33582 | <strong>Lines:</strong> 242 | <strong>Time:</strong> 2.7s | string search for &#39;(class|record|struct) \w+ ... Task&#39;</p>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-derived-types-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 33582 | Lines: 242 | Time: 2.8s</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct) \w+ ... Task&#39;</p>
         <pre id="expand-15-short">D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\CallTarget.cs:16: /// This class implements the &quot;CallTarget&quot; task, which invokes other targets within the same
 D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs:20: /// This class implements the &quot;MSBuild&quot; task, which hands off child project files to the MSBuild engine to be built.
 D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\PropertyGroupIntrinsicTask.cs:19: /// This class represents a PropertyGroup intrinsic task.
@@ -21569,10 +21584,10 @@ D:\msbuild\src\Utilities\ToolTask.cs:351: /// Gets an instance of a shared resou
 D:\msbuild\src\Utilities\TrackedDependencies\FlatTrackingData.cs:726: // Keep a record of the task resources that was in use before
 D:\msbuild\src\Utilities.UnitTests\MockTask.cs:12: internal sealed class MockTask : Task
 D:\msbuild\src\Utilities.UnitTests\TrackedDependencies\TrackedDependenciesTests.cs:3538: internal sealed class MockTask : Task</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-derived-types (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 15941 | <strong>Lines:</strong> 151 | <strong>Time:</strong> 179ms | called SymbolFinder.FindDerivedClassesAsync(Microsoft.Build.Utilities.Task)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-derived-types (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 15941 | Lines: 151 | Time: 202ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDerivedClassesAsync(Microsoft.Build.Utilities.Task)</p>
         <pre id="expand-16-short">AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
 AssemblyLoadContextTest.RetrieveObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(85,18)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(17,18)
@@ -21735,10 +21750,10 @@ NullMetadataTask.NullMetadataTask - D:\msbuild\src\Build.UnitTests\BackEnd\NullM
 SampleTask.ExampleTaskX64 - D:\msbuild\src\Build.UnitTests\TestAssets\ExampleFrameworkTask\ExampleTaskX64\ExampleTaskX64.cs(8,18)
 SampleTask.ExampleTaskX86 - D:\msbuild\src\Build.UnitTests\TestAssets\ExampleFrameworkTask\ExampleTaskX86\ExampleTaskX86.cs(8,18)
 TaskWithDependency.LogStringFromDependency - D:\msbuild\src\Samples\TaskWithDependency\LogStringFromDependency.cs(10,18)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-derived-types (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 15941 | <strong>Lines:</strong> 151 | <strong>Time:</strong> 6ms | called SymbolFinder.FindDerivedClassesAsync(Microsoft.Build.Utilities.Task)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-derived-types (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 15941 | Lines: 151 | Time: 7ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDerivedClassesAsync(Microsoft.Build.Utilities.Task)</p>
         <pre id="expand-17-short">AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
 AssemblyLoadContextTest.RetrieveObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(85,18)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(17,18)
@@ -21901,16 +21916,16 @@ NullMetadataTask.NullMetadataTask - D:\msbuild\src\Build.UnitTests\BackEnd\NullM
 SampleTask.ExampleTaskX64 - D:\msbuild\src\Build.UnitTests\TestAssets\ExampleFrameworkTask\ExampleTaskX64\ExampleTaskX64.cs(8,18)
 SampleTask.ExampleTaskX86 - D:\msbuild\src\Build.UnitTests\TestAssets\ExampleFrameworkTask\ExampleTaskX86\ExampleTaskX86.cs(8,18)
 TaskWithDependency.LogStringFromDependency - D:\msbuild\src\Samples\TaskWithDependency\LogStringFromDependency.cs(10,18)</pre>
-      </section>
-    </article>
-    <article class="query">
-      <h2>find-interface-implementation</h2>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-interface-implementation (name: ITask)</span><span class="summary-meta">3 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>ITask</dd>
       </dl>
-      <section class="algorithm">
-        <h3>find-interface-implementation-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 1436 | <strong>Lines:</strong> 13 | <strong>Time:</strong> 2.4s | string search for &#39;: ...ITask&#39;</p>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-interface-implementation-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1436 | Lines: 13 | Time: 2.4s</span></summary>
+        <p class="algorithm-details">string search for &#39;: ...ITask&#39;</p>
         <pre id="expand-18-short">D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\CallTarget.cs:23: internal class CallTarget : ITask
 D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs:23: internal class MSBuild : ITask, IMultiThreadableTask
 D:\msbuild\src\Build.UnitTests\MockTask.cs:380: internal sealed class MockTask : MockTaskBase, ITask
@@ -21935,10 +21950,10 @@ D:\msbuild\src\ThreadSafeTaskAnalyzer.Tests\TestHelpers.cs:34: public interface 
 D:\msbuild\src\ThreadSafeTaskAnalyzer.Tests\TestHelpers.cs:78: public abstract class Task : Microsoft.Build.Framework.ITask
 D:\msbuild\src\Utilities\AppDomainIsolatedTask.cs:22: public abstract class AppDomainIsolatedTask : MarshalByRefObject, ITask
 D:\msbuild\src\Utilities\Task.cs:15: public abstract class Task : ITask</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-implementations (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 17551 | <strong>Lines:</strong> 166 | <strong>Time:</strong> 41ms | called SymbolFinder.FindImplementationsAsync(Microsoft.Build.Framework.ITask)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-implementations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 17551 | Lines: 166 | Time: 46ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindImplementationsAsync(Microsoft.Build.Framework.ITask)</p>
         <pre id="expand-19-short">AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
 AssemblyLoadContextTest.RetrieveObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(85,18)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(17,18)
@@ -22116,10 +22131,10 @@ NullMetadataTask.NullMetadataTask - D:\msbuild\src\Build.UnitTests\BackEnd\NullM
 SampleTask.ExampleTaskX64 - D:\msbuild\src\Build.UnitTests\TestAssets\ExampleFrameworkTask\ExampleTaskX64\ExampleTaskX64.cs(8,18)
 SampleTask.ExampleTaskX86 - D:\msbuild\src\Build.UnitTests\TestAssets\ExampleFrameworkTask\ExampleTaskX86\ExampleTaskX86.cs(8,18)
 TaskWithDependency.LogStringFromDependency - D:\msbuild\src\Samples\TaskWithDependency\LogStringFromDependency.cs(10,18)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-implementations (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 17551 | <strong>Lines:</strong> 166 | <strong>Time:</strong> 7ms | called SymbolFinder.FindImplementationsAsync(Microsoft.Build.Framework.ITask)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-implementations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 17551 | Lines: 166 | Time: 7ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindImplementationsAsync(Microsoft.Build.Framework.ITask)</p>
         <pre id="expand-20-short">AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
 AssemblyLoadContextTest.RetrieveObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(85,18)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(17,18)
@@ -22297,16 +22312,16 @@ NullMetadataTask.NullMetadataTask - D:\msbuild\src\Build.UnitTests\BackEnd\NullM
 SampleTask.ExampleTaskX64 - D:\msbuild\src\Build.UnitTests\TestAssets\ExampleFrameworkTask\ExampleTaskX64\ExampleTaskX64.cs(8,18)
 SampleTask.ExampleTaskX86 - D:\msbuild\src\Build.UnitTests\TestAssets\ExampleFrameworkTask\ExampleTaskX86\ExampleTaskX86.cs(8,18)
 TaskWithDependency.LogStringFromDependency - D:\msbuild\src\Samples\TaskWithDependency\LogStringFromDependency.cs(10,18)</pre>
-      </section>
-    </article>
-    <article class="query">
-      <h2>find-member-definition</h2>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-member-definition (name: Execute)</span><span class="summary-meta">3 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>Execute</dd>
       </dl>
-      <section class="algorithm">
-        <h3>find-member-definition-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 79702 | <strong>Lines:</strong> 770 | <strong>Time:</strong> 4.5s | string search for member declaration &#39;Execute&#39;</p>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 79702 | Lines: 770 | Time: 4.8s</span></summary>
+        <p class="algorithm-details">string search for member declaration &#39;Execute&#39;</p>
         <pre id="expand-21-short">D:\msbuild\src\Build\BackEnd\BuildManager\BuildSubmission.cs:62: public abstract TResultData Execute();
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildSubmission.cs:182: public override BuildResult Execute()
 D:\msbuild\src\Build\BackEnd\Client\MSBuildClient.cs:152: public MSBuildClientExitResult Execute(CancellationToken cancellationToken)
@@ -23088,10 +23103,10 @@ D:\msbuild\src\Utilities.UnitTests\ToolTask_Tests.cs:1576: bool result = tool.Ex
 D:\msbuild\src\Utilities.UnitTests\TrackedDependencies\FileTrackerTests.cs:496: bool success = csc.Execute();
 D:\msbuild\src\Utilities.UnitTests\TrackedDependencies\FileTrackerTests.cs:2287: bool compileSucceeded = csc.Execute();
 D:\msbuild\src\Utilities.UnitTests\TrackedDependencies\TrackedDependenciesTests.cs:3547: public override bool Execute() =&gt; true;</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-member-declarations (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 20523 | <strong>Lines:</strong> 161 | <strong>Time:</strong> 168ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Execute&#39;, SymbolFilter.Member)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 20523 | Lines: 161 | Time: 143ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Execute&#39;, SymbolFilter.Member)</p>
         <pre id="expand-22-short">AssemblyLoadContextTest.RegisterObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(73,30)
 AssemblyLoadContextTest.RetrieveObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(87,30)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(31,30)
@@ -23264,10 +23279,10 @@ PortableTask.Sleep.Execute() - D:\msbuild\src\Samples\PortableTask\Sleep.cs(15,3
 SampleTask.ExampleTaskX64.Execute() - D:\msbuild\src\Build.UnitTests\TestAssets\ExampleFrameworkTask\ExampleTaskX64\ExampleTaskX64.cs(12,30)
 SampleTask.ExampleTaskX86.Execute() - D:\msbuild\src\Build.UnitTests\TestAssets\ExampleFrameworkTask\ExampleTaskX86\ExampleTaskX86.cs(12,30)
 TaskWithDependency.LogStringFromDependency.Execute() - D:\msbuild\src\Samples\TaskWithDependency\LogStringFromDependency.cs(12,30)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-member-declarations (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 20523 | <strong>Lines:</strong> 161 | <strong>Time:</strong> 64ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Execute&#39;, SymbolFilter.Member)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 20523 | Lines: 161 | Time: 66ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Execute&#39;, SymbolFilter.Member)</p>
         <pre id="expand-23-short">AssemblyLoadContextTest.RegisterObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(73,30)
 AssemblyLoadContextTest.RetrieveObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(87,30)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(31,30)
@@ -23440,21 +23455,21 @@ PortableTask.Sleep.Execute() - D:\msbuild\src\Samples\PortableTask\Sleep.cs(15,3
 SampleTask.ExampleTaskX64.Execute() - D:\msbuild\src\Build.UnitTests\TestAssets\ExampleFrameworkTask\ExampleTaskX64\ExampleTaskX64.cs(12,30)
 SampleTask.ExampleTaskX86.Execute() - D:\msbuild\src\Build.UnitTests\TestAssets\ExampleFrameworkTask\ExampleTaskX86\ExampleTaskX86.cs(12,30)
 TaskWithDependency.LogStringFromDependency.Execute() - D:\msbuild\src\Samples\TaskWithDependency\LogStringFromDependency.cs(12,30)</pre>
-      </section>
-    </article>
-    <article class="query">
-      <h2>find-type-definition</h2>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: BuildManager)</span><span class="summary-meta">8 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>BuildManager</dd>
       </dl>
-      <section class="algorithm">
-        <h3>find-type-definition-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 142 | <strong>Lines:</strong> 1 | <strong>Time:</strong> 3.3s | string search for &#39;(class|record|struct|interface|enum) BuildManager&#39;</p>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 142 | Lines: 1 | Time: 2.9s</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) BuildManager&#39;</p>
         <pre>D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:51: public class BuildManager : INodePacketHandler, IBuildComponentHost, IDisposable</pre>
-      </section>
-      <section class="algorithm">
-        <h3>find-type-definition-grep-nameonly</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 48801 | <strong>Lines:</strong> 358 | <strong>Time:</strong> 2.5s | string search for &#39;BuildManager&#39;</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 48801 | Lines: 358 | Time: 2.4s</span></summary>
+        <p class="algorithm-details">string search for &#39;BuildManager&#39;</p>
         <pre id="expand-24-short">D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:51: public class BuildManager : INodePacketHandler, IBuildComponentHost, IDisposable
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:64: /// The object used for thread-safe synchronization of BuildManager shared data and the Scheduler.
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:69: /// The singleton instance for the BuildManager.
@@ -23824,20 +23839,20 @@ D:\msbuild\src\Utilities.UnitTests\MuxLogger_Tests.cs:307: BuildManager buildMan
 D:\msbuild\src\Utilities.UnitTests\MuxLogger_Tests.cs:313: buildManager.BeginBuild(parameters);
 D:\msbuild\src\Utilities.UnitTests\MuxLogger_Tests.cs:319: BuildSubmission submission = buildManager.PendBuildRequest(new BuildRequestData(project, Array.Empty&lt;string&gt;(), null));
 D:\msbuild\src\Utilities.UnitTests\MuxLogger_Tests.cs:329: buildManager.EndBuild();</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 105 | <strong>Lines:</strong> 1 | <strong>Time:</strong> 31ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 105 | Lines: 1 | Time: 23ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
         <pre>Microsoft.Build.Execution.BuildManager - D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs(51,18)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 105 | <strong>Lines:</strong> 1 | <strong>Time:</strong> 26ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 105 | Lines: 1 | Time: 19ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
         <pre>Microsoft.Build.Execution.BuildManager - D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs(51,18)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-with-pattern (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2016 | <strong>Lines:</strong> 14 | <strong>Time:</strong> 19ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2016 | Lines: 14 | Time: 14ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
         <pre id="expand-25-short">Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
 Microsoft.Build.BuildCheck.UnitTests.BuildCheckManagerTests - D:\msbuild\src\BuildCheck.UnitTests\BuildCheckManagerProviderTests.cs(21,14)
 Microsoft.Build.Engine.UnitTests.BackEnd.BuildManager_Logging_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Logging_Tests.cs(23,18)
@@ -23863,10 +23878,10 @@ Microsoft.Build.Experimental.BuildCheck.Infrastructure.NullBuildCheckManagerProv
 Microsoft.Build.UnitTests.BackEnd.BuildManager_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Tests.cs(37,18)
 Microsoft.Build.UnitTests.Helpers.BuildManagerSession - D:\msbuild\src\UnitTests.Shared\ObjectModelHelpers.cs(2072,29)
 Microsoft.Build.UnitTests.TestEnvironment.ResetDefaultBuildManager - D:\msbuild\src\UnitTests.Shared\EngineTestEnvironment.cs(32,30)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-with-pattern (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2016 | <strong>Lines:</strong> 14 | <strong>Time:</strong> 12ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2016 | Lines: 14 | Time: 12ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
         <pre id="expand-26-short">Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
 Microsoft.Build.BuildCheck.UnitTests.BuildCheckManagerTests - D:\msbuild\src\BuildCheck.UnitTests\BuildCheckManagerProviderTests.cs(21,14)
 Microsoft.Build.Engine.UnitTests.BackEnd.BuildManager_Logging_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Logging_Tests.cs(23,18)
@@ -23892,10 +23907,10 @@ Microsoft.Build.Experimental.BuildCheck.Infrastructure.NullBuildCheckManagerProv
 Microsoft.Build.UnitTests.BackEnd.BuildManager_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Tests.cs(37,18)
 Microsoft.Build.UnitTests.Helpers.BuildManagerSession - D:\msbuild\src\UnitTests.Shared\ObjectModelHelpers.cs(2072,29)
 Microsoft.Build.UnitTests.TestEnvironment.ResetDefaultBuildManager - D:\msbuild\src\UnitTests.Shared\EngineTestEnvironment.cs(32,30)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-workspaceSymbol (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2016 | <strong>Lines:</strong> 14 | <strong>Time:</strong> 167ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;) without SymbolFilter</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2016 | Lines: 14 | Time: 125ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;) without SymbolFilter</p>
         <pre id="expand-27-short">Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
 Microsoft.Build.BuildCheck.UnitTests.BuildCheckManagerTests - D:\msbuild\src\BuildCheck.UnitTests\BuildCheckManagerProviderTests.cs(21,14)
 Microsoft.Build.Engine.UnitTests.BackEnd.BuildManager_Logging_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Logging_Tests.cs(23,18)
@@ -23921,10 +23936,10 @@ Microsoft.Build.Experimental.BuildCheck.Infrastructure.NullBuildCheckManagerProv
 Microsoft.Build.UnitTests.BackEnd.BuildManager_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Tests.cs(37,18)
 Microsoft.Build.UnitTests.Helpers.BuildManagerSession - D:\msbuild\src\UnitTests.Shared\ObjectModelHelpers.cs(2072,29)
 Microsoft.Build.UnitTests.TestEnvironment.ResetDefaultBuildManager - D:\msbuild\src\UnitTests.Shared\EngineTestEnvironment.cs(32,30)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-declarations-workspaceSymbol (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2016 | <strong>Lines:</strong> 14 | <strong>Time:</strong> 119ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;) without SymbolFilter</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2016 | Lines: 14 | Time: 120ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;) without SymbolFilter</p>
         <pre id="expand-28-short">Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
 Microsoft.Build.BuildCheck.UnitTests.BuildCheckManagerTests - D:\msbuild\src\BuildCheck.UnitTests\BuildCheckManagerProviderTests.cs(21,14)
 Microsoft.Build.Engine.UnitTests.BackEnd.BuildManager_Logging_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Logging_Tests.cs(23,18)
@@ -23950,16 +23965,16 @@ Microsoft.Build.Experimental.BuildCheck.Infrastructure.NullBuildCheckManagerProv
 Microsoft.Build.UnitTests.BackEnd.BuildManager_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Tests.cs(37,18)
 Microsoft.Build.UnitTests.Helpers.BuildManagerSession - D:\msbuild\src\UnitTests.Shared\ObjectModelHelpers.cs(2072,29)
 Microsoft.Build.UnitTests.TestEnvironment.ResetDefaultBuildManager - D:\msbuild\src\UnitTests.Shared\EngineTestEnvironment.cs(32,30)</pre>
-      </section>
-    </article>
-    <article class="query">
-      <h2>find-member-definition</h2>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-member-definition (name: Build)</span><span class="summary-meta">3 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>Build</dd>
       </dl>
-      <section class="algorithm">
-        <h3>find-member-definition-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 24205 | <strong>Lines:</strong> 194 | <strong>Time:</strong> 4.7s | string search for member declaration &#39;Build&#39;</p>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 24205 | Lines: 194 | Time: 4.6s</span></summary>
+        <p class="algorithm-details">string search for member declaration &#39;Build&#39;</p>
         <pre id="expand-29-short">D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:1382: private TResultData Build&lt;TRequestData, TResultData&gt;(BuildParameters parameters, TRequestData requestData)
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:1409: public BuildResult Build(BuildParameters parameters, BuildRequestData requestData)
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:1416: public GraphBuildResult Build(BuildParameters parameters, GraphBuildRequestData requestData)
@@ -24165,10 +24180,10 @@ D:\msbuild\src\Utilities.UnitTests\ToolLocationHelper_Tests.cs:1113: bool succes
 D:\msbuild\src\Utilities.UnitTests\ToolLocationHelper_Tests.cs:1154: bool success = p.Build(logger);
 D:\msbuild\src\Utilities.UnitTests\ToolLocationHelper_Tests.cs:1197: bool success = p.Build(logger);
 D:\msbuild\src\Utilities.UnitTests\ToolLocationHelper_Tests.cs:1250: bool success = p.Build(logger);</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-member-declarations (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 8964 | <strong>Lines:</strong> 41 | <strong>Time:</strong> 59ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Build&#39;, SymbolFilter.Member)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 8964 | Lines: 41 | Time: 77ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Build&#39;, SymbolFilter.Member)</p>
         <pre id="expand-30-short">Microsoft.Build.BackEnd.MSBuild.SkipNonExistentProjectsBehavior.Build - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(48,13)
 Microsoft.Build.Engine.UnitTests.InstanceFromRemote.FakeProjectLink.Build(string[], System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Logging.ForwardingLoggerRecord&gt;, Microsoft.Build.Evaluation.Context.EvaluationContext) - D:\msbuild\src\Build.UnitTests\InstanceFromRemote\FakeProjectLink.cs(85,30)
 Microsoft.Build.Evaluation.Expander&lt;P, I&gt;.FunctionBuilder&lt;T&gt;.Build() - D:\msbuild\src\Build\Evaluation\Expander.cs(3708,43)
@@ -24221,10 +24236,10 @@ Microsoft.Build.UnitTests.Helpers.BuildManagerSession.Build(Microsoft.Build.Exec
 Microsoft.Build.UnitTests.OM.Instance.ProjectInstance_Internal_Tests.Build() - D:\msbuild\src\Build.UnitTests\Instance\ProjectInstance_Internal_Tests.cs(560,21)
 Microsoft.Build.UnitTests.OM.ObjectModelRemoting.MockProjectLink.Build(string[], System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Logging.ForwardingLoggerRecord&gt;, Microsoft.Build.Evaluation.Context.EvaluationContext) - D:\msbuild\src\Build.OM.UnitTests\ObjectModelRemoting\RemoteProjectsProviderMock\EvaluationLinkMocks\MockProjectLink.cs(183,30)
 Microsoft.Build.Utilities.SimpleVersion.Build - D:\msbuild\src\Build\Utilities\SimpleVersion.cs(46,29)</pre>
-      </section>
-      <section class="algorithm">
-        <h3>roslyn-find-member-declarations (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 8964 | <strong>Lines:</strong> 41 | <strong>Time:</strong> 39ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Build&#39;, SymbolFilter.Member)</p>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 8964 | Lines: 41 | Time: 46ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Build&#39;, SymbolFilter.Member)</p>
         <pre id="expand-31-short">Microsoft.Build.BackEnd.MSBuild.SkipNonExistentProjectsBehavior.Build - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(48,13)
 Microsoft.Build.Engine.UnitTests.InstanceFromRemote.FakeProjectLink.Build(string[], System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Logging.ForwardingLoggerRecord&gt;, Microsoft.Build.Evaluation.Context.EvaluationContext) - D:\msbuild\src\Build.UnitTests\InstanceFromRemote\FakeProjectLink.cs(85,30)
 Microsoft.Build.Evaluation.Expander&lt;P, I&gt;.FunctionBuilder&lt;T&gt;.Build() - D:\msbuild\src\Build\Evaluation\Expander.cs(3708,43)
@@ -24277,8 +24292,13 @@ Microsoft.Build.UnitTests.Helpers.BuildManagerSession.Build(Microsoft.Build.Exec
 Microsoft.Build.UnitTests.OM.Instance.ProjectInstance_Internal_Tests.Build() - D:\msbuild\src\Build.UnitTests\Instance\ProjectInstance_Internal_Tests.cs(560,21)
 Microsoft.Build.UnitTests.OM.ObjectModelRemoting.MockProjectLink.Build(string[], System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Logging.ForwardingLoggerRecord&gt;, Microsoft.Build.Evaluation.Context.EvaluationContext) - D:\msbuild\src\Build.OM.UnitTests\ObjectModelRemoting\RemoteProjectsProviderMock\EvaluationLinkMocks\MockProjectLink.cs(183,30)
 Microsoft.Build.Utilities.SimpleVersion.Build - D:\msbuild\src\Build\Utilities\SimpleVersion.cs(46,29)</pre>
-      </section>
-    </article>
+      </details>
+    </details>
   </section>
+  <script>
+    document.querySelector('[data-action="expand-all"]').addEventListener('click', () => document.querySelectorAll('details').forEach(details => details.open = true));
+    document.querySelector('[data-action="collapse-algorithms"]').addEventListener('click', () => document.querySelectorAll('details.algorithm').forEach(details => details.open = false));
+    document.querySelector('[data-action="collapse-all"]').addEventListener('click', () => document.querySelectorAll('details').forEach(details => details.open = false));
+  </script>
 </body>
 </html>

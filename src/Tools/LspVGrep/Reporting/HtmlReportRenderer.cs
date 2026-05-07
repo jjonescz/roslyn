@@ -8,6 +8,7 @@ internal static class HtmlReportRenderer
 {
     public static string Render(ToolReport report)
     {
+        s_expandCounter = 0;
         var builder = new StringBuilder();
 
         builder.AppendLine("<!DOCTYPE html>");
@@ -18,8 +19,18 @@ internal static class HtmlReportRenderer
         builder.AppendLine("  <style>");
         builder.AppendLine("    body { font-family: Arial, sans-serif; margin: 2rem; color: #1f2937; }");
         builder.AppendLine("    h1, h2, h3 { margin-bottom: 0.5rem; }");
-        builder.AppendLine("    .query { border: 1px solid #d1d5db; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }");
-        builder.AppendLine("    .algorithm { border-top: 1px solid #e5e7eb; padding-top: 1rem; margin-top: 1rem; }");
+        builder.AppendLine("    .actions { display: flex; gap: 0.5rem; margin: 1rem 0; }");
+        builder.AppendLine("    button { border: 1px solid #b8c2d1; border-radius: 6px; background: #fff; color: #1f2937; padding: 0.35rem 0.65rem; cursor: pointer; }");
+        builder.AppendLine("    button:hover { background: #eef2f7; }");
+        builder.AppendLine("    details { background: #fff; }");
+        builder.AppendLine("    summary { cursor: pointer; }");
+        builder.AppendLine("    .query { border: 1px solid #d1d5db; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem; }");
+        builder.AppendLine("    .query[open] > summary { border-bottom: 1px solid #e5e7eb; margin-bottom: 0.75rem; padding-bottom: 0.75rem; }");
+        builder.AppendLine("    .algorithm { border-top: 1px solid #e5e7eb; padding-top: 0.75rem; margin-top: 0.75rem; }");
+        builder.AppendLine("    .algorithm[open] > summary { margin-bottom: 0.5rem; }");
+        builder.AppendLine("    .summary-title { font-weight: 700; }");
+        builder.AppendLine("    .summary-meta { color: #4b5563; margin-left: 0.75rem; font-size: 0.92rem; }");
+        builder.AppendLine("    .algorithm-details { margin: 0.5rem 0; color: #4b5563; }");
         builder.AppendLine("    .status { font-weight: bold; }");
         builder.AppendLine("    .status-failed { color: #b91c1c; }");
         builder.AppendLine("    .status-succeeded { color: #047857; }");
@@ -53,12 +64,17 @@ internal static class HtmlReportRenderer
                 $"  <p><strong>Roslyn target:</strong> {Encode(report.RoslynTargetKind)} - {Encode(report.RoslynTargetPath)} (loaded in {loadTime})</p>");
         }
 
+        builder.AppendLine("  <div class=\"actions\">");
+        builder.AppendLine("    <button type=\"button\" data-action=\"expand-all\">Expand all</button>");
+        builder.AppendLine("    <button type=\"button\" data-action=\"collapse-algorithms\">Collapse algorithms</button>");
+        builder.AppendLine("    <button type=\"button\" data-action=\"collapse-all\">Collapse all</button>");
+        builder.AppendLine("  </div>");
         builder.AppendLine("  <section>");
 
         foreach (var query in report.Queries)
         {
-            builder.AppendLine("    <article class=\"query\">");
-            builder.AppendLine($"      <h2>{Encode(query.Type)}</h2>");
+            builder.AppendLine("    <details class=\"query\" open>");
+            builder.AppendLine($"      <summary><span class=\"summary-title\">{Encode(FormatQueryTitle(query))}</span><span class=\"summary-meta\">{query.Algorithms.Count} algorithms</span></summary>");
             builder.AppendLine("      <dl>");
             foreach (var field in query.Fields)
             {
@@ -73,26 +89,36 @@ internal static class HtmlReportRenderer
                     ? "status-succeeded"
                     : "status-failed";
 
-                var summaryFragment = string.IsNullOrEmpty(algorithm.Summary)
+                var summaryDetail = string.IsNullOrEmpty(algorithm.Summary)
                     ? string.Empty
-                    : $" | {Encode(algorithm.Summary)}";
+                    : Encode(algorithm.Summary);
 
                 var elapsed = algorithm.ElapsedTime.TotalSeconds >= 1
                     ? $"{algorithm.ElapsedTime.TotalSeconds:F1}s"
                     : $"{algorithm.ElapsedTime.TotalMilliseconds:F0}ms";
 
-                builder.AppendLine("      <section class=\"algorithm\">");
-                builder.AppendLine($"        <h3>{Encode(algorithm.AlgorithmName)}</h3>");
+                var open = algorithm.Outcome == AlgorithmOutcome.Failed ? " open" : string.Empty;
+                builder.AppendLine($"      <details class=\"algorithm\"{open}>");
                 builder.AppendLine(
-                    $"        <p><span class=\"status {statusClass}\">{Encode(algorithm.Outcome.ToString())}</span> | <strong>Characters:</strong> {algorithm.CharacterCount} | <strong>Lines:</strong> {algorithm.LineCount} | <strong>Time:</strong> {elapsed}{summaryFragment}</p>");
+                    $"        <summary><span class=\"summary-title\">{Encode(algorithm.AlgorithmName)}</span><span class=\"summary-meta\"><span class=\"status {statusClass}\">{Encode(algorithm.Outcome.ToString())}</span> | Characters: {algorithm.CharacterCount} | Lines: {algorithm.LineCount} | Time: {elapsed}</span></summary>");
+                if (!string.IsNullOrEmpty(summaryDetail))
+                {
+                    builder.AppendLine($"        <p class=\"algorithm-details\">{summaryDetail}</p>");
+                }
+
                 RenderResponseText(builder, algorithm.ResponseText);
-                builder.AppendLine("      </section>");
+                builder.AppendLine("      </details>");
             }
 
-            builder.AppendLine("    </article>");
+            builder.AppendLine("    </details>");
         }
 
         builder.AppendLine("  </section>");
+        builder.AppendLine("  <script>");
+        builder.AppendLine("    document.querySelector('[data-action=\"expand-all\"]').addEventListener('click', () => document.querySelectorAll('details').forEach(details => details.open = true));");
+        builder.AppendLine("    document.querySelector('[data-action=\"collapse-algorithms\"]').addEventListener('click', () => document.querySelectorAll('details.algorithm').forEach(details => details.open = false));");
+        builder.AppendLine("    document.querySelector('[data-action=\"collapse-all\"]').addEventListener('click', () => document.querySelectorAll('details').forEach(details => details.open = false));");
+        builder.AppendLine("  </script>");
         builder.AppendLine("</body>");
         builder.AppendLine("</html>");
 
@@ -100,6 +126,15 @@ internal static class HtmlReportRenderer
     }
 
     private static string Encode(string value) => WebUtility.HtmlEncode(value);
+
+    private static string FormatQueryTitle(QueryExecutionReport query)
+    {
+        if (query.Fields.Count == 0)
+            return query.Type;
+
+        var fields = string.Join(", ", query.Fields.Select(static field => $"{field.Key}: {field.Value}"));
+        return $"{query.Type} ({fields})";
+    }
 
     private static string FormatLsCacheUsage(ToolReport report)
     {
