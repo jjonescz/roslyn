@@ -63,9 +63,15 @@ internal static class CombinedReportRenderer
     .grep { background: #16a34a; }
     .lsp { background: #7c3aed; }
     .lsp-load { background: #ea580c; }
+    .chart-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 12px; }
     .legend { display: flex; flex-wrap: wrap; gap: 12px; color: #475569; font-size: 12px; }
     .legend span { display: inline-flex; align-items: center; gap: 6px; }
     .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+    .scale-toggle { display: inline-flex; border: 1px solid #b8c2d1; border-radius: 6px; overflow: hidden; }
+    .scale-toggle button { border: 0; border-radius: 0; padding: 5px 10px; }
+    .scale-toggle button + button { border-left: 1px solid #b8c2d1; }
+    .scale-toggle button[aria-pressed="true"] { background: #2563eb; color: #fff; }
+    .scale-toggle button[aria-pressed="true"]:hover { background: #1d4ed8; }
   </style>
 </head>
 <body>
@@ -87,10 +93,16 @@ internal static class CombinedReportRenderer
   <section class="panel">
     <div class="toolbar">
       <h2>Median Search Time by Repository Size</h2>
-      <div class="legend">
-        <span><i class="swatch grep"></i>Grep</span>
-        <span><i class="swatch lsp"></i>LSP</span>
-        <span><i class="swatch lsp-load"></i>LSP + solution load</span>
+      <div class="chart-controls">
+        <div class="legend">
+          <span><i class="swatch grep"></i>Grep</span>
+          <span><i class="swatch lsp"></i>LSP</span>
+          <span><i class="swatch lsp-load"></i>LSP + solution load</span>
+        </div>
+        <div class="scale-toggle" role="group" aria-label="Y-axis scale">
+          <button id="normalScale" type="button" aria-pressed="false">Normal</button>
+          <button id="logScale" type="button" aria-pressed="true">Log</button>
+        </div>
       </div>
     </div>
     <div id="chart" class="plot-wrap"></div>
@@ -121,12 +133,15 @@ const allRows = ROWS_JSON;
 const queryFilters = document.getElementById('queryFilters');
 const rowsBody = document.getElementById('rows');
 const chart = document.getElementById('chart');
+const normalScaleButton = document.getElementById('normalScale');
+const logScaleButton = document.getElementById('logScale');
 const seriesDefinitions = [
   { label: 'Grep', field: 'grepMilliseconds', color: '#16a34a' },
   { label: 'LSP', field: 'lspMilliseconds', color: '#7c3aed' },
   { label: 'LSP + solution load', field: 'lspWithSolutionLoadMilliseconds', color: '#ea580c' }
 ];
 const svgNamespace = 'http://www.w3.org/2000/svg';
+let yScaleMode = 'log';
 
 const queries = [...new Set(allRows.map(row => row.query))].sort((left, right) => left.localeCompare(right));
 for (const query of queries) {
@@ -142,6 +157,15 @@ for (const query of queries) {
 
 document.getElementById('selectAll').addEventListener('click', () => setAll(true));
 document.getElementById('selectNone').addEventListener('click', () => setAll(false));
+normalScaleButton.addEventListener('click', () => setYScaleMode('normal'));
+logScaleButton.addEventListener('click', () => setYScaleMode('log'));
+
+function setYScaleMode(mode) {
+  yScaleMode = mode;
+  normalScaleButton.setAttribute('aria-pressed', String(mode === 'normal'));
+  logScaleButton.setAttribute('aria-pressed', String(mode === 'log'));
+  render();
+}
 
 function setAll(value) {
   for (const checkbox of queryFilters.querySelectorAll('input')) {
@@ -197,7 +221,7 @@ function renderChart(visibleRows) {
     return;
   }
 
-  chart.append(createPlot(pointsBySeries, allPoints));
+  chart.append(createPlot(pointsBySeries, allPoints, yScaleMode));
 }
 
 function groupRowsByRepository(rows) {
@@ -238,7 +262,7 @@ function createPoint(group, field) {
   };
 }
 
-function createPlot(pointsBySeries, allPoints) {
+function createPlot(pointsBySeries, allPoints, scaleMode) {
   const width = 980;
   const height = 430;
   const margin = { top: 20, right: 28, bottom: 58, left: 82 };
@@ -257,27 +281,34 @@ function createPlot(pointsBySeries, allPoints) {
     xMax += padding;
   }
 
-  const yMin = Math.max(1, Math.min(...yValues) * 0.75);
+  const isLogScale = scaleMode === 'log';
+  const yMin = isLogScale ? Math.max(1, Math.min(...yValues) * 0.75) : 0;
   const yMax = Math.max(yMin * 1.1, Math.max(...yValues) * 1.25);
-  const logYMin = Math.log10(yMin);
-  const logYMax = Math.log10(yMax);
   const xScale = value => margin.left + ((value - xMin) / (xMax - xMin)) * plotWidth;
-  const yScale = value => margin.top + ((logYMax - Math.log10(value)) / (logYMax - logYMin)) * plotHeight;
+  const yScale = isLogScale
+    ? value => {
+        const logYMin = Math.log10(yMin);
+        const logYMax = Math.log10(yMax);
+        return margin.top + ((logYMax - Math.log10(value)) / (logYMax - logYMin)) * plotHeight;
+      }
+    : value => margin.top + ((yMax - value) / (yMax - yMin)) * plotHeight;
   const svg = svgElement('svg', { class: 'plot-svg', viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': 'Search time by repository size' });
 
-  renderGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xMax, yMin, yMax);
+  renderGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xMax, yMin, yMax, scaleMode);
   for (const series of pointsBySeries) {
     renderSeries(svg, series, xScale, yScale);
   }
 
   svg.append(svgElement('text', { class: 'axis-label', x: margin.left + plotWidth / 2, y: height - 12, 'text-anchor': 'middle' }, 'Repository size (kLOC)'));
-  svg.append(svgElement('text', { class: 'axis-label', x: 18, y: margin.top + plotHeight / 2, 'text-anchor': 'middle', transform: `rotate(-90 18 ${margin.top + plotHeight / 2})` }, 'Time (log scale)'));
+  svg.append(svgElement('text', { class: 'axis-label', x: 18, y: margin.top + plotHeight / 2, 'text-anchor': 'middle', transform: `rotate(-90 18 ${margin.top + plotHeight / 2})` }, isLogScale ? 'Time (log scale)' : 'Time (normal scale)'));
   return svg;
 }
 
-function renderGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xMax, yMin, yMax) {
+function renderGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xMax, yMin, yMax, scaleMode) {
   const xTicks = createLinearTicks(xMin, xMax, 5);
-  const yTicks = createLogTicks(yMin, yMax);
+  const yTicks = scaleMode === 'log'
+    ? createLogTicks(yMin, yMax)
+    : createLinearTicks(yMin, yMax, 6);
   for (const tick of xTicks) {
     const x = xScale(tick);
     svg.append(svgElement('line', { class: 'grid', x1: x, y1: margin.top, x2: x, y2: margin.top + plotHeight }));
