@@ -43,6 +43,7 @@ internal static class CombinedReportRenderer
     .filters label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px; background: #fff; font-size: 13px; }
     .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
     .toolbar h2 { margin: 0; font-size: 18px; }
+    .toolbar-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 12px; }
     button { border: 1px solid #b8c2d1; border-radius: 6px; background: #fff; color: #1f2937; padding: 6px 10px; cursor: pointer; }
     button:hover { background: #eef2f7; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -82,9 +83,15 @@ internal static class CombinedReportRenderer
   <section class="panel">
     <div class="toolbar">
       <h2>Queries</h2>
-      <div>
-        <button id="selectAll" type="button">Select all</button>
-        <button id="selectNone" type="button">Select none</button>
+      <div class="toolbar-actions">
+        <div class="scale-toggle" role="group" aria-label="Query filter granularity">
+          <button id="fineQueryFilter" type="button" aria-pressed="true">Fine</button>
+          <button id="coarseQueryFilter" type="button" aria-pressed="false">Coarse</button>
+        </div>
+        <div>
+          <button id="selectAll" type="button">Select all</button>
+          <button id="selectNone" type="button">Select none</button>
+        </div>
       </div>
     </div>
     <div id="queryFilters" class="filters"></div>
@@ -133,6 +140,8 @@ const allRows = ROWS_JSON;
 const queryFilters = document.getElementById('queryFilters');
 const rowsBody = document.getElementById('rows');
 const chart = document.getElementById('chart');
+const fineQueryFilterButton = document.getElementById('fineQueryFilter');
+const coarseQueryFilterButton = document.getElementById('coarseQueryFilter');
 const normalScaleButton = document.getElementById('normalScale');
 const logScaleButton = document.getElementById('logScale');
 const seriesDefinitions = [
@@ -141,24 +150,25 @@ const seriesDefinitions = [
   { label: 'LSP + solution load', field: 'lspWithSolutionLoadMilliseconds', color: '#ea580c' }
 ];
 const svgNamespace = 'http://www.w3.org/2000/svg';
+const fineQueries = [...new Set(allRows.map(row => row.query))].sort((left, right) => left.localeCompare(right));
+const coarseQueries = [...new Set(allRows.map(row => row.queryType ?? row.query))].sort((left, right) => left.localeCompare(right));
+let queryFilterMode = 'fine';
 let yScaleMode = 'log';
-
-const queries = [...new Set(allRows.map(row => row.query))].sort((left, right) => left.localeCompare(right));
-for (const query of queries) {
-  const label = document.createElement('label');
-  const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
-  checkbox.value = query;
-  checkbox.checked = true;
-  checkbox.addEventListener('change', render);
-  label.append(checkbox, document.createTextNode(query));
-  queryFilters.append(label);
-}
 
 document.getElementById('selectAll').addEventListener('click', () => setAll(true));
 document.getElementById('selectNone').addEventListener('click', () => setAll(false));
+fineQueryFilterButton.addEventListener('click', () => setQueryFilterMode('fine'));
+coarseQueryFilterButton.addEventListener('click', () => setQueryFilterMode('coarse'));
 normalScaleButton.addEventListener('click', () => setYScaleMode('normal'));
 logScaleButton.addEventListener('click', () => setYScaleMode('log'));
+
+function setQueryFilterMode(mode) {
+  queryFilterMode = mode;
+  fineQueryFilterButton.setAttribute('aria-pressed', String(mode === 'fine'));
+  coarseQueryFilterButton.setAttribute('aria-pressed', String(mode === 'coarse'));
+  renderQueryFilters();
+  render();
+}
 
 function setYScaleMode(mode) {
   yScaleMode = mode;
@@ -179,9 +189,24 @@ function selectedQueries() {
   return new Set([...queryFilters.querySelectorAll('input:checked')].map(checkbox => checkbox.value));
 }
 
+function renderQueryFilters() {
+  queryFilters.textContent = '';
+  const queries = queryFilterMode === 'fine' ? fineQueries : coarseQueries;
+  for (const query of queries) {
+    const label = document.createElement('label');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = query;
+    checkbox.checked = true;
+    checkbox.addEventListener('change', render);
+    label.append(checkbox, document.createTextNode(query));
+    queryFilters.append(label);
+  }
+}
+
 function render() {
   const selected = selectedQueries();
-  const visibleRows = allRows.filter(row => selected.has(row.query));
+  const visibleRows = allRows.filter(row => selected.has(queryFilterMode === 'fine' ? row.query : (row.queryType ?? row.query)));
   renderTable(visibleRows);
   renderChart(visibleRows);
 }
@@ -431,6 +456,7 @@ function formatMs(value) {
     : `${Math.round(value)}ms`;
 }
 
+renderQueryFilters();
 render();
 </script>
 </body>
@@ -462,6 +488,7 @@ render();
                 report.Directory,
                 report.SourceLineCount,
                 FormatQuery(query),
+                query.Type,
                 grep?.LineCount,
                 lsp?.LineCount,
                 report.RoslynTarget?.LoadTimeMilliseconds,
@@ -522,6 +549,7 @@ render();
         string Directory,
         long? SourceLineCount,
         string Query,
+        string QueryType,
         int? GrepResultCount,
         int? LspResultCount,
         double? SolutionLoadMilliseconds,
