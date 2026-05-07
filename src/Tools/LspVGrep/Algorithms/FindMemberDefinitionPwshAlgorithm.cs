@@ -1,4 +1,4 @@
-using LspVGrepTool.Execution;
+﻿using LspVGrepTool.Execution;
 using LspVGrepTool.Models;
 
 namespace LspVGrepTool.Algorithms;
@@ -36,7 +36,7 @@ internal sealed class FindMemberDefinitionPwshAlgorithm : QueryAlgorithm<FindMem
         }
 
         var responseText = string.IsNullOrWhiteSpace(searchResult.StandardOutput)
-            ? "No matches found with Select-String."
+            ? ""
             : searchResult.StandardOutput.TrimEnd();
 
         return new AlgorithmExecutionResult(

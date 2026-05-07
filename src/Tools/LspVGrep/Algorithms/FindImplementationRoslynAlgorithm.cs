@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using LspVGrepTool.Execution;
 using LspVGrepTool.Infrastructure;
@@ -32,7 +32,7 @@ internal sealed class FindInterfaceImplementationRoslynAlgorithm : QueryAlgorith
         {
             var notFoundSummary = $"called SymbolFinder.FindDeclarationsAsync for '{query.Name}' — not found";
             return new AlgorithmExecutionResult(Name, AlgorithmOutcome.Succeeded,
-                $"Loaded {workspace.TargetKind}: {workspace.TargetPath}\nType '{query.Name}' was not found in the solution.",
+                "",
                 notFoundSummary);
         }
 
@@ -58,12 +58,7 @@ internal sealed class FindInterfaceImplementationRoslynAlgorithm : QueryAlgorith
         }
 
         var distinct = matches.Distinct(StringComparer.Ordinal).OrderBy(m => m, StringComparer.Ordinal).ToList();
-        var lines = new List<string>
-        {
-            $"Loaded {workspace.TargetKind}: {workspace.TargetPath}",
-            $"Target: {target.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat)} ({target.TypeKind})"
-        };
-        lines.AddRange(distinct.Count == 0 ? ["No implementations found."] : distinct);
+        var lines = distinct;
 
         return new AlgorithmExecutionResult(Name, AlgorithmOutcome.Succeeded, string.Join(Environment.NewLine, lines), summary);
     }

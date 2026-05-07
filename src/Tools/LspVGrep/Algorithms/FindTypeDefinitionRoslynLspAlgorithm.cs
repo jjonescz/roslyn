@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using LspVGrepTool.Execution;
 using LspVGrepTool.Models;
@@ -41,16 +41,9 @@ internal sealed class FindTypeDefinitionRoslynLspAlgorithm : QueryAlgorithm<Find
             .OrderBy(m => m, StringComparer.Ordinal)
             .ToList();
 
-        var lines = new List<string>
-        {
-            $"Loaded {workspace.TargetKind}: {workspace.TargetPath}"
-        };
+        var lines = new List<string>();
 
-        if (distinct.Count == 0)
-        {
-            lines.Add("No matching types found.");
-        }
-        else
+        if (distinct.Count > 0)
         {
             lines.AddRange(distinct);
         }

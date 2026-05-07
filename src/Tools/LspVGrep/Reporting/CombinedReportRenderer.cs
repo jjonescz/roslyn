@@ -102,7 +102,8 @@ internal static class CombinedReportRenderer
             <th>Repository</th>
             <th>Query</th>
             <th>kLOC</th>
-            <th>LS cache</th>
+            <th>Grep results</th>
+            <th>LSP results</th>
             <th>Solution load</th>
             <th>Grep</th>
             <th>LSP cold</th>
@@ -162,7 +163,8 @@ function renderTable(visibleRows) {
       cell(row.repository),
       cell(row.query),
       numericCell(formatKloc(row.sourceLineCount)),
-      cell(formatLsCache(row)),
+      numericCell(formatCount(row.grepResultCount)),
+      numericCell(formatCount(row.lspResultCount)),
       numericCell(formatMs(row.solutionLoadMilliseconds)),
       numericCell(formatMs(row.grepMilliseconds)),
       numericCell(formatMs(row.lspColdMilliseconds)),
@@ -232,6 +234,14 @@ function formatKloc(value) {
   return `${(value / 1000).toFixed(1)}`;
 }
 
+function formatCount(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  return value.toLocaleString();
+}
+
 function formatMs(value) {
   if (value === null || value === undefined) {
     return '';
@@ -240,18 +250,6 @@ function formatMs(value) {
   return value >= 1000
     ? `${(value / 1000).toFixed(1)}s`
     : `${Math.round(value)}ms`;
-}
-
-function formatLsCache(row) {
-  if (row.lsCacheUsed) {
-    return 'used';
-  }
-
-  if (row.lsCacheEnabled) {
-    return 'not used';
-  }
-
-  return 'disabled';
 }
 
 render();
@@ -281,9 +279,9 @@ render();
                 repository,
                 report.Directory,
                 report.SourceLineCount,
-                report.LsCache?.Enabled,
-                report.LsCache?.Used,
                 FormatQuery(query),
+                grep?.LineCount,
+                (lspWarm ?? lspCold)?.LineCount,
                 report.RoslynTarget?.LoadTimeMilliseconds,
                 grep?.ElapsedMilliseconds,
                 lspCold?.ElapsedMilliseconds,
@@ -300,18 +298,24 @@ render();
     private static JsonSummaryAlgorithm? SelectLspAlgorithm(IReadOnlyList<JsonSummaryAlgorithm> algorithms, int pass)
     {
         var passText = $"(pass {pass})";
-        return algorithms.FirstOrDefault(algorithm => IsPreferredLspAlgorithm(algorithm.Name) && algorithm.Name.Contains(passText, StringComparison.OrdinalIgnoreCase))
-            ?? algorithms.FirstOrDefault(algorithm => IsFallbackLspAlgorithm(algorithm.Name) && algorithm.Name.Contains(passText, StringComparison.OrdinalIgnoreCase))
-            ?? (pass == 1 ? algorithms.FirstOrDefault(algorithm => IsPreferredLspAlgorithm(algorithm.Name)) : null)
-            ?? (pass == 1 ? algorithms.FirstOrDefault(algorithm => IsFallbackLspAlgorithm(algorithm.Name)) : null);
+        return algorithms.FirstOrDefault(algorithm => IsExactLspAlgorithm(algorithm.Name) && algorithm.Name.Contains(passText, StringComparison.OrdinalIgnoreCase))
+          ?? algorithms.FirstOrDefault(algorithm => IsPatternLspAlgorithm(algorithm.Name) && algorithm.Name.Contains(passText, StringComparison.OrdinalIgnoreCase))
+          ?? algorithms.FirstOrDefault(algorithm => IsWorkspaceSymbolLspAlgorithm(algorithm.Name) && algorithm.Name.Contains(passText, StringComparison.OrdinalIgnoreCase))
+          ?? (pass == 1 ? algorithms.FirstOrDefault(algorithm => IsExactLspAlgorithm(algorithm.Name)) : null)
+          ?? (pass == 1 ? algorithms.FirstOrDefault(algorithm => IsPatternLspAlgorithm(algorithm.Name)) : null)
+          ?? (pass == 1 ? algorithms.FirstOrDefault(algorithm => IsWorkspaceSymbolLspAlgorithm(algorithm.Name)) : null);
     }
 
-    private static bool IsPreferredLspAlgorithm(string name) =>
-        name.Contains("workspaceSymbol", StringComparison.OrdinalIgnoreCase);
+    private static bool IsExactLspAlgorithm(string name) =>
+      name.Contains("roslyn", StringComparison.OrdinalIgnoreCase) &&
+      !name.Contains("with-pattern", StringComparison.OrdinalIgnoreCase) &&
+      !name.Contains("workspaceSymbol", StringComparison.OrdinalIgnoreCase);
 
-    private static bool IsFallbackLspAlgorithm(string name) =>
-        name.Contains("with-pattern", StringComparison.OrdinalIgnoreCase) ||
-        name.Contains("roslyn", StringComparison.OrdinalIgnoreCase);
+    private static bool IsPatternLspAlgorithm(string name) =>
+      name.Contains("with-pattern", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsWorkspaceSymbolLspAlgorithm(string name) =>
+      name.Contains("workspaceSymbol", StringComparison.OrdinalIgnoreCase);
 
     private static string FormatQuery(JsonSummaryQuery query)
     {
@@ -335,9 +339,9 @@ render();
         string Repository,
         string Directory,
         long? SourceLineCount,
-        bool? LsCacheEnabled,
-        bool? LsCacheUsed,
         string Query,
+        int? GrepResultCount,
+        int? LspResultCount,
         double? SolutionLoadMilliseconds,
         double? GrepMilliseconds,
         double? LspColdMilliseconds,

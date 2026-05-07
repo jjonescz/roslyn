@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using LspVGrepTool.Execution;
 using LspVGrepTool.Models;
@@ -31,7 +31,7 @@ internal sealed class FindDerivedTypesRoslynAlgorithm : QueryAlgorithm<FindDeriv
         {
             var notFoundSummary = $"called SymbolFinder.FindDeclarationsAsync for '{query.Name}' — not found";
             return new AlgorithmExecutionResult(Name, AlgorithmOutcome.Succeeded,
-                $"Loaded {workspace.TargetKind}: {workspace.TargetPath}\nType '{query.Name}' was not found in the solution.",
+                "",
                 notFoundSummary);
         }
 
@@ -50,12 +50,7 @@ internal sealed class FindDerivedTypesRoslynAlgorithm : QueryAlgorithm<FindDeriv
         }
 
         var distinct = matches.Distinct(StringComparer.Ordinal).OrderBy(m => m, StringComparer.Ordinal).ToList();
-        var lines = new List<string>
-        {
-            $"Loaded {workspace.TargetKind}: {workspace.TargetPath}",
-            $"Target: {targetSymbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat)} ({targetSymbol.TypeKind})"
-        };
-        lines.AddRange(distinct.Count == 0 ? ["No derived types found."] : distinct);
+        var lines = distinct;
 
         return new AlgorithmExecutionResult(Name, AlgorithmOutcome.Succeeded, string.Join(Environment.NewLine, lines),
             $"called SymbolFinder.FindDerivedClassesAsync({displayName})");

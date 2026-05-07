@@ -1,4 +1,4 @@
-using LspVGrepTool.Execution;
+﻿using LspVGrepTool.Execution;
 using LspVGrepTool.Models;
 
 namespace LspVGrepTool.Algorithms;
@@ -24,7 +24,7 @@ internal sealed class FindTypeDefinitionPwshSimpleAlgorithm : QueryAlgorithm<Fin
             return new AlgorithmExecutionResult(Name, AlgorithmOutcome.Failed, searchResult.StandardError.Trim(), summary);
 
         var responseText = string.IsNullOrWhiteSpace(searchResult.StandardOutput)
-            ? "No matches found with Select-String."
+            ? ""
             : searchResult.StandardOutput.TrimEnd();
 
         return new AlgorithmExecutionResult(Name, AlgorithmOutcome.Succeeded, responseText, summary);

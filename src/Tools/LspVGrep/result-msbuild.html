@@ -24,7 +24,7 @@
   <p><strong>Directory:</strong> D:\msbuild</p>
   <p><strong>Commit:</strong> d6f0b0696ea3013f946c09866cdc17776ce90412</p>
   <p><strong>LS cache:</strong> not used (enabled)</p>
-  <p><strong>Roslyn target:</strong> Solution - D:\msbuild\MSBuild.slnx (loaded in 47.2s)</p>
+  <p><strong>Roslyn target:</strong> Solution - D:\msbuild\MSBuild.slnx (loaded in 62.4s)</p>
   <section>
     <article class="query">
       <h2>find-type-definition</h2>
@@ -33,13 +33,13 @@
       </dl>
       <section class="algorithm">
         <h3>find-type-definition-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 197 | <strong>Lines:</strong> 2 | <strong>Time:</strong> 3.7s | string search for &#39;(class|record|struct|interface|enum) Project&#39;</p>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 197 | <strong>Lines:</strong> 2 | <strong>Time:</strong> 3.3s | string search for &#39;(class|record|struct|interface|enum) Project&#39;</p>
         <pre>D:\msbuild\src\Build\Definition\Project.cs:50: public class Project : ILinkableObject
 D:\msbuild\src\Samples\XmlFileLogger\ObjectModel\Project.cs:18: internal sealed class Project : LogProcessNode</pre>
       </section>
       <section class="algorithm">
         <h3>find-type-definition-grep-nameonly</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2012380 | <strong>Lines:</strong> 15199 | <strong>Time:</strong> 5.5s | string search for &#39;Project&#39;</p>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2012380 | <strong>Lines:</strong> 15199 | <strong>Time:</strong> 4.2s | string search for &#39;Project&#39;</p>
         <pre id="expand-0-short">D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:54: //       The rationale for this is that we can detect during design-time builds in the Evaluator (which populates this) that the project cache will be used so that we don&#39;t
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:55: //       need to evaluate the project at build time just to figure that out, which would regress perf for scenarios which don&#39;t use the project cache.
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:189: /// Mapping of unnamed project instances to the file names assigned to them.
@@ -15253,23 +15253,20 @@ D:\msbuild\src\Utilities.UnitTests\ToolTask_Tests.cs:1526: // Assert: WorkingDir
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 247 | <strong>Lines:</strong> 3 | <strong>Time:</strong> 5.8s | called SymbolFinder.FindDeclarationsAsync(project, &#39;Project&#39;, SymbolFilter.Type)</p>
-        <pre>Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Evaluation.Project - D:\msbuild\src\Build\Definition\Project.cs(50,18)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 205 | <strong>Lines:</strong> 2 | <strong>Time:</strong> 5.4s | called SymbolFinder.FindDeclarationsAsync(project, &#39;Project&#39;, SymbolFilter.Type)</p>
+        <pre>Microsoft.Build.Evaluation.Project - D:\msbuild\src\Build\Definition\Project.cs(50,18)
 Microsoft.Build.Logging.StructuredLogger.Project - D:\msbuild\src\Samples\XmlFileLogger\ObjectModel\Project.cs(18,27)</pre>
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 247 | <strong>Lines:</strong> 3 | <strong>Time:</strong> 33ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Project&#39;, SymbolFilter.Type)</p>
-        <pre>Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Evaluation.Project - D:\msbuild\src\Build\Definition\Project.cs(50,18)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 205 | <strong>Lines:</strong> 2 | <strong>Time:</strong> 26ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Project&#39;, SymbolFilter.Type)</p>
+        <pre>Microsoft.Build.Evaluation.Project - D:\msbuild\src\Build\Definition\Project.cs(50,18)
 Microsoft.Build.Logging.StructuredLogger.Project - D:\msbuild\src\Samples\XmlFileLogger\ObjectModel\Project.cs(18,27)</pre>
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-with-pattern (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 56973 | <strong>Lines:</strong> 363 | <strong>Time:</strong> 2.8s | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;, SymbolFilter.Type)</p>
-        <pre id="expand-1-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 56931 | <strong>Lines:</strong> 362 | <strong>Time:</strong> 2.3s | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;, SymbolFilter.Type)</p>
+        <pre id="expand-1-short">MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
 Microsoft.Build.BackEnd.Logging.ProjectFullKey - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(592,20)
 Microsoft.Build.BackEnd.Logging.ProjectLoggingContext - D:\msbuild\src\Build\BackEnd\Components\Logging\ProjectLoggingContext.cs(21,20)
 Microsoft.Build.BackEnd.Logging.ProjectStartedEventMinimumFields - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(276,20)
@@ -15277,10 +15274,10 @@ Microsoft.Build.BackEnd.Logging.ProjectTelemetry - D:\msbuild\src\Build\BackEnd\
 Microsoft.Build.BackEnd.MSBuild.SkipNonExistentProjectsBehavior - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(28,22)
 Microsoft.Build.CommandLine.ProjectSchemaValidationHandler - D:\msbuild\src\MSBuild\ProjectSchemaValidationHandler.cs(20,27)
 Microsoft.Build.Construction.ProjectChooseElement - D:\msbuild\src\Build\Construction\ProjectChooseElement.cs(19,18)
-Microsoft.Build.Construction.ProjectConfigurationInSolution - D:\msbuild\src\Build\Construction\Solution\ProjectConfigurationInSolution.cs(11,25)
-<span class="truncated-link" onclick="document.getElementById('expand-1-short').style.display='none'; document.getElementById('expand-1-full').style.display='block';">... truncated (353 more lines) — click to expand</span></pre>
-        <pre id="expand-1-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
+Microsoft.Build.Construction.ProjectConfigurationInSolution - D:\msbuild\src\Build\Construction\Solution\ProjectConfigurationInSolution.cs(11,25)
+Microsoft.Build.Construction.ProjectElement - D:\msbuild\src\Build\Construction\ProjectElement.cs(20,27)
+<span class="truncated-link" onclick="document.getElementById('expand-1-short').style.display='none'; document.getElementById('expand-1-full').style.display='block';">... truncated (352 more lines) — click to expand</span></pre>
+        <pre id="expand-1-full" class="full-result">MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
 Microsoft.Build.BackEnd.Logging.ProjectFullKey - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(592,20)
 Microsoft.Build.BackEnd.Logging.ProjectLoggingContext - D:\msbuild\src\Build\BackEnd\Components\Logging\ProjectLoggingContext.cs(21,20)
 Microsoft.Build.BackEnd.Logging.ProjectStartedEventMinimumFields - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(276,20)
@@ -15645,9 +15642,8 @@ System.Text.RegularExpressions.Generated.CrackProjectLineRegex_17 - D:\msbuild\a
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-with-pattern (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 56973 | <strong>Lines:</strong> 363 | <strong>Time:</strong> 20ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;, SymbolFilter.Type)</p>
-        <pre id="expand-2-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 56931 | <strong>Lines:</strong> 362 | <strong>Time:</strong> 17ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;, SymbolFilter.Type)</p>
+        <pre id="expand-2-short">MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
 Microsoft.Build.BackEnd.Logging.ProjectFullKey - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(592,20)
 Microsoft.Build.BackEnd.Logging.ProjectLoggingContext - D:\msbuild\src\Build\BackEnd\Components\Logging\ProjectLoggingContext.cs(21,20)
 Microsoft.Build.BackEnd.Logging.ProjectStartedEventMinimumFields - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(276,20)
@@ -15655,10 +15651,10 @@ Microsoft.Build.BackEnd.Logging.ProjectTelemetry - D:\msbuild\src\Build\BackEnd\
 Microsoft.Build.BackEnd.MSBuild.SkipNonExistentProjectsBehavior - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(28,22)
 Microsoft.Build.CommandLine.ProjectSchemaValidationHandler - D:\msbuild\src\MSBuild\ProjectSchemaValidationHandler.cs(20,27)
 Microsoft.Build.Construction.ProjectChooseElement - D:\msbuild\src\Build\Construction\ProjectChooseElement.cs(19,18)
-Microsoft.Build.Construction.ProjectConfigurationInSolution - D:\msbuild\src\Build\Construction\Solution\ProjectConfigurationInSolution.cs(11,25)
-<span class="truncated-link" onclick="document.getElementById('expand-2-short').style.display='none'; document.getElementById('expand-2-full').style.display='block';">... truncated (353 more lines) — click to expand</span></pre>
-        <pre id="expand-2-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
+Microsoft.Build.Construction.ProjectConfigurationInSolution - D:\msbuild\src\Build\Construction\Solution\ProjectConfigurationInSolution.cs(11,25)
+Microsoft.Build.Construction.ProjectElement - D:\msbuild\src\Build\Construction\ProjectElement.cs(20,27)
+<span class="truncated-link" onclick="document.getElementById('expand-2-short').style.display='none'; document.getElementById('expand-2-full').style.display='block';">... truncated (352 more lines) — click to expand</span></pre>
+        <pre id="expand-2-full" class="full-result">MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
 Microsoft.Build.BackEnd.Logging.ProjectFullKey - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(592,20)
 Microsoft.Build.BackEnd.Logging.ProjectLoggingContext - D:\msbuild\src\Build\BackEnd\Components\Logging\ProjectLoggingContext.cs(21,20)
 Microsoft.Build.BackEnd.Logging.ProjectStartedEventMinimumFields - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(276,20)
@@ -16023,9 +16019,8 @@ System.Text.RegularExpressions.Generated.CrackProjectLineRegex_17 - D:\msbuild\a
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-workspaceSymbol (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 56973 | <strong>Lines:</strong> 363 | <strong>Time:</strong> 2.3s | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;) without SymbolFilter</p>
-        <pre id="expand-3-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 56931 | <strong>Lines:</strong> 362 | <strong>Time:</strong> 2.4s | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;) without SymbolFilter</p>
+        <pre id="expand-3-short">MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
 Microsoft.Build.BackEnd.Logging.ProjectFullKey - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(592,20)
 Microsoft.Build.BackEnd.Logging.ProjectLoggingContext - D:\msbuild\src\Build\BackEnd\Components\Logging\ProjectLoggingContext.cs(21,20)
 Microsoft.Build.BackEnd.Logging.ProjectStartedEventMinimumFields - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(276,20)
@@ -16033,10 +16028,10 @@ Microsoft.Build.BackEnd.Logging.ProjectTelemetry - D:\msbuild\src\Build\BackEnd\
 Microsoft.Build.BackEnd.MSBuild.SkipNonExistentProjectsBehavior - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(28,22)
 Microsoft.Build.CommandLine.ProjectSchemaValidationHandler - D:\msbuild\src\MSBuild\ProjectSchemaValidationHandler.cs(20,27)
 Microsoft.Build.Construction.ProjectChooseElement - D:\msbuild\src\Build\Construction\ProjectChooseElement.cs(19,18)
-Microsoft.Build.Construction.ProjectConfigurationInSolution - D:\msbuild\src\Build\Construction\Solution\ProjectConfigurationInSolution.cs(11,25)
-<span class="truncated-link" onclick="document.getElementById('expand-3-short').style.display='none'; document.getElementById('expand-3-full').style.display='block';">... truncated (353 more lines) — click to expand</span></pre>
-        <pre id="expand-3-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
+Microsoft.Build.Construction.ProjectConfigurationInSolution - D:\msbuild\src\Build\Construction\Solution\ProjectConfigurationInSolution.cs(11,25)
+Microsoft.Build.Construction.ProjectElement - D:\msbuild\src\Build\Construction\ProjectElement.cs(20,27)
+<span class="truncated-link" onclick="document.getElementById('expand-3-short').style.display='none'; document.getElementById('expand-3-full').style.display='block';">... truncated (352 more lines) — click to expand</span></pre>
+        <pre id="expand-3-full" class="full-result">MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
 Microsoft.Build.BackEnd.Logging.ProjectFullKey - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(592,20)
 Microsoft.Build.BackEnd.Logging.ProjectLoggingContext - D:\msbuild\src\Build\BackEnd\Components\Logging\ProjectLoggingContext.cs(21,20)
 Microsoft.Build.BackEnd.Logging.ProjectStartedEventMinimumFields - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(276,20)
@@ -16401,9 +16396,8 @@ System.Text.RegularExpressions.Generated.CrackProjectLineRegex_17 - D:\msbuild\a
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-workspaceSymbol (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 56973 | <strong>Lines:</strong> 363 | <strong>Time:</strong> 164ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;) without SymbolFilter</p>
-        <pre id="expand-4-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 56931 | <strong>Lines:</strong> 362 | <strong>Time:</strong> 151ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Project&#39;) without SymbolFilter</p>
+        <pre id="expand-4-short">MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
 Microsoft.Build.BackEnd.Logging.ProjectFullKey - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(592,20)
 Microsoft.Build.BackEnd.Logging.ProjectLoggingContext - D:\msbuild\src\Build\BackEnd\Components\Logging\ProjectLoggingContext.cs(21,20)
 Microsoft.Build.BackEnd.Logging.ProjectStartedEventMinimumFields - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(276,20)
@@ -16411,10 +16405,10 @@ Microsoft.Build.BackEnd.Logging.ProjectTelemetry - D:\msbuild\src\Build\BackEnd\
 Microsoft.Build.BackEnd.MSBuild.SkipNonExistentProjectsBehavior - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(28,22)
 Microsoft.Build.CommandLine.ProjectSchemaValidationHandler - D:\msbuild\src\MSBuild\ProjectSchemaValidationHandler.cs(20,27)
 Microsoft.Build.Construction.ProjectChooseElement - D:\msbuild\src\Build\Construction\ProjectChooseElement.cs(19,18)
-Microsoft.Build.Construction.ProjectConfigurationInSolution - D:\msbuild\src\Build\Construction\Solution\ProjectConfigurationInSolution.cs(11,25)
-<span class="truncated-link" onclick="document.getElementById('expand-4-short').style.display='none'; document.getElementById('expand-4-full').style.display='block';">... truncated (353 more lines) — click to expand</span></pre>
-        <pre id="expand-4-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
+Microsoft.Build.Construction.ProjectConfigurationInSolution - D:\msbuild\src\Build\Construction\Solution\ProjectConfigurationInSolution.cs(11,25)
+Microsoft.Build.Construction.ProjectElement - D:\msbuild\src\Build\Construction\ProjectElement.cs(20,27)
+<span class="truncated-link" onclick="document.getElementById('expand-4-short').style.display='none'; document.getElementById('expand-4-full').style.display='block';">... truncated (352 more lines) — click to expand</span></pre>
+        <pre id="expand-4-full" class="full-result">MSBuild.Benchmarks.DefiningProjectModifiersBenchmark - D:\msbuild\src\MSBuild.Benchmarks\DefiningProjectModifiersBenchmark.cs(13,14)
 Microsoft.Build.BackEnd.Logging.ProjectFullKey - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(592,20)
 Microsoft.Build.BackEnd.Logging.ProjectLoggingContext - D:\msbuild\src\Build\BackEnd\Components\Logging\ProjectLoggingContext.cs(21,20)
 Microsoft.Build.BackEnd.Logging.ProjectStartedEventMinimumFields - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(276,20)
@@ -16785,12 +16779,12 @@ System.Text.RegularExpressions.Generated.CrackProjectLineRegex_17 - D:\msbuild\a
       </dl>
       <section class="algorithm">
         <h3>find-type-definition-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 295 | <strong>Lines:</strong> 1 | <strong>Time:</strong> 3.2s | string search for &#39;(class|record|struct|interface|enum) ProjectInstance&#39;</p>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 295 | <strong>Lines:</strong> 1 | <strong>Time:</strong> 2.7s | string search for &#39;(class|record|struct|interface|enum) ProjectInstance&#39;</p>
         <pre>D:\msbuild\src\Build\Instance\ProjectInstance.cs:79: public class ProjectInstance : IPropertyProvider&lt;ProjectPropertyInstance&gt;, IItemProvider&lt;ProjectItemInstance&gt;, IEvaluatorData&lt;ProjectPropertyInstance, ProjectItemInstance, ProjectMetadataInstance, ProjectItemDefinitionInstance&gt;, ITranslatable</pre>
       </section>
       <section class="algorithm">
         <h3>find-type-definition-grep-nameonly</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 168223 | <strong>Lines:</strong> 1090 | <strong>Time:</strong> 2.9s | string search for &#39;ProjectInstance&#39;</p>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 168223 | <strong>Lines:</strong> 1090 | <strong>Time:</strong> 2.5s | string search for &#39;ProjectInstance&#39;</p>
         <pre id="expand-5-short">D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:191: private readonly Dictionary&lt;ProjectInstance, string&gt; _unnamedProjectInstanceToNames;
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:306: _unnamedProjectInstanceToNames = new Dictionary&lt;ProjectInstance, string&gt;();
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:921: /// This methods requests the BuildManager to find a matching ProjectInstance in its cache of previously-built projects.
@@ -17895,21 +17889,18 @@ D:\msbuild\src\Utilities.UnitTests\MuxLogger_Tests.cs:305: ProjectInstance proje
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 141 | <strong>Lines:</strong> 2 | <strong>Time:</strong> 27ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
-        <pre>Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Execution.ProjectInstance - D:\msbuild\src\Build\Instance\ProjectInstance.cs(79,18)</pre>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 99 | <strong>Lines:</strong> 1 | <strong>Time:</strong> 95ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
+        <pre>Microsoft.Build.Execution.ProjectInstance - D:\msbuild\src\Build\Instance\ProjectInstance.cs(79,18)</pre>
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 141 | <strong>Lines:</strong> 2 | <strong>Time:</strong> 24ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
-        <pre>Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Execution.ProjectInstance - D:\msbuild\src\Build\Instance\ProjectInstance.cs(79,18)</pre>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 99 | <strong>Lines:</strong> 1 | <strong>Time:</strong> 20ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
+        <pre>Microsoft.Build.Execution.ProjectInstance - D:\msbuild\src\Build\Instance\ProjectInstance.cs(79,18)</pre>
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-with-pattern (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 6940 | <strong>Lines:</strong> 48 | <strong>Time:</strong> 16ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
-        <pre id="expand-6-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 6898 | <strong>Lines:</strong> 47 | <strong>Time:</strong> 15ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
+        <pre id="expand-6-short">Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectPropertyGroupTaskPropertyInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectPropertyGroupTaskPropertyInstance_Internal_Tests.cs(16,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTargetInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTargetInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTaskInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTaskInstance_Internal_Tests.cs(18,18)
@@ -17917,10 +17908,10 @@ Microsoft.Build.Engine.UnitTests.InstanceFromRemote.ProjectInstance_FromImmutabl
 Microsoft.Build.Engine.UnitTests.TestComparers.ProjectInstanceModelTestComparers - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(20,25)
 Microsoft.Build.Engine.UnitTests.TestComparers.ProjectInstanceModelTestComparers.ProjectInstanceComparer - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(22,22)
 Microsoft.Build.Engine.UnitTests.TestComparers.TargetTaskComparer.ProjectTaskInstanceChildComparer - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(356,22)
-Microsoft.Build.Engine.UnitTests.TestData.ProjectInstanceTestObjects - D:\msbuild\src\Build.UnitTests\TestData\ProjectInstanceTestObjects.cs(14,27)
-<span class="truncated-link" onclick="document.getElementById('expand-6-short').style.display='none'; document.getElementById('expand-6-full').style.display='block';">... truncated (38 more lines) — click to expand</span></pre>
-        <pre id="expand-6-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
+Microsoft.Build.Engine.UnitTests.TestData.ProjectInstanceTestObjects - D:\msbuild\src\Build.UnitTests\TestData\ProjectInstanceTestObjects.cs(14,27)
+Microsoft.Build.Execution.ProjectInstance - D:\msbuild\src\Build\Instance\ProjectInstance.cs(79,18)
+<span class="truncated-link" onclick="document.getElementById('expand-6-short').style.display='none'; document.getElementById('expand-6-full').style.display='block';">... truncated (37 more lines) — click to expand</span></pre>
+        <pre id="expand-6-full" class="full-result">Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectPropertyGroupTaskPropertyInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectPropertyGroupTaskPropertyInstance_Internal_Tests.cs(16,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTargetInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTargetInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTaskInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTaskInstance_Internal_Tests.cs(18,18)
@@ -17970,9 +17961,8 @@ Microsoft.Build.UnitTests.ObjectModelHelpers.ProjectItemInstanceTestItemAdapter 
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-with-pattern (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 6940 | <strong>Lines:</strong> 48 | <strong>Time:</strong> 17ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
-        <pre id="expand-7-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 6898 | <strong>Lines:</strong> 47 | <strong>Time:</strong> 16ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;, SymbolFilter.Type)</p>
+        <pre id="expand-7-short">Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectPropertyGroupTaskPropertyInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectPropertyGroupTaskPropertyInstance_Internal_Tests.cs(16,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTargetInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTargetInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTaskInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTaskInstance_Internal_Tests.cs(18,18)
@@ -17980,10 +17970,10 @@ Microsoft.Build.Engine.UnitTests.InstanceFromRemote.ProjectInstance_FromImmutabl
 Microsoft.Build.Engine.UnitTests.TestComparers.ProjectInstanceModelTestComparers - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(20,25)
 Microsoft.Build.Engine.UnitTests.TestComparers.ProjectInstanceModelTestComparers.ProjectInstanceComparer - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(22,22)
 Microsoft.Build.Engine.UnitTests.TestComparers.TargetTaskComparer.ProjectTaskInstanceChildComparer - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(356,22)
-Microsoft.Build.Engine.UnitTests.TestData.ProjectInstanceTestObjects - D:\msbuild\src\Build.UnitTests\TestData\ProjectInstanceTestObjects.cs(14,27)
-<span class="truncated-link" onclick="document.getElementById('expand-7-short').style.display='none'; document.getElementById('expand-7-full').style.display='block';">... truncated (38 more lines) — click to expand</span></pre>
-        <pre id="expand-7-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
+Microsoft.Build.Engine.UnitTests.TestData.ProjectInstanceTestObjects - D:\msbuild\src\Build.UnitTests\TestData\ProjectInstanceTestObjects.cs(14,27)
+Microsoft.Build.Execution.ProjectInstance - D:\msbuild\src\Build\Instance\ProjectInstance.cs(79,18)
+<span class="truncated-link" onclick="document.getElementById('expand-7-short').style.display='none'; document.getElementById('expand-7-full').style.display='block';">... truncated (37 more lines) — click to expand</span></pre>
+        <pre id="expand-7-full" class="full-result">Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectPropertyGroupTaskPropertyInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectPropertyGroupTaskPropertyInstance_Internal_Tests.cs(16,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTargetInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTargetInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTaskInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTaskInstance_Internal_Tests.cs(18,18)
@@ -18033,9 +18023,8 @@ Microsoft.Build.UnitTests.ObjectModelHelpers.ProjectItemInstanceTestItemAdapter 
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-workspaceSymbol (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 6940 | <strong>Lines:</strong> 48 | <strong>Time:</strong> 222ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;) without SymbolFilter</p>
-        <pre id="expand-8-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 6898 | <strong>Lines:</strong> 47 | <strong>Time:</strong> 146ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;) without SymbolFilter</p>
+        <pre id="expand-8-short">Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectPropertyGroupTaskPropertyInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectPropertyGroupTaskPropertyInstance_Internal_Tests.cs(16,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTargetInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTargetInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTaskInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTaskInstance_Internal_Tests.cs(18,18)
@@ -18043,10 +18032,10 @@ Microsoft.Build.Engine.UnitTests.InstanceFromRemote.ProjectInstance_FromImmutabl
 Microsoft.Build.Engine.UnitTests.TestComparers.ProjectInstanceModelTestComparers - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(20,25)
 Microsoft.Build.Engine.UnitTests.TestComparers.ProjectInstanceModelTestComparers.ProjectInstanceComparer - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(22,22)
 Microsoft.Build.Engine.UnitTests.TestComparers.TargetTaskComparer.ProjectTaskInstanceChildComparer - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(356,22)
-Microsoft.Build.Engine.UnitTests.TestData.ProjectInstanceTestObjects - D:\msbuild\src\Build.UnitTests\TestData\ProjectInstanceTestObjects.cs(14,27)
-<span class="truncated-link" onclick="document.getElementById('expand-8-short').style.display='none'; document.getElementById('expand-8-full').style.display='block';">... truncated (38 more lines) — click to expand</span></pre>
-        <pre id="expand-8-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
+Microsoft.Build.Engine.UnitTests.TestData.ProjectInstanceTestObjects - D:\msbuild\src\Build.UnitTests\TestData\ProjectInstanceTestObjects.cs(14,27)
+Microsoft.Build.Execution.ProjectInstance - D:\msbuild\src\Build\Instance\ProjectInstance.cs(79,18)
+<span class="truncated-link" onclick="document.getElementById('expand-8-short').style.display='none'; document.getElementById('expand-8-full').style.display='block';">... truncated (37 more lines) — click to expand</span></pre>
+        <pre id="expand-8-full" class="full-result">Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectPropertyGroupTaskPropertyInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectPropertyGroupTaskPropertyInstance_Internal_Tests.cs(16,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTargetInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTargetInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTaskInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTaskInstance_Internal_Tests.cs(18,18)
@@ -18096,9 +18085,8 @@ Microsoft.Build.UnitTests.ObjectModelHelpers.ProjectItemInstanceTestItemAdapter 
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-workspaceSymbol (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 6940 | <strong>Lines:</strong> 48 | <strong>Time:</strong> 115ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;) without SymbolFilter</p>
-        <pre id="expand-9-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 6898 | <strong>Lines:</strong> 47 | <strong>Time:</strong> 120ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ProjectInstance&#39;) without SymbolFilter</p>
+        <pre id="expand-9-short">Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectPropertyGroupTaskPropertyInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectPropertyGroupTaskPropertyInstance_Internal_Tests.cs(16,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTargetInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTargetInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTaskInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTaskInstance_Internal_Tests.cs(18,18)
@@ -18106,10 +18094,10 @@ Microsoft.Build.Engine.UnitTests.InstanceFromRemote.ProjectInstance_FromImmutabl
 Microsoft.Build.Engine.UnitTests.TestComparers.ProjectInstanceModelTestComparers - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(20,25)
 Microsoft.Build.Engine.UnitTests.TestComparers.ProjectInstanceModelTestComparers.ProjectInstanceComparer - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(22,22)
 Microsoft.Build.Engine.UnitTests.TestComparers.TargetTaskComparer.ProjectTaskInstanceChildComparer - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(356,22)
-Microsoft.Build.Engine.UnitTests.TestData.ProjectInstanceTestObjects - D:\msbuild\src\Build.UnitTests\TestData\ProjectInstanceTestObjects.cs(14,27)
-<span class="truncated-link" onclick="document.getElementById('expand-9-short').style.display='none'; document.getElementById('expand-9-full').style.display='block';">... truncated (38 more lines) — click to expand</span></pre>
-        <pre id="expand-9-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
+Microsoft.Build.Engine.UnitTests.TestData.ProjectInstanceTestObjects - D:\msbuild\src\Build.UnitTests\TestData\ProjectInstanceTestObjects.cs(14,27)
+Microsoft.Build.Execution.ProjectInstance - D:\msbuild\src\Build\Instance\ProjectInstance.cs(79,18)
+<span class="truncated-link" onclick="document.getElementById('expand-9-short').style.display='none'; document.getElementById('expand-9-full').style.display='block';">... truncated (37 more lines) — click to expand</span></pre>
+        <pre id="expand-9-full" class="full-result">Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectPropertyGroupTaskPropertyInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectPropertyGroupTaskPropertyInstance_Internal_Tests.cs(16,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTargetInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTargetInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectTaskInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectTaskInstance_Internal_Tests.cs(18,18)
@@ -18165,7 +18153,7 @@ Microsoft.Build.UnitTests.ObjectModelHelpers.ProjectItemInstanceTestItemAdapter 
       </dl>
       <section class="algorithm">
         <h3>find-type-definition-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 370 | <strong>Lines:</strong> 4 | <strong>Time:</strong> 3.3s | string search for &#39;(class|record|struct|interface|enum) TaskItem&#39;</p>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 370 | <strong>Lines:</strong> 4 | <strong>Time:</strong> 2.9s | string search for &#39;(class|record|struct|interface|enum) TaskItem&#39;</p>
         <pre>D:\msbuild\src\Build\Instance\ProjectItemInstance.cs:781: internal sealed class TaskItem :
 D:\msbuild\src\Tasks.UnitTests\CommandLineGenerator_Tests.cs:158: private sealed class TaskItem : ITaskItem
 D:\msbuild\src\ThreadSafeTaskAnalyzer.Tests\TestHelpers.cs:62: public class TaskItem : ITaskItem
@@ -18173,7 +18161,7 @@ D:\msbuild\src\Utilities\TaskItem.cs:36: public sealed class TaskItem :</pre>
       </section>
       <section class="algorithm">
         <h3>find-type-definition-grep-nameonly</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 396070 | <strong>Lines:</strong> 2931 | <strong>Time:</strong> 3.3s | string search for &#39;TaskItem&#39;</p>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 396070 | <strong>Lines:</strong> 2931 | <strong>Time:</strong> 2.8s | string search for &#39;TaskItem&#39;</p>
         <pre id="expand-10-short">D:\msbuild\src\Build\BackEnd\Components\Communications\LogMessagePacket.cs:13: using TaskItem = Microsoft.Build.Execution.ProjectItemInstance.TaskItem;
 D:\msbuild\src\Build\BackEnd\Components\Communications\LogMessagePacket.cs:240: if (kvp.item is ITaskItem taskItem)
 D:\msbuild\src\Build\BackEnd\Components\Communications\LogMessagePacket.cs:242: writer.Write(taskItem.ItemSpec);
@@ -21119,25 +21107,22 @@ D:\msbuild\src\Utilities.UnitTests\TrackedDependencies\TrackedDependenciesTests.
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 375 | <strong>Lines:</strong> 4 | <strong>Time:</strong> 27ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
-        <pre>Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Execution.ProjectItemInstance.TaskItem - D:\msbuild\src\Build\Instance\ProjectItemInstance.cs(781,31)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 333 | <strong>Lines:</strong> 3 | <strong>Time:</strong> 28ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
+        <pre>Microsoft.Build.Execution.ProjectItemInstance.TaskItem - D:\msbuild\src\Build\Instance\ProjectItemInstance.cs(781,31)
 Microsoft.Build.UnitTests.CommandLineGenerator_Tests.TaskItem - D:\msbuild\src\Tasks.UnitTests\CommandLineGenerator_Tests.cs(158,30)
 Microsoft.Build.Utilities.TaskItem - D:\msbuild\src\Utilities\TaskItem.cs(36,25)</pre>
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 375 | <strong>Lines:</strong> 4 | <strong>Time:</strong> 26ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
-        <pre>Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Execution.ProjectItemInstance.TaskItem - D:\msbuild\src\Build\Instance\ProjectItemInstance.cs(781,31)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 333 | <strong>Lines:</strong> 3 | <strong>Time:</strong> 21ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
+        <pre>Microsoft.Build.Execution.ProjectItemInstance.TaskItem - D:\msbuild\src\Build\Instance\ProjectItemInstance.cs(781,31)
 Microsoft.Build.UnitTests.CommandLineGenerator_Tests.TaskItem - D:\msbuild\src\Tasks.UnitTests\CommandLineGenerator_Tests.cs(158,30)
 Microsoft.Build.Utilities.TaskItem - D:\msbuild\src\Utilities\TaskItem.cs(36,25)</pre>
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-with-pattern (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 4293 | <strong>Lines:</strong> 33 | <strong>Time:</strong> 21ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
-        <pre id="expand-11-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 4251 | <strong>Lines:</strong> 32 | <strong>Time:</strong> 19ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
+        <pre id="expand-11-short">Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
 Microsoft.Build.BackEnd.TaskParameter.TaskParameterTaskItem - D:\msbuild\src\Shared\TaskParameter.cs(538,23)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsDictionaryTaskItem - D:\msbuild\src\Build.UnitTests\BackEnd\TaskThatReturnsDictionaryTaskItem.cs(15,21)
@@ -21145,10 +21130,10 @@ Microsoft.Build.Engine.UnitTests.TaskThatReturnsDictionaryTaskItem.MinimalDictio
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsMinimalItem - D:\msbuild\src\Build.UnitTests\TaskThatReturnsMinimalItem.cs(14,21)
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsMinimalItem.MinimalTaskItem - D:\msbuild\src\Build.UnitTests\TaskThatReturnsMinimalItem.cs(28,27)
 Microsoft.Build.Engine.UnitTests.TestComparers.TargetTaskComparer.ProjectTaskOutputItemComparer - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(378,22)
-Microsoft.Build.Engine.UnitTests.TestComparers.TaskItemComparer - D:\msbuild\src\Build.UnitTests\TestComparers\TaskItemComparer.cs(15,18)
-<span class="truncated-link" onclick="document.getElementById('expand-11-short').style.display='none'; document.getElementById('expand-11-full').style.display='block';">... truncated (23 more lines) — click to expand</span></pre>
-        <pre id="expand-11-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
+Microsoft.Build.Engine.UnitTests.TestComparers.TaskItemComparer - D:\msbuild\src\Build.UnitTests\TestComparers\TaskItemComparer.cs(15,18)
+Microsoft.Build.Execution.ProjectItemGroupTaskItemInstance - D:\msbuild\src\Build\Instance\ProjectItemGroupTaskItemInstance.cs(20,18)
+<span class="truncated-link" onclick="document.getElementById('expand-11-short').style.display='none'; document.getElementById('expand-11-full').style.display='block';">... truncated (22 more lines) — click to expand</span></pre>
+        <pre id="expand-11-full" class="full-result">Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
 Microsoft.Build.BackEnd.TaskParameter.TaskParameterTaskItem - D:\msbuild\src\Shared\TaskParameter.cs(538,23)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsDictionaryTaskItem - D:\msbuild\src\Build.UnitTests\BackEnd\TaskThatReturnsDictionaryTaskItem.cs(15,21)
@@ -21183,9 +21168,8 @@ Microsoft.Build.Utilities.TaskItem - D:\msbuild\src\Utilities\TaskItem.cs(36,25)
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-with-pattern (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 4293 | <strong>Lines:</strong> 33 | <strong>Time:</strong> 18ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
-        <pre id="expand-12-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 4251 | <strong>Lines:</strong> 32 | <strong>Time:</strong> 17ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;, SymbolFilter.Type)</p>
+        <pre id="expand-12-short">Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
 Microsoft.Build.BackEnd.TaskParameter.TaskParameterTaskItem - D:\msbuild\src\Shared\TaskParameter.cs(538,23)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsDictionaryTaskItem - D:\msbuild\src\Build.UnitTests\BackEnd\TaskThatReturnsDictionaryTaskItem.cs(15,21)
@@ -21193,10 +21177,10 @@ Microsoft.Build.Engine.UnitTests.TaskThatReturnsDictionaryTaskItem.MinimalDictio
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsMinimalItem - D:\msbuild\src\Build.UnitTests\TaskThatReturnsMinimalItem.cs(14,21)
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsMinimalItem.MinimalTaskItem - D:\msbuild\src\Build.UnitTests\TaskThatReturnsMinimalItem.cs(28,27)
 Microsoft.Build.Engine.UnitTests.TestComparers.TargetTaskComparer.ProjectTaskOutputItemComparer - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(378,22)
-Microsoft.Build.Engine.UnitTests.TestComparers.TaskItemComparer - D:\msbuild\src\Build.UnitTests\TestComparers\TaskItemComparer.cs(15,18)
-<span class="truncated-link" onclick="document.getElementById('expand-12-short').style.display='none'; document.getElementById('expand-12-full').style.display='block';">... truncated (23 more lines) — click to expand</span></pre>
-        <pre id="expand-12-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
+Microsoft.Build.Engine.UnitTests.TestComparers.TaskItemComparer - D:\msbuild\src\Build.UnitTests\TestComparers\TaskItemComparer.cs(15,18)
+Microsoft.Build.Execution.ProjectItemGroupTaskItemInstance - D:\msbuild\src\Build\Instance\ProjectItemGroupTaskItemInstance.cs(20,18)
+<span class="truncated-link" onclick="document.getElementById('expand-12-short').style.display='none'; document.getElementById('expand-12-full').style.display='block';">... truncated (22 more lines) — click to expand</span></pre>
+        <pre id="expand-12-full" class="full-result">Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
 Microsoft.Build.BackEnd.TaskParameter.TaskParameterTaskItem - D:\msbuild\src\Shared\TaskParameter.cs(538,23)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsDictionaryTaskItem - D:\msbuild\src\Build.UnitTests\BackEnd\TaskThatReturnsDictionaryTaskItem.cs(15,21)
@@ -21231,9 +21215,8 @@ Microsoft.Build.Utilities.TaskItem - D:\msbuild\src\Utilities\TaskItem.cs(36,25)
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-workspaceSymbol (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 4293 | <strong>Lines:</strong> 33 | <strong>Time:</strong> 184ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;) without SymbolFilter</p>
-        <pre id="expand-13-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 4251 | <strong>Lines:</strong> 32 | <strong>Time:</strong> 198ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;) without SymbolFilter</p>
+        <pre id="expand-13-short">Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
 Microsoft.Build.BackEnd.TaskParameter.TaskParameterTaskItem - D:\msbuild\src\Shared\TaskParameter.cs(538,23)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsDictionaryTaskItem - D:\msbuild\src\Build.UnitTests\BackEnd\TaskThatReturnsDictionaryTaskItem.cs(15,21)
@@ -21241,10 +21224,10 @@ Microsoft.Build.Engine.UnitTests.TaskThatReturnsDictionaryTaskItem.MinimalDictio
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsMinimalItem - D:\msbuild\src\Build.UnitTests\TaskThatReturnsMinimalItem.cs(14,21)
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsMinimalItem.MinimalTaskItem - D:\msbuild\src\Build.UnitTests\TaskThatReturnsMinimalItem.cs(28,27)
 Microsoft.Build.Engine.UnitTests.TestComparers.TargetTaskComparer.ProjectTaskOutputItemComparer - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(378,22)
-Microsoft.Build.Engine.UnitTests.TestComparers.TaskItemComparer - D:\msbuild\src\Build.UnitTests\TestComparers\TaskItemComparer.cs(15,18)
-<span class="truncated-link" onclick="document.getElementById('expand-13-short').style.display='none'; document.getElementById('expand-13-full').style.display='block';">... truncated (23 more lines) — click to expand</span></pre>
-        <pre id="expand-13-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
+Microsoft.Build.Engine.UnitTests.TestComparers.TaskItemComparer - D:\msbuild\src\Build.UnitTests\TestComparers\TaskItemComparer.cs(15,18)
+Microsoft.Build.Execution.ProjectItemGroupTaskItemInstance - D:\msbuild\src\Build\Instance\ProjectItemGroupTaskItemInstance.cs(20,18)
+<span class="truncated-link" onclick="document.getElementById('expand-13-short').style.display='none'; document.getElementById('expand-13-full').style.display='block';">... truncated (22 more lines) — click to expand</span></pre>
+        <pre id="expand-13-full" class="full-result">Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
 Microsoft.Build.BackEnd.TaskParameter.TaskParameterTaskItem - D:\msbuild\src\Shared\TaskParameter.cs(538,23)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsDictionaryTaskItem - D:\msbuild\src\Build.UnitTests\BackEnd\TaskThatReturnsDictionaryTaskItem.cs(15,21)
@@ -21279,9 +21262,8 @@ Microsoft.Build.Utilities.TaskItem - D:\msbuild\src\Utilities\TaskItem.cs(36,25)
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-workspaceSymbol (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 4293 | <strong>Lines:</strong> 33 | <strong>Time:</strong> 181ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;) without SymbolFilter</p>
-        <pre id="expand-14-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 4251 | <strong>Lines:</strong> 32 | <strong>Time:</strong> 172ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;TaskItem&#39;) without SymbolFilter</p>
+        <pre id="expand-14-short">Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
 Microsoft.Build.BackEnd.TaskParameter.TaskParameterTaskItem - D:\msbuild\src\Shared\TaskParameter.cs(538,23)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsDictionaryTaskItem - D:\msbuild\src\Build.UnitTests\BackEnd\TaskThatReturnsDictionaryTaskItem.cs(15,21)
@@ -21289,10 +21271,10 @@ Microsoft.Build.Engine.UnitTests.TaskThatReturnsDictionaryTaskItem.MinimalDictio
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsMinimalItem - D:\msbuild\src\Build.UnitTests\TaskThatReturnsMinimalItem.cs(14,21)
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsMinimalItem.MinimalTaskItem - D:\msbuild\src\Build.UnitTests\TaskThatReturnsMinimalItem.cs(28,27)
 Microsoft.Build.Engine.UnitTests.TestComparers.TargetTaskComparer.ProjectTaskOutputItemComparer - D:\msbuild\src\Build.UnitTests\TestComparers\ProjectInstanceModelTestComparers.cs(378,22)
-Microsoft.Build.Engine.UnitTests.TestComparers.TaskItemComparer - D:\msbuild\src\Build.UnitTests\TestComparers\TaskItemComparer.cs(15,18)
-<span class="truncated-link" onclick="document.getElementById('expand-14-short').style.display='none'; document.getElementById('expand-14-full').style.display='block';">... truncated (23 more lines) — click to expand</span></pre>
-        <pre id="expand-14-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
+Microsoft.Build.Engine.UnitTests.TestComparers.TaskItemComparer - D:\msbuild\src\Build.UnitTests\TestComparers\TaskItemComparer.cs(15,18)
+Microsoft.Build.Execution.ProjectItemGroupTaskItemInstance - D:\msbuild\src\Build\Instance\ProjectItemGroupTaskItemInstance.cs(20,18)
+<span class="truncated-link" onclick="document.getElementById('expand-14-short').style.display='none'; document.getElementById('expand-14-full').style.display='block';">... truncated (22 more lines) — click to expand</span></pre>
+        <pre id="expand-14-full" class="full-result">Microsoft.Build.BackEnd.Logging.BaseConsoleLogger.ITaskItemItemSpecComparer - D:\msbuild\src\Build\Logging\BaseConsoleLogger.cs(107,24)
 Microsoft.Build.BackEnd.TaskParameter.TaskParameterTaskItem - D:\msbuild\src\Shared\TaskParameter.cs(538,23)
 Microsoft.Build.Engine.UnitTests.Instance.ProjectItemGroupTaskItemInstance_Internal_Tests - D:\msbuild\src\Build.UnitTests\Instance\ProjectItemGroupTaskItemInstance_Internal_Tests.cs(17,18)
 Microsoft.Build.Engine.UnitTests.TaskThatReturnsDictionaryTaskItem - D:\msbuild\src\Build.UnitTests\BackEnd\TaskThatReturnsDictionaryTaskItem.cs(15,21)
@@ -21333,7 +21315,7 @@ Microsoft.Build.Utilities.TaskItem - D:\msbuild\src\Utilities\TaskItem.cs(36,25)
       </dl>
       <section class="algorithm">
         <h3>find-derived-types-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 33582 | <strong>Lines:</strong> 242 | <strong>Time:</strong> 3.1s | string search for &#39;(class|record|struct) \w+ ... Task&#39;</p>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 33582 | <strong>Lines:</strong> 242 | <strong>Time:</strong> 2.7s | string search for &#39;(class|record|struct) \w+ ... Task&#39;</p>
         <pre id="expand-15-short">D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\CallTarget.cs:16: /// This class implements the &quot;CallTarget&quot; task, which invokes other targets within the same
 D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs:20: /// This class implements the &quot;MSBuild&quot; task, which hands off child project files to the MSBuild engine to be built.
 D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\PropertyGroupIntrinsicTask.cs:19: /// This class represents a PropertyGroup intrinsic task.
@@ -21590,21 +21572,19 @@ D:\msbuild\src\Utilities.UnitTests\TrackedDependencies\TrackedDependenciesTests.
       </section>
       <section class="algorithm">
         <h3>roslyn-find-derived-types (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 16031 | <strong>Lines:</strong> 153 | <strong>Time:</strong> 224ms | called SymbolFinder.FindDerivedClassesAsync(Microsoft.Build.Utilities.Task)</p>
-        <pre id="expand-16-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Target: Microsoft.Build.Utilities.Task (Class)
-AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 15941 | <strong>Lines:</strong> 151 | <strong>Time:</strong> 179ms | called SymbolFinder.FindDerivedClassesAsync(Microsoft.Build.Utilities.Task)</p>
+        <pre id="expand-16-short">AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
 AssemblyLoadContextTest.RetrieveObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(85,18)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(17,18)
 ItemCreationTask.ItemCreationTask - D:\msbuild\src\Build.UnitTests\BackEnd\ItemCreationTask.cs(11,18)
 Microsoft.Build.Engine.UnitTests.BackEnd.AttributeTestTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskRouter_IntegrationTests.cs(474,18)
 Microsoft.Build.Engine.UnitTests.BackEnd.DerivedMakeDirTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskHost_MultiThreadableTask_Tests.cs(112,18)
 Microsoft.Build.Engine.UnitTests.BackEnd.InterfaceTestTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskRouter_IntegrationTests.cs(450,18)
-Microsoft.Build.Engine.UnitTests.BackEnd.NonEnlightenedTestTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskRouter_IntegrationTests.cs(437,18)
-<span class="truncated-link" onclick="document.getElementById('expand-16-short').style.display='none'; document.getElementById('expand-16-full').style.display='block';">... truncated (143 more lines) — click to expand</span></pre>
-        <pre id="expand-16-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Target: Microsoft.Build.Utilities.Task (Class)
-AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
+Microsoft.Build.Engine.UnitTests.BackEnd.NonEnlightenedTestTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskRouter_IntegrationTests.cs(437,18)
+Microsoft.Build.Engine.UnitTests.EnvironmentIsolationTestTask - D:\msbuild\src\MSBuild.UnitTests\MSBuildMultithreaded_Tests.cs(23,18)
+Microsoft.Build.Engine.UnitTests.ProcessIdTask - D:\msbuild\src\MSBuild.UnitTests\MSBuildServer_Tests.cs(42,18)
+<span class="truncated-link" onclick="document.getElementById('expand-16-short').style.display='none'; document.getElementById('expand-16-full').style.display='block';">... truncated (141 more lines) — click to expand</span></pre>
+        <pre id="expand-16-full" class="full-result">AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
 AssemblyLoadContextTest.RetrieveObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(85,18)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(17,18)
 ItemCreationTask.ItemCreationTask - D:\msbuild\src\Build.UnitTests\BackEnd\ItemCreationTask.cs(11,18)
@@ -21758,21 +21738,19 @@ TaskWithDependency.LogStringFromDependency - D:\msbuild\src\Samples\TaskWithDepe
       </section>
       <section class="algorithm">
         <h3>roslyn-find-derived-types (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 16031 | <strong>Lines:</strong> 153 | <strong>Time:</strong> 9ms | called SymbolFinder.FindDerivedClassesAsync(Microsoft.Build.Utilities.Task)</p>
-        <pre id="expand-17-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Target: Microsoft.Build.Utilities.Task (Class)
-AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 15941 | <strong>Lines:</strong> 151 | <strong>Time:</strong> 6ms | called SymbolFinder.FindDerivedClassesAsync(Microsoft.Build.Utilities.Task)</p>
+        <pre id="expand-17-short">AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
 AssemblyLoadContextTest.RetrieveObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(85,18)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(17,18)
 ItemCreationTask.ItemCreationTask - D:\msbuild\src\Build.UnitTests\BackEnd\ItemCreationTask.cs(11,18)
 Microsoft.Build.Engine.UnitTests.BackEnd.AttributeTestTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskRouter_IntegrationTests.cs(474,18)
 Microsoft.Build.Engine.UnitTests.BackEnd.DerivedMakeDirTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskHost_MultiThreadableTask_Tests.cs(112,18)
 Microsoft.Build.Engine.UnitTests.BackEnd.InterfaceTestTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskRouter_IntegrationTests.cs(450,18)
-Microsoft.Build.Engine.UnitTests.BackEnd.NonEnlightenedTestTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskRouter_IntegrationTests.cs(437,18)
-<span class="truncated-link" onclick="document.getElementById('expand-17-short').style.display='none'; document.getElementById('expand-17-full').style.display='block';">... truncated (143 more lines) — click to expand</span></pre>
-        <pre id="expand-17-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Target: Microsoft.Build.Utilities.Task (Class)
-AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
+Microsoft.Build.Engine.UnitTests.BackEnd.NonEnlightenedTestTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskRouter_IntegrationTests.cs(437,18)
+Microsoft.Build.Engine.UnitTests.EnvironmentIsolationTestTask - D:\msbuild\src\MSBuild.UnitTests\MSBuildMultithreaded_Tests.cs(23,18)
+Microsoft.Build.Engine.UnitTests.ProcessIdTask - D:\msbuild\src\MSBuild.UnitTests\MSBuildServer_Tests.cs(42,18)
+<span class="truncated-link" onclick="document.getElementById('expand-17-short').style.display='none'; document.getElementById('expand-17-full').style.display='block';">... truncated (141 more lines) — click to expand</span></pre>
+        <pre id="expand-17-full" class="full-result">AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
 AssemblyLoadContextTest.RetrieveObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(85,18)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(17,18)
 ItemCreationTask.ItemCreationTask - D:\msbuild\src\Build.UnitTests\BackEnd\ItemCreationTask.cs(11,18)
@@ -21932,7 +21910,7 @@ TaskWithDependency.LogStringFromDependency - D:\msbuild\src\Samples\TaskWithDepe
       </dl>
       <section class="algorithm">
         <h3>find-interface-implementation-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 1436 | <strong>Lines:</strong> 13 | <strong>Time:</strong> 2.7s | string search for &#39;: ...ITask&#39;</p>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 1436 | <strong>Lines:</strong> 13 | <strong>Time:</strong> 2.4s | string search for &#39;: ...ITask&#39;</p>
         <pre id="expand-18-short">D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\CallTarget.cs:23: internal class CallTarget : ITask
 D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs:23: internal class MSBuild : ITask, IMultiThreadableTask
 D:\msbuild\src\Build.UnitTests\MockTask.cs:380: internal sealed class MockTask : MockTaskBase, ITask
@@ -21960,21 +21938,19 @@ D:\msbuild\src\Utilities\Task.cs:15: public abstract class Task : ITask</pre>
       </section>
       <section class="algorithm">
         <h3>roslyn-find-implementations (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 17646 | <strong>Lines:</strong> 168 | <strong>Time:</strong> 46ms | called SymbolFinder.FindImplementationsAsync(Microsoft.Build.Framework.ITask)</p>
-        <pre id="expand-19-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Target: Microsoft.Build.Framework.ITask (Interface)
-AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 17551 | <strong>Lines:</strong> 166 | <strong>Time:</strong> 41ms | called SymbolFinder.FindImplementationsAsync(Microsoft.Build.Framework.ITask)</p>
+        <pre id="expand-19-short">AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
 AssemblyLoadContextTest.RetrieveObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(85,18)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(17,18)
 ItemCreationTask.ItemCreationTask - D:\msbuild\src\Build.UnitTests\BackEnd\ItemCreationTask.cs(11,18)
 Microsoft.Build.BackEnd.CallTarget - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\CallTarget.cs(23,20)
 Microsoft.Build.BackEnd.MSBuild - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(23,20)
 Microsoft.Build.BackEnd.TaskHostTask - D:\msbuild\src\Build\Instance\TaskFactories\TaskHostTask.cs(32,20)
-Microsoft.Build.Engine.UnitTests.BackEnd.AttributeTestTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskRouter_IntegrationTests.cs(474,18)
-<span class="truncated-link" onclick="document.getElementById('expand-19-short').style.display='none'; document.getElementById('expand-19-full').style.display='block';">... truncated (158 more lines) — click to expand</span></pre>
-        <pre id="expand-19-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Target: Microsoft.Build.Framework.ITask (Interface)
-AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
+Microsoft.Build.Engine.UnitTests.BackEnd.AttributeTestTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskRouter_IntegrationTests.cs(474,18)
+Microsoft.Build.Engine.UnitTests.BackEnd.DerivedMakeDirTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskHost_MultiThreadableTask_Tests.cs(112,18)
+Microsoft.Build.Engine.UnitTests.BackEnd.InterfaceTestTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskRouter_IntegrationTests.cs(450,18)
+<span class="truncated-link" onclick="document.getElementById('expand-19-short').style.display='none'; document.getElementById('expand-19-full').style.display='block';">... truncated (156 more lines) — click to expand</span></pre>
+        <pre id="expand-19-full" class="full-result">AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
 AssemblyLoadContextTest.RetrieveObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(85,18)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(17,18)
 ItemCreationTask.ItemCreationTask - D:\msbuild\src\Build.UnitTests\BackEnd\ItemCreationTask.cs(11,18)
@@ -22143,21 +22119,19 @@ TaskWithDependency.LogStringFromDependency - D:\msbuild\src\Samples\TaskWithDepe
       </section>
       <section class="algorithm">
         <h3>roslyn-find-implementations (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 17646 | <strong>Lines:</strong> 168 | <strong>Time:</strong> 7ms | called SymbolFinder.FindImplementationsAsync(Microsoft.Build.Framework.ITask)</p>
-        <pre id="expand-20-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Target: Microsoft.Build.Framework.ITask (Interface)
-AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 17551 | <strong>Lines:</strong> 166 | <strong>Time:</strong> 7ms | called SymbolFinder.FindImplementationsAsync(Microsoft.Build.Framework.ITask)</p>
+        <pre id="expand-20-short">AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
 AssemblyLoadContextTest.RetrieveObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(85,18)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(17,18)
 ItemCreationTask.ItemCreationTask - D:\msbuild\src\Build.UnitTests\BackEnd\ItemCreationTask.cs(11,18)
 Microsoft.Build.BackEnd.CallTarget - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\CallTarget.cs(23,20)
 Microsoft.Build.BackEnd.MSBuild - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(23,20)
 Microsoft.Build.BackEnd.TaskHostTask - D:\msbuild\src\Build\Instance\TaskFactories\TaskHostTask.cs(32,20)
-Microsoft.Build.Engine.UnitTests.BackEnd.AttributeTestTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskRouter_IntegrationTests.cs(474,18)
-<span class="truncated-link" onclick="document.getElementById('expand-20-short').style.display='none'; document.getElementById('expand-20-full').style.display='block';">... truncated (158 more lines) — click to expand</span></pre>
-        <pre id="expand-20-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Target: Microsoft.Build.Framework.ITask (Interface)
-AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
+Microsoft.Build.Engine.UnitTests.BackEnd.AttributeTestTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskRouter_IntegrationTests.cs(474,18)
+Microsoft.Build.Engine.UnitTests.BackEnd.DerivedMakeDirTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskHost_MultiThreadableTask_Tests.cs(112,18)
+Microsoft.Build.Engine.UnitTests.BackEnd.InterfaceTestTask - D:\msbuild\src\Build.UnitTests\BackEnd\TaskRouter_IntegrationTests.cs(450,18)
+<span class="truncated-link" onclick="document.getElementById('expand-20-short').style.display='none'; document.getElementById('expand-20-full').style.display='block';">... truncated (156 more lines) — click to expand</span></pre>
+        <pre id="expand-20-full" class="full-result">AssemblyLoadContextTest.RegisterObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(69,18)
 AssemblyLoadContextTest.RetrieveObject - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(85,18)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(17,18)
 ItemCreationTask.ItemCreationTask - D:\msbuild\src\Build.UnitTests\BackEnd\ItemCreationTask.cs(11,18)
@@ -22332,7 +22306,7 @@ TaskWithDependency.LogStringFromDependency - D:\msbuild\src\Samples\TaskWithDepe
       </dl>
       <section class="algorithm">
         <h3>find-member-definition-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 79702 | <strong>Lines:</strong> 770 | <strong>Time:</strong> 4.8s | string search for member declaration &#39;Execute&#39;</p>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 79702 | <strong>Lines:</strong> 770 | <strong>Time:</strong> 4.5s | string search for member declaration &#39;Execute&#39;</p>
         <pre id="expand-21-short">D:\msbuild\src\Build\BackEnd\BuildManager\BuildSubmission.cs:62: public abstract TResultData Execute();
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildSubmission.cs:182: public override BuildResult Execute()
 D:\msbuild\src\Build\BackEnd\Client\MSBuildClient.cs:152: public MSBuildClientExitResult Execute(CancellationToken cancellationToken)
@@ -23117,9 +23091,8 @@ D:\msbuild\src\Utilities.UnitTests\TrackedDependencies\TrackedDependenciesTests.
       </section>
       <section class="algorithm">
         <h3>roslyn-find-member-declarations (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 20565 | <strong>Lines:</strong> 162 | <strong>Time:</strong> 145ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Execute&#39;, SymbolFilter.Member)</p>
-        <pre id="expand-22-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-AssemblyLoadContextTest.RegisterObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(73,30)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 20523 | <strong>Lines:</strong> 161 | <strong>Time:</strong> 168ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Execute&#39;, SymbolFilter.Member)</p>
+        <pre id="expand-22-short">AssemblyLoadContextTest.RegisterObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(73,30)
 AssemblyLoadContextTest.RetrieveObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(87,30)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(31,30)
 ItemCreationTask.ItemCreationTask.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\ItemCreationTask.cs(53,30)
@@ -23127,10 +23100,10 @@ Microsoft.Build.BackEnd.CallTarget.Execute() - D:\msbuild\src\Build\BackEnd\Comp
 Microsoft.Build.BackEnd.MSBuild.Execute() - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(228,21)
 Microsoft.Build.BackEnd.TaskExecutionHost.Execute() - D:\msbuild\src\Build\BackEnd\TaskExecutionHost\TaskExecutionHost.cs(631,21)
 Microsoft.Build.BackEnd.TaskHostTask.Execute() - D:\msbuild\src\Build\Instance\TaskFactories\TaskHostTask.cs(302,21)
-Microsoft.Build.CommandLine.MSBuildApp.Execute(string[]) - D:\msbuild\src\MSBuild\XMake.cs(644,32)
-<span class="truncated-link" onclick="document.getElementById('expand-22-short').style.display='none'; document.getElementById('expand-22-full').style.display='block';">... truncated (152 more lines) — click to expand</span></pre>
-        <pre id="expand-22-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-AssemblyLoadContextTest.RegisterObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(73,30)
+Microsoft.Build.CommandLine.MSBuildApp.Execute(string[]) - D:\msbuild\src\MSBuild\XMake.cs(644,32)
+Microsoft.Build.CommandLine.MSBuildClientApp.Execute(string[], System.Threading.CancellationToken) - D:\msbuild\src\MSBuild\MSBuildClientApp.cs(37,43)
+<span class="truncated-link" onclick="document.getElementById('expand-22-short').style.display='none'; document.getElementById('expand-22-full').style.display='block';">... truncated (151 more lines) — click to expand</span></pre>
+        <pre id="expand-22-full" class="full-result">AssemblyLoadContextTest.RegisterObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(73,30)
 AssemblyLoadContextTest.RetrieveObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(87,30)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(31,30)
 ItemCreationTask.ItemCreationTask.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\ItemCreationTask.cs(53,30)
@@ -23294,9 +23267,8 @@ TaskWithDependency.LogStringFromDependency.Execute() - D:\msbuild\src\Samples\Ta
       </section>
       <section class="algorithm">
         <h3>roslyn-find-member-declarations (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 20565 | <strong>Lines:</strong> 162 | <strong>Time:</strong> 106ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Execute&#39;, SymbolFilter.Member)</p>
-        <pre id="expand-23-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-AssemblyLoadContextTest.RegisterObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(73,30)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 20523 | <strong>Lines:</strong> 161 | <strong>Time:</strong> 64ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Execute&#39;, SymbolFilter.Member)</p>
+        <pre id="expand-23-short">AssemblyLoadContextTest.RegisterObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(73,30)
 AssemblyLoadContextTest.RetrieveObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(87,30)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(31,30)
 ItemCreationTask.ItemCreationTask.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\ItemCreationTask.cs(53,30)
@@ -23304,10 +23276,10 @@ Microsoft.Build.BackEnd.CallTarget.Execute() - D:\msbuild\src\Build\BackEnd\Comp
 Microsoft.Build.BackEnd.MSBuild.Execute() - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(228,21)
 Microsoft.Build.BackEnd.TaskExecutionHost.Execute() - D:\msbuild\src\Build\BackEnd\TaskExecutionHost\TaskExecutionHost.cs(631,21)
 Microsoft.Build.BackEnd.TaskHostTask.Execute() - D:\msbuild\src\Build\Instance\TaskFactories\TaskHostTask.cs(302,21)
-Microsoft.Build.CommandLine.MSBuildApp.Execute(string[]) - D:\msbuild\src\MSBuild\XMake.cs(644,32)
-<span class="truncated-link" onclick="document.getElementById('expand-23-short').style.display='none'; document.getElementById('expand-23-full').style.display='block';">... truncated (152 more lines) — click to expand</span></pre>
-        <pre id="expand-23-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-AssemblyLoadContextTest.RegisterObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(73,30)
+Microsoft.Build.CommandLine.MSBuildApp.Execute(string[]) - D:\msbuild\src\MSBuild\XMake.cs(644,32)
+Microsoft.Build.CommandLine.MSBuildClientApp.Execute(string[], System.Threading.CancellationToken) - D:\msbuild\src\MSBuild\MSBuildClientApp.cs(37,43)
+<span class="truncated-link" onclick="document.getElementById('expand-23-short').style.display='none'; document.getElementById('expand-23-full').style.display='block';">... truncated (151 more lines) — click to expand</span></pre>
+        <pre id="expand-23-full" class="full-result">AssemblyLoadContextTest.RegisterObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(73,30)
 AssemblyLoadContextTest.RetrieveObject.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(87,30)
 AssemblyLoadContextTest.ValidateAssemblyVersionRollForward.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\AssemblyLoadContextTestTasks.cs(31,30)
 ItemCreationTask.ItemCreationTask.Execute() - D:\msbuild\src\Build.UnitTests\BackEnd\ItemCreationTask.cs(53,30)
@@ -23477,12 +23449,12 @@ TaskWithDependency.LogStringFromDependency.Execute() - D:\msbuild\src\Samples\Ta
       </dl>
       <section class="algorithm">
         <h3>find-type-definition-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 142 | <strong>Lines:</strong> 1 | <strong>Time:</strong> 3.4s | string search for &#39;(class|record|struct|interface|enum) BuildManager&#39;</p>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 142 | <strong>Lines:</strong> 1 | <strong>Time:</strong> 3.3s | string search for &#39;(class|record|struct|interface|enum) BuildManager&#39;</p>
         <pre>D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:51: public class BuildManager : INodePacketHandler, IBuildComponentHost, IDisposable</pre>
       </section>
       <section class="algorithm">
         <h3>find-type-definition-grep-nameonly</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 48801 | <strong>Lines:</strong> 358 | <strong>Time:</strong> 2.8s | string search for &#39;BuildManager&#39;</p>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 48801 | <strong>Lines:</strong> 358 | <strong>Time:</strong> 2.5s | string search for &#39;BuildManager&#39;</p>
         <pre id="expand-24-short">D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:51: public class BuildManager : INodePacketHandler, IBuildComponentHost, IDisposable
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:64: /// The object used for thread-safe synchronization of BuildManager shared data and the Scheduler.
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:69: /// The singleton instance for the BuildManager.
@@ -23855,21 +23827,18 @@ D:\msbuild\src\Utilities.UnitTests\MuxLogger_Tests.cs:329: buildManager.EndBuild
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 147 | <strong>Lines:</strong> 2 | <strong>Time:</strong> 29ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
-        <pre>Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Execution.BuildManager - D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs(51,18)</pre>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 105 | <strong>Lines:</strong> 1 | <strong>Time:</strong> 31ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
+        <pre>Microsoft.Build.Execution.BuildManager - D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs(51,18)</pre>
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 147 | <strong>Lines:</strong> 2 | <strong>Time:</strong> 21ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
-        <pre>Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.Execution.BuildManager - D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs(51,18)</pre>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 105 | <strong>Lines:</strong> 1 | <strong>Time:</strong> 26ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
+        <pre>Microsoft.Build.Execution.BuildManager - D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs(51,18)</pre>
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-with-pattern (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2058 | <strong>Lines:</strong> 15 | <strong>Time:</strong> 12ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
-        <pre id="expand-25-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2016 | <strong>Lines:</strong> 14 | <strong>Time:</strong> 19ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
+        <pre id="expand-25-short">Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
 Microsoft.Build.BuildCheck.UnitTests.BuildCheckManagerTests - D:\msbuild\src\BuildCheck.UnitTests\BuildCheckManagerProviderTests.cs(21,14)
 Microsoft.Build.Engine.UnitTests.BackEnd.BuildManager_Logging_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Logging_Tests.cs(23,18)
 Microsoft.Build.Execution.BuildManager - D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs(51,18)
@@ -23877,10 +23846,10 @@ Microsoft.Build.Execution.BuildManager.BuildManagerState - D:\msbuild\src\Build\
 Microsoft.Build.Experimental.BuildCheck.IBuildCheckManager - D:\msbuild\src\Build\BuildCheck\Infrastructure\IBuildCheckManager.cs(34,20)
 Microsoft.Build.Experimental.BuildCheck.Infrastructure.BuildCheckManagerProvider - D:\msbuild\src\Build\BuildCheck\Infrastructure\BuildCheckManagerProvider.cs(26,23)
 Microsoft.Build.Experimental.BuildCheck.Infrastructure.BuildCheckManagerProvider.BuildCheckManager - D:\msbuild\src\Build\BuildCheck\Infrastructure\BuildCheckManagerProvider.cs(63,27)
-Microsoft.Build.Experimental.BuildCheck.Infrastructure.IBuildCheckManagerProvider - D:\msbuild\src\Build\BuildCheck\Infrastructure\IBuildCheckManagerProvider.cs(8,20)
-<span class="truncated-link" onclick="document.getElementById('expand-25-short').style.display='none'; document.getElementById('expand-25-full').style.display='block';">... truncated (5 more lines) — click to expand</span></pre>
-        <pre id="expand-25-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
+Microsoft.Build.Experimental.BuildCheck.Infrastructure.IBuildCheckManagerProvider - D:\msbuild\src\Build\BuildCheck\Infrastructure\IBuildCheckManagerProvider.cs(8,20)
+Microsoft.Build.Experimental.BuildCheck.Infrastructure.NullBuildCheckManager - D:\msbuild\src\Build\BuildCheck\Infrastructure\NullBuildCheckManager.cs(10,16)
+<span class="truncated-link" onclick="document.getElementById('expand-25-short').style.display='none'; document.getElementById('expand-25-full').style.display='block';">... truncated (4 more lines) — click to expand</span></pre>
+        <pre id="expand-25-full" class="full-result">Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
 Microsoft.Build.BuildCheck.UnitTests.BuildCheckManagerTests - D:\msbuild\src\BuildCheck.UnitTests\BuildCheckManagerProviderTests.cs(21,14)
 Microsoft.Build.Engine.UnitTests.BackEnd.BuildManager_Logging_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Logging_Tests.cs(23,18)
 Microsoft.Build.Execution.BuildManager - D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs(51,18)
@@ -23897,9 +23866,8 @@ Microsoft.Build.UnitTests.TestEnvironment.ResetDefaultBuildManager - D:\msbuild\
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-with-pattern (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2058 | <strong>Lines:</strong> 15 | <strong>Time:</strong> 13ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
-        <pre id="expand-26-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2016 | <strong>Lines:</strong> 14 | <strong>Time:</strong> 12ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;, SymbolFilter.Type)</p>
+        <pre id="expand-26-short">Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
 Microsoft.Build.BuildCheck.UnitTests.BuildCheckManagerTests - D:\msbuild\src\BuildCheck.UnitTests\BuildCheckManagerProviderTests.cs(21,14)
 Microsoft.Build.Engine.UnitTests.BackEnd.BuildManager_Logging_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Logging_Tests.cs(23,18)
 Microsoft.Build.Execution.BuildManager - D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs(51,18)
@@ -23907,10 +23875,10 @@ Microsoft.Build.Execution.BuildManager.BuildManagerState - D:\msbuild\src\Build\
 Microsoft.Build.Experimental.BuildCheck.IBuildCheckManager - D:\msbuild\src\Build\BuildCheck\Infrastructure\IBuildCheckManager.cs(34,20)
 Microsoft.Build.Experimental.BuildCheck.Infrastructure.BuildCheckManagerProvider - D:\msbuild\src\Build\BuildCheck\Infrastructure\BuildCheckManagerProvider.cs(26,23)
 Microsoft.Build.Experimental.BuildCheck.Infrastructure.BuildCheckManagerProvider.BuildCheckManager - D:\msbuild\src\Build\BuildCheck\Infrastructure\BuildCheckManagerProvider.cs(63,27)
-Microsoft.Build.Experimental.BuildCheck.Infrastructure.IBuildCheckManagerProvider - D:\msbuild\src\Build\BuildCheck\Infrastructure\IBuildCheckManagerProvider.cs(8,20)
-<span class="truncated-link" onclick="document.getElementById('expand-26-short').style.display='none'; document.getElementById('expand-26-full').style.display='block';">... truncated (5 more lines) — click to expand</span></pre>
-        <pre id="expand-26-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
+Microsoft.Build.Experimental.BuildCheck.Infrastructure.IBuildCheckManagerProvider - D:\msbuild\src\Build\BuildCheck\Infrastructure\IBuildCheckManagerProvider.cs(8,20)
+Microsoft.Build.Experimental.BuildCheck.Infrastructure.NullBuildCheckManager - D:\msbuild\src\Build\BuildCheck\Infrastructure\NullBuildCheckManager.cs(10,16)
+<span class="truncated-link" onclick="document.getElementById('expand-26-short').style.display='none'; document.getElementById('expand-26-full').style.display='block';">... truncated (4 more lines) — click to expand</span></pre>
+        <pre id="expand-26-full" class="full-result">Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
 Microsoft.Build.BuildCheck.UnitTests.BuildCheckManagerTests - D:\msbuild\src\BuildCheck.UnitTests\BuildCheckManagerProviderTests.cs(21,14)
 Microsoft.Build.Engine.UnitTests.BackEnd.BuildManager_Logging_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Logging_Tests.cs(23,18)
 Microsoft.Build.Execution.BuildManager - D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs(51,18)
@@ -23927,9 +23895,8 @@ Microsoft.Build.UnitTests.TestEnvironment.ResetDefaultBuildManager - D:\msbuild\
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-workspaceSymbol (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2058 | <strong>Lines:</strong> 15 | <strong>Time:</strong> 129ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;) without SymbolFilter</p>
-        <pre id="expand-27-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2016 | <strong>Lines:</strong> 14 | <strong>Time:</strong> 167ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;) without SymbolFilter</p>
+        <pre id="expand-27-short">Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
 Microsoft.Build.BuildCheck.UnitTests.BuildCheckManagerTests - D:\msbuild\src\BuildCheck.UnitTests\BuildCheckManagerProviderTests.cs(21,14)
 Microsoft.Build.Engine.UnitTests.BackEnd.BuildManager_Logging_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Logging_Tests.cs(23,18)
 Microsoft.Build.Execution.BuildManager - D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs(51,18)
@@ -23937,10 +23904,10 @@ Microsoft.Build.Execution.BuildManager.BuildManagerState - D:\msbuild\src\Build\
 Microsoft.Build.Experimental.BuildCheck.IBuildCheckManager - D:\msbuild\src\Build\BuildCheck\Infrastructure\IBuildCheckManager.cs(34,20)
 Microsoft.Build.Experimental.BuildCheck.Infrastructure.BuildCheckManagerProvider - D:\msbuild\src\Build\BuildCheck\Infrastructure\BuildCheckManagerProvider.cs(26,23)
 Microsoft.Build.Experimental.BuildCheck.Infrastructure.BuildCheckManagerProvider.BuildCheckManager - D:\msbuild\src\Build\BuildCheck\Infrastructure\BuildCheckManagerProvider.cs(63,27)
-Microsoft.Build.Experimental.BuildCheck.Infrastructure.IBuildCheckManagerProvider - D:\msbuild\src\Build\BuildCheck\Infrastructure\IBuildCheckManagerProvider.cs(8,20)
-<span class="truncated-link" onclick="document.getElementById('expand-27-short').style.display='none'; document.getElementById('expand-27-full').style.display='block';">... truncated (5 more lines) — click to expand</span></pre>
-        <pre id="expand-27-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
+Microsoft.Build.Experimental.BuildCheck.Infrastructure.IBuildCheckManagerProvider - D:\msbuild\src\Build\BuildCheck\Infrastructure\IBuildCheckManagerProvider.cs(8,20)
+Microsoft.Build.Experimental.BuildCheck.Infrastructure.NullBuildCheckManager - D:\msbuild\src\Build\BuildCheck\Infrastructure\NullBuildCheckManager.cs(10,16)
+<span class="truncated-link" onclick="document.getElementById('expand-27-short').style.display='none'; document.getElementById('expand-27-full').style.display='block';">... truncated (4 more lines) — click to expand</span></pre>
+        <pre id="expand-27-full" class="full-result">Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
 Microsoft.Build.BuildCheck.UnitTests.BuildCheckManagerTests - D:\msbuild\src\BuildCheck.UnitTests\BuildCheckManagerProviderTests.cs(21,14)
 Microsoft.Build.Engine.UnitTests.BackEnd.BuildManager_Logging_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Logging_Tests.cs(23,18)
 Microsoft.Build.Execution.BuildManager - D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs(51,18)
@@ -23957,9 +23924,8 @@ Microsoft.Build.UnitTests.TestEnvironment.ResetDefaultBuildManager - D:\msbuild\
       </section>
       <section class="algorithm">
         <h3>roslyn-find-declarations-workspaceSymbol (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2058 | <strong>Lines:</strong> 15 | <strong>Time:</strong> 128ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;) without SymbolFilter</p>
-        <pre id="expand-28-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 2016 | <strong>Lines:</strong> 14 | <strong>Time:</strong> 119ms | called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildManager&#39;) without SymbolFilter</p>
+        <pre id="expand-28-short">Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
 Microsoft.Build.BuildCheck.UnitTests.BuildCheckManagerTests - D:\msbuild\src\BuildCheck.UnitTests\BuildCheckManagerProviderTests.cs(21,14)
 Microsoft.Build.Engine.UnitTests.BackEnd.BuildManager_Logging_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Logging_Tests.cs(23,18)
 Microsoft.Build.Execution.BuildManager - D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs(51,18)
@@ -23967,10 +23933,10 @@ Microsoft.Build.Execution.BuildManager.BuildManagerState - D:\msbuild\src\Build\
 Microsoft.Build.Experimental.BuildCheck.IBuildCheckManager - D:\msbuild\src\Build\BuildCheck\Infrastructure\IBuildCheckManager.cs(34,20)
 Microsoft.Build.Experimental.BuildCheck.Infrastructure.BuildCheckManagerProvider - D:\msbuild\src\Build\BuildCheck\Infrastructure\BuildCheckManagerProvider.cs(26,23)
 Microsoft.Build.Experimental.BuildCheck.Infrastructure.BuildCheckManagerProvider.BuildCheckManager - D:\msbuild\src\Build\BuildCheck\Infrastructure\BuildCheckManagerProvider.cs(63,27)
-Microsoft.Build.Experimental.BuildCheck.Infrastructure.IBuildCheckManagerProvider - D:\msbuild\src\Build\BuildCheck\Infrastructure\IBuildCheckManagerProvider.cs(8,20)
-<span class="truncated-link" onclick="document.getElementById('expand-28-short').style.display='none'; document.getElementById('expand-28-full').style.display='block';">... truncated (5 more lines) — click to expand</span></pre>
-        <pre id="expand-28-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
+Microsoft.Build.Experimental.BuildCheck.Infrastructure.IBuildCheckManagerProvider - D:\msbuild\src\Build\BuildCheck\Infrastructure\IBuildCheckManagerProvider.cs(8,20)
+Microsoft.Build.Experimental.BuildCheck.Infrastructure.NullBuildCheckManager - D:\msbuild\src\Build\BuildCheck\Infrastructure\NullBuildCheckManager.cs(10,16)
+<span class="truncated-link" onclick="document.getElementById('expand-28-short').style.display='none'; document.getElementById('expand-28-full').style.display='block';">... truncated (4 more lines) — click to expand</span></pre>
+        <pre id="expand-28-full" class="full-result">Microsoft.Build.BackEnd.Logging.BuildEventManager - D:\msbuild\src\Build\Logging\ParallelLogger\ParallelLoggerHelpers.cs(17,20)
 Microsoft.Build.BuildCheck.UnitTests.BuildCheckManagerTests - D:\msbuild\src\BuildCheck.UnitTests\BuildCheckManagerProviderTests.cs(21,14)
 Microsoft.Build.Engine.UnitTests.BackEnd.BuildManager_Logging_Tests - D:\msbuild\src\Build.UnitTests\BackEnd\BuildManager_Logging_Tests.cs(23,18)
 Microsoft.Build.Execution.BuildManager - D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs(51,18)
@@ -23993,7 +23959,7 @@ Microsoft.Build.UnitTests.TestEnvironment.ResetDefaultBuildManager - D:\msbuild\
       </dl>
       <section class="algorithm">
         <h3>find-member-definition-grep</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 24205 | <strong>Lines:</strong> 194 | <strong>Time:</strong> 4.8s | string search for member declaration &#39;Build&#39;</p>
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 24205 | <strong>Lines:</strong> 194 | <strong>Time:</strong> 4.7s | string search for member declaration &#39;Build&#39;</p>
         <pre id="expand-29-short">D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:1382: private TResultData Build&lt;TRequestData, TResultData&gt;(BuildParameters parameters, TRequestData requestData)
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:1409: public BuildResult Build(BuildParameters parameters, BuildRequestData requestData)
 D:\msbuild\src\Build\BackEnd\BuildManager\BuildManager.cs:1416: public GraphBuildResult Build(BuildParameters parameters, GraphBuildRequestData requestData)
@@ -24202,9 +24168,8 @@ D:\msbuild\src\Utilities.UnitTests\ToolLocationHelper_Tests.cs:1250: bool succes
       </section>
       <section class="algorithm">
         <h3>roslyn-find-member-declarations (pass 1)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 9006 | <strong>Lines:</strong> 42 | <strong>Time:</strong> 67ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Build&#39;, SymbolFilter.Member)</p>
-        <pre id="expand-30-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.MSBuild.SkipNonExistentProjectsBehavior.Build - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(48,13)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 8964 | <strong>Lines:</strong> 41 | <strong>Time:</strong> 59ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Build&#39;, SymbolFilter.Member)</p>
+        <pre id="expand-30-short">Microsoft.Build.BackEnd.MSBuild.SkipNonExistentProjectsBehavior.Build - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(48,13)
 Microsoft.Build.Engine.UnitTests.InstanceFromRemote.FakeProjectLink.Build(string[], System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Logging.ForwardingLoggerRecord&gt;, Microsoft.Build.Evaluation.Context.EvaluationContext) - D:\msbuild\src\Build.UnitTests\InstanceFromRemote\FakeProjectLink.cs(85,30)
 Microsoft.Build.Evaluation.Expander&lt;P, I&gt;.FunctionBuilder&lt;T&gt;.Build() - D:\msbuild\src\Build\Evaluation\Expander.cs(3708,43)
 Microsoft.Build.Evaluation.Project.Build() - D:\msbuild\src\Build\Definition\Project.cs(1491,21)
@@ -24212,10 +24177,10 @@ Microsoft.Build.Evaluation.Project.Build(Microsoft.Build.Framework.ILogger) - D:
 Microsoft.Build.Evaluation.Project.Build(System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;) - D:\msbuild\src\Build\Definition\Project.cs(1520,21)
 Microsoft.Build.Evaluation.Project.Build(System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Logging.ForwardingLoggerRecord&gt;) - D:\msbuild\src\Build\Definition\Project.cs(1535,21)
 Microsoft.Build.Evaluation.Project.Build(string) - D:\msbuild\src\Build\Definition\Project.cs(1549,21)
-Microsoft.Build.Evaluation.Project.Build(string, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;) - D:\msbuild\src\Build\Definition\Project.cs(1564,21)
-<span class="truncated-link" onclick="document.getElementById('expand-30-short').style.display='none'; document.getElementById('expand-30-full').style.display='block';">... truncated (32 more lines) — click to expand</span></pre>
-        <pre id="expand-30-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.MSBuild.SkipNonExistentProjectsBehavior.Build - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(48,13)
+Microsoft.Build.Evaluation.Project.Build(string, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;) - D:\msbuild\src\Build\Definition\Project.cs(1564,21)
+Microsoft.Build.Evaluation.Project.Build(string, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Logging.ForwardingLoggerRecord&gt;) - D:\msbuild\src\Build\Definition\Project.cs(1580,21)
+<span class="truncated-link" onclick="document.getElementById('expand-30-short').style.display='none'; document.getElementById('expand-30-full').style.display='block';">... truncated (31 more lines) — click to expand</span></pre>
+        <pre id="expand-30-full" class="full-result">Microsoft.Build.BackEnd.MSBuild.SkipNonExistentProjectsBehavior.Build - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(48,13)
 Microsoft.Build.Engine.UnitTests.InstanceFromRemote.FakeProjectLink.Build(string[], System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Logging.ForwardingLoggerRecord&gt;, Microsoft.Build.Evaluation.Context.EvaluationContext) - D:\msbuild\src\Build.UnitTests\InstanceFromRemote\FakeProjectLink.cs(85,30)
 Microsoft.Build.Evaluation.Expander&lt;P, I&gt;.FunctionBuilder&lt;T&gt;.Build() - D:\msbuild\src\Build\Evaluation\Expander.cs(3708,43)
 Microsoft.Build.Evaluation.Project.Build() - D:\msbuild\src\Build\Definition\Project.cs(1491,21)
@@ -24259,9 +24224,8 @@ Microsoft.Build.Utilities.SimpleVersion.Build - D:\msbuild\src\Build\Utilities\S
       </section>
       <section class="algorithm">
         <h3>roslyn-find-member-declarations (pass 2)</h3>
-        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 9006 | <strong>Lines:</strong> 42 | <strong>Time:</strong> 60ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Build&#39;, SymbolFilter.Member)</p>
-        <pre id="expand-31-short">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.MSBuild.SkipNonExistentProjectsBehavior.Build - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(48,13)
+        <p><span class="status status-succeeded">Succeeded</span> | <strong>Characters:</strong> 8964 | <strong>Lines:</strong> 41 | <strong>Time:</strong> 39ms | called SymbolFinder.FindDeclarationsAsync(project, &#39;Build&#39;, SymbolFilter.Member)</p>
+        <pre id="expand-31-short">Microsoft.Build.BackEnd.MSBuild.SkipNonExistentProjectsBehavior.Build - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(48,13)
 Microsoft.Build.Engine.UnitTests.InstanceFromRemote.FakeProjectLink.Build(string[], System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Logging.ForwardingLoggerRecord&gt;, Microsoft.Build.Evaluation.Context.EvaluationContext) - D:\msbuild\src\Build.UnitTests\InstanceFromRemote\FakeProjectLink.cs(85,30)
 Microsoft.Build.Evaluation.Expander&lt;P, I&gt;.FunctionBuilder&lt;T&gt;.Build() - D:\msbuild\src\Build\Evaluation\Expander.cs(3708,43)
 Microsoft.Build.Evaluation.Project.Build() - D:\msbuild\src\Build\Definition\Project.cs(1491,21)
@@ -24269,10 +24233,10 @@ Microsoft.Build.Evaluation.Project.Build(Microsoft.Build.Framework.ILogger) - D:
 Microsoft.Build.Evaluation.Project.Build(System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;) - D:\msbuild\src\Build\Definition\Project.cs(1520,21)
 Microsoft.Build.Evaluation.Project.Build(System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Logging.ForwardingLoggerRecord&gt;) - D:\msbuild\src\Build\Definition\Project.cs(1535,21)
 Microsoft.Build.Evaluation.Project.Build(string) - D:\msbuild\src\Build\Definition\Project.cs(1549,21)
-Microsoft.Build.Evaluation.Project.Build(string, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;) - D:\msbuild\src\Build\Definition\Project.cs(1564,21)
-<span class="truncated-link" onclick="document.getElementById('expand-31-short').style.display='none'; document.getElementById('expand-31-full').style.display='block';">... truncated (32 more lines) — click to expand</span></pre>
-        <pre id="expand-31-full" class="full-result">Loaded Solution: D:\msbuild\MSBuild.slnx
-Microsoft.Build.BackEnd.MSBuild.SkipNonExistentProjectsBehavior.Build - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(48,13)
+Microsoft.Build.Evaluation.Project.Build(string, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;) - D:\msbuild\src\Build\Definition\Project.cs(1564,21)
+Microsoft.Build.Evaluation.Project.Build(string, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Logging.ForwardingLoggerRecord&gt;) - D:\msbuild\src\Build\Definition\Project.cs(1580,21)
+<span class="truncated-link" onclick="document.getElementById('expand-31-short').style.display='none'; document.getElementById('expand-31-full').style.display='block';">... truncated (31 more lines) — click to expand</span></pre>
+        <pre id="expand-31-full" class="full-result">Microsoft.Build.BackEnd.MSBuild.SkipNonExistentProjectsBehavior.Build - D:\msbuild\src\Build\BackEnd\Components\RequestBuilder\IntrinsicTasks\MSBuild.cs(48,13)
 Microsoft.Build.Engine.UnitTests.InstanceFromRemote.FakeProjectLink.Build(string[], System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Framework.ILogger&gt;, System.Collections.Generic.IEnumerable&lt;Microsoft.Build.Logging.ForwardingLoggerRecord&gt;, Microsoft.Build.Evaluation.Context.EvaluationContext) - D:\msbuild\src\Build.UnitTests\InstanceFromRemote\FakeProjectLink.cs(85,30)
 Microsoft.Build.Evaluation.Expander&lt;P, I&gt;.FunctionBuilder&lt;T&gt;.Build() - D:\msbuild\src\Build\Evaluation\Expander.cs(3708,43)
 Microsoft.Build.Evaluation.Project.Build() - D:\msbuild\src\Build\Definition\Project.cs(1491,21)

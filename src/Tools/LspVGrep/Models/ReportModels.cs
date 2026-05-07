@@ -30,5 +30,5 @@ internal sealed record AlgorithmExecutionResult(
     TimeSpan ElapsedTime = default)
 {
     public int CharacterCount => ResponseText.Length;
-    public int LineCount => ResponseText.Split('\n').Length;
+    public int LineCount => string.IsNullOrEmpty(ResponseText) ? 0 : ResponseText.Count(static character => character == '\n') + 1;
 }

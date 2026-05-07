@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using LspVGrepTool.Execution;
 using LspVGrepTool.Models;
@@ -47,16 +47,9 @@ internal sealed class FindMemberDefinitionRoslynAlgorithm : QueryAlgorithm<FindM
             .OrderBy(match => match, StringComparer.Ordinal)
             .ToList();
 
-        var responseLines = new List<string>
-        {
-            $"Loaded {workspace.TargetKind}: {workspace.TargetPath}"
-        };
+        var responseLines = new List<string>();
 
-        if (distinctMatches.Count == 0)
-        {
-            responseLines.Add("No matching members found.");
-        }
-        else
+        if (distinctMatches.Count > 0)
         {
             responseLines.AddRange(distinctMatches);
         }

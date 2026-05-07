@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-05-06T19:51:57.3903936+00:00",
+  "generatedAtUtc": "2026-05-07T11:53:26.8815301+00:00",
   "directory": "D:\\roslyn-B",
-  "repositoryCommitHash": "a1586df1c8fff13813da68ae7e96dacfe83ae108",
-  "sourceLineCount": 6936837,
+  "repositoryCommitHash": "1df28e1cb6f4d3fd28d8b1ae7f09da95bc45579c",
+  "sourceLineCount": 6936803,
   "lscache": {
     "enabled": true,
     "used": true
@@ -11,7 +11,7 @@
   "roslynTarget": {
     "kind": "LsCache",
     "path": "411 LS cache projects from 281 cache files",
-    "loadTimeMilliseconds": 37289.8605
+    "loadTimeMilliseconds": 33718.2188
   },
   "queries": [
     {
@@ -24,7 +24,7 @@
           "name": "find-type-definition-grep",
           "outcome": "Succeeded",
           "summary": "string search for \u0027(class|record|struct|interface|enum) SyntaxNode\u0027",
-          "elapsedMilliseconds": 12802.461,
+          "elapsedMilliseconds": 10598.2785,
           "characterCount": 921,
           "lineCount": 8
         },
@@ -32,7 +32,7 @@
           "name": "find-type-definition-grep-nameonly",
           "outcome": "Succeeded",
           "summary": "string search for \u0027SyntaxNode\u0027",
-          "elapsedMilliseconds": 11624.8598,
+          "elapsedMilliseconds": 9759.2257,
           "characterCount": 2426823,
           "lineCount": 12627
         },
@@ -40,49 +40,49 @@
           "name": "roslyn-find-declarations (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027SyntaxNode\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 36383.6589,
-          "characterCount": 278,
-          "lineCount": 3
+          "elapsedMilliseconds": 33158.1052,
+          "characterCount": 218,
+          "lineCount": 2
         },
         {
           "name": "roslyn-find-declarations (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027SyntaxNode\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 185.4637,
-          "characterCount": 278,
-          "lineCount": 3
+          "elapsedMilliseconds": 161.5239,
+          "characterCount": 218,
+          "lineCount": 2
         },
         {
           "name": "roslyn-find-declarations-with-pattern (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027SyntaxNode\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 22338.5949,
-          "characterCount": 7714,
-          "lineCount": 46
+          "elapsedMilliseconds": 19209.6033,
+          "characterCount": 7654,
+          "lineCount": 45
         },
         {
           "name": "roslyn-find-declarations-with-pattern (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027SyntaxNode\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 168.5251,
-          "characterCount": 7714,
-          "lineCount": 46
+          "elapsedMilliseconds": 136.1889,
+          "characterCount": 7654,
+          "lineCount": 45
         },
         {
           "name": "roslyn-find-declarations-workspaceSymbol (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027SyntaxNode\u0027) without SymbolFilter",
-          "elapsedMilliseconds": 13973.0725,
-          "characterCount": 7714,
-          "lineCount": 46
+          "elapsedMilliseconds": 12878.7959,
+          "characterCount": 7654,
+          "lineCount": 45
         },
         {
           "name": "roslyn-find-declarations-workspaceSymbol (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027SyntaxNode\u0027) without SymbolFilter",
-          "elapsedMilliseconds": 1615.308,
-          "characterCount": 7714,
-          "lineCount": 46
+          "elapsedMilliseconds": 1394.7365,
+          "characterCount": 7654,
+          "lineCount": 45
         }
       ]
     },
@@ -96,7 +96,7 @@
           "name": "find-type-definition-grep",
           "outcome": "Succeeded",
           "summary": "string search for \u0027(class|record|struct|interface|enum) SyntaxKind\u0027",
-          "elapsedMilliseconds": 13322.8222,
+          "elapsedMilliseconds": 10192.4053,
           "characterCount": 219,
           "lineCount": 2
         },
@@ -104,7 +104,7 @@
           "name": "find-type-definition-grep-nameonly",
           "outcome": "Succeeded",
           "summary": "string search for \u0027SyntaxKind\u0027",
-          "elapsedMilliseconds": 51858.7872,
+          "elapsedMilliseconds": 16405.7343,
           "characterCount": 15494851,
           "lineCount": 115545
         },
@@ -112,49 +112,49 @@
           "name": "roslyn-find-declarations (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027SyntaxKind\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 322.6717,
-          "characterCount": 361,
-          "lineCount": 3
+          "elapsedMilliseconds": 118.6199,
+          "characterCount": 301,
+          "lineCount": 2
         },
         {
           "name": "roslyn-find-declarations (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027SyntaxKind\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 238.4285,
-          "characterCount": 361,
-          "lineCount": 3
+          "elapsedMilliseconds": 68.1609,
+          "characterCount": 301,
+          "lineCount": 2
         },
         {
           "name": "roslyn-find-declarations-with-pattern (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027SyntaxKind\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 170.4832,
-          "characterCount": 2665,
-          "lineCount": 16
+          "elapsedMilliseconds": 128.3915,
+          "characterCount": 2605,
+          "lineCount": 15
         },
         {
           "name": "roslyn-find-declarations-with-pattern (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027SyntaxKind\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 197.3886,
-          "characterCount": 2665,
-          "lineCount": 16
+          "elapsedMilliseconds": 127.2655,
+          "characterCount": 2605,
+          "lineCount": 15
         },
         {
           "name": "roslyn-find-declarations-workspaceSymbol (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027SyntaxKind\u0027) without SymbolFilter",
-          "elapsedMilliseconds": 2743.7352,
-          "characterCount": 2665,
-          "lineCount": 16
+          "elapsedMilliseconds": 1403.9587,
+          "characterCount": 2605,
+          "lineCount": 15
         },
         {
           "name": "roslyn-find-declarations-workspaceSymbol (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027SyntaxKind\u0027) without SymbolFilter",
-          "elapsedMilliseconds": 1555.7374,
-          "characterCount": 2665,
-          "lineCount": 16
+          "elapsedMilliseconds": 1279.1331,
+          "characterCount": 2605,
+          "lineCount": 15
         }
       ]
     },
@@ -168,7 +168,7 @@
           "name": "find-type-definition-grep",
           "outcome": "Succeeded",
           "summary": "string search for \u0027(class|record|struct|interface|enum) ISymbol\u0027",
-          "elapsedMilliseconds": 14746.1183,
+          "elapsedMilliseconds": 11132.5331,
           "characterCount": 1357,
           "lineCount": 7
         },
@@ -176,7 +176,7 @@
           "name": "find-type-definition-grep-nameonly",
           "outcome": "Succeeded",
           "summary": "string search for \u0027ISymbol\u0027",
-          "elapsedMilliseconds": 11424.1642,
+          "elapsedMilliseconds": 9202.1712,
           "characterCount": 793999,
           "lineCount": 4269
         },
@@ -184,49 +184,49 @@
           "name": "roslyn-find-declarations (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027ISymbol\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 88.8569,
-          "characterCount": 158,
-          "lineCount": 2
+          "elapsedMilliseconds": 126.8855,
+          "characterCount": 98,
+          "lineCount": 1
         },
         {
           "name": "roslyn-find-declarations (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027ISymbol\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 113.0989,
-          "characterCount": 158,
-          "lineCount": 2
+          "elapsedMilliseconds": 75.2131,
+          "characterCount": 98,
+          "lineCount": 1
         },
         {
           "name": "roslyn-find-declarations-with-pattern (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027ISymbol\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 198.3355,
-          "characterCount": 22684,
-          "lineCount": 139
+          "elapsedMilliseconds": 203.747,
+          "characterCount": 22624,
+          "lineCount": 138
         },
         {
           "name": "roslyn-find-declarations-with-pattern (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027ISymbol\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 169.8914,
-          "characterCount": 22684,
-          "lineCount": 139
+          "elapsedMilliseconds": 159.5069,
+          "characterCount": 22624,
+          "lineCount": 138
         },
         {
           "name": "roslyn-find-declarations-workspaceSymbol (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027ISymbol\u0027) without SymbolFilter",
-          "elapsedMilliseconds": 3194.2171,
-          "characterCount": 22684,
-          "lineCount": 139
+          "elapsedMilliseconds": 3027.9132,
+          "characterCount": 22624,
+          "lineCount": 138
         },
         {
           "name": "roslyn-find-declarations-workspaceSymbol (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027ISymbol\u0027) without SymbolFilter",
-          "elapsedMilliseconds": 2056.7627,
-          "characterCount": 22684,
-          "lineCount": 139
+          "elapsedMilliseconds": 1844.1453,
+          "characterCount": 22624,
+          "lineCount": 138
         }
       ]
     },
@@ -240,7 +240,7 @@
           "name": "find-derived-types-grep",
           "outcome": "Succeeded",
           "summary": "string search for \u0027(class|record|struct) \\w\u002B ... BoundNode\u0027",
-          "elapsedMilliseconds": 12451.0546,
+          "elapsedMilliseconds": 11299.7255,
           "characterCount": 3181,
           "lineCount": 21
         },
@@ -248,17 +248,17 @@
           "name": "roslyn-find-derived-types (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindDerivedClassesAsync(Microsoft.CodeAnalysis.CSharp.BoundNode)",
-          "elapsedMilliseconds": 1082.8717,
-          "characterCount": 66698,
-          "lineCount": 471
+          "elapsedMilliseconds": 430.1492,
+          "characterCount": 66581,
+          "lineCount": 469
         },
         {
           "name": "roslyn-find-derived-types (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindDerivedClassesAsync(Microsoft.CodeAnalysis.CSharp.BoundNode)",
-          "elapsedMilliseconds": 13.6367,
-          "characterCount": 66698,
-          "lineCount": 471
+          "elapsedMilliseconds": 12.8325,
+          "characterCount": 66581,
+          "lineCount": 469
         }
       ]
     },
@@ -272,7 +272,7 @@
           "name": "find-interface-implementation-grep",
           "outcome": "Succeeded",
           "summary": "string search for \u0027: ...ISymbol\u0027",
-          "elapsedMilliseconds": 10797.545,
+          "elapsedMilliseconds": 9225.2581,
           "characterCount": 63810,
           "lineCount": 303
         },
@@ -280,17 +280,17 @@
           "name": "roslyn-find-implementations (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindImplementationsAsync(Microsoft.CodeAnalysis.ISymbol)",
-          "elapsedMilliseconds": 29872.8151,
-          "characterCount": 10424,
-          "lineCount": 58
+          "elapsedMilliseconds": 7173.3141,
+          "characterCount": 10312,
+          "lineCount": 56
         },
         {
           "name": "roslyn-find-implementations (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindImplementationsAsync(Microsoft.CodeAnalysis.ISymbol)",
-          "elapsedMilliseconds": 37.412,
-          "characterCount": 10424,
-          "lineCount": 58
+          "elapsedMilliseconds": 76.9365,
+          "characterCount": 10312,
+          "lineCount": 56
         }
       ]
     },
@@ -304,7 +304,7 @@
           "name": "find-member-definition-grep",
           "outcome": "Succeeded",
           "summary": "string search for member declaration \u0027GetHashCode\u0027",
-          "elapsedMilliseconds": 29554.7011,
+          "elapsedMilliseconds": 18082.1106,
           "characterCount": 209521,
           "lineCount": 1497
         },
@@ -312,17 +312,17 @@
           "name": "roslyn-find-member-declarations (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027GetHashCode\u0027, SymbolFilter.Member)",
-          "elapsedMilliseconds": 1172.8591,
-          "characterCount": 116120,
-          "lineCount": 639
+          "elapsedMilliseconds": 668.0759,
+          "characterCount": 116060,
+          "lineCount": 638
         },
         {
           "name": "roslyn-find-member-declarations (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027GetHashCode\u0027, SymbolFilter.Member)",
-          "elapsedMilliseconds": 181.5632,
-          "characterCount": 116120,
-          "lineCount": 639
+          "elapsedMilliseconds": 195.6409,
+          "characterCount": 116060,
+          "lineCount": 638
         }
       ]
     },
@@ -336,7 +336,7 @@
           "name": "find-type-definition-grep",
           "outcome": "Succeeded",
           "summary": "string search for \u0027(class|record|struct|interface|enum) Compilation\u0027",
-          "elapsedMilliseconds": 49784.8632,
+          "elapsedMilliseconds": 10769.4014,
           "characterCount": 778,
           "lineCount": 6
         },
@@ -344,7 +344,7 @@
           "name": "find-type-definition-grep-nameonly",
           "outcome": "Succeeded",
           "summary": "string search for \u0027Compilation\u0027",
-          "elapsedMilliseconds": 53162.1758,
+          "elapsedMilliseconds": 10940.5796,
           "characterCount": 4551912,
           "lineCount": 27798
         },
@@ -352,49 +352,49 @@
           "name": "roslyn-find-declarations (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027Compilation\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 144.1693,
-          "characterCount": 531,
-          "lineCount": 5
+          "elapsedMilliseconds": 75.9864,
+          "characterCount": 471,
+          "lineCount": 4
         },
         {
           "name": "roslyn-find-declarations (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027Compilation\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 91.1709,
-          "characterCount": 531,
-          "lineCount": 5
+          "elapsedMilliseconds": 109.869,
+          "characterCount": 471,
+          "lineCount": 4
         },
         {
           "name": "roslyn-find-declarations-with-pattern (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Compilation\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 172.5155,
-          "characterCount": 29375,
-          "lineCount": 170
+          "elapsedMilliseconds": 161.4671,
+          "characterCount": 29315,
+          "lineCount": 169
         },
         {
           "name": "roslyn-find-declarations-with-pattern (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Compilation\u0027, SymbolFilter.Type)",
-          "elapsedMilliseconds": 144.3126,
-          "characterCount": 29375,
-          "lineCount": 170
+          "elapsedMilliseconds": 122.5822,
+          "characterCount": 29315,
+          "lineCount": 169
         },
         {
           "name": "roslyn-find-declarations-workspaceSymbol (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Compilation\u0027) without SymbolFilter",
-          "elapsedMilliseconds": 2440.0706,
-          "characterCount": 29375,
-          "lineCount": 170
+          "elapsedMilliseconds": 2126.2639,
+          "characterCount": 29315,
+          "lineCount": 169
         },
         {
           "name": "roslyn-find-declarations-workspaceSymbol (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Compilation\u0027) without SymbolFilter",
-          "elapsedMilliseconds": 1467.4233,
-          "characterCount": 29375,
-          "lineCount": 170
+          "elapsedMilliseconds": 1295.2949,
+          "characterCount": 29315,
+          "lineCount": 169
         }
       ]
     },
@@ -408,25 +408,25 @@
           "name": "find-member-definition-grep",
           "outcome": "Succeeded",
           "summary": "string search for member declaration \u0027EmitAsync\u0027",
-          "elapsedMilliseconds": 22793.9672,
-          "characterCount": 36,
-          "lineCount": 1
+          "elapsedMilliseconds": 17206.6334,
+          "characterCount": 0,
+          "lineCount": 0
         },
         {
           "name": "roslyn-find-member-declarations (pass 1)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027EmitAsync\u0027, SymbolFilter.Member)",
-          "elapsedMilliseconds": 83.8071,
-          "characterCount": 86,
-          "lineCount": 2
+          "elapsedMilliseconds": 68.761,
+          "characterCount": 0,
+          "lineCount": 0
         },
         {
           "name": "roslyn-find-member-declarations (pass 2)",
           "outcome": "Succeeded",
           "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027EmitAsync\u0027, SymbolFilter.Member)",
-          "elapsedMilliseconds": 64.9859,
-          "characterCount": 86,
-          "lineCount": 2
+          "elapsedMilliseconds": 90.8235,
+          "characterCount": 0,
+          "lineCount": 0
         }
       ]
     }
