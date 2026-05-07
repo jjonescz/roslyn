@@ -85,8 +85,8 @@ internal static class CombinedReportRenderer
       <h2>Queries</h2>
       <div class="toolbar-actions">
         <div class="scale-toggle" role="group" aria-label="Query filter granularity">
-          <button id="fineQueryFilter" type="button" aria-pressed="true">Fine</button>
-          <button id="coarseQueryFilter" type="button" aria-pressed="false">Coarse</button>
+          <button id="fineQueryFilter" type="button" aria-pressed="false">Fine</button>
+          <button id="coarseQueryFilter" type="button" aria-pressed="true">Coarse</button>
         </div>
         <div>
           <button id="selectAll" type="button">Select all</button>
@@ -152,7 +152,7 @@ const seriesDefinitions = [
 const svgNamespace = 'http://www.w3.org/2000/svg';
 const fineQueries = [...new Set(allRows.map(row => row.query))].sort((left, right) => left.localeCompare(right));
 const coarseQueries = [...new Set(allRows.map(row => row.queryType ?? row.query))].sort((left, right) => left.localeCompare(right));
-let queryFilterMode = 'fine';
+let queryFilterMode = 'coarse';
 let yScaleMode = 'log';
 
 document.getElementById('selectAll').addEventListener('click', () => setAll(true));
