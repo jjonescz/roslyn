@@ -51,12 +51,15 @@ internal static class CombinedReportRenderer
     .numeric { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .muted { color: #667085; }
     .table-wrap { max-height: 520px; overflow: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
-    .chart { display: grid; gap: 12px; }
-    .chart-row { display: grid; grid-template-columns: minmax(180px, 280px) 1fr; gap: 12px; align-items: center; }
-    .chart-label { font-size: 12px; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .bar-group { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; align-items: end; min-height: 44px; }
-    .bar { min-width: 0; border-radius: 4px; color: #fff; font-size: 11px; line-height: 1.2; padding: 4px; box-sizing: border-box; display: flex; align-items: end; justify-content: center; text-align: center; overflow: hidden; }
-    .load { background: #2563eb; }
+    .plot-wrap { min-height: 420px; }
+    .plot-svg { width: 100%; height: auto; display: block; }
+    .axis { stroke: #64748b; stroke-width: 1; }
+    .grid { stroke: #e2e8f0; stroke-width: 1; }
+    .tick-label { fill: #475569; font-size: 12px; }
+    .axis-label { fill: #334155; font-size: 13px; font-weight: 600; }
+    .series-line { fill: none; stroke-width: 2.5; }
+    .point { stroke: #fff; stroke-width: 1.5; }
+    .plot-empty { color: #667085; padding: 24px 0; }
     .grep { background: #16a34a; }
     .cold { background: #dc2626; }
     .warm { background: #7c3aed; }
@@ -83,15 +86,14 @@ internal static class CombinedReportRenderer
 
   <section class="panel">
     <div class="toolbar">
-      <h2>Timings</h2>
+      <h2>Median Search Time by Repository Size</h2>
       <div class="legend">
-        <span><i class="swatch load"></i>Load</span>
         <span><i class="swatch grep"></i>Grep</span>
         <span><i class="swatch cold"></i>LSP cold</span>
         <span><i class="swatch warm"></i>LSP warm</span>
       </div>
     </div>
-    <div id="chart" class="chart"></div>
+    <div id="chart" class="plot-wrap"></div>
   </section>
 
   <section class="panel">
@@ -120,6 +122,12 @@ const allRows = ROWS_JSON;
 const queryFilters = document.getElementById('queryFilters');
 const rowsBody = document.getElementById('rows');
 const chart = document.getElementById('chart');
+const seriesDefinitions = [
+  { label: 'Grep', field: 'grepMilliseconds', color: '#16a34a' },
+  { label: 'LSP cold', field: 'lspColdMilliseconds', color: '#dc2626' },
+  { label: 'LSP warm', field: 'lspWarmMilliseconds', color: '#7c3aed' }
+];
+const svgNamespace = 'http://www.w3.org/2000/svg';
 
 const queries = [...new Set(allRows.map(row => row.query))].sort((left, right) => left.localeCompare(right));
 for (const query of queries) {
@@ -175,43 +183,185 @@ function renderTable(visibleRows) {
 
 function renderChart(visibleRows) {
   chart.textContent = '';
-  const values = visibleRows.flatMap(row => [row.solutionLoadMilliseconds, row.grepMilliseconds, row.lspColdMilliseconds, row.lspWarmMilliseconds]).filter(value => value !== null && value !== undefined && value > 0);
-  const max = Math.max(1, ...values.map(value => Math.log10(value + 1)));
-  for (const row of visibleRows) {
-    const chartRow = document.createElement('div');
-    chartRow.className = 'chart-row';
-    const label = document.createElement('div');
-    label.className = 'chart-label';
-    label.title = `${row.repository} - ${row.query}`;
-    label.textContent = `${row.repository} - ${row.query}`;
-    const group = document.createElement('div');
-    group.className = 'bar-group';
-    group.append(
-      bar(row.solutionLoadMilliseconds, max, 'bar load'),
-      bar(row.grepMilliseconds, max, 'bar grep'),
-      bar(row.lspColdMilliseconds, max, 'bar cold'),
-      bar(row.lspWarmMilliseconds, max, 'bar warm'));
-    chartRow.append(label, group);
-    chart.append(chartRow);
+  const groups = groupRowsByRepository(visibleRows);
+  const pointsBySeries = seriesDefinitions.map(definition => ({
+    ...definition,
+    points: groups
+      .map(group => createPoint(group, definition.field))
+      .filter(point => point !== null)
+  }));
+  const allPoints = pointsBySeries.flatMap(series => series.points);
+  if (allPoints.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'plot-empty';
+    empty.textContent = 'No timing data for the selected queries.';
+    chart.append(empty);
+    return;
+  }
+
+  chart.append(createPlot(pointsBySeries, allPoints));
+}
+
+function groupRowsByRepository(rows) {
+  const groups = new Map();
+  for (const row of rows) {
+    if (row.sourceLineCount === null || row.sourceLineCount === undefined || row.sourceLineCount <= 0) {
+      continue;
+    }
+
+    const key = `${row.repository}\u0000${row.sourceLineCount}`;
+    let group = groups.get(key);
+    if (group === undefined) {
+      group = { repository: row.repository, sourceLineCount: row.sourceLineCount, rows: [] };
+      groups.set(key, group);
+    }
+
+    group.rows.push(row);
+  }
+
+  return [...groups.values()].sort((left, right) => left.sourceLineCount - right.sourceLineCount || left.repository.localeCompare(right.repository));
+}
+
+function createPoint(group, field) {
+  const values = group.rows
+    .map(row => row[field])
+    .filter(value => value !== null && value !== undefined && value > 0)
+    .sort((left, right) => left - right);
+  if (values.length === 0) {
+    return null;
+  }
+
+  return {
+    repository: group.repository,
+    sourceLineCount: group.sourceLineCount,
+    kLoc: group.sourceLineCount / 1000,
+    milliseconds: median(values),
+    sampleCount: values.length
+  };
+}
+
+function createPlot(pointsBySeries, allPoints) {
+  const width = 980;
+  const height = 430;
+  const margin = { top: 20, right: 28, bottom: 58, left: 82 };
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
+  const xValues = allPoints.map(point => point.kLoc);
+  const yValues = allPoints.map(point => point.milliseconds);
+  let xMin = Math.min(...xValues);
+  let xMax = Math.max(...xValues);
+  if (xMin === xMax) {
+    xMin = Math.max(0, xMin - 1);
+    xMax += 1;
+  } else {
+    const padding = (xMax - xMin) * 0.06;
+    xMin = Math.max(0, xMin - padding);
+    xMax += padding;
+  }
+
+  const yMin = Math.max(1, Math.min(...yValues) * 0.75);
+  const yMax = Math.max(yMin * 1.1, Math.max(...yValues) * 1.25);
+  const logYMin = Math.log10(yMin);
+  const logYMax = Math.log10(yMax);
+  const xScale = value => margin.left + ((value - xMin) / (xMax - xMin)) * plotWidth;
+  const yScale = value => margin.top + ((logYMax - Math.log10(value)) / (logYMax - logYMin)) * plotHeight;
+  const svg = svgElement('svg', { class: 'plot-svg', viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': 'Search time by repository size' });
+
+  renderGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xMax, yMin, yMax);
+  for (const series of pointsBySeries) {
+    renderSeries(svg, series, xScale, yScale);
+  }
+
+  svg.append(svgElement('text', { class: 'axis-label', x: margin.left + plotWidth / 2, y: height - 12, 'text-anchor': 'middle' }, 'Repository size (kLOC)'));
+  svg.append(svgElement('text', { class: 'axis-label', x: 18, y: margin.top + plotHeight / 2, 'text-anchor': 'middle', transform: `rotate(-90 18 ${margin.top + plotHeight / 2})` }, 'Time (log scale)'));
+  return svg;
+}
+
+function renderGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xMax, yMin, yMax) {
+  const xTicks = createLinearTicks(xMin, xMax, 5);
+  const yTicks = createLogTicks(yMin, yMax);
+  for (const tick of xTicks) {
+    const x = xScale(tick);
+    svg.append(svgElement('line', { class: 'grid', x1: x, y1: margin.top, x2: x, y2: margin.top + plotHeight }));
+    svg.append(svgElement('text', { class: 'tick-label', x, y: margin.top + plotHeight + 20, 'text-anchor': 'middle' }, formatKloc(tick * 1000)));
+  }
+
+  for (const tick of yTicks) {
+    const y = yScale(tick);
+    svg.append(svgElement('line', { class: 'grid', x1: margin.left, y1: y, x2: margin.left + plotWidth, y2: y }));
+    svg.append(svgElement('text', { class: 'tick-label', x: margin.left - 10, y: y + 4, 'text-anchor': 'end' }, formatMs(tick)));
+  }
+
+  svg.append(svgElement('line', { class: 'axis', x1: margin.left, y1: margin.top + plotHeight, x2: margin.left + plotWidth, y2: margin.top + plotHeight }));
+  svg.append(svgElement('line', { class: 'axis', x1: margin.left, y1: margin.top, x2: margin.left, y2: margin.top + plotHeight }));
+}
+
+function renderSeries(svg, series, xScale, yScale) {
+  const points = [...series.points].sort((left, right) => left.kLoc - right.kLoc);
+  if (points.length >= 2) {
+    svg.append(svgElement('polyline', {
+      class: 'series-line',
+      stroke: series.color,
+      points: points.map(point => `${xScale(point.kLoc)},${yScale(point.milliseconds)}`).join(' ')
+    }));
+  }
+
+  for (const point of points) {
+    const circle = svgElement('circle', {
+      class: 'point',
+      cx: xScale(point.kLoc),
+      cy: yScale(point.milliseconds),
+      r: 5,
+      fill: series.color
+    });
+    circle.append(svgElement('title', {}, `${series.label}\n${point.repository}\n${formatKloc(point.sourceLineCount)} kLOC\n${formatMs(point.milliseconds)} median across ${point.sampleCount} selected queries`));
+    svg.append(circle);
   }
 }
 
-function bar(value, max, className) {
-  const div = document.createElement('div');
-  div.className = className;
-  if (value === null || value === undefined) {
-    div.style.height = '8px';
-    div.textContent = '';
-    div.title = 'No data';
-    div.style.opacity = '0.18';
-    return div;
+function svgElement(name, attributes, text) {
+  const element = document.createElementNS(svgNamespace, name);
+  for (const [key, value] of Object.entries(attributes)) {
+    element.setAttribute(key, value);
   }
 
-  const scaled = Math.log10(value + 1) / max;
-  div.style.height = `${Math.max(10, Math.round(scaled * 64))}px`;
-  div.textContent = formatMs(value);
-  div.title = formatMs(value);
-  return div;
+  if (text !== undefined) {
+    element.textContent = text;
+  }
+
+  return element;
+}
+
+function createLinearTicks(min, max, count) {
+  if (count <= 1) {
+    return [min];
+  }
+
+  const step = (max - min) / (count - 1);
+  return Array.from({ length: count }, (_, index) => min + step * index);
+}
+
+function createLogTicks(min, max) {
+  const ticks = [];
+  const minPower = Math.floor(Math.log10(min));
+  const maxPower = Math.ceil(Math.log10(max));
+  for (let power = minPower; power <= maxPower; power++) {
+    for (const multiplier of [1, 2, 5]) {
+      const value = multiplier * Math.pow(10, power);
+      if (value >= min && value <= max) {
+        ticks.push(value);
+      }
+    }
+  }
+
+  return ticks.length === 0 ? [min, max] : ticks;
+}
+
+function median(values) {
+  const middle = Math.floor(values.length / 2);
+  return values.length % 2 === 0
+    ? (values[middle - 1] + values[middle]) / 2
+    : values[middle];
 }
 
 function cell(text) {
