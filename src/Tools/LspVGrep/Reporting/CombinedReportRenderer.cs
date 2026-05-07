@@ -48,7 +48,7 @@ internal static class CombinedReportRenderer
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; text-align: left; vertical-align: top; }
     th { background: #f1f5f9; font-weight: 650; position: sticky; top: 0; z-index: 1; }
-    td.numeric { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .numeric { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .muted { color: #667085; }
     .table-wrap { max-height: 520px; overflow: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
     .chart { display: grid; gap: 12px; }
@@ -101,13 +101,13 @@ internal static class CombinedReportRenderer
           <tr>
             <th>Repository</th>
             <th>Query</th>
-            <th>kLOC</th>
-            <th>Grep results</th>
-            <th>LSP results</th>
-            <th>Solution load</th>
-            <th>Grep</th>
-            <th>LSP cold</th>
-            <th>LSP warm</th>
+            <th class="numeric">kLOC</th>
+            <th class="numeric">Grep results</th>
+            <th class="numeric">LSP results</th>
+            <th class="numeric">Solution load</th>
+            <th class="numeric">Grep</th>
+            <th class="numeric">LSP cold</th>
+            <th class="numeric">LSP warm</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
