@@ -110,9 +110,13 @@ internal static class CombinedReportRenderer
           <span><i class="swatch lsp"></i>LSP</span>
           <span><i class="swatch lsp-load"></i>LSP + solution load</span>
         </div>
+        <div class="scale-toggle" role="group" aria-label="X-axis scale">
+          <button id="normalXScale" type="button" aria-pressed="false">X normal</button>
+          <button id="logXScale" type="button" aria-pressed="true">X log</button>
+        </div>
         <div class="scale-toggle" role="group" aria-label="Y-axis scale">
-          <button id="normalScale" type="button" aria-pressed="false">Normal</button>
-          <button id="logScale" type="button" aria-pressed="true">Log</button>
+          <button id="normalScale" type="button" aria-pressed="false">Y normal</button>
+          <button id="logScale" type="button" aria-pressed="true">Y log</button>
         </div>
       </div>
     </div>
@@ -169,6 +173,8 @@ const selectionRowsBody = document.getElementById('selectionRows');
 const chart = document.getElementById('chart');
 const fineQueryFilterButton = document.getElementById('fineQueryFilter');
 const coarseQueryFilterButton = document.getElementById('coarseQueryFilter');
+const normalXScaleButton = document.getElementById('normalXScale');
+const logXScaleButton = document.getElementById('logXScale');
 const normalScaleButton = document.getElementById('normalScale');
 const logScaleButton = document.getElementById('logScale');
 const seriesDefinitions = [
@@ -182,12 +188,15 @@ const svgNamespace = 'http://www.w3.org/2000/svg';
 const fineQueries = [...new Set(allRows.map(row => row.query))].sort((left, right) => left.localeCompare(right));
 const coarseQueries = [...new Set(allRows.map(row => row.queryType ?? row.query))].sort((left, right) => left.localeCompare(right));
 let queryFilterMode = 'coarse';
+let xScaleMode = 'log';
 let yScaleMode = 'log';
 
 document.getElementById('selectAll').addEventListener('click', () => setAll(true));
 document.getElementById('selectNone').addEventListener('click', () => setAll(false));
 fineQueryFilterButton.addEventListener('click', () => setQueryFilterMode('fine'));
 coarseQueryFilterButton.addEventListener('click', () => setQueryFilterMode('coarse'));
+normalXScaleButton.addEventListener('click', () => setXScaleMode('normal'));
+logXScaleButton.addEventListener('click', () => setXScaleMode('log'));
 normalScaleButton.addEventListener('click', () => setYScaleMode('normal'));
 logScaleButton.addEventListener('click', () => setYScaleMode('log'));
 
@@ -203,6 +212,13 @@ function setYScaleMode(mode) {
   yScaleMode = mode;
   normalScaleButton.setAttribute('aria-pressed', String(mode === 'normal'));
   logScaleButton.setAttribute('aria-pressed', String(mode === 'log'));
+  render();
+}
+
+function setXScaleMode(mode) {
+  xScaleMode = mode;
+  normalXScaleButton.setAttribute('aria-pressed', String(mode === 'normal'));
+  logXScaleButton.setAttribute('aria-pressed', String(mode === 'log'));
   render();
 }
 
@@ -324,7 +340,7 @@ function renderChart(visibleRows) {
     return;
   }
 
-  chart.append(createPlot(pointsBySeries, allPoints, yScaleMode));
+  chart.append(createPlot(pointsBySeries, allPoints, xScaleMode, yScaleMode));
 }
 
 function groupRowsByRepository(rows) {
@@ -365,7 +381,7 @@ function createPoint(group, field) {
   };
 }
 
-function createPlot(pointsBySeries, allPoints, scaleMode) {
+function createPlot(pointsBySeries, allPoints, xScaleMode, yScaleMode) {
   const width = 980;
   const height = 430;
   const margin = { top: 20, right: 28, bottom: 58, left: 82 };
@@ -373,43 +389,68 @@ function createPlot(pointsBySeries, allPoints, scaleMode) {
   const plotHeight = height - margin.top - margin.bottom;
   const xValues = allPoints.map(point => point.kLoc);
   const yValues = allPoints.map(point => point.milliseconds);
-  let xMin = Math.min(...xValues);
-  let xMax = Math.max(...xValues);
-  if (xMin === xMax) {
-    xMin = Math.max(0, xMin - 1);
-    xMax += 1;
-  } else {
-    const padding = (xMax - xMin) * 0.06;
-    xMin = Math.max(0, xMin - padding);
-    xMax += padding;
-  }
+  const isLogXScale = xScaleMode === 'log';
+  const xExtent = createDomain(xValues, isLogXScale);
+  const xMin = xExtent.min;
+  const xMax = xExtent.max;
 
-  const isLogScale = scaleMode === 'log';
-  const yMin = isLogScale ? Math.max(1, Math.min(...yValues) * 0.75) : 0;
+  const isLogYScale = yScaleMode === 'log';
+  const yMin = isLogYScale ? Math.max(1, Math.min(...yValues) * 0.75) : 0;
   const yMax = Math.max(yMin * 1.1, Math.max(...yValues) * 1.25);
-  const xScale = value => margin.left + ((value - xMin) / (xMax - xMin)) * plotWidth;
-  const yScale = isLogScale
+  const xScale = isLogXScale
+    ? value => {
+        const logXMin = Math.log10(xMin);
+        const logXMax = Math.log10(xMax);
+        return margin.left + ((Math.log10(value) - logXMin) / (logXMax - logXMin)) * plotWidth;
+      }
+    : value => margin.left + ((value - xMin) / (xMax - xMin)) * plotWidth;
+  const yScale = isLogYScale
     ? value => {
         const logYMin = Math.log10(yMin);
         const logYMax = Math.log10(yMax);
         return margin.top + ((logYMax - Math.log10(value)) / (logYMax - logYMin)) * plotHeight;
       }
     : value => margin.top + ((yMax - value) / (yMax - yMin)) * plotHeight;
-  const svg = svgElement('svg', { class: 'plot-svg', viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': 'Search time by repository size' });
+  const svg = svgElement('svg', { class: 'plot-svg', viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': `Search time by repository size, x-axis ${xScaleMode} scale, y-axis ${yScaleMode} scale` });
 
-  renderGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xMax, yMin, yMax, scaleMode);
+  renderGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xMax, yMin, yMax, xScaleMode, yScaleMode);
   for (const series of pointsBySeries) {
     renderSeries(svg, series, xScale, yScale);
   }
 
-  svg.append(svgElement('text', { class: 'axis-label', x: margin.left + plotWidth / 2, y: height - 12, 'text-anchor': 'middle' }, 'Repository size (kLOC)'));
-  svg.append(svgElement('text', { class: 'axis-label', x: 18, y: margin.top + plotHeight / 2, 'text-anchor': 'middle', transform: `rotate(-90 18 ${margin.top + plotHeight / 2})` }, isLogScale ? 'Time (log scale)' : 'Time (normal scale)'));
+  svg.append(svgElement('text', { class: 'axis-label', x: margin.left + plotWidth / 2, y: height - 12, 'text-anchor': 'middle' }, isLogXScale ? 'Repository size (log kLOC)' : 'Repository size (kLOC)'));
+  svg.append(svgElement('text', { class: 'axis-label', x: 18, y: margin.top + plotHeight / 2, 'text-anchor': 'middle', transform: `rotate(-90 18 ${margin.top + plotHeight / 2})` }, isLogYScale ? 'Time (log scale)' : 'Time (normal scale)'));
   return svg;
 }
 
-function renderGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xMax, yMin, yMax, scaleMode) {
-  const xTicks = createLinearTicks(xMin, xMax, 5);
-  const yTicks = scaleMode === 'log'
+function createDomain(values, isLogScale) {
+  let min = Math.min(...values);
+  let max = Math.max(...values);
+  if (min === max) {
+    if (isLogScale) {
+      min = Math.max(0.1, min / 2);
+      max *= 2;
+    } else {
+      min = Math.max(0, min - 1);
+      max += 1;
+    }
+  } else if (isLogScale) {
+    min = Math.max(0.1, min * 0.75);
+    max *= 1.25;
+  } else {
+    const padding = (max - min) * 0.06;
+    min = Math.max(0, min - padding);
+    max += padding;
+  }
+
+  return { min, max };
+}
+
+function renderGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xMax, yMin, yMax, xScaleMode, yScaleMode) {
+  const xTicks = xScaleMode === 'log'
+    ? createLogTicks(xMin, xMax)
+    : createLinearTicks(xMin, xMax, 5);
+  const yTicks = yScaleMode === 'log'
     ? createLogTicks(yMin, yMax)
     : createLinearTicks(yMin, yMax, 6);
   for (const tick of xTicks) {
