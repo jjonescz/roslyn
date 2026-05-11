@@ -569,7 +569,7 @@ BC35000: Requested operation is not available because the runtime library functi
         End Sub
 
         <Fact, WorkItem(8287, "https://github.com/dotnet/roslyn/issues/8287")>
-        Public Sub ToManyUserStrings()
+        Public Sub TooManyUserStrings()
 
             Dim source As New System.Text.StringBuilder()
             source.Append("
@@ -589,15 +589,22 @@ Module C
     End Sub
 End Module")
 
-            Dim compilation = CreateEmptyCompilationWithReferences(VisualBasicSyntaxTree.ParseText(source.ToString()), {MscorlibRef, SystemRef, MsvbRef})
+            Dim sourceText = source.ToString()
 
-            Dim expectedDiagnostics =
-            {
-                Diagnostic(ERRID.ERR_TooManyUserStrings, """" & New String("K"c, 1000000) & """").WithLocation(13, 33),
-                Diagnostic(ERRID.ERR_TooManyUserStrings, """" & New String("L"c, 1000000) & """").WithLocation(14, 33)
-            }
+            'Dim compilation = CreateEmptyCompilationWithReferences(VisualBasicSyntaxTree.ParseText(sourceText), {MscorlibRef, SystemRef, MsvbRef})
 
-            CreateCompilation(source.ToString()).VerifyEmitDiagnostics(expectedDiagnostics)
+            'Dim expectedDiagnostics =
+            '{
+            '    Diagnostic(ERRID.ERR_TooManyUserStrings, """" & New String("K"c, 1000000) & """").WithLocation(13, 33),
+            '    Diagnostic(ERRID.ERR_TooManyUserStrings, """" & New String("L"c, 1000000) & """").WithLocation(14, 33)
+            '}
+
+            'compilation.VerifyEmitDiagnostics(expectedDiagnostics)
+
+            CreateCompilation(
+                sourceText,
+                parseOptions:=TestOptions.Regular.WithFeature("experimental-data-section-string-literals")).
+                VerifyEmitDiagnostics()
         End Sub
 
 #End Region
