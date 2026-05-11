@@ -64,6 +64,11 @@ internal static class HtmlReportRenderer
                 $"  <p><strong>Roslyn target:</strong> {Encode(report.RoslynTargetKind)} - {Encode(report.RoslynTargetPath)} (loaded in {loadTime})</p>");
         }
 
+        if (report.TgrepIndexTime is { } tgrepIndexTime)
+        {
+            builder.AppendLine($"  <p><strong>tgrep index:</strong> built in {FormatDuration(tgrepIndexTime)}</p>");
+        }
+
         builder.AppendLine("  <div class=\"actions\">");
         builder.AppendLine("    <button type=\"button\" data-action=\"expand-all\">Expand all</button>");
         builder.AppendLine("    <button type=\"button\" data-action=\"collapse-algorithms\">Collapse algorithms</button>");
@@ -145,6 +150,11 @@ internal static class HtmlReportRenderer
             ? "not used (enabled)"
             : "not used (disabled)";
     }
+
+    private static string FormatDuration(TimeSpan elapsed) =>
+        elapsed.TotalSeconds >= 1
+            ? $"{elapsed.TotalSeconds:F1}s"
+            : $"{elapsed.TotalMilliseconds:F0}ms";
 
     private const int MaxDisplayLines = 10;
     private static int s_expandCounter;

@@ -1,4 +1,4 @@
-using LspVGrepTool.Infrastructure;
+﻿using LspVGrepTool.Infrastructure;
 
 namespace LspVGrepTool.Execution;
 
@@ -30,20 +30,38 @@ internal sealed class QueryExecutionContext : IDisposable
         return await _workspaceLoadTask;
     }
 
+    public Task<ExternalSearchResult> BuildTgrepIndexAsync(CancellationToken cancellationToken) =>
+        _externalSearchRunner.BuildTgrepIndexAsync(DirectoryPath, cancellationToken);
+
     public Task<ExternalSearchResult> SearchTypeDefinitionPwshAsync(string typeName, CancellationToken cancellationToken) =>
         _externalSearchRunner.SearchTypeDefinitionPwshAsync(DirectoryPath, typeName, cancellationToken);
+
+    public Task<ExternalSearchResult> SearchTypeDefinitionTgrepAsync(string typeName, CancellationToken cancellationToken) =>
+        _externalSearchRunner.SearchTypeDefinitionTgrepAsync(DirectoryPath, typeName, cancellationToken);
 
     public Task<ExternalSearchResult> SearchTypeNamePwshAsync(string typeName, CancellationToken cancellationToken) =>
         _externalSearchRunner.SearchTypeNamePwshAsync(DirectoryPath, typeName, cancellationToken);
 
+    public Task<ExternalSearchResult> SearchTypeNameTgrepAsync(string typeName, CancellationToken cancellationToken) =>
+        _externalSearchRunner.SearchTypeNameTgrepAsync(DirectoryPath, typeName, cancellationToken);
+
     public Task<ExternalSearchResult> SearchImplementationPwshAsync(string typeName, CancellationToken cancellationToken) =>
         _externalSearchRunner.SearchImplementationPwshAsync(DirectoryPath, typeName, cancellationToken);
+
+    public Task<ExternalSearchResult> SearchImplementationTgrepAsync(string typeName, CancellationToken cancellationToken) =>
+        _externalSearchRunner.SearchImplementationTgrepAsync(DirectoryPath, typeName, cancellationToken);
 
     public Task<ExternalSearchResult> SearchDerivedTypesPwshAsync(string typeName, CancellationToken cancellationToken) =>
         _externalSearchRunner.SearchDerivedTypesPwshAsync(DirectoryPath, typeName, cancellationToken);
 
+    public Task<ExternalSearchResult> SearchDerivedTypesTgrepAsync(string typeName, CancellationToken cancellationToken) =>
+        _externalSearchRunner.SearchDerivedTypesTgrepAsync(DirectoryPath, typeName, cancellationToken);
+
     public Task<ExternalSearchResult> SearchMemberDefinitionPwshAsync(string memberName, CancellationToken cancellationToken) =>
         _externalSearchRunner.SearchMemberDefinitionPwshAsync(DirectoryPath, memberName, cancellationToken);
+
+    public Task<ExternalSearchResult> SearchMemberDefinitionTgrepAsync(string memberName, CancellationToken cancellationToken) =>
+        _externalSearchRunner.SearchMemberDefinitionTgrepAsync(DirectoryPath, memberName, cancellationToken);
 
     public WorkspaceLoadResult? TryGetLoadedWorkspace()
     {

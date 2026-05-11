@@ -35,6 +35,9 @@ internal sealed class JsonSummaryReport
     [JsonPropertyName("roslynTarget")]
     public JsonSummaryRoslynTarget? RoslynTarget { get; init; }
 
+    [JsonPropertyName("tgrepIndex")]
+    public JsonSummaryTgrepIndex? TgrepIndex { get; init; }
+
     [JsonPropertyName("queries")]
     public List<JsonSummaryQuery> Queries { get; init; } = [];
 
@@ -52,6 +55,7 @@ internal sealed class JsonSummaryReport
                 Used = report.LsCacheUsed
             },
             RoslynTarget = CreateRoslynTarget(report),
+            TgrepIndex = CreateTgrepIndex(report),
             Queries = report.Queries.Select(static query => new JsonSummaryQuery
             {
                 Type = query.Type,
@@ -98,6 +102,17 @@ internal sealed class JsonSummaryReport
             LoadTimeMilliseconds = report.RoslynLoadTime?.TotalMilliseconds
         };
     }
+
+    private static JsonSummaryTgrepIndex? CreateTgrepIndex(ToolReport report)
+    {
+        if (report.TgrepIndexTime is null)
+            return null;
+
+        return new JsonSummaryTgrepIndex
+        {
+            BuildTimeMilliseconds = report.TgrepIndexTime.Value.TotalMilliseconds
+        };
+    }
 }
 
 internal sealed class JsonSummaryLsCache
@@ -119,6 +134,12 @@ internal sealed class JsonSummaryRoslynTarget
 
     [JsonPropertyName("loadTimeMilliseconds")]
     public double? LoadTimeMilliseconds { get; init; }
+}
+
+internal sealed class JsonSummaryTgrepIndex
+{
+    [JsonPropertyName("buildTimeMilliseconds")]
+    public double? BuildTimeMilliseconds { get; init; }
 }
 
 internal sealed class JsonSummaryQuery

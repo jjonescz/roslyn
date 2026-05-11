@@ -16,11 +16,11 @@ internal static class CombinedReportRenderer
     public static string Render(IReadOnlyList<JsonSummaryReport> reports)
     {
         var rows = reports
-            .SelectMany(CreateRows)
-            .OrderBy(static row => row.SourceLineCount ?? long.MaxValue)
-            .ThenBy(static row => row.Repository, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(static row => row.Query, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+          .SelectMany(CreateRows)
+          .OrderBy(static row => row.SourceLineCount ?? long.MaxValue)
+          .ThenBy(static row => row.Repository, StringComparer.OrdinalIgnoreCase)
+          .ThenBy(static row => row.Query, StringComparer.OrdinalIgnoreCase)
+          .ToList();
 
         var rowsJson = JsonSerializer.Serialize(rows, s_jsonOptions);
         var generatedAt = DateTimeOffset.UtcNow.ToString("u");
@@ -62,6 +62,8 @@ internal static class CombinedReportRenderer
     .point { stroke: #fff; stroke-width: 1.5; }
     .plot-empty { color: #667085; padding: 24px 0; }
     .grep { background: #16a34a; }
+    .tgrep { background: #0891b2; }
+    .tgrep-load { background: #0f766e; }
     .lsp { background: #7c3aed; }
     .lsp-load { background: #ea580c; }
     .chart-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 12px; }
@@ -103,6 +105,8 @@ internal static class CombinedReportRenderer
       <div class="chart-controls">
         <div class="legend">
           <span><i class="swatch grep"></i>Grep</span>
+          <span><i class="swatch tgrep"></i>tgrep</span>
+          <span><i class="swatch tgrep-load"></i>tgrep + index</span>
           <span><i class="swatch lsp"></i>LSP</span>
           <span><i class="swatch lsp-load"></i>LSP + solution load</span>
         </div>
@@ -124,9 +128,12 @@ internal static class CombinedReportRenderer
             <th>Query</th>
             <th class="numeric">kLOC</th>
             <th class="numeric">Grep results</th>
+            <th class="numeric">tgrep results</th>
             <th class="numeric">LSP results</th>
             <th class="numeric">Solution load</th>
+            <th class="numeric">tgrep index</th>
             <th class="numeric">Grep</th>
+            <th class="numeric">tgrep</th>
             <th class="numeric">LSP</th>
           </tr>
         </thead>
@@ -145,6 +152,7 @@ internal static class CombinedReportRenderer
           <tr>
             <th>Query type</th>
             <th>Grep</th>
+            <th>tgrep</th>
             <th>LSP</th>
           </tr>
         </thead>
@@ -165,6 +173,8 @@ const normalScaleButton = document.getElementById('normalScale');
 const logScaleButton = document.getElementById('logScale');
 const seriesDefinitions = [
   { label: 'Grep', field: 'grepMilliseconds', color: '#16a34a' },
+  { label: 'tgrep', field: 'tgrepMilliseconds', color: '#0891b2' },
+  { label: 'tgrep + index', field: 'tgrepWithIndexMilliseconds', color: '#0f766e' },
   { label: 'LSP', field: 'lspMilliseconds', color: '#7c3aed' },
   { label: 'LSP + solution load', field: 'lspWithSolutionLoadMilliseconds', color: '#ea580c' }
 ];
@@ -239,9 +249,12 @@ function renderTable(visibleRows) {
       cell(row.query),
       numericCell(formatKloc(row.sourceLineCount)),
       numericCell(formatCount(row.grepResultCount)),
+      numericCell(formatCount(row.tgrepResultCount)),
       numericCell(formatCount(row.lspResultCount)),
       numericCell(formatMs(row.solutionLoadMilliseconds)),
+      numericCell(formatMs(row.tgrepIndexMilliseconds)),
       numericCell(formatMs(row.grepMilliseconds)),
+      numericCell(formatMs(row.tgrepMilliseconds)),
       numericCell(formatMs(row.lspMilliseconds)));
     rowsBody.append(tr);
   }
@@ -254,6 +267,7 @@ function renderAlgorithmSelectionTable() {
     tr.append(
       cell(row.queryType),
       cell(row.grepAlgorithms.join(', ')),
+      cell(row.tgrepAlgorithms.join(', ')),
       cell(row.lspAlgorithms.join(', ')));
     selectionRowsBody.append(tr);
   }
@@ -265,12 +279,16 @@ function getAlgorithmSelectionRows() {
     const queryType = row.queryType ?? row.query;
     let item = byQueryType.get(queryType);
     if (item === undefined) {
-      item = { queryType, grepAlgorithms: new Set(), lspAlgorithms: new Set() };
+      item = { queryType, grepAlgorithms: new Set(), tgrepAlgorithms: new Set(), lspAlgorithms: new Set() };
       byQueryType.set(queryType, item);
     }
 
     if (row.grepAlgorithmName) {
       item.grepAlgorithms.add(row.grepAlgorithmName);
+    }
+
+    if (row.tgrepAlgorithmName) {
+      item.tgrepAlgorithms.add(row.tgrepAlgorithmName);
     }
 
     if (row.lspAlgorithmName) {
@@ -282,6 +300,7 @@ function getAlgorithmSelectionRows() {
     .map(item => ({
       queryType: item.queryType,
       grepAlgorithms: [...item.grepAlgorithms].sort((left, right) => left.localeCompare(right)),
+      tgrepAlgorithms: [...item.tgrepAlgorithms].sort((left, right) => left.localeCompare(right)),
       lspAlgorithms: [...item.lspAlgorithms].sort((left, right) => left.localeCompare(right))
     }))
     .sort((left, right) => left.queryType.localeCompare(right.queryType));
@@ -537,8 +556,12 @@ render();
                 .ToList();
 
             var grep = SelectGrepAlgorithm(successfulAlgorithms);
+            var tgrep = SelectTgrepAlgorithm(successfulAlgorithms);
             var lspWarm = SelectLspAlgorithm(successfulAlgorithms, pass: 2);
             var lsp = lspWarm ?? SelectLspAlgorithm(successfulAlgorithms, pass: 1);
+            var tgrepWithIndex = report.TgrepIndex?.BuildTimeMilliseconds is { } indexMilliseconds && tgrep?.ElapsedMilliseconds is { } tgrepMilliseconds
+              ? indexMilliseconds + tgrepMilliseconds
+              : (double?)null;
             var lspWithSolutionLoad = report.RoslynTarget?.LoadTimeMilliseconds is { } loadMilliseconds && lsp?.ElapsedMilliseconds is { } lspMilliseconds
                 ? loadMilliseconds + lspMilliseconds
                 : (double?)null;
@@ -550,11 +573,16 @@ render();
                 FormatQuery(query),
                 query.Type,
                 grep?.Name,
+                tgrep?.Name,
                 lsp?.Name,
                 grep?.LineCount,
+                tgrep?.LineCount,
                 lsp?.LineCount,
                 report.RoslynTarget?.LoadTimeMilliseconds,
+                report.TgrepIndex?.BuildTimeMilliseconds,
                 grep?.ElapsedMilliseconds,
+                tgrep?.ElapsedMilliseconds,
+                tgrepWithIndex,
                 lsp?.ElapsedMilliseconds,
                 lspWithSolutionLoad);
         }
@@ -563,8 +591,18 @@ render();
     private static JsonSummaryAlgorithm? SelectGrepAlgorithm(IReadOnlyList<JsonSummaryAlgorithm> algorithms) =>
         algorithms.FirstOrDefault(static algorithm =>
             algorithm.Name.Contains("grep", StringComparison.OrdinalIgnoreCase) &&
+            !algorithm.Name.Contains("tgrep", StringComparison.OrdinalIgnoreCase) &&
             !algorithm.Name.Contains("nameonly", StringComparison.OrdinalIgnoreCase))
-        ?? algorithms.FirstOrDefault(static algorithm => algorithm.Name.Contains("grep", StringComparison.OrdinalIgnoreCase));
+        ?? algorithms.FirstOrDefault(static algorithm =>
+            algorithm.Name.Contains("grep", StringComparison.OrdinalIgnoreCase) &&
+            !algorithm.Name.Contains("tgrep", StringComparison.OrdinalIgnoreCase));
+
+    private static JsonSummaryAlgorithm? SelectTgrepAlgorithm(IReadOnlyList<JsonSummaryAlgorithm> algorithms) =>
+        algorithms.FirstOrDefault(static algorithm => IsTgrepAlgorithm(algorithm.Name) && !algorithm.Name.Contains("nameonly", StringComparison.OrdinalIgnoreCase))
+        ?? algorithms.FirstOrDefault(static algorithm => IsTgrepAlgorithm(algorithm.Name));
+
+    private static bool IsTgrepAlgorithm(string name) =>
+        name.Contains("tgrep", StringComparison.OrdinalIgnoreCase);
 
     private static JsonSummaryAlgorithm? SelectLspAlgorithm(IReadOnlyList<JsonSummaryAlgorithm> algorithms, int pass)
     {
@@ -613,11 +651,16 @@ render();
         string Query,
         string QueryType,
         string? GrepAlgorithmName,
+        string? TgrepAlgorithmName,
         string? LspAlgorithmName,
         int? GrepResultCount,
+        int? TgrepResultCount,
         int? LspResultCount,
         double? SolutionLoadMilliseconds,
+        double? TgrepIndexMilliseconds,
         double? GrepMilliseconds,
+        double? TgrepMilliseconds,
+        double? TgrepWithIndexMilliseconds,
         double? LspMilliseconds,
         double? LspWithSolutionLoadMilliseconds);
 }

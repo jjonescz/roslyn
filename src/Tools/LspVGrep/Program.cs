@@ -110,6 +110,28 @@ internal static class Program
             new RoslynWorkspaceProvider(Log, LogProgress),
             new ExternalSearchRunner());
 
+        Log("Building tgrep index.");
+        TimeSpan? tgrepIndexTime = null;
+        var tgrepIndexStopwatch = Stopwatch.StartNew();
+        var tgrepIndexResult = await context.BuildTgrepIndexAsync(cancellationToken);
+        tgrepIndexStopwatch.Stop();
+        if (tgrepIndexResult.CommandMissing)
+        {
+            Log("Skipping tgrep index because 'tgrep' was not available on PATH.");
+        }
+        else if (tgrepIndexResult.ExitCode != 0)
+        {
+            var message = string.IsNullOrWhiteSpace(tgrepIndexResult.StandardError)
+                ? tgrepIndexResult.StandardOutput.Trim()
+                : tgrepIndexResult.StandardError.Trim();
+            Log($"tgrep index failed in {FormatDuration(tgrepIndexStopwatch.Elapsed)}; tgrep searches will run without an index. {message}");
+        }
+        else
+        {
+            tgrepIndexTime = tgrepIndexStopwatch.Elapsed;
+            Log($"Built tgrep index in {FormatDuration(tgrepIndexStopwatch.Elapsed)}.");
+        }
+
         // Eagerly load workspace so timing is separate from individual algorithm runs.
         Log("Loading Roslyn workspace.");
         var workspaceStopwatch = Stopwatch.StartNew();
@@ -120,21 +142,26 @@ internal static class Program
         var algorithms = new IQueryAlgorithm[]
         {
             new FindTypeDefinitionPwshAlgorithm(),
+            new FindTypeDefinitionTgrepAlgorithm(),
             new FindTypeDefinitionPwshSimpleAlgorithm(),
+            new FindTypeDefinitionTgrepSimpleAlgorithm(),
             new FindTypeDefinitionRoslynAlgorithm(),
             new FindTypeDefinitionRoslynLspAlgorithm(),
             new FindTypeDefinitionRoslynWorkspaceSymbolAlgorithm(),
             new FindInterfaceImplementationPwshAlgorithm(),
+            new FindInterfaceImplementationTgrepAlgorithm(),
             new FindInterfaceImplementationRoslynAlgorithm(),
             new FindDerivedTypesPwshAlgorithm(),
+            new FindDerivedTypesTgrepAlgorithm(),
             new FindDerivedTypesRoslynAlgorithm(),
             new FindMemberDefinitionPwshAlgorithm(),
+            new FindMemberDefinitionTgrepAlgorithm(),
             new FindMemberDefinitionRoslynAlgorithm()
         };
 
         Log($"Running {queries.Count} queries with {algorithms.Length} algorithms registered.");
         var executor = new QueryExecutor(algorithms, Log, LogProgress);
-        var report = await executor.ExecuteAsync(queries, context, repositoryCommitHash, sourceLineCount, workspaceStopwatch.Elapsed, cancellationToken);
+        var report = await executor.ExecuteAsync(queries, context, repositoryCommitHash, sourceLineCount, workspaceStopwatch.Elapsed, tgrepIndexTime, cancellationToken);
 
         var outputPath = ResolveOutputPath(inputPath, input.Output);
         Log($"Rendering report to '{outputPath}'.");

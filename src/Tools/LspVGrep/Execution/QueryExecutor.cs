@@ -30,6 +30,7 @@ internal sealed class QueryExecutor
         string? repositoryCommitHash,
         long? sourceLineCount,
         TimeSpan? workspaceLoadTime,
+        TimeSpan? tgrepIndexTime,
         CancellationToken cancellationToken)
     {
         var executionStopwatch = Stopwatch.StartNew();
@@ -73,6 +74,7 @@ internal sealed class QueryExecutor
             workspace?.TargetPath,
             workspace?.TargetKind.ToString(),
             workspaceLoadTime,
+            tgrepIndexTime,
             queryReports);
     }
 
