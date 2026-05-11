@@ -58,18 +58,19 @@ internal static class CombinedReportRenderer
     .grid { stroke: #e2e8f0; stroke-width: 1; }
     .tick-label { fill: #475569; font-size: 12px; }
     .axis-label { fill: #334155; font-size: 13px; font-weight: 600; }
-    .series-line { fill: none; stroke-width: 2.5; }
+    .series-line { fill: none; stroke-width: 2.75; }
     .point { stroke: #fff; stroke-width: 1.5; }
     .plot-empty { color: #667085; padding: 24px 0; }
-    .grep { background: #16a34a; }
-    .tgrep { background: #0891b2; }
-    .tgrep-load { background: #0f766e; }
-    .lsp { background: #7c3aed; }
-    .lsp-load { background: #ea580c; }
+    .grep { background: #0072b2; color: #0072b2; }
+    .tgrep { background: #e69f00; color: #e69f00; }
+    .tgrep-load { background: #d55e00; color: #d55e00; }
+    .lsp { background: #009e73; color: #009e73; }
+    .lsp-load { background: #cc79a7; color: #cc79a7; }
     .chart-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 12px; }
     .legend { display: flex; flex-wrap: wrap; gap: 12px; color: #475569; font-size: 12px; }
     .legend span { display: inline-flex; align-items: center; gap: 6px; }
-    .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+    .swatch { width: 18px; height: 4px; border-radius: 999px; display: inline-block; }
+    .swatch.dashed { background: repeating-linear-gradient(90deg, currentColor 0 6px, transparent 6px 10px); }
     .scale-toggle { display: inline-flex; border: 1px solid #b8c2d1; border-radius: 6px; overflow: hidden; }
     .scale-toggle button { border: 0; border-radius: 0; padding: 5px 10px; }
     .scale-toggle button + button { border-left: 1px solid #b8c2d1; }
@@ -106,9 +107,9 @@ internal static class CombinedReportRenderer
         <div class="legend">
           <span><i class="swatch grep"></i>Grep</span>
           <span><i class="swatch tgrep"></i>tgrep</span>
-          <span><i class="swatch tgrep-load"></i>tgrep + index</span>
+          <span><i class="swatch dashed tgrep-load"></i>tgrep + index</span>
           <span><i class="swatch lsp"></i>LSP</span>
-          <span><i class="swatch lsp-load"></i>LSP + solution load</span>
+          <span><i class="swatch dashed lsp-load"></i>LSP + solution load</span>
         </div>
         <div class="scale-toggle" role="group" aria-label="X-axis scale">
           <button id="normalXScale" type="button" aria-pressed="false">X normal</button>
@@ -178,11 +179,11 @@ const logXScaleButton = document.getElementById('logXScale');
 const normalScaleButton = document.getElementById('normalScale');
 const logScaleButton = document.getElementById('logScale');
 const seriesDefinitions = [
-  { label: 'Grep', field: 'grepMilliseconds', color: '#16a34a' },
-  { label: 'tgrep', field: 'tgrepMilliseconds', color: '#0891b2' },
-  { label: 'tgrep + index', field: 'tgrepWithIndexMilliseconds', color: '#0f766e' },
-  { label: 'LSP', field: 'lspMilliseconds', color: '#7c3aed' },
-  { label: 'LSP + solution load', field: 'lspWithSolutionLoadMilliseconds', color: '#ea580c' }
+  { label: 'Grep', field: 'grepMilliseconds', color: '#0072b2' },
+  { label: 'tgrep', field: 'tgrepMilliseconds', color: '#e69f00' },
+  { label: 'tgrep + index', field: 'tgrepWithIndexMilliseconds', color: '#d55e00', dash: '8 5' },
+  { label: 'LSP', field: 'lspMilliseconds', color: '#009e73' },
+  { label: 'LSP + solution load', field: 'lspWithSolutionLoadMilliseconds', color: '#cc79a7', dash: '8 5' }
 ];
 const svgNamespace = 'http://www.w3.org/2000/svg';
 const fineQueries = [...new Set(allRows.map(row => row.query))].sort((left, right) => left.localeCompare(right));
@@ -472,11 +473,16 @@ function renderGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xM
 function renderSeries(svg, series, xScale, yScale) {
   const points = [...series.points].sort((left, right) => left.kLoc - right.kLoc);
   if (points.length >= 2) {
-    svg.append(svgElement('polyline', {
+    const lineAttributes = {
       class: 'series-line',
       stroke: series.color,
       points: points.map(point => `${xScale(point.kLoc)},${yScale(point.milliseconds)}`).join(' ')
-    }));
+    };
+    if (series.dash) {
+      lineAttributes['stroke-dasharray'] = series.dash;
+    }
+
+    svg.append(svgElement('polyline', lineAttributes));
   }
 
   for (const point of points) {
