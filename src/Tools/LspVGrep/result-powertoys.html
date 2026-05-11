@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>LspVGrepTool Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; color: #1f2937; }
+    h1, h2, h3 { margin-bottom: 0.5rem; }
+    .actions { display: flex; gap: 0.5rem; margin: 1rem 0; }
+    button { border: 1px solid #b8c2d1; border-radius: 6px; background: #fff; color: #1f2937; padding: 0.35rem 0.65rem; cursor: pointer; }
+    button:hover { background: #eef2f7; }
+    details { background: #fff; }
+    summary { cursor: pointer; }
+    .query { border: 1px solid #d1d5db; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem; }
+    .query[open] > summary { border-bottom: 1px solid #e5e7eb; margin-bottom: 0.75rem; padding-bottom: 0.75rem; }
+    .algorithm { border-top: 1px solid #e5e7eb; padding-top: 0.75rem; margin-top: 0.75rem; }
+    .algorithm[open] > summary { margin-bottom: 0.5rem; }
+    .summary-title { font-weight: 700; }
+    .summary-meta { color: #4b5563; margin-left: 0.75rem; font-size: 0.92rem; }
+    .algorithm-details { margin: 0.5rem 0; color: #4b5563; }
+    .status { font-weight: bold; }
+    .status-failed { color: #b91c1c; }
+    .status-succeeded { color: #047857; }
+    dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1rem; }
+    dt { font-weight: bold; }
+    pre { background: #f9fafb; border-radius: 6px; padding: 1rem; overflow-x: auto; white-space: pre-wrap; }
+    .truncated-link { color: #2563eb; cursor: pointer; font-style: italic; }
+    .truncated-link:hover { text-decoration: underline; }
+    .full-result { display: none; }
+  </style>
+</head>
+<body>
+  <h1>LspVGrepTool Report</h1>
+  <p><strong>Directory:</strong> C:\repos\PowerToys\src\modules\launcher</p>
+  <p><strong>Commit:</strong> 5b981666a968fc76e96f32ed8845b719c0742ca4</p>
+  <p><strong>LS cache:</strong> not used (enabled)</p>
+  <p><strong>Roslyn target:</strong> MultipleProjects - 35 projects (loaded in 113.2s)</p>
+  <p><strong>tgrep index:</strong> built in 361ms</p>
+  <div class="actions">
+    <button type="button" data-action="expand-all">Expand all</button>
+    <button type="button" data-action="collapse-algorithms">Collapse algorithms</button>
+    <button type="button" data-action="collapse-all">Collapse all</button>
+  </div>
+  <section>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: StringMatcher)</span><span class="summary-meta">10 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>StringMatcher</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 106 | Lines: 1 | Time: 924ms</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) StringMatcher&#39;</p>
+        <pre>C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:17: public class StringMatcher</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 65 | Lines: 1 | Time: 58ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) StringMatcher&#39;</p>
+        <pre>Wox.Infrastructure/StringMatcher.cs:17:public class StringMatcher</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 13956 | Lines: 83 | Time: 899ms</span></summary>
+        <p class="algorithm-details">string search for &#39;StringMatcher&#39;</p>
+        <pre id="expand-0-short">C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator\Main.cs:205: var matchScore = StringMatcher.FuzzySearch(query.Search.Trim(), generatorData.Keyword).Score;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\UserFolderResult.cs:31: return new Result(StringMatcher.FuzzySearch(Search, Title).MatchData)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Sources\Result\EnvironmentVariableResult.cs:36: return new Wox.Plugin.Result(StringMatcher.FuzzySearch(Search, Title).MatchData)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Sources\Result\FileItemResult.cs:40: var result = new Wox.Plugin.Result(StringMatcher.FuzzySearch(Search, _path.GetFileName(FilePath)).MatchData)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Sources\Result\FolderItemResult.cs:40: return new Wox.Plugin.Result(StringMatcher.FuzzySearch(Search, Title).MatchData)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\UWPApplication.cs:82: var displayNameMatch = StringMatcher.FuzzySearch(query, DisplayName);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\UWPApplication.cs:83: var descriptionMatch = StringMatcher.FuzzySearch(query, Description);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\UWPApplication.cs:120: result.TitleHighlightData = StringMatcher.FuzzySearch(query, Name).MatchData;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\Win32Program.cs:116: var nameMatch = StringMatcher.FuzzySearch(query, Name);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\Win32Program.cs:117: var locNameMatch = StringMatcher.FuzzySearch(query, NameLocalized);
+<span class="truncated-link" onclick="document.getElementById('expand-0-short').style.display='none'; document.getElementById('expand-0-full').style.display='block';">... truncated (73 more lines) — click to expand</span></pre>
+        <pre id="expand-0-full" class="full-result">C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator\Main.cs:205: var matchScore = StringMatcher.FuzzySearch(query.Search.Trim(), generatorData.Keyword).Score;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\UserFolderResult.cs:31: return new Result(StringMatcher.FuzzySearch(Search, Title).MatchData)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Sources\Result\EnvironmentVariableResult.cs:36: return new Wox.Plugin.Result(StringMatcher.FuzzySearch(Search, Title).MatchData)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Sources\Result\FileItemResult.cs:40: var result = new Wox.Plugin.Result(StringMatcher.FuzzySearch(Search, _path.GetFileName(FilePath)).MatchData)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Sources\Result\FolderItemResult.cs:40: return new Wox.Plugin.Result(StringMatcher.FuzzySearch(Search, Title).MatchData)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\UWPApplication.cs:82: var displayNameMatch = StringMatcher.FuzzySearch(query, DisplayName);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\UWPApplication.cs:83: var descriptionMatch = StringMatcher.FuzzySearch(query, Description);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\UWPApplication.cs:120: result.TitleHighlightData = StringMatcher.FuzzySearch(query, Name).MatchData;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\Win32Program.cs:116: var nameMatch = StringMatcher.FuzzySearch(query, Name);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\Win32Program.cs:117: var locNameMatch = StringMatcher.FuzzySearch(query, NameLocalized);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\Win32Program.cs:118: var descriptionMatch = StringMatcher.FuzzySearch(query, Description);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\Win32Program.cs:119: var executableNameMatch = StringMatcher.FuzzySearch(query, ExecutableName);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\Win32Program.cs:120: var locExecutableNameMatch = StringMatcher.FuzzySearch(query, ExecutableNameLocalized);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\Win32Program.cs:121: var lnkResolvedExecutableNameMatch = StringMatcher.FuzzySearch(query, LnkResolvedExecutableName);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\Win32Program.cs:122: var locLnkResolvedExecutableNameMatch = StringMatcher.FuzzySearch(query, LnkResolvedExecutableNameLocalized);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Programs\Win32Program.cs:263: result.TitleHighlightData = StringMatcher.FuzzySearch(query, result.Title).MatchData;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program.UnitTests\Programs\Win32Tests.cs:595: StringMatcher.Instance = new StringMatcher();
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program.UnitTests\Programs\Win32Tests.cs:610: StringMatcher.Instance = new StringMatcher();
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Main.cs:49: var matchResult = StringMatcher.FuzzySearch(query.Search, utility.Name);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System\Main.cs:105: var resultMatch = StringMatcher.FuzzySearch(query.Search, c.Title);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System\Main.cs:114: var searchTagMatch = StringMatcher.FuzzySearch(query.Search, contextData.SearchTag);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System\Main.cs:132: //        Score = StringMatcher.FuzzySearch(&quot;address&quot;, &quot;ip address&quot;).Score,
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System\Main.cs:156: var resultMatch = StringMatcher.FuzzySearch(query.Search, r.SubTitle);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System\Main.cs:165: var searchTagMatch = StringMatcher.FuzzySearch(query.Search, contextData.SearchTag);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System.UnitTests\ImageTests.cs:20: StringMatcher.Instance = new StringMatcher();
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System.UnitTests\QueryTests.cs:21: StringMatcher.Instance = new StringMatcher();
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate\Components\SearchController.cs:167: int score = StringMatcher.FuzzySearch(query, label).Score;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate\Components\SearchController.cs:172: var tagScore = StringMatcher.FuzzySearch(query, t.Trim()).Score / 2;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests\ImageTests.cs:24: StringMatcher.Instance = new StringMatcher();
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests\QueryTests.cs:25: StringMatcher.Instance = new StringMatcher();
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.WindowsTerminal\Main.cs:85: int score = StringMatcher.FuzzySearch(search, profile.Name).Score;
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\App.xaml.cs:47: private StringMatcher _stringMatcher;
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\App.xaml.cs:151: _stringMatcher = new StringMatcher(_alphabet);
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\App.xaml.cs:152: StringMatcher.Instance = _stringMatcher;
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\MainViewModel.cs:568: r =&gt; StringMatcher.FuzzySearch(query, r.Title).IsSearchPrecisionScoreMet() ||
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\MainViewModel.cs:569: StringMatcher.FuzzySearch(query, r.SubTitle).IsSearchPrecisionScoreMet()).ToList();
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\FuzzyMatcher.cs:9: [Obsolete(&quot;This class is obsolete and should not be used. Please use the static function StringMatcher.FuzzySearch&quot;)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\FuzzyMatcher.cs:37: return StringMatcher.Instance.FuzzyMatch(query, str, opt);
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\MatchResult.cs:8: using static Wox.Infrastructure.StringMatcher;
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:17: public class StringMatcher
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:25: public StringMatcher(IAlphabet alphabet = null)
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:30: public static StringMatcher Instance { get; internal set; }
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:34: [Obsolete(&quot;This method is obsolete and should not be used. Please use the static function StringMatcher.FuzzySearch&quot;)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:40: [Obsolete(&quot;This method is obsolete and should not be used. Please use the static function StringMatcher.FuzzySearch&quot;)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\UserSettings\PowerToysRunSettings.cs:191: internal StringMatcher.SearchPrecisionScore QuerySearchPrecision { get; private set; } = StringMatcher.SearchPrecisionScore.Regular;
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:45: Enum.GetValues(typeof(StringMatcher.SearchPrecisionScore))
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:46: .Cast&lt;StringMatcher.SearchPrecisionScore&gt;()
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:66: var matcher = new StringMatcher();
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:89: var matcher = new StringMatcher();
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:105: var matcher = new StringMatcher();
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:140: var matcher = new StringMatcher();
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:157: [DataRow(&quot;goo&quot;, &quot;Google Chrome&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:158: [DataRow(&quot;chr&quot;, &quot;Google Chrome&quot;, StringMatcher.SearchPrecisionScore.Low, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:159: [DataRow(&quot;chr&quot;, &quot;Chrome&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:160: [DataRow(&quot;chr&quot;, &quot;Help cure hope raise on mind entity Chrome&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:161: [DataRow(&quot;chr&quot;, &quot;Help cure hope raise on mind entity Chrome&quot;, StringMatcher.SearchPrecisionScore.Low, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:162: [DataRow(&quot;chr&quot;, &quot;Candy Crush Saga from King&quot;, StringMatcher.SearchPrecisionScore.Regular, false)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:163: [DataRow(&quot;chr&quot;, &quot;Candy Crush Saga from King&quot;, StringMatcher.SearchPrecisionScore.None, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:164: [DataRow(&quot;ccs&quot;, &quot;Candy Crush Saga from King&quot;, StringMatcher.SearchPrecisionScore.Low, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:165: [DataRow(&quot;cand&quot;, &quot;Candy Crush Saga from King&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:166: [DataRow(&quot;cand&quot;, &quot;Help cure hope raise on mind entity Chrome&quot;, StringMatcher.SearchPrecisionScore.Regular, false)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:170: StringMatcher.SearchPrecisionScore expectedPrecisionScore,
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:174: var matcher = new StringMatcher { UserSettingSearchPrecision = expectedPrecisionScore };
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:194: [DataRow(&quot;exce&quot;, &quot;OverLeaf-Latex: An online LaTeX editor&quot;, StringMatcher.SearchPrecisionScore.Regular, false)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:195: [DataRow(&quot;term&quot;, &quot;Windows Terminal (Preview)&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:196: [DataRow(&quot;sql s managa&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, false)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:197: [DataRow(&quot;sql&#39; s manag&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, false)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:198: [DataRow(&quot;sql s manag&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:199: [DataRow(&quot;sql manag&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:200: [DataRow(&quot;sql&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:201: [DataRow(&quot;sql serv&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:202: [DataRow(&quot;sql serv man&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:203: [DataRow(&quot;sql studio&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:204: [DataRow(&quot;mic&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:205: [DataRow(&quot;chr&quot;, &quot;Shutdown&quot;, StringMatcher.SearchPrecisionScore.Regular, false)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:206: [DataRow(&quot;mssms&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, false)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:207: [DataRow(&quot;chr&quot;, &quot;Change settings for text-to-speech and for speech recognition (if installed).&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:208: [DataRow(&quot;ch r&quot;, &quot;Change settings for text-to-speech and for speech recognition (if installed).&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:209: [DataRow(&quot;a test&quot;, &quot;This is a test&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:210: [DataRow(&quot;test&quot;, &quot;This is a test&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:214: StringMatcher.SearchPrecisionScore expectedPrecisionScore,
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:218: var matcher = new StringMatcher { UserSettingSearchPrecision = expectedPrecisionScore };
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:243: var matcher = new StringMatcher();</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 10471 | Lines: 83 | Time: 58ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;StringMatcher&#39;</p>
+        <pre id="expand-1-short">Wox.Test/FuzzyMatcherTest.cs:45:Enum.GetValues(typeof(StringMatcher.SearchPrecisionScore))
+Wox.Test/FuzzyMatcherTest.cs:46:.Cast&lt;StringMatcher.SearchPrecisionScore&gt;()
+Wox.Test/FuzzyMatcherTest.cs:66:var matcher = new StringMatcher();
+Wox.Test/FuzzyMatcherTest.cs:89:var matcher = new StringMatcher();
+Wox.Test/FuzzyMatcherTest.cs:105:var matcher = new StringMatcher();
+Wox.Test/FuzzyMatcherTest.cs:140:var matcher = new StringMatcher();
+Wox.Test/FuzzyMatcherTest.cs:157:[DataRow(&quot;goo&quot;, &quot;Google Chrome&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:158:[DataRow(&quot;chr&quot;, &quot;Google Chrome&quot;, StringMatcher.SearchPrecisionScore.Low, true)]
+Wox.Test/FuzzyMatcherTest.cs:159:[DataRow(&quot;chr&quot;, &quot;Chrome&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:160:[DataRow(&quot;chr&quot;, &quot;Help cure hope raise on mind entity Chrome&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+<span class="truncated-link" onclick="document.getElementById('expand-1-short').style.display='none'; document.getElementById('expand-1-full').style.display='block';">... truncated (73 more lines) — click to expand</span></pre>
+        <pre id="expand-1-full" class="full-result">Wox.Test/FuzzyMatcherTest.cs:45:Enum.GetValues(typeof(StringMatcher.SearchPrecisionScore))
+Wox.Test/FuzzyMatcherTest.cs:46:.Cast&lt;StringMatcher.SearchPrecisionScore&gt;()
+Wox.Test/FuzzyMatcherTest.cs:66:var matcher = new StringMatcher();
+Wox.Test/FuzzyMatcherTest.cs:89:var matcher = new StringMatcher();
+Wox.Test/FuzzyMatcherTest.cs:105:var matcher = new StringMatcher();
+Wox.Test/FuzzyMatcherTest.cs:140:var matcher = new StringMatcher();
+Wox.Test/FuzzyMatcherTest.cs:157:[DataRow(&quot;goo&quot;, &quot;Google Chrome&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:158:[DataRow(&quot;chr&quot;, &quot;Google Chrome&quot;, StringMatcher.SearchPrecisionScore.Low, true)]
+Wox.Test/FuzzyMatcherTest.cs:159:[DataRow(&quot;chr&quot;, &quot;Chrome&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:160:[DataRow(&quot;chr&quot;, &quot;Help cure hope raise on mind entity Chrome&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:161:[DataRow(&quot;chr&quot;, &quot;Help cure hope raise on mind entity Chrome&quot;, StringMatcher.SearchPrecisionScore.Low, true)]
+Wox.Test/FuzzyMatcherTest.cs:162:[DataRow(&quot;chr&quot;, &quot;Candy Crush Saga from King&quot;, StringMatcher.SearchPrecisionScore.Regular, false)]
+Wox.Test/FuzzyMatcherTest.cs:163:[DataRow(&quot;chr&quot;, &quot;Candy Crush Saga from King&quot;, StringMatcher.SearchPrecisionScore.None, true)]
+Wox.Test/FuzzyMatcherTest.cs:164:[DataRow(&quot;ccs&quot;, &quot;Candy Crush Saga from King&quot;, StringMatcher.SearchPrecisionScore.Low, true)]
+Wox.Test/FuzzyMatcherTest.cs:165:[DataRow(&quot;cand&quot;, &quot;Candy Crush Saga from King&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:166:[DataRow(&quot;cand&quot;, &quot;Help cure hope raise on mind entity Chrome&quot;, StringMatcher.SearchPrecisionScore.Regular, false)]
+Wox.Test/FuzzyMatcherTest.cs:170:StringMatcher.SearchPrecisionScore expectedPrecisionScore,
+Wox.Test/FuzzyMatcherTest.cs:174:var matcher = new StringMatcher { UserSettingSearchPrecision = expectedPrecisionScore };
+Wox.Test/FuzzyMatcherTest.cs:194:[DataRow(&quot;exce&quot;, &quot;OverLeaf-Latex: An online LaTeX editor&quot;, StringMatcher.SearchPrecisionScore.Regular, false)]
+Wox.Test/FuzzyMatcherTest.cs:195:[DataRow(&quot;term&quot;, &quot;Windows Terminal (Preview)&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:196:[DataRow(&quot;sql s managa&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, false)]
+Wox.Test/FuzzyMatcherTest.cs:197:[DataRow(&quot;sql&#39; s manag&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, false)]
+Wox.Test/FuzzyMatcherTest.cs:198:[DataRow(&quot;sql s manag&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:199:[DataRow(&quot;sql manag&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:200:[DataRow(&quot;sql&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:201:[DataRow(&quot;sql serv&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:202:[DataRow(&quot;sql serv man&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:203:[DataRow(&quot;sql studio&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:204:[DataRow(&quot;mic&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:205:[DataRow(&quot;chr&quot;, &quot;Shutdown&quot;, StringMatcher.SearchPrecisionScore.Regular, false)]
+Wox.Test/FuzzyMatcherTest.cs:206:[DataRow(&quot;mssms&quot;, MicrosoftSqlServerManagementStudio, StringMatcher.SearchPrecisionScore.Regular, false)]
+Wox.Test/FuzzyMatcherTest.cs:207:[DataRow(&quot;chr&quot;, &quot;Change settings for text-to-speech and for speech recognition (if installed).&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:208:[DataRow(&quot;ch r&quot;, &quot;Change settings for text-to-speech and for speech recognition (if installed).&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:209:[DataRow(&quot;a test&quot;, &quot;This is a test&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:210:[DataRow(&quot;test&quot;, &quot;This is a test&quot;, StringMatcher.SearchPrecisionScore.Regular, true)]
+Wox.Test/FuzzyMatcherTest.cs:214:StringMatcher.SearchPrecisionScore expectedPrecisionScore,
+Wox.Test/FuzzyMatcherTest.cs:218:var matcher = new StringMatcher { UserSettingSearchPrecision = expectedPrecisionScore };
+Wox.Test/FuzzyMatcherTest.cs:243:var matcher = new StringMatcher();
+PowerLauncher/ViewModel/MainViewModel.cs:568:r =&gt; StringMatcher.FuzzySearch(query, r.Title).IsSearchPrecisionScoreMet() ||
+PowerLauncher/ViewModel/MainViewModel.cs:569:StringMatcher.FuzzySearch(query, r.SubTitle).IsSearchPrecisionScoreMet()).ToList();
+Wox.Infrastructure/UserSettings/PowerToysRunSettings.cs:191:internal StringMatcher.SearchPrecisionScore QuerySearchPrecision { get; private set; } = StringMatcher.SearchPrecisionScore.Regular;
+Wox.Infrastructure/StringMatcher.cs:17:public class StringMatcher
+Wox.Infrastructure/StringMatcher.cs:25:public StringMatcher(IAlphabet alphabet = null)
+Wox.Infrastructure/StringMatcher.cs:30:public static StringMatcher Instance { get; internal set; }
+Wox.Infrastructure/StringMatcher.cs:34:[Obsolete(&quot;This method is obsolete and should not be used. Please use the static function StringMatcher.FuzzySearch&quot;)]
+Wox.Infrastructure/StringMatcher.cs:40:[Obsolete(&quot;This method is obsolete and should not be used. Please use the static function StringMatcher.FuzzySearch&quot;)]
+Plugins/Microsoft.Plugin.Folder/UserFolderResult.cs:31:return new Result(StringMatcher.FuzzySearch(Search, Title).MatchData)
+Wox.Infrastructure/FuzzyMatcher.cs:9:[Obsolete(&quot;This class is obsolete and should not be used. Please use the static function StringMatcher.FuzzySearch&quot;)]
+Wox.Infrastructure/FuzzyMatcher.cs:37:return StringMatcher.Instance.FuzzyMatch(query, str, opt);
+Wox.Infrastructure/MatchResult.cs:8:using static Wox.Infrastructure.StringMatcher;
+PowerLauncher/App.xaml.cs:47:private StringMatcher _stringMatcher;
+PowerLauncher/App.xaml.cs:151:_stringMatcher = new StringMatcher(_alphabet);
+PowerLauncher/App.xaml.cs:152:StringMatcher.Instance = _stringMatcher;
+Plugins/Microsoft.Plugin.Folder/Sources/Result/EnvironmentVariableResult.cs:36:return new Wox.Plugin.Result(StringMatcher.FuzzySearch(Search, Title).MatchData)
+Plugins/Microsoft.Plugin.Folder/Sources/Result/FolderItemResult.cs:40:return new Wox.Plugin.Result(StringMatcher.FuzzySearch(Search, Title).MatchData)
+Plugins/Microsoft.Plugin.Folder/Sources/Result/FileItemResult.cs:40:var result = new Wox.Plugin.Result(StringMatcher.FuzzySearch(Search, _path.GetFileName(FilePath)).MatchData)
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsTerminal/Main.cs:85:int score = StringMatcher.FuzzySearch(search, profile.Name).Score;
+Plugins/Microsoft.PowerToys.Run.Plugin.System.UnitTests/QueryTests.cs:21:StringMatcher.Instance = new StringMatcher();
+Plugins/Microsoft.PowerToys.Run.Plugin.System.UnitTests/ImageTests.cs:20:StringMatcher.Instance = new StringMatcher();
+Plugins/Community.PowerToys.Run.Plugin.ValueGenerator/Main.cs:205:var matchScore = StringMatcher.FuzzySearch(query.Search.Trim(), generatorData.Keyword).Score;
+Plugins/Microsoft.PowerToys.Run.Plugin.System/Main.cs:105:var resultMatch = StringMatcher.FuzzySearch(query.Search, c.Title);
+Plugins/Microsoft.PowerToys.Run.Plugin.System/Main.cs:114:var searchTagMatch = StringMatcher.FuzzySearch(query.Search, contextData.SearchTag);
+Plugins/Microsoft.PowerToys.Run.Plugin.System/Main.cs:132://        Score = StringMatcher.FuzzySearch(&quot;address&quot;, &quot;ip address&quot;).Score,
+Plugins/Microsoft.PowerToys.Run.Plugin.System/Main.cs:156:var resultMatch = StringMatcher.FuzzySearch(query.Search, r.SubTitle);
+Plugins/Microsoft.PowerToys.Run.Plugin.System/Main.cs:165:var searchTagMatch = StringMatcher.FuzzySearch(query.Search, contextData.SearchTag);
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests/ImageTests.cs:24:StringMatcher.Instance = new StringMatcher();
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests/QueryTests.cs:25:StringMatcher.Instance = new StringMatcher();
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate/Components/SearchController.cs:167:int score = StringMatcher.FuzzySearch(query, label).Score;
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate/Components/SearchController.cs:172:var tagScore = StringMatcher.FuzzySearch(query, t.Trim()).Score / 2;
+Plugins/Microsoft.Plugin.Program/Programs/Win32Program.cs:116:var nameMatch = StringMatcher.FuzzySearch(query, Name);
+Plugins/Microsoft.Plugin.Program/Programs/Win32Program.cs:117:var locNameMatch = StringMatcher.FuzzySearch(query, NameLocalized);
+Plugins/Microsoft.Plugin.Program/Programs/Win32Program.cs:118:var descriptionMatch = StringMatcher.FuzzySearch(query, Description);
+Plugins/Microsoft.Plugin.Program/Programs/Win32Program.cs:119:var executableNameMatch = StringMatcher.FuzzySearch(query, ExecutableName);
+Plugins/Microsoft.Plugin.Program/Programs/Win32Program.cs:120:var locExecutableNameMatch = StringMatcher.FuzzySearch(query, ExecutableNameLocalized);
+Plugins/Microsoft.Plugin.Program/Programs/Win32Program.cs:121:var lnkResolvedExecutableNameMatch = StringMatcher.FuzzySearch(query, LnkResolvedExecutableName);
+Plugins/Microsoft.Plugin.Program/Programs/Win32Program.cs:122:var locLnkResolvedExecutableNameMatch = StringMatcher.FuzzySearch(query, LnkResolvedExecutableNameLocalized);
+Plugins/Microsoft.Plugin.Program/Programs/Win32Program.cs:263:result.TitleHighlightData = StringMatcher.FuzzySearch(query, result.Title).MatchData;
+Plugins/Microsoft.Plugin.Program/Programs/UWPApplication.cs:82:var displayNameMatch = StringMatcher.FuzzySearch(query, DisplayName);
+Plugins/Microsoft.Plugin.Program/Programs/UWPApplication.cs:83:var descriptionMatch = StringMatcher.FuzzySearch(query, Description);
+Plugins/Microsoft.Plugin.Program/Programs/UWPApplication.cs:120:result.TitleHighlightData = StringMatcher.FuzzySearch(query, Name).MatchData;
+Plugins/Microsoft.PowerToys.Run.Plugin.PowerToys/Main.cs:49:var matchResult = StringMatcher.FuzzySearch(query.Search, utility.Name);
+Plugins/Microsoft.Plugin.Program.UnitTests/Programs/Win32Tests.cs:595:StringMatcher.Instance = new StringMatcher();
+Plugins/Microsoft.Plugin.Program.UnitTests/Programs/Win32Tests.cs:610:StringMatcher.Instance = new StringMatcher();</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 296ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;StringMatcher&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 1ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;StringMatcher&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 48ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;StringMatcher&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;StringMatcher&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 2ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;StringMatcher&#39;) without SymbolFilter</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;StringMatcher&#39;) without SymbolFilter</p>
+        <pre></pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: MatchResult)</span><span class="summary-meta">10 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>MatchResult</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 102 | Lines: 1 | Time: 916ms</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) MatchResult&#39;</p>
+        <pre>C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\MatchResult.cs:14: public class MatchResult</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 61 | Lines: 1 | Time: 44ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) MatchResult&#39;</p>
+        <pre>Wox.Infrastructure/MatchResult.cs:14:public class MatchResult</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 4568 | Lines: 28 | Time: 894ms</span></summary>
+        <p class="algorithm-details">string search for &#39;MatchResult&#39;</p>
+        <pre id="expand-2-short">C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Main.cs:49: var matchResult = StringMatcher.FuzzySearch(query.Search, utility.Name);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Main.cs:50: if (string.IsNullOrWhiteSpace(query.Search) || matchResult.Score &gt; 0)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Main.cs:52: results.Add(utility.CreateResult(matchResult));
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Components\Utility.cs:36: public Result CreateResult(MatchResult matchResult)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Components\Utility.cs:45: Score = matchResult.Score,
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Components\Utility.cs:46: TitleHighlightData = matchResult.MatchData,
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\FuzzyMatcher.cs:35: public MatchResult Evaluate(string str)
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\MatchResult.cs:14: public class MatchResult
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\MatchResult.cs:16: public MatchResult(bool success, SearchPrecisionScore searchPrecision)
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\MatchResult.cs:22: public MatchResult(bool success, SearchPrecisionScore searchPrecision, List&lt;int&gt; matchData, int rawScore)
+<span class="truncated-link" onclick="document.getElementById('expand-2-short').style.display='none'; document.getElementById('expand-2-full').style.display='block';">... truncated (18 more lines) — click to expand</span></pre>
+        <pre id="expand-2-full" class="full-result">C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Main.cs:49: var matchResult = StringMatcher.FuzzySearch(query.Search, utility.Name);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Main.cs:50: if (string.IsNullOrWhiteSpace(query.Search) || matchResult.Score &gt; 0)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Main.cs:52: results.Add(utility.CreateResult(matchResult));
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Components\Utility.cs:36: public Result CreateResult(MatchResult matchResult)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Components\Utility.cs:45: Score = matchResult.Score,
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Components\Utility.cs:46: TitleHighlightData = matchResult.MatchData,
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\FuzzyMatcher.cs:35: public MatchResult Evaluate(string str)
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\MatchResult.cs:14: public class MatchResult
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\MatchResult.cs:16: public MatchResult(bool success, SearchPrecisionScore searchPrecision)
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\MatchResult.cs:22: public MatchResult(bool success, SearchPrecisionScore searchPrecision, List&lt;int&gt; matchData, int rawScore)
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:46: public static MatchResult FuzzySearch(string query, string stringToCompare)
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:51: public MatchResult FuzzyMatch(string query, string stringToCompare)
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:67: public MatchResult FuzzyMatch(string query, string stringToCompare, MatchOption opt)
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:71: return new MatchResult(false, UserSettingSearchPrecision);
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:74: var bestResult = new MatchResult(false, UserSettingSearchPrecision);
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:78: MatchResult result = FuzzyMatch(query, stringToCompare, opt, startIndex);
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:88: private MatchResult FuzzyMatch(string query, string stringToCompare, MatchOption opt, int startIndex)
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:92: return new MatchResult(false, UserSettingSearchPrecision);
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:213: return new MatchResult(true, UserSettingSearchPrecision, indexList, score);
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:216: return new MatchResult(false, UserSettingSearchPrecision);
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:177: var matchResult = matcher.FuzzyMatch(queryString, compareString);
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:182: Debug.WriteLine($&quot;RAW SCORE: {matchResult.RawScore}, PrecisionLevelSetAt: {expectedPrecisionScore} ({(int)expectedPrecisionScore})&quot;);
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:189: matchResult.IsSearchPrecisionScoreMet(),
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:190: $&quot;{$&quot;Query:{queryString}{Environment.NewLine} &quot;}{$&quot;Compare:{compareString}{Environment.NewLine}&quot;}{$&quot;Raw Score: {matchResult.RawScore}{Environment.NewLine}&quot;}{$&quot;Precision Score: {(int)expectedPrecisionScore}&quot;}&quot;);
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:221: var matchResult = matcher.FuzzyMatch(queryString, compareString);
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:226: Debug.WriteLine($&quot;RAW SCORE: {matchResult.RawScore}, PrecisionLevelSetAt: {expectedPrecisionScore} ({(int)expectedPrecisionScore})&quot;);
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:233: matchResult.IsSearchPrecisionScoreMet(),
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\FuzzyMatcherTest.cs:234: $&quot;{$&quot;Query:{queryString}{Environment.NewLine} &quot;}{$&quot;Compare:{compareString}{Environment.NewLine}&quot;}{$&quot;Raw Score: {matchResult.RawScore}{Environment.NewLine}&quot;}{$&quot;Precision Score: {(int)expectedPrecisionScore}&quot;}&quot;);</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1635 | Lines: 15 | Time: 43ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;MatchResult&#39;</p>
+        <pre id="expand-3-short">Wox.Infrastructure/StringMatcher.cs:46:public static MatchResult FuzzySearch(string query, string stringToCompare)
+Wox.Infrastructure/StringMatcher.cs:51:public MatchResult FuzzyMatch(string query, string stringToCompare)
+Wox.Infrastructure/StringMatcher.cs:67:public MatchResult FuzzyMatch(string query, string stringToCompare, MatchOption opt)
+Wox.Infrastructure/StringMatcher.cs:71:return new MatchResult(false, UserSettingSearchPrecision);
+Wox.Infrastructure/StringMatcher.cs:74:var bestResult = new MatchResult(false, UserSettingSearchPrecision);
+Wox.Infrastructure/StringMatcher.cs:78:MatchResult result = FuzzyMatch(query, stringToCompare, opt, startIndex);
+Wox.Infrastructure/StringMatcher.cs:88:private MatchResult FuzzyMatch(string query, string stringToCompare, MatchOption opt, int startIndex)
+Wox.Infrastructure/StringMatcher.cs:92:return new MatchResult(false, UserSettingSearchPrecision);
+Wox.Infrastructure/StringMatcher.cs:213:return new MatchResult(true, UserSettingSearchPrecision, indexList, score);
+Wox.Infrastructure/StringMatcher.cs:216:return new MatchResult(false, UserSettingSearchPrecision);
+<span class="truncated-link" onclick="document.getElementById('expand-3-short').style.display='none'; document.getElementById('expand-3-full').style.display='block';">... truncated (5 more lines) — click to expand</span></pre>
+        <pre id="expand-3-full" class="full-result">Wox.Infrastructure/StringMatcher.cs:46:public static MatchResult FuzzySearch(string query, string stringToCompare)
+Wox.Infrastructure/StringMatcher.cs:51:public MatchResult FuzzyMatch(string query, string stringToCompare)
+Wox.Infrastructure/StringMatcher.cs:67:public MatchResult FuzzyMatch(string query, string stringToCompare, MatchOption opt)
+Wox.Infrastructure/StringMatcher.cs:71:return new MatchResult(false, UserSettingSearchPrecision);
+Wox.Infrastructure/StringMatcher.cs:74:var bestResult = new MatchResult(false, UserSettingSearchPrecision);
+Wox.Infrastructure/StringMatcher.cs:78:MatchResult result = FuzzyMatch(query, stringToCompare, opt, startIndex);
+Wox.Infrastructure/StringMatcher.cs:88:private MatchResult FuzzyMatch(string query, string stringToCompare, MatchOption opt, int startIndex)
+Wox.Infrastructure/StringMatcher.cs:92:return new MatchResult(false, UserSettingSearchPrecision);
+Wox.Infrastructure/StringMatcher.cs:213:return new MatchResult(true, UserSettingSearchPrecision, indexList, score);
+Wox.Infrastructure/StringMatcher.cs:216:return new MatchResult(false, UserSettingSearchPrecision);
+Wox.Infrastructure/FuzzyMatcher.cs:35:public MatchResult Evaluate(string str)
+Wox.Infrastructure/MatchResult.cs:14:public class MatchResult
+Wox.Infrastructure/MatchResult.cs:16:public MatchResult(bool success, SearchPrecisionScore searchPrecision)
+Wox.Infrastructure/MatchResult.cs:22:public MatchResult(bool success, SearchPrecisionScore searchPrecision, List&lt;int&gt; matchData, int rawScore)
+Plugins/Microsoft.PowerToys.Run.Plugin.PowerToys/Components/Utility.cs:36:public Result CreateResult(MatchResult matchResult)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 1ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;MatchResult&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 1ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;MatchResult&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;MatchResult&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;MatchResult&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 1ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;MatchResult&#39;) without SymbolFilter</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;MatchResult&#39;) without SymbolFilter</p>
+        <pre></pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: ThemeManager)</span><span class="summary-meta">10 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>ThemeManager</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 120 | Lines: 1 | Time: 917ms</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) ThemeManager&#39;</p>
+        <pre>C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Helper\ThemeManager.cs:19: public class ThemeManager : IDisposable</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 79 | Lines: 1 | Time: 43ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) ThemeManager&#39;</p>
+        <pre>PowerLauncher/Helper/ThemeManager.cs:19:public class ThemeManager : IDisposable</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2775 | Lines: 17 | Time: 888ms</span></summary>
+        <p class="algorithm-details">string search for &#39;ThemeManager&#39;</p>
+        <pre id="expand-4-short">C:\repos\PowerToys\src\modules\launcher\PowerLauncher\App.xaml.cs:45: private ThemeManager _themeManager;
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\App.xaml.cs:157: _themeManager = new ThemeManager(_settings, _mainWindow);
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\PublicAPIInstance.cs:27: private readonly ThemeManager _themeManager;
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\PublicAPIInstance.cs:32: public PublicAPIInstance(SettingWindowViewModel settingsVM, MainViewModel mainVM, Alphabet alphabet, ThemeManager themeManager)
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\PublicAPIInstance.cs:37: _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\SettingsReader.cs:34: private readonly ThemeManager _themeManager;
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\SettingsReader.cs:39: public SettingsReader(PowerToysRunSettings settings, ThemeManager themeManager)
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\SettingsReader.cs:43: _themeManager = themeManager;
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Helper\ThemeManager.cs:19: public class ThemeManager : IDisposable
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Helper\ThemeManager.cs:34: public ThemeManager(PowerToysRunSettings settings, MainWindow mainWindow)
+<span class="truncated-link" onclick="document.getElementById('expand-4-short').style.display='none'; document.getElementById('expand-4-full').style.display='block';">... truncated (7 more lines) — click to expand</span></pre>
+        <pre id="expand-4-full" class="full-result">C:\repos\PowerToys\src\modules\launcher\PowerLauncher\App.xaml.cs:45: private ThemeManager _themeManager;
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\App.xaml.cs:157: _themeManager = new ThemeManager(_settings, _mainWindow);
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\PublicAPIInstance.cs:27: private readonly ThemeManager _themeManager;
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\PublicAPIInstance.cs:32: public PublicAPIInstance(SettingWindowViewModel settingsVM, MainViewModel mainVM, Alphabet alphabet, ThemeManager themeManager)
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\PublicAPIInstance.cs:37: _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\SettingsReader.cs:34: private readonly ThemeManager _themeManager;
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\SettingsReader.cs:39: public SettingsReader(PowerToysRunSettings settings, ThemeManager themeManager)
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\SettingsReader.cs:43: _themeManager = themeManager;
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Helper\ThemeManager.cs:19: public class ThemeManager : IDisposable
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Helper\ThemeManager.cs:34: public ThemeManager(PowerToysRunSettings settings, MainWindow mainWindow)
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Helper\ThemeManager.cs:147: Log.Debug(&quot;Theme update operation was cancelled.&quot;, typeof(ThemeManager));
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Helper\ThemeManager.cs:158: Log.Info($&quot;Successfully applied theme after {attempt - 1} retry attempt(s).&quot;, typeof(ThemeManager));
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Helper\ThemeManager.cs:168: Log.Warn($&quot;Desktop composition is disabled (HRESULT: 0x{ex.HResult:X}). Scheduling retries for theme update.&quot;, typeof(ThemeManager));
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Helper\ThemeManager.cs:172: Log.Warn($&quot;Retry {attempt - 1}/{MaxRetries} failed: Desktop composition still disabled. Retrying in {delayMs * 2}ms...&quot;, typeof(ThemeManager));
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Helper\ThemeManager.cs:176: Log.Exception($&quot;Failed to set theme after {MaxRetries} retry attempts. Desktop composition remains disabled.&quot;, ex, typeof(ThemeManager));
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Helper\ThemeManager.cs:182: Log.Debug(&quot;Theme update operation was cancelled.&quot;, typeof(ThemeManager));
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Helper\ThemeManager.cs:187: Log.Exception($&quot;Unexpected error during theme update (attempt {attempt}/{maxAttempts}): {ex.Message}&quot;, ex, typeof(ThemeManager));</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1872 | Lines: 15 | Time: 42ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;ThemeManager&#39;</p>
+        <pre id="expand-5-short">PowerLauncher/App.xaml.cs:45:private ThemeManager _themeManager;
+PowerLauncher/App.xaml.cs:157:_themeManager = new ThemeManager(_settings, _mainWindow);
+PowerLauncher/SettingsReader.cs:34:private readonly ThemeManager _themeManager;
+PowerLauncher/SettingsReader.cs:39:public SettingsReader(PowerToysRunSettings settings, ThemeManager themeManager)
+PowerLauncher/PublicAPIInstance.cs:27:private readonly ThemeManager _themeManager;
+PowerLauncher/PublicAPIInstance.cs:32:public PublicAPIInstance(SettingWindowViewModel settingsVM, MainViewModel mainVM, Alphabet alphabet, ThemeManager themeManager)
+PowerLauncher/Helper/ThemeManager.cs:19:public class ThemeManager : IDisposable
+PowerLauncher/Helper/ThemeManager.cs:34:public ThemeManager(PowerToysRunSettings settings, MainWindow mainWindow)
+PowerLauncher/Helper/ThemeManager.cs:147:Log.Debug(&quot;Theme update operation was cancelled.&quot;, typeof(ThemeManager));
+PowerLauncher/Helper/ThemeManager.cs:158:Log.Info($&quot;Successfully applied theme after {attempt - 1} retry attempt(s).&quot;, typeof(ThemeManager));
+<span class="truncated-link" onclick="document.getElementById('expand-5-short').style.display='none'; document.getElementById('expand-5-full').style.display='block';">... truncated (5 more lines) — click to expand</span></pre>
+        <pre id="expand-5-full" class="full-result">PowerLauncher/App.xaml.cs:45:private ThemeManager _themeManager;
+PowerLauncher/App.xaml.cs:157:_themeManager = new ThemeManager(_settings, _mainWindow);
+PowerLauncher/SettingsReader.cs:34:private readonly ThemeManager _themeManager;
+PowerLauncher/SettingsReader.cs:39:public SettingsReader(PowerToysRunSettings settings, ThemeManager themeManager)
+PowerLauncher/PublicAPIInstance.cs:27:private readonly ThemeManager _themeManager;
+PowerLauncher/PublicAPIInstance.cs:32:public PublicAPIInstance(SettingWindowViewModel settingsVM, MainViewModel mainVM, Alphabet alphabet, ThemeManager themeManager)
+PowerLauncher/Helper/ThemeManager.cs:19:public class ThemeManager : IDisposable
+PowerLauncher/Helper/ThemeManager.cs:34:public ThemeManager(PowerToysRunSettings settings, MainWindow mainWindow)
+PowerLauncher/Helper/ThemeManager.cs:147:Log.Debug(&quot;Theme update operation was cancelled.&quot;, typeof(ThemeManager));
+PowerLauncher/Helper/ThemeManager.cs:158:Log.Info($&quot;Successfully applied theme after {attempt - 1} retry attempt(s).&quot;, typeof(ThemeManager));
+PowerLauncher/Helper/ThemeManager.cs:168:Log.Warn($&quot;Desktop composition is disabled (HRESULT: 0x{ex.HResult:X}). Scheduling retries for theme update.&quot;, typeof(ThemeManager));
+PowerLauncher/Helper/ThemeManager.cs:172:Log.Warn($&quot;Retry {attempt - 1}/{MaxRetries} failed: Desktop composition still disabled. Retrying in {delayMs * 2}ms...&quot;, typeof(ThemeManager));
+PowerLauncher/Helper/ThemeManager.cs:176:Log.Exception($&quot;Failed to set theme after {MaxRetries} retry attempts. Desktop composition remains disabled.&quot;, ex, typeof(ThemeManager));
+PowerLauncher/Helper/ThemeManager.cs:182:Log.Debug(&quot;Theme update operation was cancelled.&quot;, typeof(ThemeManager));
+PowerLauncher/Helper/ThemeManager.cs:187:Log.Exception($&quot;Unexpected error during theme update (attempt {attempt}/{maxAttempts}): {ex.Message}&quot;, ex, typeof(ThemeManager));</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 1ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;ThemeManager&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;ThemeManager&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ThemeManager&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ThemeManager&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ThemeManager&#39;) without SymbolFilter</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ThemeManager&#39;) without SymbolFilter</p>
+        <pre></pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: PluginInitContext)</span><span class="summary-meta">10 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>PluginInitContext</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 105 | Lines: 1 | Time: 920ms</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) PluginInitContext&#39;</p>
+        <pre>C:\repos\PowerToys\src\modules\launcher\Wox.Plugin\PluginInitContext.cs:7: public class PluginInitContext</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 64 | Lines: 1 | Time: 61ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) PluginInitContext&#39;</p>
+        <pre>Wox.Plugin/PluginInitContext.cs:7:public class PluginInitContext</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 9781 | Lines: 66 | Time: 900ms</span></summary>
+        <p class="algorithm-details">string search for &#39;PluginInitContext&#39;</p>
+        <pre id="expand-6-short">C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter\Main.cs:29: private PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter\Main.cs:35: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator\Main.cs:28: private PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator\Main.cs:33: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.VSCodeWorkspaces\Main.cs:26: private PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.VSCodeWorkspaces\Main.cs:173: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.WebSearch\Main.cs:32: private PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.WebSearch\Main.cs:171: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\ContextMenuLoader.cs:21: private readonly PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\ContextMenuLoader.cs:23: public ContextMenuLoader(PluginInitContext context)
+<span class="truncated-link" onclick="document.getElementById('expand-6-short').style.display='none'; document.getElementById('expand-6-full').style.display='block';">... truncated (56 more lines) — click to expand</span></pre>
+        <pre id="expand-6-full" class="full-result">C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter\Main.cs:29: private PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter\Main.cs:35: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator\Main.cs:28: private PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator\Main.cs:33: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.VSCodeWorkspaces\Main.cs:26: private PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.VSCodeWorkspaces\Main.cs:173: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.WebSearch\Main.cs:32: private PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.WebSearch\Main.cs:171: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\ContextMenuLoader.cs:21: private readonly PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\ContextMenuLoader.cs:23: public ContextMenuLoader(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Main.cs:40: private static PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Main.cs:72: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Indexer\ContextMenuLoader.cs:24: private readonly PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Indexer\ContextMenuLoader.cs:35: public ContextMenuLoader(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Indexer\Main.cs:32: private PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Indexer\Main.cs:197: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Main.cs:44: private static PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Main.cs:106: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Storage\PackageRepository.cs:24: private readonly PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Storage\PackageRepository.cs:26: public PackageRepository(IPackageCatalog packageCatalog, PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Shell\Main.cs:78: private PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Shell\Main.cs:432: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Uri\Main.cs:36: public PluginInitContext Context { get; protected set; }
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Uri\Main.cs:130: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.WindowWalker\Main.cs:27: private PluginInitContext Context { get; set; }
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.WindowWalker\Main.cs:58: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator\Main.cs:29: private PluginInitContext Context { get; set; }
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator\Main.cs:158: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest\QueryTests.cs:28: _main.Object.Init(new PluginInitContext() { API = _api.Object });
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.History\Main.cs:18: private PluginInitContext Context { get; set; }
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.History\Main.cs:159: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.OneNote\Main.cs:38: private PluginInitContext? _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.OneNote\Main.cs:69: /// Initialize the plugin with the given &lt;see cref=&quot;PluginInitContext&quot;/&gt;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.OneNote\Main.cs:71: /// &lt;param name=&quot;context&quot;&gt;The &lt;see cref=&quot;PluginInitContext&quot;/&gt; for this plugin&lt;/param&gt;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.OneNote\Main.cs:72: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Main.cs:31: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Registry\Main.cs:34: private PluginInitContext? _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Registry\Main.cs:62: /// Initialize the plugin with the given &lt;see cref=&quot;PluginInitContext&quot;/&gt;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Registry\Main.cs:64: /// &lt;param name=&quot;context&quot;&gt;The &lt;see cref=&quot;PluginInitContext&quot;/&gt; for this plugin&lt;/param&gt;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Registry\Main.cs:65: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Service\Main.cs:20: private PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Service\Main.cs:29: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Service\Helpers\ServiceHelper.cs:24: public static IEnumerable&lt;Result&gt; Search(string search, string icoPath, PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System\Main.cs:23: private PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System\Main.cs:76: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate\Main.cs:22: private PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate\Main.cs:63: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.WindowsSettings\Main.cs:40: private PluginInitContext? _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.WindowsSettings\Main.cs:82: /// Initialize the plugin with the given &lt;see cref=&quot;PluginInitContext&quot;/&gt;.
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.WindowsSettings\Main.cs:84: /// &lt;param name=&quot;context&quot;&gt;The &lt;see cref=&quot;PluginInitContext&quot;/&gt; for this plugin.&lt;/param&gt;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.WindowsSettings\Main.cs:85: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.WindowsTerminal\Main.cs:28: private PluginInitContext _context;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.WindowsTerminal\Main.cs:65: public void Init(PluginInitContext context)
+C:\repos\PowerToys\src\modules\launcher\Wox.Plugin\IPlugin.cs:14: void Init(PluginInitContext context);
+C:\repos\PowerToys\src\modules\launcher\Wox.Plugin\PluginInitContext.cs:7: public class PluginInitContext
+C:\repos\PowerToys\src\modules\launcher\Wox.Plugin\PluginPair.cs:233: Plugin.Init(new PluginInitContext
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\Plugins\FolderPluginTest.cs:22: var pluginInitContext = new PluginInitContext() { API = mock.Object };
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\Plugins\FolderPluginTest.cs:23: var contextMenuLoader = new ContextMenuLoader(pluginInitContext);
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\Plugins\FolderPluginTest.cs:41: var pluginInitContext = new PluginInitContext() { API = mock.Object };
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\Plugins\FolderPluginTest.cs:42: var contextMenuLoader = new ContextMenuLoader(pluginInitContext);
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\Plugins\WindowsIndexerTest.cs:282: var pluginInitContext = new PluginInitContext() { API = mockapi.Object };
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\Plugins\WindowsIndexerTest.cs:284: ContextMenuLoader contextMenuLoader = new ContextMenuLoader(pluginInitContext);
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\Plugins\WindowsIndexerTest.cs:312: var pluginInitContext = new PluginInitContext() { API = mockapi.Object };
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\Plugins\WindowsIndexerTest.cs:314: ContextMenuLoader contextMenuLoader = new ContextMenuLoader(pluginInitContext);
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\Plugins\WindowsIndexerTest.cs:338: var pluginInitContext = new PluginInitContext() { API = mockapi.Object };
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\Plugins\WindowsIndexerTest.cs:340: ContextMenuLoader contextMenuLoader = new ContextMenuLoader(pluginInitContext);</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 6429 | Lines: 61 | Time: 61ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;PluginInitContext&#39;</p>
+        <pre id="expand-7-short">Wox.Test/Plugins/WindowsIndexerTest.cs:282:var pluginInitContext = new PluginInitContext() { API = mockapi.Object };
+Wox.Test/Plugins/WindowsIndexerTest.cs:312:var pluginInitContext = new PluginInitContext() { API = mockapi.Object };
+Wox.Test/Plugins/WindowsIndexerTest.cs:338:var pluginInitContext = new PluginInitContext() { API = mockapi.Object };
+Wox.Test/Plugins/FolderPluginTest.cs:22:var pluginInitContext = new PluginInitContext() { API = mock.Object };
+Wox.Test/Plugins/FolderPluginTest.cs:41:var pluginInitContext = new PluginInitContext() { API = mock.Object };
+Plugins/Microsoft.Plugin.Folder/ContextMenuLoader.cs:21:private readonly PluginInitContext _context;
+Plugins/Microsoft.Plugin.Folder/ContextMenuLoader.cs:23:public ContextMenuLoader(PluginInitContext context)
+Plugins/Microsoft.Plugin.Folder/Main.cs:40:private static PluginInitContext _context;
+Plugins/Microsoft.Plugin.Folder/Main.cs:72:public void Init(PluginInitContext context)
+Wox.Plugin/PluginPair.cs:233:Plugin.Init(new PluginInitContext
+<span class="truncated-link" onclick="document.getElementById('expand-7-short').style.display='none'; document.getElementById('expand-7-full').style.display='block';">... truncated (51 more lines) — click to expand</span></pre>
+        <pre id="expand-7-full" class="full-result">Wox.Test/Plugins/WindowsIndexerTest.cs:282:var pluginInitContext = new PluginInitContext() { API = mockapi.Object };
+Wox.Test/Plugins/WindowsIndexerTest.cs:312:var pluginInitContext = new PluginInitContext() { API = mockapi.Object };
+Wox.Test/Plugins/WindowsIndexerTest.cs:338:var pluginInitContext = new PluginInitContext() { API = mockapi.Object };
+Wox.Test/Plugins/FolderPluginTest.cs:22:var pluginInitContext = new PluginInitContext() { API = mock.Object };
+Wox.Test/Plugins/FolderPluginTest.cs:41:var pluginInitContext = new PluginInitContext() { API = mock.Object };
+Plugins/Microsoft.Plugin.Folder/ContextMenuLoader.cs:21:private readonly PluginInitContext _context;
+Plugins/Microsoft.Plugin.Folder/ContextMenuLoader.cs:23:public ContextMenuLoader(PluginInitContext context)
+Plugins/Microsoft.Plugin.Folder/Main.cs:40:private static PluginInitContext _context;
+Plugins/Microsoft.Plugin.Folder/Main.cs:72:public void Init(PluginInitContext context)
+Wox.Plugin/PluginPair.cs:233:Plugin.Init(new PluginInitContext
+Wox.Plugin/PluginInitContext.cs:7:public class PluginInitContext
+Wox.Plugin/IPlugin.cs:14:void Init(PluginInitContext context);
+Plugins/Community.PowerToys.Run.Plugin.WebSearch/Main.cs:32:private PluginInitContext _context;
+Plugins/Community.PowerToys.Run.Plugin.WebSearch/Main.cs:171:public void Init(PluginInitContext context)
+Plugins/Microsoft.PowerToys.Run.Plugin.History/Main.cs:18:private PluginInitContext Context { get; set; }
+Plugins/Microsoft.PowerToys.Run.Plugin.History/Main.cs:159:public void Init(PluginInitContext context)
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsTerminal/Main.cs:28:private PluginInitContext _context;
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsTerminal/Main.cs:65:public void Init(PluginInitContext context)
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest/QueryTests.cs:28:_main.Object.Init(new PluginInitContext() { API = _api.Object });
+Plugins/Microsoft.Plugin.WindowWalker/Main.cs:27:private PluginInitContext Context { get; set; }
+Plugins/Microsoft.Plugin.WindowWalker/Main.cs:58:public void Init(PluginInitContext context)
+Plugins/Community.PowerToys.Run.Plugin.VSCodeWorkspaces/Main.cs:26:private PluginInitContext _context;
+Plugins/Community.PowerToys.Run.Plugin.VSCodeWorkspaces/Main.cs:173:public void Init(PluginInitContext context)
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator/Main.cs:29:private PluginInitContext Context { get; set; }
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator/Main.cs:158:public void Init(PluginInitContext context)
+Plugins/Community.PowerToys.Run.Plugin.UnitConverter/Main.cs:29:private PluginInitContext _context;
+Plugins/Community.PowerToys.Run.Plugin.UnitConverter/Main.cs:35:public void Init(PluginInitContext context)
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsSettings/Main.cs:40:private PluginInitContext? _context;
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsSettings/Main.cs:82:/// Initialize the plugin with the given &lt;see cref=&quot;PluginInitContext&quot;/&gt;.
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsSettings/Main.cs:84:/// &lt;param name=&quot;context&quot;&gt;The &lt;see cref=&quot;PluginInitContext&quot;/&gt; for this plugin.&lt;/param&gt;
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsSettings/Main.cs:85:public void Init(PluginInitContext context)
+Plugins/Community.PowerToys.Run.Plugin.ValueGenerator/Main.cs:28:private PluginInitContext _context;
+Plugins/Community.PowerToys.Run.Plugin.ValueGenerator/Main.cs:33:public void Init(PluginInitContext context)
+Plugins/Microsoft.Plugin.Uri/Main.cs:36:public PluginInitContext Context { get; protected set; }
+Plugins/Microsoft.Plugin.Uri/Main.cs:130:public void Init(PluginInitContext context)
+Plugins/Microsoft.PowerToys.Run.Plugin.System/Main.cs:23:private PluginInitContext _context;
+Plugins/Microsoft.PowerToys.Run.Plugin.System/Main.cs:76:public void Init(PluginInitContext context)
+Plugins/Microsoft.PowerToys.Run.Plugin.Service/Main.cs:20:private PluginInitContext _context;
+Plugins/Microsoft.PowerToys.Run.Plugin.Service/Main.cs:29:public void Init(PluginInitContext context)
+Plugins/Microsoft.PowerToys.Run.Plugin.Registry/Main.cs:34:private PluginInitContext? _context;
+Plugins/Microsoft.PowerToys.Run.Plugin.Registry/Main.cs:62:/// Initialize the plugin with the given &lt;see cref=&quot;PluginInitContext&quot;/&gt;
+Plugins/Microsoft.PowerToys.Run.Plugin.Registry/Main.cs:64:/// &lt;param name=&quot;context&quot;&gt;The &lt;see cref=&quot;PluginInitContext&quot;/&gt; for this plugin&lt;/param&gt;
+Plugins/Microsoft.PowerToys.Run.Plugin.Registry/Main.cs:65:public void Init(PluginInitContext context)
+Plugins/Microsoft.Plugin.Indexer/Main.cs:32:private PluginInitContext _context;
+Plugins/Microsoft.Plugin.Indexer/Main.cs:197:public void Init(PluginInitContext context)
+Plugins/Microsoft.Plugin.Program/Main.cs:44:private static PluginInitContext _context;
+Plugins/Microsoft.Plugin.Program/Main.cs:106:public void Init(PluginInitContext context)
+Plugins/Microsoft.Plugin.Indexer/ContextMenuLoader.cs:24:private readonly PluginInitContext _context;
+Plugins/Microsoft.Plugin.Indexer/ContextMenuLoader.cs:35:public ContextMenuLoader(PluginInitContext context)
+Plugins/Microsoft.PowerToys.Run.Plugin.Service/Helpers/ServiceHelper.cs:24:public static IEnumerable&lt;Result&gt; Search(string search, string icoPath, PluginInitContext context)
+Plugins/Microsoft.Plugin.Shell/Main.cs:78:private PluginInitContext _context;
+Plugins/Microsoft.Plugin.Shell/Main.cs:432:public void Init(PluginInitContext context)
+Plugins/Microsoft.Plugin.Program/Storage/PackageRepository.cs:24:private readonly PluginInitContext _context;
+Plugins/Microsoft.Plugin.Program/Storage/PackageRepository.cs:26:public PackageRepository(IPackageCatalog packageCatalog, PluginInitContext context)
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate/Main.cs:22:private PluginInitContext _context;
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate/Main.cs:63:public void Init(PluginInitContext context)
+Plugins/Microsoft.PowerToys.Run.Plugin.PowerToys/Main.cs:31:public void Init(PluginInitContext context)
+Plugins/Microsoft.PowerToys.Run.Plugin.OneNote/Main.cs:38:private PluginInitContext? _context;
+Plugins/Microsoft.PowerToys.Run.Plugin.OneNote/Main.cs:69:/// Initialize the plugin with the given &lt;see cref=&quot;PluginInitContext&quot;/&gt;
+Plugins/Microsoft.PowerToys.Run.Plugin.OneNote/Main.cs:71:/// &lt;param name=&quot;context&quot;&gt;The &lt;see cref=&quot;PluginInitContext&quot;/&gt; for this plugin&lt;/param&gt;
+Plugins/Microsoft.PowerToys.Run.Plugin.OneNote/Main.cs:72:public void Init(PluginInitContext context)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 1ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;PluginInitContext&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;PluginInitContext&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;PluginInitContext&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;PluginInitContext&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;PluginInitContext&#39;) without SymbolFilter</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;PluginInitContext&#39;) without SymbolFilter</p>
+        <pre></pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-derived-types (name: BaseModel)</span><span class="summary-meta">4 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>BaseModel</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-derived-types-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1203 | Lines: 9 | Time: 916ms</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct) \w+ ... BaseModel&#39;</p>
+        <pre>C:\repos\PowerToys\src\modules\launcher\PowerLauncher\SettingsReader.cs:27: public class SettingsReader : BaseModel
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\ContextMenuItemViewModel.cs:13: public class ContextMenuItemViewModel : BaseModel
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\MainViewModel.cs:38: public class MainViewModel : BaseModel, IMainViewModel, ISavable, IDisposable
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\ResultsViewModel.cs:20: public class ResultsViewModel : BaseModel
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\ResultViewModel.cs:21: public class ResultViewModel : BaseModel
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\SettingWindowViewModel.cs:14: public class SettingWindowViewModel : BaseModel
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\UserSettings\PowerToysRunSettings.cs:12: public class PowerToysRunSettings : BaseModel
+C:\repos\PowerToys\src\modules\launcher\Wox.Plugin\PluginMetadata.cs:12: public class PluginMetadata : BaseModel
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\WoxTest.cs:18: private sealed class DummyTestClass : BaseModel</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-derived-types-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 826 | Lines: 9 | Time: 48ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct) \w+ ... BaseModel&#39;</p>
+        <pre>Wox.Test/WoxTest.cs:18:private sealed class DummyTestClass : BaseModel
+PowerLauncher/ViewModel/SettingWindowViewModel.cs:14:public class SettingWindowViewModel : BaseModel
+PowerLauncher/ViewModel/ResultViewModel.cs:21:public class ResultViewModel : BaseModel
+PowerLauncher/ViewModel/ResultsViewModel.cs:20:public class ResultsViewModel : BaseModel
+PowerLauncher/ViewModel/MainViewModel.cs:38:public class MainViewModel : BaseModel, IMainViewModel, ISavable, IDisposable
+PowerLauncher/ViewModel/ContextMenuItemViewModel.cs:13:public class ContextMenuItemViewModel : BaseModel
+Wox.Infrastructure/UserSettings/PowerToysRunSettings.cs:12:public class PowerToysRunSettings : BaseModel
+Wox.Plugin/PluginMetadata.cs:12:public class PluginMetadata : BaseModel
+PowerLauncher/SettingsReader.cs:27:public class SettingsReader : BaseModel</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-derived-types (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 2ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync for &#39;BaseModel&#39; — not found</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-derived-types (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync for &#39;BaseModel&#39; — not found</p>
+        <pre></pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-interface-implementation (name: IPlugin)</span><span class="summary-meta">4 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>IPlugin</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-interface-implementation-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3482 | Lines: 20 | Time: 887ms</span></summary>
+        <p class="algorithm-details">string search for &#39;: ...IPlugin&#39;</p>
+        <pre id="expand-8-short">C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter\Main.cs:21: public class Main : IPlugin, IPluginI18n, IContextMenu, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator\Main.cs:20: public class Main : IPlugin, IPluginI18n, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.VSCodeWorkspaces\Main.cs:24: public class Main : IPlugin, IPluginI18n, IContextMenu
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.WebSearch\Main.cs:22: public class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider, IReloadable, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Main.cs:18: public class Main : IPlugin, IPluginI18n, ISavable, IContextMenu, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Indexer\Main.cs:25: internal class Main : ISettingProvider, IPlugin, ISavable, IPluginI18n, IContextMenu, IDisposable, IDelayedExecutionPlugin
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Main.cs:23: public class Main : IPlugin, IPluginI18n, IContextMenu, ISavable, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Shell\Main.cs:29: public class Main : IPlugin, IPluginI18n, ISettingProvider, IContextMenu, ISavable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Uri\Main.cs:18: public class Main : IPlugin, IPluginI18n, IContextMenu, ISavable, IReloadable, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.WindowWalker\Main.cs:18: public class Main : IPlugin, IPluginI18n, ISettingProvider, IContextMenu, IDisposable
+<span class="truncated-link" onclick="document.getElementById('expand-8-short').style.display='none'; document.getElementById('expand-8-full').style.display='block';">... truncated (10 more lines) — click to expand</span></pre>
+        <pre id="expand-8-full" class="full-result">C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter\Main.cs:21: public class Main : IPlugin, IPluginI18n, IContextMenu, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator\Main.cs:20: public class Main : IPlugin, IPluginI18n, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.VSCodeWorkspaces\Main.cs:24: public class Main : IPlugin, IPluginI18n, IContextMenu
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.WebSearch\Main.cs:22: public class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider, IReloadable, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Main.cs:18: public class Main : IPlugin, IPluginI18n, ISavable, IContextMenu, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Indexer\Main.cs:25: internal class Main : ISettingProvider, IPlugin, ISavable, IPluginI18n, IContextMenu, IDisposable, IDelayedExecutionPlugin
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Main.cs:23: public class Main : IPlugin, IPluginI18n, IContextMenu, ISavable, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Shell\Main.cs:29: public class Main : IPlugin, IPluginI18n, ISettingProvider, IContextMenu, ISavable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Uri\Main.cs:18: public class Main : IPlugin, IPluginI18n, IContextMenu, ISavable, IReloadable, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.WindowWalker\Main.cs:18: public class Main : IPlugin, IPluginI18n, ISettingProvider, IContextMenu, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator\Main.cs:20: public class Main : IPlugin, IPluginI18n, IDisposable, ISettingProvider
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.History\Main.cs:16: public class Main : IPlugin, IContextMenu, IPluginI18n, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.OneNote\Main.cs:23: public class Main : IPlugin, IDelayedExecutionPlugin, IPluginI18n
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Main.cs:16: public class Main : IPlugin, IPluginI18n, IContextMenu, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Registry\Main.cs:24: public class Main : IPlugin, IContextMenu, IPluginI18n, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Service\Main.cs:18: public class Main : IPlugin, IContextMenu, IPluginI18n
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System\Main.cs:21: public class Main : IPlugin, IPluginI18n, ISettingProvider, IContextMenu, IDelayedExecutionPlugin
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate\Main.cs:20: public class Main : IPlugin, IPluginI18n, ISettingProvider, IContextMenu
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.WindowsSettings\Main.cs:20: public class Main : IPlugin, IContextMenu, IPluginI18n, IDisposable
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.WindowsTerminal\Main.cs:22: public class Main : IPlugin, IContextMenu, IPluginI18n, ISettingProvider</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-interface-implementation-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2643 | Lines: 20 | Time: 59ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;: ...IPlugin&#39;</p>
+        <pre id="expand-9-short">Plugins/Microsoft.Plugin.Folder/Main.cs:18:public class Main : IPlugin, IPluginI18n, ISavable, IContextMenu, IDisposable
+Plugins/Community.PowerToys.Run.Plugin.WebSearch/Main.cs:22:public class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider, IReloadable, IDisposable
+Plugins/Microsoft.PowerToys.Run.Plugin.History/Main.cs:16:public class Main : IPlugin, IContextMenu, IPluginI18n, IDisposable
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsTerminal/Main.cs:22:public class Main : IPlugin, IContextMenu, IPluginI18n, ISettingProvider
+Plugins/Microsoft.Plugin.WindowWalker/Main.cs:18:public class Main : IPlugin, IPluginI18n, ISettingProvider, IContextMenu, IDisposable
+Plugins/Community.PowerToys.Run.Plugin.VSCodeWorkspaces/Main.cs:24:public class Main : IPlugin, IPluginI18n, IContextMenu
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator/Main.cs:20:public class Main : IPlugin, IPluginI18n, IDisposable, ISettingProvider
+Plugins/Community.PowerToys.Run.Plugin.UnitConverter/Main.cs:21:public class Main : IPlugin, IPluginI18n, IContextMenu, IDisposable
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsSettings/Main.cs:20:public class Main : IPlugin, IContextMenu, IPluginI18n, IDisposable
+Plugins/Community.PowerToys.Run.Plugin.ValueGenerator/Main.cs:20:public class Main : IPlugin, IPluginI18n, IDisposable
+<span class="truncated-link" onclick="document.getElementById('expand-9-short').style.display='none'; document.getElementById('expand-9-full').style.display='block';">... truncated (10 more lines) — click to expand</span></pre>
+        <pre id="expand-9-full" class="full-result">Plugins/Microsoft.Plugin.Folder/Main.cs:18:public class Main : IPlugin, IPluginI18n, ISavable, IContextMenu, IDisposable
+Plugins/Community.PowerToys.Run.Plugin.WebSearch/Main.cs:22:public class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider, IReloadable, IDisposable
+Plugins/Microsoft.PowerToys.Run.Plugin.History/Main.cs:16:public class Main : IPlugin, IContextMenu, IPluginI18n, IDisposable
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsTerminal/Main.cs:22:public class Main : IPlugin, IContextMenu, IPluginI18n, ISettingProvider
+Plugins/Microsoft.Plugin.WindowWalker/Main.cs:18:public class Main : IPlugin, IPluginI18n, ISettingProvider, IContextMenu, IDisposable
+Plugins/Community.PowerToys.Run.Plugin.VSCodeWorkspaces/Main.cs:24:public class Main : IPlugin, IPluginI18n, IContextMenu
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator/Main.cs:20:public class Main : IPlugin, IPluginI18n, IDisposable, ISettingProvider
+Plugins/Community.PowerToys.Run.Plugin.UnitConverter/Main.cs:21:public class Main : IPlugin, IPluginI18n, IContextMenu, IDisposable
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsSettings/Main.cs:20:public class Main : IPlugin, IContextMenu, IPluginI18n, IDisposable
+Plugins/Community.PowerToys.Run.Plugin.ValueGenerator/Main.cs:20:public class Main : IPlugin, IPluginI18n, IDisposable
+Plugins/Microsoft.Plugin.Uri/Main.cs:18:public class Main : IPlugin, IPluginI18n, IContextMenu, ISavable, IReloadable, IDisposable
+Plugins/Microsoft.PowerToys.Run.Plugin.System/Main.cs:21:public class Main : IPlugin, IPluginI18n, ISettingProvider, IContextMenu, IDelayedExecutionPlugin
+Plugins/Microsoft.PowerToys.Run.Plugin.Service/Main.cs:18:public class Main : IPlugin, IContextMenu, IPluginI18n
+Plugins/Microsoft.PowerToys.Run.Plugin.Registry/Main.cs:24:public class Main : IPlugin, IContextMenu, IPluginI18n, IDisposable
+Plugins/Microsoft.Plugin.Indexer/Main.cs:25:internal class Main : ISettingProvider, IPlugin, ISavable, IPluginI18n, IContextMenu, IDisposable, IDelayedExecutionPlugin
+Plugins/Microsoft.Plugin.Program/Main.cs:23:public class Main : IPlugin, IPluginI18n, IContextMenu, ISavable, IDisposable
+Plugins/Microsoft.Plugin.Shell/Main.cs:29:public class Main : IPlugin, IPluginI18n, ISettingProvider, IContextMenu, ISavable
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate/Main.cs:20:public class Main : IPlugin, IPluginI18n, ISettingProvider, IContextMenu
+Plugins/Microsoft.PowerToys.Run.Plugin.PowerToys/Main.cs:16:public class Main : IPlugin, IPluginI18n, IContextMenu, IDisposable
+Plugins/Microsoft.PowerToys.Run.Plugin.OneNote/Main.cs:23:public class Main : IPlugin, IDelayedExecutionPlugin, IPluginI18n</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-implementations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 2ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync for &#39;IPlugin&#39; — not found</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-implementations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync for &#39;IPlugin&#39; — not found</p>
+        <pre></pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-member-definition (name: Query)</span><span class="summary-meta">4 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>Query</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 16254 | Lines: 104 | Time: 1.1s</span></summary>
+        <p class="algorithm-details">string search for member declaration &#39;Query&#39;</p>
+        <pre id="expand-10-short">C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter\Main.cs:44: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter.UnitTest\InputInterpreterTests.cs:98: Query query = new Query(queryString);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter.UnitTest\InputInterpreterTests.cs:110: Query query = new Query(queryString);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator\Main.cs:104: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator.UnitTests\InputParserTests.cs:51: var query = new Query(input);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.VSCodeWorkspaces\Main.cs:43: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.VSCodeWorkspaces\WorkspacesHelper\Rfc3986Uri.cs:24: public string Query { get; private set; }
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.WebSearch\Main.cs:63: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Main.cs:60: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Sources\QueryEnvironmentVariable.cs:26: public IEnumerable&lt;IItemResult&gt; Query(string querySearch)
+<span class="truncated-link" onclick="document.getElementById('expand-10-short').style.display='none'; document.getElementById('expand-10-full').style.display='block';">... truncated (94 more lines) — click to expand</span></pre>
+        <pre id="expand-10-full" class="full-result">C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter\Main.cs:44: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter.UnitTest\InputInterpreterTests.cs:98: Query query = new Query(queryString);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter.UnitTest\InputInterpreterTests.cs:110: Query query = new Query(queryString);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator\Main.cs:104: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator.UnitTests\InputParserTests.cs:51: var query = new Query(input);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.VSCodeWorkspaces\Main.cs:43: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.VSCodeWorkspaces\WorkspacesHelper\Rfc3986Uri.cs:24: public string Query { get; private set; }
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.WebSearch\Main.cs:63: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Main.cs:60: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Sources\QueryEnvironmentVariable.cs:26: public IEnumerable&lt;IItemResult&gt; Query(string querySearch)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Sources\QueryInternalDirectory.cs:88: public IEnumerable&lt;IItemResult&gt; Query(string search)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder.UnitTests\InternalQueryFolderTests.cs:72: var isDriveOrSharedFolder = queryInternalDirectory.Query(search)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder.UnitTests\InternalQueryFolderTests.cs:108: var isDriveOrSharedFolder = queryInternalDirectory.Query(search)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder.UnitTests\QueryEnvironmentVariableTests.cs:52: var results = _queryEnvironmentVariable.Query(search);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder.UnitTests\QueryEnvironmentVariableTests.cs:64: var results = _queryEnvironmentVariable.Query(search);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Indexer\Main.cs:90: public List&lt;Result&gt; Query(Query query, bool isFullQuery)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Indexer\Main.cs:191: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Indexer\SearchHelper\OleDBSearch.cs:12: public List&lt;OleDBResult&gt; Query(string connectionString, string sqlQuery)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Main.cs:68: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Main.cs:86: private IEnumerable&lt;Result&gt; Query(string program, string programArguments)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program.UnitTests\ProgramArgumentParser\ProgramArgumentParserTests.cs:35: var query = new Query(inputQuery);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Shell\Main.cs:92: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Uri\Main.cs:49: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.WindowWalker\Main.cs:37: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator\Main.cs:89: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest\QueryTests.cs:51: var result = _main.Object.Query(expectedQuery).FirstOrDefault().SubTitle;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest\QueryTests.cs:76: var result = _main.Object.Query(expectedQuery).Count;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest\QueryTests.cs:100: var result = _main.Object.Query(expectedQuery).Count;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest\QueryTests.cs:101: var resultWithKeyword = _main.Object.Query(expectedQueryWithKeyword).Count;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest\QueryTests.cs:120: var result = _main.Object.Query(expectedQuery).FirstOrDefault().SubTitle;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest\QueryTests.cs:121: var resultWithKeyword = _main.Object.Query(expectedQueryWithKeyword).FirstOrDefault().SubTitle;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest\QueryTests.cs:209: var result = _main.Object.Query(expectedQuery).FirstOrDefault()?.SubTitle;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest\QueryTests.cs:210: var resultWithKeyword = _main.Object.Query(expectedQueryWithKeyword).FirstOrDefault()?.SubTitle;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest\QueryTests.cs:240: var result = _main.Object.Query(expectedQuery).FirstOrDefault()?.Title;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest\QueryTests.cs:241: var resultWithKeyword = _main.Object.Query(expectedQueryWithKeyword).FirstOrDefault()?.Title;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest\QueryTests.cs:260: var result = _main.Object.Query(expectedQuery).FirstOrDefault()?.Title;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest\QueryTests.cs:261: var resultWithKeyword = _main.Object.Query(expectedQueryWithKeyword).FirstOrDefault()?.Title;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.History\Main.cs:30: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.History\Main.cs:122: var tempResults = PluginManager.QueryForPlugin(plugin, new Query(searchTerm), false);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.History\Main.cs:137: tempResults = PluginManager.QueryForPlugin(plugin, new Query(searchTerm), true);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.OneNote\Main.cs:99: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.OneNote\Main.cs:117: public List&lt;Result&gt; Query(Query query, bool delayedExecution)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Main.cs:43: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Registry\Main.cs:77: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Service\Main.cs:119: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System\Main.cs:91: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System\Main.cs:138: public List&lt;Result&gt; Query(Query query, bool delayedExecution)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System.UnitTests\ImageTests.cs:41: Query expectedQuery = new Query(typedString);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System.UnitTests\ImageTests.cs:44: var result = !isDelayed ? main.Object.Query(expectedQuery).FirstOrDefault().IcoPath : main.Object.Query(expectedQuery, true).FirstOrDefault().IcoPath;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System.UnitTests\ImageTests.cs:68: Query expectedQuery = new Query(typedString);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System.UnitTests\ImageTests.cs:71: var result = !isDelayed ? main.Object.Query(expectedQuery).FirstOrDefault().IcoPath : main.Object.Query(expectedQuery, true).FirstOrDefault().IcoPath;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System.UnitTests\QueryTests.cs:37: Query expectedQuery = new Query(typedString);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System.UnitTests\QueryTests.cs:40: var result = main.Object.Query(expectedQuery).FirstOrDefault().SubTitle;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System.UnitTests\QueryTests.cs:56: Query expectedQuery = new Query(typedString);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System.UnitTests\QueryTests.cs:59: var result = main.Object.Query(expectedQuery, true).FirstOrDefault().SubTitle;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System.UnitTests\QueryTests.cs:71: Query expectedQuery = new Query(&quot;uefi firm&quot;);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System.UnitTests\QueryTests.cs:74: var result = main.Object.Query(expectedQuery).FirstOrDefault().SubTitle;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System.UnitTests\QueryTests.cs:86: Query expectedQuery = new Query(&quot;uefi firm&quot;);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.System.UnitTests\QueryTests.cs:89: var result = main.Object.Query(expectedQuery).FirstOrDefault();
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate\Main.cs:70: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests\ImageTests.cs:74: string result = main.Object.Query(expectedQuery).FirstOrDefault(predicate: x =&gt; x.SubTitle.StartsWith(subTitleMatch, System.StringComparison.CurrentCulture)).IcoPath;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests\ImageTests.cs:121: var result = main.Object.Query(expectedQuery).FirstOrDefault(x =&gt; x.SubTitle.StartsWith(subTitleMatch, System.StringComparison.CurrentCulture)).IcoPath;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests\QueryTests.cs:49: var result = main.Object.Query(expectedQuery).Count;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests\QueryTests.cs:71: var result = main.Object.Query(expectedQuery);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests\QueryTests.cs:95: var result = main.Object.Query(expectedQuery);
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests\QueryTests.cs:152: var result = main.Object.Query(expectedQuery).FirstOrDefault(x =&gt; x.SubTitle.StartsWith(expectedResult, StringComparison.CurrentCulture));
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests\QueryTests.cs:176: var result = main.Object.Query(expectedQuery).FirstOrDefault(x =&gt; x.SubTitle.StartsWith(expectedResult, StringComparison.CurrentCulture));
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests\QueryTests.cs:199: var result = main.Object.Query(expectedQuery).FirstOrDefault();
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests\QueryTests.cs:232: var result = main.Object.Query(expectedQuery).FirstOrDefault().Title;
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests\QueryTests.cs:252: var result = main.Object.Query(expectedQuery).FirstOrDefault();
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.WindowsSettings\Main.cs:104: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.WindowsTerminal\Main.cs:70: public List&lt;Result&gt; Query(Query query)
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Plugin\QueryBuilder.cs:38: var query = new Query(text, pluginActionKeyword);
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Plugin\QueryBuilder.cs:60: var query = new Query(text);
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Properties\Resources.Designer.cs:192: public static string Query {
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Storage\HistoryItem.cs:11: public string Query { get; set; }
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\MainViewModel.cs:521: public void Query()
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\MainViewModel.cs:526: public void Query(bool? delayedExecution)
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\MainViewModel.cs:541: var query = QueryText.ToLower(CultureInfo.CurrentCulture).Trim();
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\MainViewModel.cs:554: OriginQuery = new Query(h.Query),
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\MainViewModel.cs:630: var query = pluginQueryItem.Value;
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\MainViewModel.cs:651: var query = pluginQueryItem.Value;
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\FuzzyMatcher.cs:12: private string query;
+C:\repos\PowerToys\src\modules\launcher\Wox.Infrastructure\StringMatcher.cs:107: var queryWithoutCase = opt.IgnoreCase ? query.ToUpper(CultureInfo.InvariantCulture) : query;
+C:\repos\PowerToys\src\modules\launcher\Wox.Plugin\Query.cs:14: internal Query()
+C:\repos\PowerToys\src\modules\launcher\Wox.Plugin\Query.cs:22: public Query(string query, string actionKeyword = &quot;&quot;)
+C:\repos\PowerToys\src\modules\launcher\Wox.Plugin\ResultUpdatedEventArgs.cs:19: public Query Query { get; set; }
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\MainViewModelTest.cs:19: string query = &quot;M&quot;;
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\MainViewModelTest.cs:34: string query = &quot;M&quot;;
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\MainViewModelTest.cs:49: string query = null;
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\MainViewModelTest.cs:64: string query = string.Empty;
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\MainViewModelTest.cs:79: string query = &quot;Vis&quot;;
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\MainViewModelTest.cs:94: string query = &quot;VIs&quot;;
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\MainViewModelTest.cs:110: string query = &quot;Vim&quot;;
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\MainViewModelTest.cs:126: string query = &quot;M&quot;;
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\MainViewModelTest.cs:141: string query = &quot;M&quot;;
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\MainViewModelTest.cs:156: string query = null;
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\MainViewModelTest.cs:171: string query = string.Empty;
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\MainViewModelTest.cs:186: string query = &quot;VIs&quot;;
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\MainViewModelTest.cs:202: string query = &quot;Vim&quot;;
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\PluginManagerTest.cs:24: var query = new Query
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\PluginManagerTest.cs:64: var query = new Query(string.Empty, actionKeyword);
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\QueryBuilderTest.cs:119: Assert.IsTrue(AreEqual(firstSearchQuerySecondPlugin, new Query(firstSearchQuery, secondPlugin.Metadata.ActionKeyword)));
+C:\repos\PowerToys\src\modules\launcher\Wox.Test\QueryBuilderTest.cs:120: Assert.IsTrue(AreEqual(secondSearchQueryFirstPlugin, new Query(secondSearchQuery, firstPlugin.Metadata.ActionKeyword)));</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 10642 | Lines: 85 | Time: 130ms</span></summary>
+        <p class="algorithm-details">tgrep search for member declaration &#39;Query&#39;</p>
+        <pre id="expand-11-short">Wox.Test/QueryBuilderTest.cs:119:Assert.IsTrue(AreEqual(firstSearchQuerySecondPlugin, new Query(firstSearchQuery, secondPlugin.Metadata.ActionKeyword)));
+Wox.Test/QueryBuilderTest.cs:120:Assert.IsTrue(AreEqual(secondSearchQueryFirstPlugin, new Query(secondSearchQuery, firstPlugin.Metadata.ActionKeyword)));
+Wox.Test/PluginManagerTest.cs:64:var query = new Query(string.Empty, actionKeyword);
+PowerLauncher/ViewModel/MainViewModel.cs:521:public void Query()
+PowerLauncher/ViewModel/MainViewModel.cs:526:public void Query(bool? delayedExecution)
+PowerLauncher/ViewModel/MainViewModel.cs:554:OriginQuery = new Query(h.Query),
+Wox.Plugin/ResultUpdatedEventArgs.cs:19:public Query Query { get; set; }
+Wox.Plugin/Query.cs:14:internal Query()
+Wox.Plugin/Query.cs:22:public Query(string query, string actionKeyword = &quot;&quot;)
+Plugins/Microsoft.Plugin.Folder/Main.cs:60:public List&lt;Result&gt; Query(Query query)
+<span class="truncated-link" onclick="document.getElementById('expand-11-short').style.display='none'; document.getElementById('expand-11-full').style.display='block';">... truncated (75 more lines) — click to expand</span></pre>
+        <pre id="expand-11-full" class="full-result">Wox.Test/QueryBuilderTest.cs:119:Assert.IsTrue(AreEqual(firstSearchQuerySecondPlugin, new Query(firstSearchQuery, secondPlugin.Metadata.ActionKeyword)));
+Wox.Test/QueryBuilderTest.cs:120:Assert.IsTrue(AreEqual(secondSearchQueryFirstPlugin, new Query(secondSearchQuery, firstPlugin.Metadata.ActionKeyword)));
+Wox.Test/PluginManagerTest.cs:64:var query = new Query(string.Empty, actionKeyword);
+PowerLauncher/ViewModel/MainViewModel.cs:521:public void Query()
+PowerLauncher/ViewModel/MainViewModel.cs:526:public void Query(bool? delayedExecution)
+PowerLauncher/ViewModel/MainViewModel.cs:554:OriginQuery = new Query(h.Query),
+Wox.Plugin/ResultUpdatedEventArgs.cs:19:public Query Query { get; set; }
+Wox.Plugin/Query.cs:14:internal Query()
+Wox.Plugin/Query.cs:22:public Query(string query, string actionKeyword = &quot;&quot;)
+Plugins/Microsoft.Plugin.Folder/Main.cs:60:public List&lt;Result&gt; Query(Query query)
+Plugins/Community.PowerToys.Run.Plugin.VSCodeWorkspaces/WorkspacesHelper/Rfc3986Uri.cs:24:public string Query { get; private set; }
+PowerLauncher/Plugin/QueryBuilder.cs:38:var query = new Query(text, pluginActionKeyword);
+PowerLauncher/Plugin/QueryBuilder.cs:60:var query = new Query(text);
+PowerLauncher/Storage/HistoryItem.cs:11:public string Query { get; set; }
+Plugins/Microsoft.Plugin.Folder/Sources/QueryInternalDirectory.cs:88:public IEnumerable&lt;IItemResult&gt; Query(string search)
+Plugins/Microsoft.Plugin.Folder/Sources/QueryEnvironmentVariable.cs:26:public IEnumerable&lt;IItemResult&gt; Query(string querySearch)
+Plugins/Community.PowerToys.Run.Plugin.WebSearch/Main.cs:63:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.PowerToys.Run.Plugin.History/Main.cs:30:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.PowerToys.Run.Plugin.History/Main.cs:122:var tempResults = PluginManager.QueryForPlugin(plugin, new Query(searchTerm), false);
+Plugins/Microsoft.PowerToys.Run.Plugin.History/Main.cs:137:tempResults = PluginManager.QueryForPlugin(plugin, new Query(searchTerm), true);
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsTerminal/Main.cs:70:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest/QueryTests.cs:51:var result = _main.Object.Query(expectedQuery).FirstOrDefault().SubTitle;
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest/QueryTests.cs:76:var result = _main.Object.Query(expectedQuery).Count;
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest/QueryTests.cs:100:var result = _main.Object.Query(expectedQuery).Count;
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest/QueryTests.cs:101:var resultWithKeyword = _main.Object.Query(expectedQueryWithKeyword).Count;
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest/QueryTests.cs:120:var result = _main.Object.Query(expectedQuery).FirstOrDefault().SubTitle;
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest/QueryTests.cs:121:var resultWithKeyword = _main.Object.Query(expectedQueryWithKeyword).FirstOrDefault().SubTitle;
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest/QueryTests.cs:209:var result = _main.Object.Query(expectedQuery).FirstOrDefault()?.SubTitle;
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest/QueryTests.cs:210:var resultWithKeyword = _main.Object.Query(expectedQueryWithKeyword).FirstOrDefault()?.SubTitle;
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest/QueryTests.cs:240:var result = _main.Object.Query(expectedQuery).FirstOrDefault()?.Title;
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest/QueryTests.cs:241:var resultWithKeyword = _main.Object.Query(expectedQueryWithKeyword).FirstOrDefault()?.Title;
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest/QueryTests.cs:260:var result = _main.Object.Query(expectedQuery).FirstOrDefault()?.Title;
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator.UnitTest/QueryTests.cs:261:var resultWithKeyword = _main.Object.Query(expectedQueryWithKeyword).FirstOrDefault()?.Title;
+PowerLauncher/Properties/Resources.Designer.cs:192:public static string Query {
+Plugins/Community.PowerToys.Run.Plugin.ValueGenerator.UnitTests/InputParserTests.cs:51:var query = new Query(input);
+Plugins/Microsoft.Plugin.WindowWalker/Main.cs:37:public List&lt;Result&gt; Query(Query query)
+Plugins/Community.PowerToys.Run.Plugin.UnitConverter.UnitTest/InputInterpreterTests.cs:98:Query query = new Query(queryString);
+Plugins/Community.PowerToys.Run.Plugin.UnitConverter.UnitTest/InputInterpreterTests.cs:110:Query query = new Query(queryString);
+Plugins/Community.PowerToys.Run.Plugin.VSCodeWorkspaces/Main.cs:43:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.PowerToys.Run.Plugin.System.UnitTests/QueryTests.cs:37:Query expectedQuery = new Query(typedString);
+Plugins/Microsoft.PowerToys.Run.Plugin.System.UnitTests/QueryTests.cs:40:var result = main.Object.Query(expectedQuery).FirstOrDefault().SubTitle;
+Plugins/Microsoft.PowerToys.Run.Plugin.System.UnitTests/QueryTests.cs:56:Query expectedQuery = new Query(typedString);
+Plugins/Microsoft.PowerToys.Run.Plugin.System.UnitTests/QueryTests.cs:59:var result = main.Object.Query(expectedQuery, true).FirstOrDefault().SubTitle;
+Plugins/Microsoft.PowerToys.Run.Plugin.System.UnitTests/QueryTests.cs:71:Query expectedQuery = new Query(&quot;uefi firm&quot;);
+Plugins/Microsoft.PowerToys.Run.Plugin.System.UnitTests/QueryTests.cs:74:var result = main.Object.Query(expectedQuery).FirstOrDefault().SubTitle;
+Plugins/Microsoft.PowerToys.Run.Plugin.System.UnitTests/QueryTests.cs:86:Query expectedQuery = new Query(&quot;uefi firm&quot;);
+Plugins/Microsoft.PowerToys.Run.Plugin.System.UnitTests/QueryTests.cs:89:var result = main.Object.Query(expectedQuery).FirstOrDefault();
+Plugins/Microsoft.PowerToys.Run.Plugin.System.UnitTests/ImageTests.cs:41:Query expectedQuery = new Query(typedString);
+Plugins/Microsoft.PowerToys.Run.Plugin.System.UnitTests/ImageTests.cs:44:var result = !isDelayed ? main.Object.Query(expectedQuery).FirstOrDefault().IcoPath : main.Object.Query(expectedQuery, true).FirstOrDefault().IcoPath;
+Plugins/Microsoft.PowerToys.Run.Plugin.System.UnitTests/ImageTests.cs:68:Query expectedQuery = new Query(typedString);
+Plugins/Microsoft.PowerToys.Run.Plugin.System.UnitTests/ImageTests.cs:71:var result = !isDelayed ? main.Object.Query(expectedQuery).FirstOrDefault().IcoPath : main.Object.Query(expectedQuery, true).FirstOrDefault().IcoPath;
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator/Main.cs:89:public List&lt;Result&gt; Query(Query query)
+Plugins/Community.PowerToys.Run.Plugin.UnitConverter/Main.cs:44:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsSettings/Main.cs:104:public List&lt;Result&gt; Query(Query query)
+Plugins/Community.PowerToys.Run.Plugin.ValueGenerator/Main.cs:104:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.Plugin.Uri/Main.cs:49:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.PowerToys.Run.Plugin.System/Main.cs:91:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.PowerToys.Run.Plugin.System/Main.cs:138:public List&lt;Result&gt; Query(Query query, bool delayedExecution)
+Plugins/Microsoft.PowerToys.Run.Plugin.Service/Main.cs:119:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.PowerToys.Run.Plugin.Registry/Main.cs:77:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests/ImageTests.cs:74:string result = main.Object.Query(expectedQuery).FirstOrDefault(predicate: x =&gt; x.SubTitle.StartsWith(subTitleMatch, System.StringComparison.CurrentCulture)).IcoPath;
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests/ImageTests.cs:121:var result = main.Object.Query(expectedQuery).FirstOrDefault(x =&gt; x.SubTitle.StartsWith(subTitleMatch, System.StringComparison.CurrentCulture)).IcoPath;
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests/QueryTests.cs:49:var result = main.Object.Query(expectedQuery).Count;
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests/QueryTests.cs:71:var result = main.Object.Query(expectedQuery);
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests/QueryTests.cs:95:var result = main.Object.Query(expectedQuery);
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests/QueryTests.cs:152:var result = main.Object.Query(expectedQuery).FirstOrDefault(x =&gt; x.SubTitle.StartsWith(expectedResult, StringComparison.CurrentCulture));
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests/QueryTests.cs:176:var result = main.Object.Query(expectedQuery).FirstOrDefault(x =&gt; x.SubTitle.StartsWith(expectedResult, StringComparison.CurrentCulture));
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests/QueryTests.cs:199:var result = main.Object.Query(expectedQuery).FirstOrDefault();
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests/QueryTests.cs:232:var result = main.Object.Query(expectedQuery).FirstOrDefault().Title;
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate.UnitTests/QueryTests.cs:252:var result = main.Object.Query(expectedQuery).FirstOrDefault();
+Plugins/Microsoft.Plugin.Indexer/SearchHelper/OleDBSearch.cs:12:public List&lt;OleDBResult&gt; Query(string connectionString, string sqlQuery)
+Plugins/Microsoft.Plugin.Indexer/Main.cs:90:public List&lt;Result&gt; Query(Query query, bool isFullQuery)
+Plugins/Microsoft.Plugin.Indexer/Main.cs:191:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.Plugin.Folder.UnitTests/InternalQueryFolderTests.cs:72:var isDriveOrSharedFolder = queryInternalDirectory.Query(search)
+Plugins/Microsoft.Plugin.Folder.UnitTests/InternalQueryFolderTests.cs:108:var isDriveOrSharedFolder = queryInternalDirectory.Query(search)
+Plugins/Microsoft.Plugin.Folder.UnitTests/QueryEnvironmentVariableTests.cs:52:var results = _queryEnvironmentVariable.Query(search);
+Plugins/Microsoft.Plugin.Folder.UnitTests/QueryEnvironmentVariableTests.cs:64:var results = _queryEnvironmentVariable.Query(search);
+Plugins/Microsoft.Plugin.Program/Main.cs:68:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.Plugin.Program/Main.cs:86:private IEnumerable&lt;Result&gt; Query(string program, string programArguments)
+Plugins/Microsoft.Plugin.Shell/Main.cs:92:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.PowerToys.Run.Plugin.TimeDate/Main.cs:70:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.PowerToys.Run.Plugin.PowerToys/Main.cs:43:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.Plugin.Program.UnitTests/ProgramArgumentParser/ProgramArgumentParserTests.cs:35:var query = new Query(inputQuery);
+Plugins/Microsoft.PowerToys.Run.Plugin.OneNote/Main.cs:99:public List&lt;Result&gt; Query(Query query)
+Plugins/Microsoft.PowerToys.Run.Plugin.OneNote/Main.cs:117:public List&lt;Result&gt; Query(Query query, bool delayedExecution)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 2ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Query&#39;, SymbolFilter.Member)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Query&#39;, SymbolFilter.Member)</p>
+        <pre></pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-member-definition (name: Dispose)</span><span class="summary-meta">4 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>Dispose</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 5327 | Lines: 41 | Time: 1.1s</span></summary>
+        <p class="algorithm-details">string search for member declaration &#39;Dispose&#39;</p>
+        <pre id="expand-12-short">C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter\Main.cs:167: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter\Main.cs:173: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator\Main.cs:42: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator\Main.cs:78: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.WebSearch\Main.cs:237: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.WebSearch\Main.cs:243: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Main.cs:125: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Main.cs:131: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Indexer\Main.cs:266: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Indexer\Main.cs:278: public void Dispose()
+<span class="truncated-link" onclick="document.getElementById('expand-12-short').style.display='none'; document.getElementById('expand-12-full').style.display='block';">... truncated (31 more lines) — click to expand</span></pre>
+        <pre id="expand-12-full" class="full-result">C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter\Main.cs:167: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.UnitConverter\Main.cs:173: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator\Main.cs:42: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.ValueGenerator\Main.cs:78: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.WebSearch\Main.cs:237: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Community.PowerToys.Run.Plugin.WebSearch\Main.cs:243: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Main.cs:125: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Folder\Main.cs:131: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Indexer\Main.cs:266: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Indexer\Main.cs:278: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Main.cs:196: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Main.cs:202: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Storage\Win32ProgramFileSystemWatchers.cs:68: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Program\Storage\Win32ProgramFileSystemWatchers.cs:74: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Uri\Main.cs:180: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.Uri\Main.cs:186: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.WindowWalker\Main.cs:110: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.Plugin.WindowWalker\Main.cs:116: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator\Main.cs:241: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Calculator\Main.cs:247: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.History\Main.cs:232: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.History\Main.cs:238: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Main.cs:59: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Main.cs:65: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Components\UtilityProvider.cs:267: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.PowerToys\Components\UtilityProvider.cs:273: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Registry\Main.cs:147: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.Registry\Main.cs:157: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.WindowsSettings\Main.cs:182: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\Plugins\Microsoft.PowerToys.Run.Plugin.WindowsSettings\Main.cs:192: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\App.xaml.cs:255: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\App.xaml.cs:290: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\MainWindow.xaml.cs:836: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\MainWindow.xaml.cs:851: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\PublicAPIInstance.cs:112: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\PublicAPIInstance.cs:123: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Helper\ThemeManager.cs:193: public void Dispose()
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Helper\ThemeManager.cs:199: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\Plugin\PluginManager.cs:329: public static void Dispose()
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\MainViewModel.cs:1173: protected virtual void Dispose(bool disposing)
+C:\repos\PowerToys\src\modules\launcher\PowerLauncher\ViewModel\MainViewModel.cs:1197: public void Dispose()</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3606 | Lines: 41 | Time: 57ms</span></summary>
+        <p class="algorithm-details">tgrep search for member declaration &#39;Dispose&#39;</p>
+        <pre id="expand-13-short">PowerLauncher/ViewModel/MainViewModel.cs:1173:protected virtual void Dispose(bool disposing)
+PowerLauncher/ViewModel/MainViewModel.cs:1197:public void Dispose()
+Plugins/Microsoft.Plugin.Folder/Main.cs:125:public void Dispose()
+Plugins/Microsoft.Plugin.Folder/Main.cs:131:protected virtual void Dispose(bool disposing)
+PowerLauncher/Plugin/PluginManager.cs:329:public static void Dispose()
+PowerLauncher/MainWindow.xaml.cs:836:protected virtual void Dispose(bool disposing)
+PowerLauncher/MainWindow.xaml.cs:851:public void Dispose()
+PowerLauncher/App.xaml.cs:255:protected virtual void Dispose(bool disposing)
+PowerLauncher/App.xaml.cs:290:public void Dispose()
+Plugins/Community.PowerToys.Run.Plugin.WebSearch/Main.cs:237:public void Dispose()
+<span class="truncated-link" onclick="document.getElementById('expand-13-short').style.display='none'; document.getElementById('expand-13-full').style.display='block';">... truncated (31 more lines) — click to expand</span></pre>
+        <pre id="expand-13-full" class="full-result">PowerLauncher/ViewModel/MainViewModel.cs:1173:protected virtual void Dispose(bool disposing)
+PowerLauncher/ViewModel/MainViewModel.cs:1197:public void Dispose()
+Plugins/Microsoft.Plugin.Folder/Main.cs:125:public void Dispose()
+Plugins/Microsoft.Plugin.Folder/Main.cs:131:protected virtual void Dispose(bool disposing)
+PowerLauncher/Plugin/PluginManager.cs:329:public static void Dispose()
+PowerLauncher/MainWindow.xaml.cs:836:protected virtual void Dispose(bool disposing)
+PowerLauncher/MainWindow.xaml.cs:851:public void Dispose()
+PowerLauncher/App.xaml.cs:255:protected virtual void Dispose(bool disposing)
+PowerLauncher/App.xaml.cs:290:public void Dispose()
+Plugins/Community.PowerToys.Run.Plugin.WebSearch/Main.cs:237:public void Dispose()
+Plugins/Community.PowerToys.Run.Plugin.WebSearch/Main.cs:243:protected virtual void Dispose(bool disposing)
+Plugins/Microsoft.PowerToys.Run.Plugin.History/Main.cs:232:public void Dispose()
+Plugins/Microsoft.PowerToys.Run.Plugin.History/Main.cs:238:protected virtual void Dispose(bool disposing)
+PowerLauncher/PublicAPIInstance.cs:112:public void Dispose()
+PowerLauncher/PublicAPIInstance.cs:123:protected virtual void Dispose(bool disposing)
+PowerLauncher/Helper/ThemeManager.cs:193:public void Dispose()
+PowerLauncher/Helper/ThemeManager.cs:199:protected virtual void Dispose(bool disposing)
+Plugins/Microsoft.Plugin.WindowWalker/Main.cs:110:public void Dispose()
+Plugins/Microsoft.Plugin.WindowWalker/Main.cs:116:protected virtual void Dispose(bool disposing)
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator/Main.cs:241:public void Dispose()
+Plugins/Microsoft.PowerToys.Run.Plugin.Calculator/Main.cs:247:protected virtual void Dispose(bool disposing)
+Plugins/Community.PowerToys.Run.Plugin.UnitConverter/Main.cs:167:public void Dispose()
+Plugins/Community.PowerToys.Run.Plugin.UnitConverter/Main.cs:173:protected virtual void Dispose(bool disposing)
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsSettings/Main.cs:182:public void Dispose()
+Plugins/Microsoft.PowerToys.Run.Plugin.WindowsSettings/Main.cs:192:protected virtual void Dispose(bool disposing)
+Plugins/Community.PowerToys.Run.Plugin.ValueGenerator/Main.cs:42:public void Dispose()
+Plugins/Community.PowerToys.Run.Plugin.ValueGenerator/Main.cs:78:protected virtual void Dispose(bool disposing)
+Plugins/Microsoft.Plugin.Uri/Main.cs:180:public void Dispose()
+Plugins/Microsoft.Plugin.Uri/Main.cs:186:protected virtual void Dispose(bool disposing)
+Plugins/Microsoft.PowerToys.Run.Plugin.Registry/Main.cs:147:public void Dispose()
+Plugins/Microsoft.PowerToys.Run.Plugin.Registry/Main.cs:157:protected virtual void Dispose(bool disposing)
+Plugins/Microsoft.Plugin.Indexer/Main.cs:266:protected virtual void Dispose(bool disposing)
+Plugins/Microsoft.Plugin.Indexer/Main.cs:278:public void Dispose()
+Plugins/Microsoft.Plugin.Program/Main.cs:196:public void Dispose()
+Plugins/Microsoft.Plugin.Program/Main.cs:202:protected virtual void Dispose(bool disposing)
+Plugins/Microsoft.Plugin.Program/Storage/Win32ProgramFileSystemWatchers.cs:68:public void Dispose()
+Plugins/Microsoft.Plugin.Program/Storage/Win32ProgramFileSystemWatchers.cs:74:protected virtual void Dispose(bool disposing)
+Plugins/Microsoft.PowerToys.Run.Plugin.PowerToys/Main.cs:59:public void Dispose()
+Plugins/Microsoft.PowerToys.Run.Plugin.PowerToys/Main.cs:65:protected virtual void Dispose(bool disposing)
+Plugins/Microsoft.PowerToys.Run.Plugin.PowerToys/Components/UtilityProvider.cs:267:public void Dispose()
+Plugins/Microsoft.PowerToys.Run.Plugin.PowerToys/Components/UtilityProvider.cs:273:protected virtual void Dispose(bool disposing)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 259 | Lines: 2 | Time: 69ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Dispose&#39;, SymbolFilter.Member)</p>
+        <pre>Microsoft.PowerToys.Telemetry.ETWTrace.Dispose() - C:\repos\PowerToys\src\common\ManagedTelemetry\Telemetry\EtwTrace.cs(85,21)
+Microsoft.PowerToys.Telemetry.ETWTrace.Dispose(bool) - C:\repos\PowerToys\src\common\ManagedTelemetry\Telemetry\EtwTrace.cs(157,32)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 259 | Lines: 2 | Time: 0ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Dispose&#39;, SymbolFilter.Member)</p>
+        <pre>Microsoft.PowerToys.Telemetry.ETWTrace.Dispose() - C:\repos\PowerToys\src\common\ManagedTelemetry\Telemetry\EtwTrace.cs(85,21)
+Microsoft.PowerToys.Telemetry.ETWTrace.Dispose(bool) - C:\repos\PowerToys\src\common\ManagedTelemetry\Telemetry\EtwTrace.cs(157,32)</pre>
+      </details>
+    </details>
+  </section>
+  <script>
+    document.querySelector('[data-action="expand-all"]').addEventListener('click', () => document.querySelectorAll('details').forEach(details => details.open = true));
+    document.querySelector('[data-action="collapse-algorithms"]').addEventListener('click', () => document.querySelectorAll('details.algorithm').forEach(details => details.open = false));
+    document.querySelector('[data-action="collapse-all"]').addEventListener('click', () => document.querySelectorAll('details').forEach(details => details.open = false));
+  </script>
+</body>
+</html>

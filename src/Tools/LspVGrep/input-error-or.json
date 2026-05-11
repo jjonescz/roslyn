@@ -1,0 +1,38 @@
+{
+  "directory": "C:\\repos\\error-or",
+  "output": "result-error-or.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "ErrorOr"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "Error"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ErrorOrExtensions"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ErrorOrFactory"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "IErrorOr"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IErrorOr"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Match"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "ToString"
+    }
+  ]
+}

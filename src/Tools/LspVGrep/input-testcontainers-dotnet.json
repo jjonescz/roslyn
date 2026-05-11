@@ -1,0 +1,38 @@
+{
+  "directory": "C:\\repos\\testcontainers-dotnet",
+  "output": "result-testcontainers-dotnet.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "ContainerBuilder"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "DockerContainer"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "IContainer"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "WaitStrategy"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "DockerContainer"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IContainer"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "StartAsync"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "DisposeAsync"
+    }
+  ]
+}

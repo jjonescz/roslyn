@@ -1,0 +1,38 @@
+{
+  "directory": "C:\\repos\\BenchmarkDotNet",
+  "output": "result-benchmarkdotnet.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "BuildRunner"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "CommandLineParser"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "KnownOptions"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "AnalyserBase"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "AnalyserBase"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IOption"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Run"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Parse"
+    }
+  ]
+}

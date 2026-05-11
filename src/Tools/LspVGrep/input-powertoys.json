@@ -1,0 +1,38 @@
+{
+  "directory": "C:\\repos\\PowerToys\\src\\modules\\launcher",
+  "output": "result-powertoys.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "StringMatcher"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "MatchResult"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ThemeManager"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "PluginInitContext"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "BaseModel"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IPlugin"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Query"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Dispose"
+    }
+  ]
+}

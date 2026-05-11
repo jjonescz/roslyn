@@ -1,0 +1,38 @@
+{
+  "directory": "C:\\repos\\PowerShell",
+  "output": "result-powershell.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "GetCimInstanceCommand"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "CmdletOperationBase"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "CimSessionWrapper"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ParameterDefinitionEntry"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "Cmdlet"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IDisposable"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "ProcessRecord"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Dispose"
+    }
+  ]
+}

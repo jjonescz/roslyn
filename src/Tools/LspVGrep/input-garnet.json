@@ -1,0 +1,38 @@
+{
+  "directory": "C:\\repos\\garnet",
+  "output": "result-garnet.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "GarnetServerEmbedded"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ClusterContext"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ClusterOperations"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "LuaRunnerOperations"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "NetworkBase"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IDisposable"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Execute"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Dispose"
+    }
+  ]
+}

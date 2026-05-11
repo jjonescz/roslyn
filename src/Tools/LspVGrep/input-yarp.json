@@ -1,0 +1,38 @@
+{
+  "directory": "C:\\repos\\yarp",
+  "output": "result-yarp.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "YarpOptions"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ReverseProxyFeature"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "IngressCache"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ServerCertificateSelector"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "IngressData"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "ICache"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Configure"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Dispose"
+    }
+  ]
+}

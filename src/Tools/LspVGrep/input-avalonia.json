@@ -1,0 +1,38 @@
+{
+  "directory": "C:\\repos\\Avalonia",
+  "output": "result-avalonia.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "AvaloniaView"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ApplicationLifetime"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "CursorFactory"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ByteArrayEqualityComparer"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "AvaloniaObject"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IAndroidApplication"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Render"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Dispose"
+    }
+  ]
+}

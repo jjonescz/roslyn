@@ -1,0 +1,38 @@
+{
+  "directory": "C:\\repos\\MudBlazor\\src",
+  "output": "result-mudblazor.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "MudButton"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "MudComponentBase"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "MudDialog"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "MudTextField"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "MudComponentBase"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IDisposable"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "OnInitialized"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "BuildRenderTree"
+    }
+  ]
+}

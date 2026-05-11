@@ -1,0 +1,38 @@
+{
+  "directory": "C:\\repos\\YoutubeExplode",
+  "output": "result-youtubeexplode.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "YoutubeClient"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ChannelClient"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "VideoWatchPage"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "PlayerResponse"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "Channel"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "ICipherOperation"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "GetAsync"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Execute"
+    }
+  ]
+}

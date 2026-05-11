@@ -1,0 +1,38 @@
+{
+  "directory": "C:\\repos\\semantic-kernel\\dotnet",
+  "output": "result-semantic-kernel.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "Kernel"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "KernelFunction"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "Agent"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ChatHistory"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "Agent"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IChatCompletionService"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "InvokeAsync"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "GetChatMessageContentsAsync"
+    }
+  ]
+}

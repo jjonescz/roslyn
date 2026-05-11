@@ -1,0 +1,38 @@
+{
+  "directory": "C:\\repos\\ILSpy",
+  "output": "result-ilspy.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "CSharpDecompiler"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "DecompilerSettings"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "XamlDecompiler"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "BamlDecompilerSettings"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "XamlNode"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IHandler"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Decompile"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Execute"
+    }
+  ]
+}

@@ -1,0 +1,533 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-05-11T12:30:21.9840595+00:00",
+  "directory": "C:\\repos\\MudBlazor\\src",
+  "repositoryCommitHash": "597198c91c192348475bc10b38e1788e1f1676d6",
+  "sourceLineCount": 183415,
+  "lscache": {
+    "enabled": true,
+    "used": false
+  },
+  "roslynTarget": {
+    "kind": "Solution",
+    "path": "C:\\repos\\MudBlazor\\src\\MudBlazor.slnx",
+    "loadTimeMilliseconds": 25762.51
+  },
+  "tgrepIndex": {
+    "buildTimeMilliseconds": 4584.9475
+  },
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "fields": {
+        "name": "MudButton"
+      },
+      "algorithms": [
+        {
+          "name": "find-type-definition-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027(class|record|struct|interface|enum) MudButton\u0027",
+          "elapsedMilliseconds": 2028.3497,
+          "characterCount": 133,
+          "lineCount": 1
+        },
+        {
+          "name": "find-type-definition-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027(class|record|struct|interface|enum) MudButton\u0027",
+          "elapsedMilliseconds": 66.6507,
+          "characterCount": 109,
+          "lineCount": 1
+        },
+        {
+          "name": "find-type-definition-grep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027MudButton\u0027",
+          "elapsedMilliseconds": 1684.1796,
+          "characterCount": 8321,
+          "lineCount": 59
+        },
+        {
+          "name": "find-type-definition-tgrep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027MudButton\u0027",
+          "elapsedMilliseconds": 63.0127,
+          "characterCount": 6677,
+          "lineCount": 58
+        },
+        {
+          "name": "roslyn-find-declarations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027MudButton\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 3127.7104,
+          "characterCount": 756,
+          "lineCount": 4
+        },
+        {
+          "name": "roslyn-find-declarations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027MudButton\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 11.4677,
+          "characterCount": 756,
+          "lineCount": 4
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudButton\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 1051.9832,
+          "characterCount": 4201,
+          "lineCount": 21
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudButton\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 24.8121,
+          "characterCount": 4201,
+          "lineCount": 21
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudButton\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 1127.84,
+          "characterCount": 4201,
+          "lineCount": 21
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudButton\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 94.8689,
+          "characterCount": 4201,
+          "lineCount": 21
+        }
+      ]
+    },
+    {
+      "type": "find-type-definition",
+      "fields": {
+        "name": "MudComponentBase"
+      },
+      "algorithms": [
+        {
+          "name": "find-type-definition-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027(class|record|struct|interface|enum) MudComponentBase\u0027",
+          "elapsedMilliseconds": 1897.9009,
+          "characterCount": 146,
+          "lineCount": 1
+        },
+        {
+          "name": "find-type-definition-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027(class|record|struct|interface|enum) MudComponentBase\u0027",
+          "elapsedMilliseconds": 169.1851,
+          "characterCount": 122,
+          "lineCount": 1
+        },
+        {
+          "name": "find-type-definition-grep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027MudComponentBase\u0027",
+          "elapsedMilliseconds": 1632.6034,
+          "characterCount": 23969,
+          "lineCount": 153
+        },
+        {
+          "name": "find-type-definition-tgrep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027MudComponentBase\u0027",
+          "elapsedMilliseconds": 149.3766,
+          "characterCount": 20051,
+          "lineCount": 152
+        },
+        {
+          "name": "roslyn-find-declarations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027MudComponentBase\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 10.1191,
+          "characterCount": 93,
+          "lineCount": 1
+        },
+        {
+          "name": "roslyn-find-declarations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027MudComponentBase\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 8.4448,
+          "characterCount": 93,
+          "lineCount": 1
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudComponentBase\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 6.2111,
+          "characterCount": 93,
+          "lineCount": 1
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudComponentBase\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 5.6018,
+          "characterCount": 93,
+          "lineCount": 1
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudComponentBase\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 83.6775,
+          "characterCount": 93,
+          "lineCount": 1
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudComponentBase\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 72.2567,
+          "characterCount": 93,
+          "lineCount": 1
+        }
+      ]
+    },
+    {
+      "type": "find-type-definition",
+      "fields": {
+        "name": "MudDialog"
+      },
+      "algorithms": [
+        {
+          "name": "find-type-definition-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027(class|record|struct|interface|enum) MudDialog\u0027",
+          "elapsedMilliseconds": 1925.1913,
+          "characterCount": 123,
+          "lineCount": 1
+        },
+        {
+          "name": "find-type-definition-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027(class|record|struct|interface|enum) MudDialog\u0027",
+          "elapsedMilliseconds": 63.1723,
+          "characterCount": 99,
+          "lineCount": 1
+        },
+        {
+          "name": "find-type-definition-grep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027MudDialog\u0027",
+          "elapsedMilliseconds": 1628.6156,
+          "characterCount": 6349,
+          "lineCount": 44
+        },
+        {
+          "name": "find-type-definition-tgrep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027MudDialog\u0027",
+          "elapsedMilliseconds": 60.7142,
+          "characterCount": 5250,
+          "lineCount": 44
+        },
+        {
+          "name": "roslyn-find-declarations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027MudDialog\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 8.8236,
+          "characterCount": 756,
+          "lineCount": 4
+        },
+        {
+          "name": "roslyn-find-declarations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027MudDialog\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 7.1539,
+          "characterCount": 756,
+          "lineCount": 4
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudDialog\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 6.1626,
+          "characterCount": 2646,
+          "lineCount": 14
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudDialog\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 5.868,
+          "characterCount": 2646,
+          "lineCount": 14
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudDialog\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 82.579,
+          "characterCount": 2646,
+          "lineCount": 14
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudDialog\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 81.2252,
+          "characterCount": 2646,
+          "lineCount": 14
+        }
+      ]
+    },
+    {
+      "type": "find-type-definition",
+      "fields": {
+        "name": "MudTextField"
+      },
+      "algorithms": [
+        {
+          "name": "find-type-definition-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027(class|record|struct|interface|enum) MudTextField\u0027",
+          "elapsedMilliseconds": 1854.3329,
+          "characterCount": 139,
+          "lineCount": 1
+        },
+        {
+          "name": "find-type-definition-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027(class|record|struct|interface|enum) MudTextField\u0027",
+          "elapsedMilliseconds": 51.7731,
+          "characterCount": 115,
+          "lineCount": 1
+        },
+        {
+          "name": "find-type-definition-grep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027MudTextField\u0027",
+          "elapsedMilliseconds": 1630.4792,
+          "characterCount": 25786,
+          "lineCount": 176
+        },
+        {
+          "name": "find-type-definition-tgrep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027MudTextField\u0027",
+          "elapsedMilliseconds": 51.3075,
+          "characterCount": 21387,
+          "lineCount": 176
+        },
+        {
+          "name": "roslyn-find-declarations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027MudTextField\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 9.8795,
+          "characterCount": 804,
+          "lineCount": 4
+        },
+        {
+          "name": "roslyn-find-declarations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027MudTextField\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 7.0806,
+          "characterCount": 804,
+          "lineCount": 4
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudTextField\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 5.951,
+          "characterCount": 804,
+          "lineCount": 4
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudTextField\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 5.735,
+          "characterCount": 804,
+          "lineCount": 4
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudTextField\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 76.5824,
+          "characterCount": 804,
+          "lineCount": 4
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027MudTextField\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 75.6408,
+          "characterCount": 804,
+          "lineCount": 4
+        }
+      ]
+    },
+    {
+      "type": "find-derived-types",
+      "fields": {
+        "name": "MudComponentBase"
+      },
+      "algorithms": [
+        {
+          "name": "find-derived-types-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027(class|record|struct) \\w\u002B ... MudComponentBase\u0027",
+          "elapsedMilliseconds": 1868.1262,
+          "characterCount": 18699,
+          "lineCount": 123
+        },
+        {
+          "name": "find-derived-types-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027(class|record|struct) \\w\u002B ... MudComponentBase\u0027",
+          "elapsedMilliseconds": 167.1621,
+          "characterCount": 15531,
+          "lineCount": 122
+        },
+        {
+          "name": "roslyn-find-derived-types (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDerivedClassesAsync(MudBlazor.MudComponentBase)",
+          "elapsedMilliseconds": 217.6889,
+          "characterCount": 53582,
+          "lineCount": 324
+        },
+        {
+          "name": "roslyn-find-derived-types (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDerivedClassesAsync(MudBlazor.MudComponentBase)",
+          "elapsedMilliseconds": 5.3881,
+          "characterCount": 53582,
+          "lineCount": 324
+        }
+      ]
+    },
+    {
+      "type": "find-interface-implementation",
+      "fields": {
+        "name": "IDisposable"
+      },
+      "algorithms": [
+        {
+          "name": "find-interface-implementation-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027: ...IDisposable\u0027",
+          "elapsedMilliseconds": 1625.7629,
+          "characterCount": 7533,
+          "lineCount": 48
+        },
+        {
+          "name": "find-interface-implementation-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027: ...IDisposable\u0027",
+          "elapsedMilliseconds": 85.2429,
+          "characterCount": 6334,
+          "lineCount": 48
+        },
+        {
+          "name": "roslyn-find-implementations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindImplementationsAsync(System.IDisposable)",
+          "elapsedMilliseconds": 998.9748,
+          "characterCount": 19414,
+          "lineCount": 116
+        },
+        {
+          "name": "roslyn-find-implementations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindImplementationsAsync(System.IDisposable)",
+          "elapsedMilliseconds": 69.492,
+          "characterCount": 19414,
+          "lineCount": 116
+        }
+      ]
+    },
+    {
+      "type": "find-member-definition",
+      "fields": {
+        "name": "OnInitialized"
+      },
+      "algorithms": [
+        {
+          "name": "find-member-definition-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for member declaration \u0027OnInitialized\u0027",
+          "elapsedMilliseconds": 2932.2289,
+          "characterCount": 7127,
+          "lineCount": 61
+        },
+        {
+          "name": "find-member-definition-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for member declaration \u0027OnInitialized\u0027",
+          "elapsedMilliseconds": 128.9239,
+          "characterCount": 5603,
+          "lineCount": 61
+        },
+        {
+          "name": "roslyn-find-member-declarations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027OnInitialized\u0027, SymbolFilter.Member)",
+          "elapsedMilliseconds": 136.8479,
+          "characterCount": 35218,
+          "lineCount": 149
+        },
+        {
+          "name": "roslyn-find-member-declarations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027OnInitialized\u0027, SymbolFilter.Member)",
+          "elapsedMilliseconds": 24.7582,
+          "characterCount": 35218,
+          "lineCount": 149
+        }
+      ]
+    },
+    {
+      "type": "find-member-definition",
+      "fields": {
+        "name": "BuildRenderTree"
+      },
+      "algorithms": [
+        {
+          "name": "find-member-definition-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for member declaration \u0027BuildRenderTree\u0027",
+          "elapsedMilliseconds": 2905.356,
+          "characterCount": 1043,
+          "lineCount": 7
+        },
+        {
+          "name": "find-member-definition-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for member declaration \u0027BuildRenderTree\u0027",
+          "elapsedMilliseconds": 45.8412,
+          "characterCount": 869,
+          "lineCount": 7
+        },
+        {
+          "name": "roslyn-find-member-declarations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027BuildRenderTree\u0027, SymbolFilter.Member)",
+          "elapsedMilliseconds": 514.7445,
+          "characterCount": 521092,
+          "lineCount": 1524
+        },
+        {
+          "name": "roslyn-find-member-declarations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027BuildRenderTree\u0027, SymbolFilter.Member)",
+          "elapsedMilliseconds": 88.9955,
+          "characterCount": 521092,
+          "lineCount": 1524
+        }
+      ]
+    }
+  ]
+}

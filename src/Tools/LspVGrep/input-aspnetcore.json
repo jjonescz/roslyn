@@ -1,0 +1,38 @@
+{
+  "directory": "C:\\repos\\aspnetcore",
+  "output": "result-aspnetcore.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "TestRunner"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "MiddlewareAnalyzer"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "OptionsAnalyzer"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "StartupAnalysis"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "DiagnosticAnalyzer"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IHostedService"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "StartAsync"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "InvokeAsync"
+    }
+  ]
+}

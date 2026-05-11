@@ -1,0 +1,38 @@
+{
+  "directory": "C:\\repos\\Terminal.Gui",
+  "output": "result-terminal-gui.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "LoginViewModel"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "Message"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "TerminalScheduler"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "View"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "View"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IDisposable"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Draw"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Run"
+    }
+  ]
+}

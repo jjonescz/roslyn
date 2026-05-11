@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>LspVGrepTool Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; color: #1f2937; }
+    h1, h2, h3 { margin-bottom: 0.5rem; }
+    .actions { display: flex; gap: 0.5rem; margin: 1rem 0; }
+    button { border: 1px solid #b8c2d1; border-radius: 6px; background: #fff; color: #1f2937; padding: 0.35rem 0.65rem; cursor: pointer; }
+    button:hover { background: #eef2f7; }
+    details { background: #fff; }
+    summary { cursor: pointer; }
+    .query { border: 1px solid #d1d5db; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem; }
+    .query[open] > summary { border-bottom: 1px solid #e5e7eb; margin-bottom: 0.75rem; padding-bottom: 0.75rem; }
+    .algorithm { border-top: 1px solid #e5e7eb; padding-top: 0.75rem; margin-top: 0.75rem; }
+    .algorithm[open] > summary { margin-bottom: 0.5rem; }
+    .summary-title { font-weight: 700; }
+    .summary-meta { color: #4b5563; margin-left: 0.75rem; font-size: 0.92rem; }
+    .algorithm-details { margin: 0.5rem 0; color: #4b5563; }
+    .status { font-weight: bold; }
+    .status-failed { color: #b91c1c; }
+    .status-succeeded { color: #047857; }
+    dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1rem; }
+    dt { font-weight: bold; }
+    pre { background: #f9fafb; border-radius: 6px; padding: 1rem; overflow-x: auto; white-space: pre-wrap; }
+    .truncated-link { color: #2563eb; cursor: pointer; font-style: italic; }
+    .truncated-link:hover { text-decoration: underline; }
+    .full-result { display: none; }
+  </style>
+</head>
+<body>
+  <h1>LspVGrepTool Report</h1>
+  <p><strong>Directory:</strong> C:\repos\BenchmarkDotNet</p>
+  <p><strong>Commit:</strong> 8ab56fefeb859931d1c92b2d5df89a3ca4002743</p>
+  <p><strong>LS cache:</strong> not used (enabled)</p>
+  <p><strong>Roslyn target:</strong> Solution - C:\repos\BenchmarkDotNet\BenchmarkDotNet.slnx (loaded in 16.9s)</p>
+  <p><strong>tgrep index:</strong> built in 1.1s</p>
+  <div class="actions">
+    <button type="button" data-action="expand-all">Expand all</button>
+    <button type="button" data-action="collapse-algorithms">Collapse algorithms</button>
+    <button type="button" data-action="collapse-all">Collapse all</button>
+  </div>
+  <section>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: BuildRunner)</span><span class="summary-meta">10 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>BuildRunner</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 104 | Lines: 1 | Time: 1.6s</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) BuildRunner&#39;</p>
+        <pre>C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\BuildRunner.cs:16: public class BuildRunner</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 78 | Lines: 1 | Time: 45ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) BuildRunner&#39;</p>
+        <pre>build/BenchmarkDotNet.Build/Runners/BuildRunner.cs:16:public class BuildRunner</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1755 | Lines: 13 | Time: 1.5s</span></summary>
+        <p class="algorithm-details">string search for &#39;BuildRunner&#39;</p>
+        <pre id="expand-0-short">C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\BuildContext.cs:54: public BuildRunner BuildRunner { get; }
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\BuildContext.cs:153: BuildRunner = new BuildRunner(this);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:25: public override void Run(BuildContext context) =&gt; context.BuildRunner.PackWeaver();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:46: public override void Run(BuildContext context) =&gt; context.BuildRunner.Restore();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:66: public override void Run(BuildContext context) =&gt; context.BuildRunner.Build();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:88: context.BuildRunner.InstallWorkload(&quot;wasm-tools-net8&quot;);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:188: public override void Run(BuildContext context) =&gt; context.BuildRunner.BuildAnalyzers();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:228: public override void Run(BuildContext context) =&gt; context.BuildRunner.Pack();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:322: context.BuildRunner.PackWeaver();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\BuildRunner.cs:16: public class BuildRunner
+<span class="truncated-link" onclick="document.getElementById('expand-0-short').style.display='none'; document.getElementById('expand-0-full').style.display='block';">... truncated (3 more lines) — click to expand</span></pre>
+        <pre id="expand-0-full" class="full-result">C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\BuildContext.cs:54: public BuildRunner BuildRunner { get; }
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\BuildContext.cs:153: BuildRunner = new BuildRunner(this);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:25: public override void Run(BuildContext context) =&gt; context.BuildRunner.PackWeaver();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:46: public override void Run(BuildContext context) =&gt; context.BuildRunner.Restore();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:66: public override void Run(BuildContext context) =&gt; context.BuildRunner.Build();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:88: context.BuildRunner.InstallWorkload(&quot;wasm-tools-net8&quot;);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:188: public override void Run(BuildContext context) =&gt; context.BuildRunner.BuildAnalyzers();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:228: public override void Run(BuildContext context) =&gt; context.BuildRunner.Pack();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:322: context.BuildRunner.PackWeaver();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\BuildRunner.cs:16: public class BuildRunner
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\BuildRunner.cs:21: public BuildRunner(BuildContext context)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\ReleaseRunner.cs:67: context.BuildRunner.BuildProjectSilent(context.TemplatesTestsProjectFile);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\ReleaseRunner.cs:101: context.BuildRunner.BuildProjectSilent(context.TemplatesTestsProjectFile);</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1405 | Lines: 13 | Time: 44ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;BuildRunner&#39;</p>
+        <pre id="expand-1-short">build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:67:context.BuildRunner.BuildProjectSilent(context.TemplatesTestsProjectFile);
+build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:101:context.BuildRunner.BuildProjectSilent(context.TemplatesTestsProjectFile);
+build/BenchmarkDotNet.Build/Runners/BuildRunner.cs:16:public class BuildRunner
+build/BenchmarkDotNet.Build/Runners/BuildRunner.cs:21:public BuildRunner(BuildContext context)
+build/BenchmarkDotNet.Build/Program.cs:25:public override void Run(BuildContext context) =&gt; context.BuildRunner.PackWeaver();
+build/BenchmarkDotNet.Build/Program.cs:46:public override void Run(BuildContext context) =&gt; context.BuildRunner.Restore();
+build/BenchmarkDotNet.Build/Program.cs:66:public override void Run(BuildContext context) =&gt; context.BuildRunner.Build();
+build/BenchmarkDotNet.Build/Program.cs:88:context.BuildRunner.InstallWorkload(&quot;wasm-tools-net8&quot;);
+build/BenchmarkDotNet.Build/Program.cs:188:public override void Run(BuildContext context) =&gt; context.BuildRunner.BuildAnalyzers();
+build/BenchmarkDotNet.Build/Program.cs:228:public override void Run(BuildContext context) =&gt; context.BuildRunner.Pack();
+<span class="truncated-link" onclick="document.getElementById('expand-1-short').style.display='none'; document.getElementById('expand-1-full').style.display='block';">... truncated (3 more lines) — click to expand</span></pre>
+        <pre id="expand-1-full" class="full-result">build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:67:context.BuildRunner.BuildProjectSilent(context.TemplatesTestsProjectFile);
+build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:101:context.BuildRunner.BuildProjectSilent(context.TemplatesTestsProjectFile);
+build/BenchmarkDotNet.Build/Runners/BuildRunner.cs:16:public class BuildRunner
+build/BenchmarkDotNet.Build/Runners/BuildRunner.cs:21:public BuildRunner(BuildContext context)
+build/BenchmarkDotNet.Build/Program.cs:25:public override void Run(BuildContext context) =&gt; context.BuildRunner.PackWeaver();
+build/BenchmarkDotNet.Build/Program.cs:46:public override void Run(BuildContext context) =&gt; context.BuildRunner.Restore();
+build/BenchmarkDotNet.Build/Program.cs:66:public override void Run(BuildContext context) =&gt; context.BuildRunner.Build();
+build/BenchmarkDotNet.Build/Program.cs:88:context.BuildRunner.InstallWorkload(&quot;wasm-tools-net8&quot;);
+build/BenchmarkDotNet.Build/Program.cs:188:public override void Run(BuildContext context) =&gt; context.BuildRunner.BuildAnalyzers();
+build/BenchmarkDotNet.Build/Program.cs:228:public override void Run(BuildContext context) =&gt; context.BuildRunner.Pack();
+build/BenchmarkDotNet.Build/Program.cs:322:context.BuildRunner.PackWeaver();
+build/BenchmarkDotNet.Build/BuildContext.cs:54:public BuildRunner BuildRunner { get; }
+build/BenchmarkDotNet.Build/BuildContext.cs:153:BuildRunner = new BuildRunner(this);</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 3.6s</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;BuildRunner&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 21ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;BuildRunner&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 1.1s</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildRunner&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 17ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildRunner&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 69ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildRunner&#39;) without SymbolFilter</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 63ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildRunner&#39;) without SymbolFilter</p>
+        <pre></pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: CommandLineParser)</span><span class="summary-meta">10 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>CommandLineParser</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 108 | Lines: 1 | Time: 1.6s</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) CommandLineParser&#39;</p>
+        <pre>C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\CommandLineParser.cs:11: public class CommandLineParser</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 82 | Lines: 1 | Time: 44ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) CommandLineParser&#39;</p>
+        <pre>build/BenchmarkDotNet.Build/CommandLineParser.cs:11:public class CommandLineParser</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1220 | Lines: 7 | Time: 1.5s</span></summary>
+        <p class="algorithm-details">string search for &#39;CommandLineParser&#39;</p>
+        <pre>C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\CommandLineParser.cs:11: public class CommandLineParser
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\CommandLineParser.cs:18: public static readonly CommandLineParser Instance = new();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:12: var cakeArgs = CommandLineParser.Instance.Parse(args);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\BenchmarkSwitcherTest.cs:24: &quot;When CommandLineParser wants to display help, it tries to get the Title of the Entry Assembly which is an xunit runner, which has no Title and fails..&quot;,
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:127: &quot;When CommandLineParser wants to display help, it tries to get the Title of the Entry Assembly which is an xunit runner, which has no Title and fails..&quot;,
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:718: [Fact(Skip = &quot;This should be handled somehow at CommandLineParser level. See https://github.com/commandlineparser/commandline/pull/892&quot;)]
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:764: // if https://github.com/commandlineparser/commandline/pull/892 lands</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 909 | Lines: 6 | Time: 41ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;CommandLineParser&#39;</p>
+        <pre>tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:127:&quot;When CommandLineParser wants to display help, it tries to get the Title of the Entry Assembly which is an xunit runner, which has no Title and fails..&quot;,
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:718:[Fact(Skip = &quot;This should be handled somehow at CommandLineParser level. See https://github.com/commandlineparser/commandline/pull/892&quot;)]
+tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:24:&quot;When CommandLineParser wants to display help, it tries to get the Title of the Entry Assembly which is an xunit runner, which has no Title and fails..&quot;,
+build/BenchmarkDotNet.Build/Program.cs:12:var cakeArgs = CommandLineParser.Instance.Parse(args);
+build/BenchmarkDotNet.Build/CommandLineParser.cs:11:public class CommandLineParser
+build/BenchmarkDotNet.Build/CommandLineParser.cs:18:public static readonly CommandLineParser Instance = new();</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 17ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;CommandLineParser&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 14ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;CommandLineParser&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 8ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;CommandLineParser&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 7ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;CommandLineParser&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 27ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;CommandLineParser&#39;) without SymbolFilter</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 28ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;CommandLineParser&#39;) without SymbolFilter</p>
+        <pre></pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: KnownOptions)</span><span class="summary-meta">10 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>KnownOptions</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 112 | Lines: 1 | Time: 1.6s</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) KnownOptions&#39;</p>
+        <pre>C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Options\KnownOptions.cs:3: public static class KnownOptions</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 86 | Lines: 1 | Time: 44ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) KnownOptions&#39;</p>
+        <pre>build/BenchmarkDotNet.Build/Options/KnownOptions.cs:3:public static class KnownOptions</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 4367 | Lines: 35 | Time: 1.4s</span></summary>
+        <p class="algorithm-details">string search for &#39;KnownOptions&#39;</p>
+        <pre id="expand-2-short">C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\BuildContext.cs:121: if (KnownOptions.Stable.Resolve(this))
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\BuildContext.cs:188: if (KnownOptions.Push.Resolve(this))
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\CommandLineParser.cs:89: KnownOptions.Verbosity, KnownOptions.Exclusive, KnownOptions.Help, KnownOptions.Stable
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:118: .WithArgument(KnownOptions.Exclusive)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:119: .WithArgument(KnownOptions.Verbosity, &quot;Diagnostic&quot;)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:140: .WithArgument(KnownOptions.Exclusive)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:141: .WithArgument(KnownOptions.Verbosity, &quot;Diagnostic&quot;)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:239: new Example(Name).WithArgument(KnownOptions.Stable)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:258: $&quot;* Last changelog footer (if {KnownOptions.Stable.CommandLineName} is specified)\n&quot; +
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:261: Options = [KnownOptions.DocsPreview, KnownOptions.DocsDepth, KnownOptions.ForceClone],
+<span class="truncated-link" onclick="document.getElementById('expand-2-short').style.display='none'; document.getElementById('expand-2-full').style.display='block';">... truncated (25 more lines) — click to expand</span></pre>
+        <pre id="expand-2-full" class="full-result">C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\BuildContext.cs:121: if (KnownOptions.Stable.Resolve(this))
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\BuildContext.cs:188: if (KnownOptions.Push.Resolve(this))
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\CommandLineParser.cs:89: KnownOptions.Verbosity, KnownOptions.Exclusive, KnownOptions.Help, KnownOptions.Stable
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:118: .WithArgument(KnownOptions.Exclusive)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:119: .WithArgument(KnownOptions.Verbosity, &quot;Diagnostic&quot;)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:140: .WithArgument(KnownOptions.Exclusive)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:141: .WithArgument(KnownOptions.Verbosity, &quot;Diagnostic&quot;)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:239: new Example(Name).WithArgument(KnownOptions.Stable)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:258: $&quot;* Last changelog footer (if {KnownOptions.Stable.CommandLineName} is specified)\n&quot; +
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:261: Options = [KnownOptions.DocsPreview, KnownOptions.DocsDepth, KnownOptions.ForceClone],
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:266: .WithArgument(KnownOptions.DocsDepth, &quot;3&quot;)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:267: .WithArgument(KnownOptions.DocsPreview)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:268: .WithArgument(KnownOptions.ForceClone)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:285: Options = [KnownOptions.DocsPreview, KnownOptions.Stable],
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:288: new Example(Name).WithArgument(KnownOptions.DocsPreview),
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:289: new Example(Name).WithArgument(KnownOptions.Stable)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:306: Options = [KnownOptions.DocsPreview],
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:309: new Example(Name).WithArgument(KnownOptions.DocsPreview)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:327: Options = [KnownOptions.NextVersion],
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:332: .WithArgument(KnownOptions.NextVersion, &quot;0.1.1729&quot;)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:351: Options = [KnownOptions.NextVersion, KnownOptions.Push],
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:356: .WithArgument(KnownOptions.Stable)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:357: .WithArgument(KnownOptions.NextVersion, &quot;0.1.1729&quot;)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:358: .WithArgument(KnownOptions.Push),
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:360: .WithArgument(KnownOptions.Stable)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:361: .WithArgument(KnownOptions.Push)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Options\KnownOptions.cs:3: public static class KnownOptions
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\ReleaseRunner.cs:29: var nextVersion = KnownOptions.NextVersion.Resolve(context);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\ReleaseRunner.cs:43: KnownOptions.Stable.AssertTrue(context);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\ReleaseRunner.cs:46: if (KnownOptions.Push.Resolve(context))
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\ReleaseRunner.cs:53: var nextVersion = KnownOptions.NextVersion.Resolve(context);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\Changelog\ChangelogBuilder.cs:35: preview = KnownOptions.DocsPreview.Resolve(context);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\Changelog\ChangelogBuilder.cs:36: depth = KnownOptions.DocsDepth.Resolve(context);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\Changelog\ChangelogBuilder.cs:37: forceClone = KnownOptions.ForceClone.Resolve(context);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\Changelog\ChangelogBuilder.cs:124: var date = KnownOptions.Stable.Resolve(context)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3423 | Lines: 35 | Time: 46ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;KnownOptions&#39;</p>
+        <pre id="expand-3-short">build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:29:var nextVersion = KnownOptions.NextVersion.Resolve(context);
+build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:43:KnownOptions.Stable.AssertTrue(context);
+build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:46:if (KnownOptions.Push.Resolve(context))
+build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:53:var nextVersion = KnownOptions.NextVersion.Resolve(context);
+build/BenchmarkDotNet.Build/Runners/Changelog/ChangelogBuilder.cs:35:preview = KnownOptions.DocsPreview.Resolve(context);
+build/BenchmarkDotNet.Build/Runners/Changelog/ChangelogBuilder.cs:36:depth = KnownOptions.DocsDepth.Resolve(context);
+build/BenchmarkDotNet.Build/Runners/Changelog/ChangelogBuilder.cs:37:forceClone = KnownOptions.ForceClone.Resolve(context);
+build/BenchmarkDotNet.Build/Runners/Changelog/ChangelogBuilder.cs:124:var date = KnownOptions.Stable.Resolve(context)
+build/BenchmarkDotNet.Build/Program.cs:118:.WithArgument(KnownOptions.Exclusive)
+build/BenchmarkDotNet.Build/Program.cs:119:.WithArgument(KnownOptions.Verbosity, &quot;Diagnostic&quot;)
+<span class="truncated-link" onclick="document.getElementById('expand-3-short').style.display='none'; document.getElementById('expand-3-full').style.display='block';">... truncated (25 more lines) — click to expand</span></pre>
+        <pre id="expand-3-full" class="full-result">build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:29:var nextVersion = KnownOptions.NextVersion.Resolve(context);
+build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:43:KnownOptions.Stable.AssertTrue(context);
+build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:46:if (KnownOptions.Push.Resolve(context))
+build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:53:var nextVersion = KnownOptions.NextVersion.Resolve(context);
+build/BenchmarkDotNet.Build/Runners/Changelog/ChangelogBuilder.cs:35:preview = KnownOptions.DocsPreview.Resolve(context);
+build/BenchmarkDotNet.Build/Runners/Changelog/ChangelogBuilder.cs:36:depth = KnownOptions.DocsDepth.Resolve(context);
+build/BenchmarkDotNet.Build/Runners/Changelog/ChangelogBuilder.cs:37:forceClone = KnownOptions.ForceClone.Resolve(context);
+build/BenchmarkDotNet.Build/Runners/Changelog/ChangelogBuilder.cs:124:var date = KnownOptions.Stable.Resolve(context)
+build/BenchmarkDotNet.Build/Program.cs:118:.WithArgument(KnownOptions.Exclusive)
+build/BenchmarkDotNet.Build/Program.cs:119:.WithArgument(KnownOptions.Verbosity, &quot;Diagnostic&quot;)
+build/BenchmarkDotNet.Build/Program.cs:140:.WithArgument(KnownOptions.Exclusive)
+build/BenchmarkDotNet.Build/Program.cs:141:.WithArgument(KnownOptions.Verbosity, &quot;Diagnostic&quot;)
+build/BenchmarkDotNet.Build/Program.cs:239:new Example(Name).WithArgument(KnownOptions.Stable)
+build/BenchmarkDotNet.Build/Program.cs:258:$&quot;* Last changelog footer (if {KnownOptions.Stable.CommandLineName} is specified)\n&quot; +
+build/BenchmarkDotNet.Build/Program.cs:261:Options = [KnownOptions.DocsPreview, KnownOptions.DocsDepth, KnownOptions.ForceClone],
+build/BenchmarkDotNet.Build/Program.cs:266:.WithArgument(KnownOptions.DocsDepth, &quot;3&quot;)
+build/BenchmarkDotNet.Build/Program.cs:267:.WithArgument(KnownOptions.DocsPreview)
+build/BenchmarkDotNet.Build/Program.cs:268:.WithArgument(KnownOptions.ForceClone)
+build/BenchmarkDotNet.Build/Program.cs:285:Options = [KnownOptions.DocsPreview, KnownOptions.Stable],
+build/BenchmarkDotNet.Build/Program.cs:288:new Example(Name).WithArgument(KnownOptions.DocsPreview),
+build/BenchmarkDotNet.Build/Program.cs:289:new Example(Name).WithArgument(KnownOptions.Stable)
+build/BenchmarkDotNet.Build/Program.cs:306:Options = [KnownOptions.DocsPreview],
+build/BenchmarkDotNet.Build/Program.cs:309:new Example(Name).WithArgument(KnownOptions.DocsPreview)
+build/BenchmarkDotNet.Build/Program.cs:327:Options = [KnownOptions.NextVersion],
+build/BenchmarkDotNet.Build/Program.cs:332:.WithArgument(KnownOptions.NextVersion, &quot;0.1.1729&quot;)
+build/BenchmarkDotNet.Build/Program.cs:351:Options = [KnownOptions.NextVersion, KnownOptions.Push],
+build/BenchmarkDotNet.Build/Program.cs:356:.WithArgument(KnownOptions.Stable)
+build/BenchmarkDotNet.Build/Program.cs:357:.WithArgument(KnownOptions.NextVersion, &quot;0.1.1729&quot;)
+build/BenchmarkDotNet.Build/Program.cs:358:.WithArgument(KnownOptions.Push),
+build/BenchmarkDotNet.Build/Program.cs:360:.WithArgument(KnownOptions.Stable)
+build/BenchmarkDotNet.Build/Program.cs:361:.WithArgument(KnownOptions.Push)
+build/BenchmarkDotNet.Build/Options/KnownOptions.cs:3:public static class KnownOptions
+build/BenchmarkDotNet.Build/CommandLineParser.cs:89:KnownOptions.Verbosity, KnownOptions.Exclusive, KnownOptions.Help, KnownOptions.Stable
+build/BenchmarkDotNet.Build/BuildContext.cs:121:if (KnownOptions.Stable.Resolve(this))
+build/BenchmarkDotNet.Build/BuildContext.cs:188:if (KnownOptions.Push.Resolve(this))</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 29ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;KnownOptions&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 14ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;KnownOptions&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 8ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;KnownOptions&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 8ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;KnownOptions&#39;, SymbolFilter.Type)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 30ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;KnownOptions&#39;) without SymbolFilter</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 30ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;KnownOptions&#39;) without SymbolFilter</p>
+        <pre></pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: AnalyserBase)</span><span class="summary-meta">10 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>AnalyserBase</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 120 | Lines: 1 | Time: 1.6s</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) AnalyserBase&#39;</p>
+        <pre>C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs:6: public abstract class AnalyserBase : IAnalyser</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 94 | Lines: 1 | Time: 47ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) AnalyserBase&#39;</p>
+        <pre>src/BenchmarkDotNet/Analysers/AnalyserBase.cs:6:public abstract class AnalyserBase : IAnalyser</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1204 | Lines: 9 | Time: 1.5s</span></summary>
+        <p class="algorithm-details">string search for &#39;AnalyserBase&#39;</p>
+        <pre>C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs:6: public abstract class AnalyserBase : IAnalyser
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\BaselineCustomAnalyzer.cs:7: public class BaselineCustomAnalyzer : AnalyserBase
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\EnvironmentAnalyser.cs:11: public class EnvironmentAnalyser : AnalyserBase
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\HideColumnsAnalyser.cs:6: public class HideColumnsAnalyser : AnalyserBase
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\MinIterationTimeAnalyser.cs:8: public class MinIterationTimeAnalyser : AnalyserBase
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\MultimodalDistributionAnalyzer.cs:8: public class MultimodalDistributionAnalyzer : AnalyserBase
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\OutliersAnalyser.cs:12: public class OutliersAnalyser : AnalyserBase
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\RuntimeErrorAnalyser.cs:5: public class RuntimeErrorAnalyser : AnalyserBase
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\ZeroMeasurementAnalyser.cs:8: public class ZeroMeasurementAnalyser : AnalyserBase</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 962 | Lines: 9 | Time: 45ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;AnalyserBase&#39;</p>
+        <pre>src/BenchmarkDotNet/Analysers/EnvironmentAnalyser.cs:11:public class EnvironmentAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/BaselineCustomAnalyzer.cs:7:public class BaselineCustomAnalyzer : AnalyserBase
+src/BenchmarkDotNet/Analysers/AnalyserBase.cs:6:public abstract class AnalyserBase : IAnalyser
+src/BenchmarkDotNet/Analysers/MultimodalDistributionAnalyzer.cs:8:public class MultimodalDistributionAnalyzer : AnalyserBase
+src/BenchmarkDotNet/Analysers/MinIterationTimeAnalyser.cs:8:public class MinIterationTimeAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/HideColumnsAnalyser.cs:6:public class HideColumnsAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/OutliersAnalyser.cs:12:public class OutliersAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/RuntimeErrorAnalyser.cs:5:public class RuntimeErrorAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/ZeroMeasurementAnalyser.cs:8:public class ZeroMeasurementAnalyser : AnalyserBase</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 42ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;AnalyserBase&#39;, SymbolFilter.Type)</p>
+        <pre>BenchmarkDotNet.Analysers.AnalyserBase - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs(6,27)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 22ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;AnalyserBase&#39;, SymbolFilter.Type)</p>
+        <pre>BenchmarkDotNet.Analysers.AnalyserBase - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs(6,27)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 12ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;AnalyserBase&#39;, SymbolFilter.Type)</p>
+        <pre>BenchmarkDotNet.Analysers.AnalyserBase - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs(6,27)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 10ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;AnalyserBase&#39;, SymbolFilter.Type)</p>
+        <pre>BenchmarkDotNet.Analysers.AnalyserBase - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs(6,27)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 957ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;AnalyserBase&#39;) without SymbolFilter</p>
+        <pre>BenchmarkDotNet.Analysers.AnalyserBase - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs(6,27)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 91ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;AnalyserBase&#39;) without SymbolFilter</p>
+        <pre>BenchmarkDotNet.Analysers.AnalyserBase - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs(6,27)</pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-derived-types (name: AnalyserBase)</span><span class="summary-meta">4 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>AnalyserBase</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-derived-types-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1082 | Lines: 8 | Time: 1.6s</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct) \w+ ... AnalyserBase&#39;</p>
+        <pre>C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\BaselineCustomAnalyzer.cs:7: public class BaselineCustomAnalyzer : AnalyserBase
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\EnvironmentAnalyser.cs:11: public class EnvironmentAnalyser : AnalyserBase
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\HideColumnsAnalyser.cs:6: public class HideColumnsAnalyser : AnalyserBase
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\MinIterationTimeAnalyser.cs:8: public class MinIterationTimeAnalyser : AnalyserBase
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\MultimodalDistributionAnalyzer.cs:8: public class MultimodalDistributionAnalyzer : AnalyserBase
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\OutliersAnalyser.cs:12: public class OutliersAnalyser : AnalyserBase
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\RuntimeErrorAnalyser.cs:5: public class RuntimeErrorAnalyser : AnalyserBase
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\ZeroMeasurementAnalyser.cs:8: public class ZeroMeasurementAnalyser : AnalyserBase</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-derived-types-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 867 | Lines: 8 | Time: 49ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct) \w+ ... AnalyserBase&#39;</p>
+        <pre>src/BenchmarkDotNet/Analysers/EnvironmentAnalyser.cs:11:public class EnvironmentAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/BaselineCustomAnalyzer.cs:7:public class BaselineCustomAnalyzer : AnalyserBase
+src/BenchmarkDotNet/Analysers/MultimodalDistributionAnalyzer.cs:8:public class MultimodalDistributionAnalyzer : AnalyserBase
+src/BenchmarkDotNet/Analysers/MinIterationTimeAnalyser.cs:8:public class MinIterationTimeAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/HideColumnsAnalyser.cs:6:public class HideColumnsAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/OutliersAnalyser.cs:12:public class OutliersAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/RuntimeErrorAnalyser.cs:5:public class RuntimeErrorAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/ZeroMeasurementAnalyser.cs:8:public class ZeroMeasurementAnalyser : AnalyserBase</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-derived-types (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1106 | Lines: 8 | Time: 205ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDerivedClassesAsync(BenchmarkDotNet.Analysers.AnalyserBase)</p>
+        <pre>BenchmarkDotNet.Analysers.BaselineCustomAnalyzer - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\BaselineCustomAnalyzer.cs(7,18)
+BenchmarkDotNet.Analysers.EnvironmentAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\EnvironmentAnalyser.cs(11,18)
+BenchmarkDotNet.Analysers.HideColumnsAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\HideColumnsAnalyser.cs(6,18)
+BenchmarkDotNet.Analysers.MinIterationTimeAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\MinIterationTimeAnalyser.cs(8,18)
+BenchmarkDotNet.Analysers.MultimodalDistributionAnalyzer - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\MultimodalDistributionAnalyzer.cs(8,18)
+BenchmarkDotNet.Analysers.OutliersAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\OutliersAnalyser.cs(12,18)
+BenchmarkDotNet.Analysers.RuntimeErrorAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\RuntimeErrorAnalyser.cs(5,18)
+BenchmarkDotNet.Analysers.ZeroMeasurementAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\ZeroMeasurementAnalyser.cs(8,18)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-derived-types (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1106 | Lines: 8 | Time: 2ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDerivedClassesAsync(BenchmarkDotNet.Analysers.AnalyserBase)</p>
+        <pre>BenchmarkDotNet.Analysers.BaselineCustomAnalyzer - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\BaselineCustomAnalyzer.cs(7,18)
+BenchmarkDotNet.Analysers.EnvironmentAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\EnvironmentAnalyser.cs(11,18)
+BenchmarkDotNet.Analysers.HideColumnsAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\HideColumnsAnalyser.cs(6,18)
+BenchmarkDotNet.Analysers.MinIterationTimeAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\MinIterationTimeAnalyser.cs(8,18)
+BenchmarkDotNet.Analysers.MultimodalDistributionAnalyzer - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\MultimodalDistributionAnalyzer.cs(8,18)
+BenchmarkDotNet.Analysers.OutliersAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\OutliersAnalyser.cs(12,18)
+BenchmarkDotNet.Analysers.RuntimeErrorAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\RuntimeErrorAnalyser.cs(5,18)
+BenchmarkDotNet.Analysers.ZeroMeasurementAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\ZeroMeasurementAnalyser.cs(8,18)</pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-interface-implementation (name: IOption)</span><span class="summary-meta">4 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>IOption</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-interface-implementation-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 115 | Lines: 1 | Time: 1.5s</span></summary>
+        <p class="algorithm-details">string search for &#39;: ...IOption&#39;</p>
+        <pre>C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Options\Option.cs:9: public abstract class Option&lt;T&gt; : IOption</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-interface-implementation-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 89 | Lines: 1 | Time: 43ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;: ...IOption&#39;</p>
+        <pre>build/BenchmarkDotNet.Build/Options/Option.cs:9:public abstract class Option&lt;T&gt; : IOption</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-implementations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 18ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync for &#39;IOption&#39; — not found</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-implementations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 15ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync for &#39;IOption&#39; — not found</p>
+        <pre></pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-member-definition (name: Run)</span><span class="summary-meta">4 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>Run</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 15148 | Lines: 95 | Time: 2.2s</span></summary>
+        <p class="algorithm-details">string search for member declaration &#39;Run&#39;</p>
+        <pre id="expand-4-short">C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:15: : new CakeHost().UseContext&lt;BuildContext&gt;().Run(cakeArgs);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:25: public override void Run(BuildContext context) =&gt; context.BuildRunner.PackWeaver();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:46: public override void Run(BuildContext context) =&gt; context.BuildRunner.Restore();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:66: public override void Run(BuildContext context) =&gt; context.BuildRunner.Build();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:86: public override void Run(BuildContext context)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:109: public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunUnitTests();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:131: public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunAnalyzerTests();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:156: public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunInTests(&quot;net472&quot;);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:167: public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunInTests(&quot;net8.0&quot;);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:188: public override void Run(BuildContext context) =&gt; context.BuildRunner.BuildAnalyzers();
+<span class="truncated-link" onclick="document.getElementById('expand-4-short').style.display='none'; document.getElementById('expand-4-full').style.display='block';">... truncated (85 more lines) — click to expand</span></pre>
+        <pre id="expand-4-full" class="full-result">C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:15: : new CakeHost().UseContext&lt;BuildContext&gt;().Run(cakeArgs);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:25: public override void Run(BuildContext context) =&gt; context.BuildRunner.PackWeaver();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:46: public override void Run(BuildContext context) =&gt; context.BuildRunner.Restore();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:66: public override void Run(BuildContext context) =&gt; context.BuildRunner.Build();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:86: public override void Run(BuildContext context)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:109: public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunUnitTests();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:131: public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunAnalyzerTests();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:156: public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunInTests(&quot;net472&quot;);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:167: public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunInTests(&quot;net8.0&quot;);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:188: public override void Run(BuildContext context) =&gt; context.BuildRunner.BuildAnalyzers();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:207: public override void Run(BuildContext context) =&gt; context.DocumentationRunner.MoveAnalyzerRules();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:228: public override void Run(BuildContext context) =&gt; context.BuildRunner.Pack();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:250: public override void Run(BuildContext context) =&gt; context.DocumentationRunner.Fetch();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:279: public override void Run(BuildContext context) =&gt; context.DocumentationRunner.Generate();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:301: public override void Run(BuildContext context) =&gt; context.DocumentationRunner.Build();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:319: public override void Run(BuildContext context)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:347: public override void Run(BuildContext context) =&gt; context.ReleaseRunner.Run();
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\ReleaseRunner.cs:41: public void Run()
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\Changelog\ChangelogDetailsBuilder.cs:170: public static void Run(BuildContext context, DirectoryPath path,
+C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroCustomMono.cs:79: public static void Run()
+C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroFluentConfigBuilder.cs:34: public static void Run()
+C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroUnicode.cs:43: public static void Run()
+C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroWasm.cs:20: public static void Run(string[] args) =&gt; BenchmarkSwitcher.FromAssembly(typeof(IntroWasmCmdConfig).Assembly).Run(args);
+C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroWasm.cs:32: public static void Run()
+C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples.Maui\MainPage.xaml.cs:28: var summary = BenchmarkRunner.Run&lt;IntroBasic&gt;(config);
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Columns\Column.cs:97: public const string Run = &quot;Run&quot;;
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Jobs\Job.cs:62: public RunMode Run =&gt; RunCharacteristic[this]!;
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerClean.cs:36: internal static async ValueTask&lt;Summary[]&gt; Run(BenchmarkRunInfo[] benchmarkRunInfos, CancellationToken cancellationToken)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerClean.cs:138: (var summary, benchmarksToRunCount) = await Run(benchmarkRunInfo, benchmarkToBuildResult, resolver, compositeLogger, eventProcessor, artifactsToCleanup,
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerClean.cs:190: private static async ValueTask&lt;(Summary summary, int benchmarksToRunCount)&gt; Run(BenchmarkRunInfo benchmarkRunInfo,
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerClean.cs:403: var result = await Task.Run(
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs:18: public static Summary Run&lt;T&gt;(IConfig? config = null, string[]? args = null)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs:25: public static Summary Run(Type type, IConfig? config = null, string[]? args = null)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs:32: public static Summary[] Run(Type[] types, IConfig? config = null, string[]? args = null)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs:39: public static Summary Run(Type type, MethodInfo[] methods, IConfig? config = null)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs:46: public static Summary[] Run(Assembly assembly, IConfig? config = null, string[]? args = null)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs:53: public static Summary Run(BenchmarkRunInfo benchmarkRunInfo)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs:60: public static Summary[] Run(BenchmarkRunInfo[] benchmarkRunInfos)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs:133: var summaries = await BenchmarkRunnerClean.Run([BenchmarkConverter.MethodsToBenchmarks(type, methods, config)], cancellationToken).ConfigureAwait(false);
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkSwitcher.cs:72: public IEnumerable&lt;Summary&gt; Run(string[]? args = null, IConfig? config = null)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\InProcess\Emit\InProcessEmitRunner.cs:16: public static async ValueTask&lt;int&gt; Run(IHost host, ExecuteParameters parameters)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\InProcess\NoEmit\InProcessNoEmitRunner.cs:21: public static async ValueTask&lt;int&gt; Run(IHost host, ExecuteParameters parameters, IBenchmarkActionFactory? benchmarkActionFactory)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Validators\RunModeValidator.cs:22: var run = benchmark.Job.Run;
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.TestAdapter\entrypoints\EntryPoint.cs:10: public static void Main(string[] args) =&gt; BenchmarkSwitcher.FromAssembly(typeof(__AutoGeneratedEntryPointClass).Assembly).Run(args);
+C:\repos\BenchmarkDotNet\templates\templates\BenchmarkDotNet.BenchmarkProjectTemplate.CSharp\Program.cs:11: var summary = BenchmarkRunner.Run&lt;$(BenchmarkName)&gt;(config, args);
+C:\repos\BenchmarkDotNet\templates\templates\BenchmarkDotNet.BenchmarkProjectTemplate.CSharp\Program.cs:14: // var summaries = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Analyzers.Tests\AnalyzerTests\Attributes\GeneralParameterAttributesAnalyzerTests.cs:1326: public void Run() { }
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Analyzers.Tests\AnalyzerTests\Attributes\GeneralParameterAttributesAnalyzerTests.cs:1356: public void Run() { }
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Analyzers.Tests\AnalyzerTests\Attributes\GeneralParameterAttributesAnalyzerTests.cs:1389: public void Run() { }
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Analyzers.Tests\AnalyzerTests\Attributes\GeneralParameterAttributesAnalyzerTests.cs:1414: public void Run() { }
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Analyzers.Tests\AnalyzerTests\Attributes\GeneralParameterAttributesAnalyzerTests.cs:1437: public void Run() { }
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\BenchmarkSwitcherTest.cs:242: var results = switcher.Run([&quot;-j&quot;, &quot;Dry&quot;, &quot;--filter&quot;, &quot;*ClassB.Method4&quot;], config);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\BenchmarkSwitcherTest.cs:258: var results = switcher.Run([&quot;--filter&quot;, &quot;*Method3&quot;], configWithJobDefined);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\BenchmarkSwitcherTest.cs:276: var results = switcher.Run([&quot;--filter&quot;, &quot;*WithDryAttribute*&quot;], configWithoutJobDefined);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\BenchmarkSwitcherTest.cs:294: var results = switcher.Run([&quot;--filter&quot;, &quot;*&quot;], configWithoutJobDefined);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\CallerThreadTests.cs:177: public void Run() =&gt; Thread.Sleep(1);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\ExceptionDiagnoserTests.cs:18: var summary = BenchmarkRunner.Run&lt;ExceptionCount&gt;(config);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\InProcessTest.cs:86: var summary = BenchmarkRunner.Run(runInfo);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\LargeAddressAwareTest.cs:30: var summary = BenchmarkRunner.Run&lt;NeedsMoreThan2GB&gt;(config);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\LargeAddressAwareTest.cs:59: var summary = BenchmarkRunner.Run&lt;NeedsMoreThan2GB&gt;(config);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\MemoryDiagnoserTests.cs:355: var summary = BenchmarkRunner.Run(benchmarks);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:49: var summary = BenchmarkRunner.Run&lt;EmptyBenchmark&gt;(config, args);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:74: var summary = BenchmarkRunner.Run&lt;NotEmptyBenchmark&gt;(config, args);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:93: var summary = BenchmarkRunner.Run(typeof(EmptyBenchmark), config, args);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:118: var summaries = BenchmarkRunner.Run(typeof(NotEmptyBenchmark), config, args);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:134: var summaries = BenchmarkRunner.Run([typeof(EmptyBenchmark), typeof(EmptyBenchmark2)], config, args);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:160: var summaries = BenchmarkRunner.Run([typeof(NotEmptyBenchmark)], config, args);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:176: var summary = BenchmarkRunner.Run(BenchmarkConverter.TypeToBenchmarks(typeof(EmptyBenchmark), config));
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:187: var summary = BenchmarkRunner.Run(BenchmarkConverter.TypeToBenchmarks(typeof(NotEmptyBenchmark), config));
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:201: var summaries = BenchmarkRunner.Run([
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:218: var summaries = BenchmarkRunner.Run([BenchmarkConverter.TypeToBenchmarks(typeof(NotEmptyBenchmark), config)]);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:234: var summaries = BenchmarkRunner.Run([typeof(EmptyBenchmark), typeof(NotEmptyBenchmark)], config, args);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:269: var summaries = BenchmarkRunner.Run(assemblyBuilder, config, args);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:274: var summaries = BenchmarkRunner.Run(assemblyBuilder, null, args);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:315: var summaries = BenchmarkRunner.Run(assemblyBuilder, config, args);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:320: var summaries = BenchmarkRunner.Run(assemblyBuilder);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunningEmptyBenchmarkTests.cs:355: var summaries = BenchmarkRunner.Run(assemblyBuilder, config);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunStrategyTests.cs:20: .AddJob(new Job(Job.Dry) { Run = { RunStrategy = RunStrategy.ColdStart } })
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunStrategyTests.cs:21: .AddJob(new Job(Job.Dry) { Run = { RunStrategy = RunStrategy.Monitoring } })
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\RunStrategyTests.cs:22: .AddJob(new Job(Job.Dry) { Run = { RunStrategy = RunStrategy.Throughput } });
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\ThreadingDiagnoserTests.cs:48: var summary = BenchmarkRunner.Run&lt;CompletedWorkItemCount&gt;(config);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\ThreadingDiagnoserTests.cs:90: var summary = BenchmarkRunner.Run&lt;LockContentionCount&gt;(config);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\Shared\BenchmarkTestExecutor.cs:45: var summary = BenchmarkRunner.Run(type, GetMinimalConfig(config));
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\Shared\TestConfigs.cs:27: AddJob(new Job(Job.Dry) { Run = { IterationCount = 5 } });
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\Shared\TestConfigs.cs:35: AddJob(new Job(Job.Dry) { Run = { RunStrategy = RunStrategy.Throughput, IterationCount = 1 } });
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\Shared\TestConfigs.cs:44: AddJob(new Job { Run = { LaunchCount = 1, WarmupCount = 1, IterationCount = 50 } });
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ParamsSourceTests.cs:58: public void Run() { }
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Columns\RatioColumnTest.cs:19: var summary = MockRunner.Run&lt;BenchmarkClass&gt;(output, name =&gt; name switch
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Configs\JobTests.cs:372: var old = j.Run;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Engine\EngineActualStageTests.cs:40: var measurements = engine.Run(stage);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Engine\EngineWarmupStageTests.cs:89: var measurements = engine.Run(stage);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Shared\Mocks\MockEngine.cs:51: internal List&lt;Measurement&gt; Run(EngineStage stage)
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Shared\Mocks\MockRunner.cs:15: public static Summary Run&lt;T&gt;(ITestOutputHelper output, Func&lt;string, double[]&gt; measurer)
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Shared\Mocks\MockRunner.cs:20: public static Summary Run&lt;T&gt;(ITestOutputHelper output, Func&lt;BenchmarkCase, List&lt;Measurement&gt;&gt; measurer)
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Shared\Mocks\MockRunner.cs:36: var summary = BenchmarkRunner.Run&lt;T&gt;(config);</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 12584 | Lines: 95 | Time: 514ms</span></summary>
+        <p class="algorithm-details">tgrep search for member declaration &#39;Run&#39;</p>
+        <pre id="expand-5-short">tests/BenchmarkDotNet.Tests/Configs/JobTests.cs:372:var old = j.Run;
+tests/BenchmarkDotNet.Tests/Columns/RatioColumnTest.cs:19:var summary = MockRunner.Run&lt;BenchmarkClass&gt;(output, name =&gt; name switch
+templates/templates/BenchmarkDotNet.BenchmarkProjectTemplate.CSharp/Program.cs:11:var summary = BenchmarkRunner.Run&lt;$(BenchmarkName)&gt;(config, args);
+templates/templates/BenchmarkDotNet.BenchmarkProjectTemplate.CSharp/Program.cs:14:// var summaries = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
+build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:41:public void Run()
+tests/BenchmarkDotNet.IntegrationTests/ThreadingDiagnoserTests.cs:48:var summary = BenchmarkRunner.Run&lt;CompletedWorkItemCount&gt;(config);
+tests/BenchmarkDotNet.IntegrationTests/ThreadingDiagnoserTests.cs:90:var summary = BenchmarkRunner.Run&lt;LockContentionCount&gt;(config);
+tests/BenchmarkDotNet.Tests/Shared/Mocks/MockRunner.cs:15:public static Summary Run&lt;T&gt;(ITestOutputHelper output, Func&lt;string, double[]&gt; measurer)
+tests/BenchmarkDotNet.Tests/Shared/Mocks/MockRunner.cs:20:public static Summary Run&lt;T&gt;(ITestOutputHelper output, Func&lt;BenchmarkCase, List&lt;Measurement&gt;&gt; measurer)
+tests/BenchmarkDotNet.Tests/Shared/Mocks/MockRunner.cs:36:var summary = BenchmarkRunner.Run&lt;T&gt;(config);
+<span class="truncated-link" onclick="document.getElementById('expand-5-short').style.display='none'; document.getElementById('expand-5-full').style.display='block';">... truncated (85 more lines) — click to expand</span></pre>
+        <pre id="expand-5-full" class="full-result">tests/BenchmarkDotNet.Tests/Configs/JobTests.cs:372:var old = j.Run;
+tests/BenchmarkDotNet.Tests/Columns/RatioColumnTest.cs:19:var summary = MockRunner.Run&lt;BenchmarkClass&gt;(output, name =&gt; name switch
+templates/templates/BenchmarkDotNet.BenchmarkProjectTemplate.CSharp/Program.cs:11:var summary = BenchmarkRunner.Run&lt;$(BenchmarkName)&gt;(config, args);
+templates/templates/BenchmarkDotNet.BenchmarkProjectTemplate.CSharp/Program.cs:14:// var summaries = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
+build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:41:public void Run()
+tests/BenchmarkDotNet.IntegrationTests/ThreadingDiagnoserTests.cs:48:var summary = BenchmarkRunner.Run&lt;CompletedWorkItemCount&gt;(config);
+tests/BenchmarkDotNet.IntegrationTests/ThreadingDiagnoserTests.cs:90:var summary = BenchmarkRunner.Run&lt;LockContentionCount&gt;(config);
+tests/BenchmarkDotNet.Tests/Shared/Mocks/MockRunner.cs:15:public static Summary Run&lt;T&gt;(ITestOutputHelper output, Func&lt;string, double[]&gt; measurer)
+tests/BenchmarkDotNet.Tests/Shared/Mocks/MockRunner.cs:20:public static Summary Run&lt;T&gt;(ITestOutputHelper output, Func&lt;BenchmarkCase, List&lt;Measurement&gt;&gt; measurer)
+tests/BenchmarkDotNet.Tests/Shared/Mocks/MockRunner.cs:36:var summary = BenchmarkRunner.Run&lt;T&gt;(config);
+tests/BenchmarkDotNet.Tests/Shared/Mocks/MockEngine.cs:51:internal List&lt;Measurement&gt; Run(EngineStage stage)
+tests/BenchmarkDotNet.IntegrationTests/ExceptionDiagnoserTests.cs:18:var summary = BenchmarkRunner.Run&lt;ExceptionCount&gt;(config);
+tests/BenchmarkDotNet.IntegrationTests/Shared/TestConfigs.cs:27:AddJob(new Job(Job.Dry) { Run = { IterationCount = 5 } });
+tests/BenchmarkDotNet.IntegrationTests/Shared/TestConfigs.cs:35:AddJob(new Job(Job.Dry) { Run = { RunStrategy = RunStrategy.Throughput, IterationCount = 1 } });
+tests/BenchmarkDotNet.IntegrationTests/Shared/TestConfigs.cs:44:AddJob(new Job { Run = { LaunchCount = 1, WarmupCount = 1, IterationCount = 50 } });
+tests/BenchmarkDotNet.IntegrationTests/Shared/BenchmarkTestExecutor.cs:45:var summary = BenchmarkRunner.Run(type, GetMinimalConfig(config));
+tests/BenchmarkDotNet.IntegrationTests/RunStrategyTests.cs:20:.AddJob(new Job(Job.Dry) { Run = { RunStrategy = RunStrategy.ColdStart } })
+tests/BenchmarkDotNet.IntegrationTests/RunStrategyTests.cs:21:.AddJob(new Job(Job.Dry) { Run = { RunStrategy = RunStrategy.Monitoring } })
+tests/BenchmarkDotNet.IntegrationTests/RunStrategyTests.cs:22:.AddJob(new Job(Job.Dry) { Run = { RunStrategy = RunStrategy.Throughput } });
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:49:var summary = BenchmarkRunner.Run&lt;EmptyBenchmark&gt;(config, args);
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:74:var summary = BenchmarkRunner.Run&lt;NotEmptyBenchmark&gt;(config, args);
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:93:var summary = BenchmarkRunner.Run(typeof(EmptyBenchmark), config, args);
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:118:var summaries = BenchmarkRunner.Run(typeof(NotEmptyBenchmark), config, args);
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:134:var summaries = BenchmarkRunner.Run([typeof(EmptyBenchmark), typeof(EmptyBenchmark2)], config, args);
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:160:var summaries = BenchmarkRunner.Run([typeof(NotEmptyBenchmark)], config, args);
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:176:var summary = BenchmarkRunner.Run(BenchmarkConverter.TypeToBenchmarks(typeof(EmptyBenchmark), config));
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:187:var summary = BenchmarkRunner.Run(BenchmarkConverter.TypeToBenchmarks(typeof(NotEmptyBenchmark), config));
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:201:var summaries = BenchmarkRunner.Run([
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:218:var summaries = BenchmarkRunner.Run([BenchmarkConverter.TypeToBenchmarks(typeof(NotEmptyBenchmark), config)]);
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:234:var summaries = BenchmarkRunner.Run([typeof(EmptyBenchmark), typeof(NotEmptyBenchmark)], config, args);
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:269:var summaries = BenchmarkRunner.Run(assemblyBuilder, config, args);
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:274:var summaries = BenchmarkRunner.Run(assemblyBuilder, null, args);
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:315:var summaries = BenchmarkRunner.Run(assemblyBuilder, config, args);
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:320:var summaries = BenchmarkRunner.Run(assemblyBuilder);
+tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:355:var summaries = BenchmarkRunner.Run(assemblyBuilder, config);
+tests/BenchmarkDotNet.IntegrationTests/CallerThreadTests.cs:177:public void Run() =&gt; Thread.Sleep(1);
+tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:242:var results = switcher.Run([&quot;-j&quot;, &quot;Dry&quot;, &quot;--filter&quot;, &quot;*ClassB.Method4&quot;], config);
+tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:258:var results = switcher.Run([&quot;--filter&quot;, &quot;*Method3&quot;], configWithJobDefined);
+tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:276:var results = switcher.Run([&quot;--filter&quot;, &quot;*WithDryAttribute*&quot;], configWithoutJobDefined);
+tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:294:var results = switcher.Run([&quot;--filter&quot;, &quot;*&quot;], configWithoutJobDefined);
+tests/BenchmarkDotNet.IntegrationTests/MemoryDiagnoserTests.cs:355:var summary = BenchmarkRunner.Run(benchmarks);
+tests/BenchmarkDotNet.IntegrationTests/LargeAddressAwareTest.cs:30:var summary = BenchmarkRunner.Run&lt;NeedsMoreThan2GB&gt;(config);
+tests/BenchmarkDotNet.IntegrationTests/LargeAddressAwareTest.cs:59:var summary = BenchmarkRunner.Run&lt;NeedsMoreThan2GB&gt;(config);
+tests/BenchmarkDotNet.IntegrationTests/InProcessTest.cs:86:var summary = BenchmarkRunner.Run(runInfo);
+build/BenchmarkDotNet.Build/Runners/Changelog/ChangelogDetailsBuilder.cs:170:public static void Run(BuildContext context, DirectoryPath path,
+build/BenchmarkDotNet.Build/Program.cs:15:: new CakeHost().UseContext&lt;BuildContext&gt;().Run(cakeArgs);
+build/BenchmarkDotNet.Build/Program.cs:25:public override void Run(BuildContext context) =&gt; context.BuildRunner.PackWeaver();
+build/BenchmarkDotNet.Build/Program.cs:46:public override void Run(BuildContext context) =&gt; context.BuildRunner.Restore();
+build/BenchmarkDotNet.Build/Program.cs:66:public override void Run(BuildContext context) =&gt; context.BuildRunner.Build();
+build/BenchmarkDotNet.Build/Program.cs:86:public override void Run(BuildContext context)
+build/BenchmarkDotNet.Build/Program.cs:109:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunUnitTests();
+build/BenchmarkDotNet.Build/Program.cs:131:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunAnalyzerTests();
+build/BenchmarkDotNet.Build/Program.cs:156:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunInTests(&quot;net472&quot;);
+build/BenchmarkDotNet.Build/Program.cs:167:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunInTests(&quot;net8.0&quot;);
+build/BenchmarkDotNet.Build/Program.cs:188:public override void Run(BuildContext context) =&gt; context.BuildRunner.BuildAnalyzers();
+build/BenchmarkDotNet.Build/Program.cs:207:public override void Run(BuildContext context) =&gt; context.DocumentationRunner.MoveAnalyzerRules();
+build/BenchmarkDotNet.Build/Program.cs:228:public override void Run(BuildContext context) =&gt; context.BuildRunner.Pack();
+build/BenchmarkDotNet.Build/Program.cs:250:public override void Run(BuildContext context) =&gt; context.DocumentationRunner.Fetch();
+build/BenchmarkDotNet.Build/Program.cs:279:public override void Run(BuildContext context) =&gt; context.DocumentationRunner.Generate();
+build/BenchmarkDotNet.Build/Program.cs:301:public override void Run(BuildContext context) =&gt; context.DocumentationRunner.Build();
+build/BenchmarkDotNet.Build/Program.cs:319:public override void Run(BuildContext context)
+build/BenchmarkDotNet.Build/Program.cs:347:public override void Run(BuildContext context) =&gt; context.ReleaseRunner.Run();
+src/BenchmarkDotNet/Validators/RunModeValidator.cs:22:var run = benchmark.Job.Run;
+tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1326:public void Run() { }
+tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1356:public void Run() { }
+tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1389:public void Run() { }
+tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1414:public void Run() { }
+tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1437:public void Run() { }
+tests/BenchmarkDotNet.Tests/Engine/EngineActualStageTests.cs:40:var measurements = engine.Run(stage);
+tests/BenchmarkDotNet.Tests/Engine/EngineWarmupStageTests.cs:89:var measurements = engine.Run(stage);
+samples/BenchmarkDotNet.Samples.Maui/MainPage.xaml.cs:28:var summary = BenchmarkRunner.Run&lt;IntroBasic&gt;(config);
+tests/BenchmarkDotNet.Tests/ParamsSourceTests.cs:58:public void Run() { }
+src/BenchmarkDotNet.TestAdapter/entrypoints/EntryPoint.cs:10:public static void Main(string[] args) =&gt; BenchmarkSwitcher.FromAssembly(typeof(__AutoGeneratedEntryPointClass).Assembly).Run(args);
+samples/BenchmarkDotNet.Samples/IntroWasm.cs:20:public static void Run(string[] args) =&gt; BenchmarkSwitcher.FromAssembly(typeof(IntroWasmCmdConfig).Assembly).Run(args);
+samples/BenchmarkDotNet.Samples/IntroWasm.cs:32:public static void Run()
+samples/BenchmarkDotNet.Samples/IntroUnicode.cs:43:public static void Run()
+samples/BenchmarkDotNet.Samples/IntroFluentConfigBuilder.cs:34:public static void Run()
+samples/BenchmarkDotNet.Samples/IntroCustomMono.cs:79:public static void Run()
+src/BenchmarkDotNet/Jobs/Job.cs:62:public RunMode Run =&gt; RunCharacteristic[this]!;
+src/BenchmarkDotNet/Running/BenchmarkSwitcher.cs:72:public IEnumerable&lt;Summary&gt; Run(string[]? args = null, IConfig? config = null)
+src/BenchmarkDotNet/Running/BenchmarkRunnerDirty.cs:18:public static Summary Run&lt;T&gt;(IConfig? config = null, string[]? args = null)
+src/BenchmarkDotNet/Running/BenchmarkRunnerDirty.cs:25:public static Summary Run(Type type, IConfig? config = null, string[]? args = null)
+src/BenchmarkDotNet/Running/BenchmarkRunnerDirty.cs:32:public static Summary[] Run(Type[] types, IConfig? config = null, string[]? args = null)
+src/BenchmarkDotNet/Running/BenchmarkRunnerDirty.cs:39:public static Summary Run(Type type, MethodInfo[] methods, IConfig? config = null)
+src/BenchmarkDotNet/Running/BenchmarkRunnerDirty.cs:46:public static Summary[] Run(Assembly assembly, IConfig? config = null, string[]? args = null)
+src/BenchmarkDotNet/Running/BenchmarkRunnerDirty.cs:53:public static Summary Run(BenchmarkRunInfo benchmarkRunInfo)
+src/BenchmarkDotNet/Running/BenchmarkRunnerDirty.cs:60:public static Summary[] Run(BenchmarkRunInfo[] benchmarkRunInfos)
+src/BenchmarkDotNet/Running/BenchmarkRunnerDirty.cs:133:var summaries = await BenchmarkRunnerClean.Run([BenchmarkConverter.MethodsToBenchmarks(type, methods, config)], cancellationToken).ConfigureAwait(false);
+src/BenchmarkDotNet/Running/BenchmarkRunnerClean.cs:36:internal static async ValueTask&lt;Summary[]&gt; Run(BenchmarkRunInfo[] benchmarkRunInfos, CancellationToken cancellationToken)
+src/BenchmarkDotNet/Running/BenchmarkRunnerClean.cs:138:(var summary, benchmarksToRunCount) = await Run(benchmarkRunInfo, benchmarkToBuildResult, resolver, compositeLogger, eventProcessor, artifactsToCleanup,
+src/BenchmarkDotNet/Running/BenchmarkRunnerClean.cs:190:private static async ValueTask&lt;(Summary summary, int benchmarksToRunCount)&gt; Run(BenchmarkRunInfo benchmarkRunInfo,
+src/BenchmarkDotNet/Running/BenchmarkRunnerClean.cs:403:var result = await Task.Run(
+src/BenchmarkDotNet/Toolchains/InProcess/NoEmit/InProcessNoEmitRunner.cs:21:public static async ValueTask&lt;int&gt; Run(IHost host, ExecuteParameters parameters, IBenchmarkActionFactory? benchmarkActionFactory)
+src/BenchmarkDotNet/Toolchains/InProcess/Emit/InProcessEmitRunner.cs:16:public static async ValueTask&lt;int&gt; Run(IHost host, ExecuteParameters parameters)
+src/BenchmarkDotNet/Columns/Column.cs:97:public const string Run = &quot;Run&quot;;</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 6345 | Lines: 30 | Time: 212ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Run&#39;, SymbolFilter.Member)</p>
+        <pre id="expand-6-short">BenchmarkDotNet.Columns.Column.Run - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Columns\Column.cs(97,29)
+BenchmarkDotNet.IntegrationTests.CallerThreadTests.CallerThreadSimpleBenchmark.Run() - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\CallerThreadTests.cs(177,21)
+BenchmarkDotNet.Jobs.Job.Run - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Jobs\Job.cs(62,24)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(Assembly, BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(46,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(BenchmarkDotNet.Running.BenchmarkRunInfo) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(53,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(BenchmarkDotNet.Running.BenchmarkRunInfo[]) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(60,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Reflection.Assembly, BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(46,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Type, BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(25,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Type, System.Reflection.MethodInfo[], BenchmarkDotNet.Configs.IConfig?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(39,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Type[], BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(32,33)
+<span class="truncated-link" onclick="document.getElementById('expand-6-short').style.display='none'; document.getElementById('expand-6-full').style.display='block';">... truncated (20 more lines) — click to expand</span></pre>
+        <pre id="expand-6-full" class="full-result">BenchmarkDotNet.Columns.Column.Run - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Columns\Column.cs(97,29)
+BenchmarkDotNet.IntegrationTests.CallerThreadTests.CallerThreadSimpleBenchmark.Run() - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\CallerThreadTests.cs(177,21)
+BenchmarkDotNet.Jobs.Job.Run - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Jobs\Job.cs(62,24)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(Assembly, BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(46,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(BenchmarkDotNet.Running.BenchmarkRunInfo) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(53,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(BenchmarkDotNet.Running.BenchmarkRunInfo[]) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(60,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Reflection.Assembly, BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(46,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Type, BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(25,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Type, System.Reflection.MethodInfo[], BenchmarkDotNet.Configs.IConfig?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(39,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Type[], BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(32,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(Type, BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(25,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(Type, MethodInfo[], BenchmarkDotNet.Configs.IConfig?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(39,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(Type[], BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(32,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run&lt;T&gt;(BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(18,31)
+BenchmarkDotNet.Running.BenchmarkRunnerClean.Run(BenchmarkDotNet.Running.BenchmarkRunInfo, Dictionary&lt;BenchmarkDotNet.Running.BenchmarkCase, (BenchmarkDotNet.Running.BenchmarkId benchmarkId, BenchmarkDotNet.Toolchains.Results.BuildResult buildResult)&gt;, BenchmarkDotNet.Characteristics.IResolver, BenchmarkDotNet.Loggers.ILogger, BenchmarkDotNet.EventProcessors.EventProcessor, List&lt;string&gt;, string, string, int, StartedClock, int, BenchmarkDotNet.Helpers.TaskbarProgress, CancellationToken) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerClean.cs(190,85)
+BenchmarkDotNet.Running.BenchmarkRunnerClean.Run(BenchmarkDotNet.Running.BenchmarkRunInfo, System.Collections.Generic.Dictionary&lt;BenchmarkDotNet.Running.BenchmarkCase, (BenchmarkDotNet.Running.BenchmarkId benchmarkId, BenchmarkDotNet.Toolchains.Results.BuildResult buildResult)&gt;, BenchmarkDotNet.Characteristics.IResolver, BenchmarkDotNet.Loggers.ILogger, BenchmarkDotNet.EventProcessors.EventProcessor, System.Collections.Generic.List&lt;string&gt;, string, string, int, StartedClock, int, BenchmarkDotNet.Helpers.TaskbarProgress, System.Threading.CancellationToken) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerClean.cs(190,85)
+BenchmarkDotNet.Running.BenchmarkRunnerClean.Run(BenchmarkDotNet.Running.BenchmarkRunInfo[], CancellationToken) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerClean.cs(36,52)
+BenchmarkDotNet.Running.BenchmarkRunnerClean.Run(BenchmarkDotNet.Running.BenchmarkRunInfo[], System.Threading.CancellationToken) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerClean.cs(36,52)
+BenchmarkDotNet.Running.BenchmarkSwitcher.Run(string[]?, BenchmarkDotNet.Configs.IConfig?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkSwitcher.cs(72,37)
+BenchmarkDotNet.Samples.IntroCustomMonoFluentConfig.Run() - C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroCustomMono.cs(79,28)
+BenchmarkDotNet.Samples.IntroFluentConfigBuilder.Run() - C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroFluentConfigBuilder.cs(34,28)
+BenchmarkDotNet.Samples.IntroUnicodeFluentConfig.Run() - C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroUnicode.cs(43,28)
+BenchmarkDotNet.Samples.IntroWasmCmdConfig.Run(string[]) - C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroWasm.cs(20,28)
+BenchmarkDotNet.Samples.IntroWasmFluentConfig.Run() - C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroWasm.cs(32,28)
+BenchmarkDotNet.Tests.Mocks.MockEngine.Run(BenchmarkDotNet.Engines.EngineStage) - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Shared\Mocks\MockEngine.cs(51,36)
+BenchmarkDotNet.Tests.Mocks.MockRunner.Run&lt;T&gt;(ITestOutputHelper, System.Func&lt;BenchmarkDotNet.Running.BenchmarkCase, System.Collections.Generic.List&lt;BenchmarkDotNet.Reports.Measurement&gt;&gt;) - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Shared\Mocks\MockRunner.cs(20,31)
+BenchmarkDotNet.Tests.Mocks.MockRunner.Run&lt;T&gt;(ITestOutputHelper, System.Func&lt;string, double[]&gt;) - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Shared\Mocks\MockRunner.cs(15,31)
+BenchmarkDotNet.Tests.ParamsSourceTests.ClassWithWriteOnlyProperty.Run() - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ParamsSourceTests.cs(58,25)
+BenchmarkDotNet.Toolchains.InProcess.Emit.InProcessEmitRunner.Run(BenchmarkDotNet.Engines.IHost, BenchmarkDotNet.Toolchains.Parameters.ExecuteParameters) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\InProcess\Emit\InProcessEmitRunner.cs(16,40)
+BenchmarkDotNet.Toolchains.InProcess.NoEmit.InProcessNoEmitRunner.Run(BenchmarkDotNet.Engines.IHost, BenchmarkDotNet.Toolchains.Parameters.ExecuteParameters, BenchmarkDotNet.Toolchains.InProcess.NoEmit.IBenchmarkActionFactory?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\InProcess\NoEmit\InProcessNoEmitRunner.cs(21,44)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 6345 | Lines: 30 | Time: 45ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Run&#39;, SymbolFilter.Member)</p>
+        <pre id="expand-7-short">BenchmarkDotNet.Columns.Column.Run - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Columns\Column.cs(97,29)
+BenchmarkDotNet.IntegrationTests.CallerThreadTests.CallerThreadSimpleBenchmark.Run() - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\CallerThreadTests.cs(177,21)
+BenchmarkDotNet.Jobs.Job.Run - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Jobs\Job.cs(62,24)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(Assembly, BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(46,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(BenchmarkDotNet.Running.BenchmarkRunInfo) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(53,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(BenchmarkDotNet.Running.BenchmarkRunInfo[]) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(60,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Reflection.Assembly, BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(46,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Type, BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(25,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Type, System.Reflection.MethodInfo[], BenchmarkDotNet.Configs.IConfig?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(39,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Type[], BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(32,33)
+<span class="truncated-link" onclick="document.getElementById('expand-7-short').style.display='none'; document.getElementById('expand-7-full').style.display='block';">... truncated (20 more lines) — click to expand</span></pre>
+        <pre id="expand-7-full" class="full-result">BenchmarkDotNet.Columns.Column.Run - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Columns\Column.cs(97,29)
+BenchmarkDotNet.IntegrationTests.CallerThreadTests.CallerThreadSimpleBenchmark.Run() - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\CallerThreadTests.cs(177,21)
+BenchmarkDotNet.Jobs.Job.Run - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Jobs\Job.cs(62,24)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(Assembly, BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(46,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(BenchmarkDotNet.Running.BenchmarkRunInfo) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(53,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(BenchmarkDotNet.Running.BenchmarkRunInfo[]) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(60,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Reflection.Assembly, BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(46,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Type, BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(25,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Type, System.Reflection.MethodInfo[], BenchmarkDotNet.Configs.IConfig?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(39,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(System.Type[], BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(32,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(Type, BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(25,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(Type, MethodInfo[], BenchmarkDotNet.Configs.IConfig?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(39,31)
+BenchmarkDotNet.Running.BenchmarkRunner.Run(Type[], BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(32,33)
+BenchmarkDotNet.Running.BenchmarkRunner.Run&lt;T&gt;(BenchmarkDotNet.Configs.IConfig?, string[]?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerDirty.cs(18,31)
+BenchmarkDotNet.Running.BenchmarkRunnerClean.Run(BenchmarkDotNet.Running.BenchmarkRunInfo, Dictionary&lt;BenchmarkDotNet.Running.BenchmarkCase, (BenchmarkDotNet.Running.BenchmarkId benchmarkId, BenchmarkDotNet.Toolchains.Results.BuildResult buildResult)&gt;, BenchmarkDotNet.Characteristics.IResolver, BenchmarkDotNet.Loggers.ILogger, BenchmarkDotNet.EventProcessors.EventProcessor, List&lt;string&gt;, string, string, int, StartedClock, int, BenchmarkDotNet.Helpers.TaskbarProgress, CancellationToken) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerClean.cs(190,85)
+BenchmarkDotNet.Running.BenchmarkRunnerClean.Run(BenchmarkDotNet.Running.BenchmarkRunInfo, System.Collections.Generic.Dictionary&lt;BenchmarkDotNet.Running.BenchmarkCase, (BenchmarkDotNet.Running.BenchmarkId benchmarkId, BenchmarkDotNet.Toolchains.Results.BuildResult buildResult)&gt;, BenchmarkDotNet.Characteristics.IResolver, BenchmarkDotNet.Loggers.ILogger, BenchmarkDotNet.EventProcessors.EventProcessor, System.Collections.Generic.List&lt;string&gt;, string, string, int, StartedClock, int, BenchmarkDotNet.Helpers.TaskbarProgress, System.Threading.CancellationToken) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerClean.cs(190,85)
+BenchmarkDotNet.Running.BenchmarkRunnerClean.Run(BenchmarkDotNet.Running.BenchmarkRunInfo[], CancellationToken) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerClean.cs(36,52)
+BenchmarkDotNet.Running.BenchmarkRunnerClean.Run(BenchmarkDotNet.Running.BenchmarkRunInfo[], System.Threading.CancellationToken) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkRunnerClean.cs(36,52)
+BenchmarkDotNet.Running.BenchmarkSwitcher.Run(string[]?, BenchmarkDotNet.Configs.IConfig?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkSwitcher.cs(72,37)
+BenchmarkDotNet.Samples.IntroCustomMonoFluentConfig.Run() - C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroCustomMono.cs(79,28)
+BenchmarkDotNet.Samples.IntroFluentConfigBuilder.Run() - C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroFluentConfigBuilder.cs(34,28)
+BenchmarkDotNet.Samples.IntroUnicodeFluentConfig.Run() - C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroUnicode.cs(43,28)
+BenchmarkDotNet.Samples.IntroWasmCmdConfig.Run(string[]) - C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroWasm.cs(20,28)
+BenchmarkDotNet.Samples.IntroWasmFluentConfig.Run() - C:\repos\BenchmarkDotNet\samples\BenchmarkDotNet.Samples\IntroWasm.cs(32,28)
+BenchmarkDotNet.Tests.Mocks.MockEngine.Run(BenchmarkDotNet.Engines.EngineStage) - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Shared\Mocks\MockEngine.cs(51,36)
+BenchmarkDotNet.Tests.Mocks.MockRunner.Run&lt;T&gt;(ITestOutputHelper, System.Func&lt;BenchmarkDotNet.Running.BenchmarkCase, System.Collections.Generic.List&lt;BenchmarkDotNet.Reports.Measurement&gt;&gt;) - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Shared\Mocks\MockRunner.cs(20,31)
+BenchmarkDotNet.Tests.Mocks.MockRunner.Run&lt;T&gt;(ITestOutputHelper, System.Func&lt;string, double[]&gt;) - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Shared\Mocks\MockRunner.cs(15,31)
+BenchmarkDotNet.Tests.ParamsSourceTests.ClassWithWriteOnlyProperty.Run() - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ParamsSourceTests.cs(58,25)
+BenchmarkDotNet.Toolchains.InProcess.Emit.InProcessEmitRunner.Run(BenchmarkDotNet.Engines.IHost, BenchmarkDotNet.Toolchains.Parameters.ExecuteParameters) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\InProcess\Emit\InProcessEmitRunner.cs(16,40)
+BenchmarkDotNet.Toolchains.InProcess.NoEmit.InProcessNoEmitRunner.Run(BenchmarkDotNet.Engines.IHost, BenchmarkDotNet.Toolchains.Parameters.ExecuteParameters, BenchmarkDotNet.Toolchains.InProcess.NoEmit.IBenchmarkActionFactory?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\InProcess\NoEmit\InProcessNoEmitRunner.cs(21,44)</pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-member-definition (name: Parse)</span><span class="summary-meta">4 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>Parse</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 16033 | Lines: 95 | Time: 2.2s</span></summary>
+        <p class="algorithm-details">string search for member declaration &#39;Parse&#39;</p>
+        <pre id="expand-8-short">C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\CommandLineParser.cs:20: public string[]? Parse(string[]? args)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:12: var cakeArgs = CommandLineParser.Instance.Parse(args);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Meta\Repo.cs:29: var number = int.Parse(match.Groups[1].Value.Replace(&quot;,&quot;, &quot;&quot;));
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\ReleaseRunner.cs:32: var version = Version.Parse(currentVersion);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\ReleaseRunner.cs:56: var version = Version.Parse(currentVersion);
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\ConsoleArguments\ConfigParser.cs:77: public static (bool isSuccess, IConfig? config, CommandLineOptions? options) Parse(string[] args, ILogger logger, IConfig? globalConfig = null)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\Linux\LinuxCpuInfoParser.cs:31: internal static CpuInfo Parse(string cpuInfo, string lscpu)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\macOS\SysctlCpuInfoParser.cs:22: internal static CpuInfo Parse(string sysctlOutput)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\Windows\WmiCpuInfoParser.cs:18: internal static CpuInfo Parse(string wmiOutput)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Diagnosers\ThreadingDiagnoser.cs:65: var completedWorkItemCount = long.Parse(splitResults[0]);
+<span class="truncated-link" onclick="document.getElementById('expand-8-short').style.display='none'; document.getElementById('expand-8-full').style.display='block';">... truncated (85 more lines) — click to expand</span></pre>
+        <pre id="expand-8-full" class="full-result">C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\CommandLineParser.cs:20: public string[]? Parse(string[]? args)
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:12: var cakeArgs = CommandLineParser.Instance.Parse(args);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Meta\Repo.cs:29: var number = int.Parse(match.Groups[1].Value.Replace(&quot;,&quot;, &quot;&quot;));
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\ReleaseRunner.cs:32: var version = Version.Parse(currentVersion);
+C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\ReleaseRunner.cs:56: var version = Version.Parse(currentVersion);
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\ConsoleArguments\ConfigParser.cs:77: public static (bool isSuccess, IConfig? config, CommandLineOptions? options) Parse(string[] args, ILogger logger, IConfig? globalConfig = null)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\Linux\LinuxCpuInfoParser.cs:31: internal static CpuInfo Parse(string cpuInfo, string lscpu)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\macOS\SysctlCpuInfoParser.cs:22: internal static CpuInfo Parse(string sysctlOutput)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\Windows\WmiCpuInfoParser.cs:18: internal static CpuInfo Parse(string wmiOutput)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Diagnosers\ThreadingDiagnoser.cs:65: var completedWorkItemCount = long.Parse(splitResults[0]);
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Diagnosers\ThreadingDiagnoser.cs:66: var lockContentionCount = long.Parse(splitResults[1]);
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Disassemblers\MonoDisassembler.cs:49: internal static DisassemblyResult Parse(IReadOnlyList&lt;string&gt; input, string methodName, string commandLine)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Engines\GcStats.cs:165: public static GcStats Parse(string line)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Extensions\ReflectionExtensions.cs:94: var parameterCount = int.Parse(parts[1]);
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Extensions\Polyfills\EnumExtensions.cs:17: public static TEnum Parse&lt;TEnum&gt;(string value)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Helpers\IpcHelper.cs:31: int port = int.Parse(args[i + 1]);
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Loggers\Broker.cs:123: int diagnoserIndex = int.Parse(lineItems[2]);
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Loggers\Broker.cs:124: int resultsLinesCount = int.Parse(lineItems[3]);
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Reports\Measurement.cs:119: public static Measurement Parse(string line, int processIndex)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Running\BenchmarkSwitcher.cs:124: var (isParsingSuccess, parsedConfig, options) = ConfigParser.Parse(notNullArgs, logger, notNullConfig);
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\CsProj\CsProjGenerator.cs:124: var doc = XDocument.Parse(await GenerateBuildProject(buildPartition, artifactsPaths, logger, cancellationToken).ConfigureAwait(false));
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\InProcess\InProcessHost.cs:80: int diagnoserIndex = int.Parse(lineItems[2]);
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\InProcess\InProcessHost.cs:81: int resultsLinesCount = int.Parse(lineItems[3]);
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\Results\ExecuteResult.cs:116: private static void Parse(IReadOnlyList&lt;string&gt; results, IReadOnlyList&lt;string&gt; prefixedLines, int launchIndex, out List&lt;Measurement&gt; measurements,
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\NativeMemoryProfiler.cs:54: return new NativeMemoryLogParser(traceFilePath, results.BenchmarkCase, logger, results.BuildResult.ArtifactsPaths.ProgramName).Parse();
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\NativeMemoryLogParser.cs:46: public IEnumerable&lt;Metric&gt; Parse()
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\NativeMemoryLogParser.cs:64: private IEnumerable&lt;Metric&gt; Parse(TraceLog traceLog)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\TraceLogParser.cs:16: public static IEnumerable&lt;Metric&gt; Parse(string etlFilePath, PreciseMachineCounter[] counters)
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\TraceLogParser.cs:26: return new TraceLogParser().Parse(traceLogEventSource, counters);
+C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\TraceLogParser.cs:35: private IEnumerable&lt;Metric&gt; Parse(TraceLogEventSource traceLogEventSource, PreciseMachineCounter[] counters)
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\PowerRequestsParser.cs:52: public static IEnumerable&lt;PowerRequest&gt; Parse(string input)
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\Diagnosers\MockInProcessDiagnoser.cs:53: int order = int.Parse(split[0]);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\BenchmarkDotNetInfoTests.cs:15: var info = new BenchmarkDotNetInfo(Version.Parse(assemblyVersion), fullVersion);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:39: var config = ConfigParser.Parse(args, new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:59: var config = ConfigParser.Parse([&quot;--job=Dry&quot;], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:74: var config = ConfigParser.Parse(
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:94: var configEasy = ConfigParser.Parse([&quot;--runOncePerIteration&quot;], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:106: var configEasy = ConfigParser.Parse([&quot;--strategy&quot;, &quot;ColdStart&quot;], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:117: var configEasy = ConfigParser.Parse([&quot;--inProcess&quot;, &quot;--strategy&quot;, &quot;Monitoring&quot;], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:137: var config = ConfigParser.Parse([], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:158: var config = ConfigParser.Parse([&quot;--job=Dry&quot;, &quot;--coreRun&quot;, fakeCoreRunPath, &quot;--cli&quot;, fakeDotnetCliPath, &quot;--packages&quot;, fakeRestorePackages],
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:176: var config = ConfigParser.Parse([&quot;--corerun&quot;, fakePath], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:223: var config = ConfigParser.Parse([&quot;--runtimes&quot;, runtime1, runtime2, &quot;--coreRun&quot;, fakePath], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:239: var config = ConfigParser.Parse([&quot;--coreRun&quot;, fakePath1, fakePath2, &quot;--runtimes&quot;, runtime1, runtime2], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:253: var config = ConfigParser.Parse([&quot;--job=Dry&quot;, &quot;--coreRun&quot;, fakeCoreRunPath_1, fakeCoreRunPath_2], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:266: var config = ConfigParser.Parse([&quot;-r&quot;, &quot;mono&quot;, &quot;--monoPath&quot;, fakeMonoPath], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:277: var config = ConfigParser.Parse([&quot;--clrVersion&quot;, clrVersion], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:288: var config = ConfigParser.Parse([&quot;-r&quot;, &quot;nativeaot60&quot;, &quot;--ilcPackages&quot;, fakePath.FullName], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:315: var config = ConfigParser.Parse([&quot;-r&quot;, tfm, &quot;--cli&quot;, fakeDotnetCliPath], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:353: var config = ConfigParser.Parse(configOptionArgs, new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:363: var config = ConfigParser.Parse([], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:373: var config = ConfigParser.Parse([&quot;-r&quot;, &quot;netcoreapp3.1&quot;, &quot;--packages&quot;, fakeRestoreDirectory], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:386: var config = ConfigParser.Parse([&quot;-r&quot;, &quot;netcoreapp3.1&quot;, &quot;--buildTimeout&quot;, timeoutInSeconds.ToString()], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:398: var config = ConfigParser.Parse([&quot;-r&quot;, &quot;netcoreapp3.1&quot;], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:410: var config = ConfigParser.Parse([&quot;--wakeLock&quot;, &quot;Display&quot;], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:419: var config = ConfigParser.Parse([], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:435: var config = ConfigParser.Parse([&quot;-r&quot;, tfm], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:461: var config = ConfigParser.Parse([&quot;-r&quot;, tfm], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:475: var config = ConfigParser.Parse([&quot;-r&quot;, msBuildMoniker], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:487: var config = ConfigParser.Parse([&quot;--runtimes&quot;, &quot;net462&quot;, &quot;MONO&quot;, &quot;netcoreapp2.0&quot;, &quot;nativeaot6.0&quot;, &quot;nativeAOT7.0&quot;, &quot;nativeAOT8.0&quot;],
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:514: var config = ConfigParser.Parse(arguments, new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:533: var (isSuccess, config, options) = ConfigParser.Parse(arguments, logger);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:562: var config = ConfigParser.Parse([&quot;--counters&quot;, $&quot;{nameof(HardwareCounter.CacheMisses)}+{nameof(HardwareCounter.InstructionRetired)}&quot;],
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:588: var config = ConfigParser.Parse([&quot;--disasm&quot;, &quot;--disasmDepth&quot;, depth.ToString()], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:604: var config = ConfigParser.Parse(args, new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:613: var config = ConfigParser.Parse([&quot;--info&quot;], new OutputLogger(Output)).options;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:627: var parsedConfig = ConfigParser.Parse([&quot;--warmupCount&quot;, &quot;2&quot;], new OutputLogger(Output), globalConfig).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:645: var parsedConfig = ConfigParser.Parse([&quot;--maxWidth&quot;, customValue.ToString()], new OutputLogger(Output), globalConfig).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:657: var parsedConfig = ConfigParser.Parse([&quot;--envVars&quot;, $&quot;{key}:{value}&quot;], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:676: var parsedConfig = ConfigParser.Parse([&quot;--platform&quot;, platform.ToString()], new OutputLogger(Output)).config;
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:695: var parsedConfiguration = ConfigParser.Parse([&quot;--noForcedGCs&quot;], new OutputLogger(Output));
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:708: var parsedConfiguration = ConfigParser.Parse([&quot;--evaluateOverhead&quot;, &quot;true&quot;], new OutputLogger(Output));
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:721: var parsedConfiguration = ConfigParser.Parse([&quot;--runtimes&quot;, &quot;wasmnet80&quot;, &quot;--wasmArgs&quot;, &quot;--expose_wasm --module&quot;, GetDummyWasmEngine()], new OutputLogger(Output));
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:735: var parsedConfiguration = ConfigParser.Parse([&quot;--runtimes&quot;, &quot;wasmnet80&quot;, &quot;--wasmArgs=--expose_wasm --module&quot;, GetDummyWasmEngine()], new OutputLogger(Output));
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:756: var parsedConfiguration = ConfigParser.Parse([$&quot;@{tempResponseFile}&quot;], new OutputLogger(Output));
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:772: var parsedConfiguration = ConfigParser.Parse([&quot;--runtimes&quot;, &quot;wasmnet80&quot;, &quot;--wasmMainJsTemplate&quot;, &quot;./dummyFile.js&quot;, GetDummyWasmEngine()], new OutputLogger(Output));
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\MonoDisassemblyOutputParserTests.cs:279: var disassemblyResult = MonoDisassembler.OutputParser.Parse(
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\TypeFilterTests.cs:214: var config = ConfigParser.Parse(args, nonNullLogger);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Columns\StatisticalTestColumnTests.cs:54: var sut = new StatisticalTestColumn(Threshold.Parse(threshold));
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\LinuxCpuInfoParserTests.cs:15: var actual = LinuxCpuInfoParser.Parse(&quot;&quot;, &quot;&quot;);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\LinuxCpuInfoParserTests.cs:23: var actual = LinuxCpuInfoParser.Parse(&quot;malformedkey: malformedvalue\n\nmalformedkey2: malformedvalue2&quot;, string.Empty);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\LinuxCpuInfoParserTests.cs:32: var actual = LinuxCpuInfoParser.Parse(cpuInfo, string.Empty);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\LinuxCpuInfoParserTests.cs:50: var actual = LinuxCpuInfoParser.Parse(cpuInfo, string.Empty);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\LinuxCpuInfoParserTests.cs:67: var actual = LinuxCpuInfoParser.Parse(cpuInfo, string.Empty);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\LinuxCpuInfoParserTests.cs:112: var actual = LinuxCpuInfoParser.Parse(cpuInfo, lscpu);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\LinuxCpuInfoParserTests.cs:148: var actual = LinuxCpuInfoParser.Parse(cpuInfo, lscpu);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\SysctlCpuInfoParserTests.cs:14: var actual = SysctlCpuInfoParser.Parse(string.Empty);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\SysctlCpuInfoParserTests.cs:22: var actual = SysctlCpuInfoParser.Parse(&quot;malformedkey=malformedvalue\n\nmalformedkey2=malformedvalue2&quot;);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\SysctlCpuInfoParserTests.cs:31: var actual = SysctlCpuInfoParser.Parse(cpuInfo);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\WmiCpuInfoParserTests.cs:14: var actual = WmiCpuInfoParser.Parse(string.Empty);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\WmiCpuInfoParserTests.cs:22: var actual = WmiCpuInfoParser.Parse(&quot;malformedkey=malformedvalue\n\nmalformedkey2=malformedvalue2&quot;);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\WmiCpuInfoParserTests.cs:44: var actual = WmiCpuInfoParser.Parse(cpuInfo);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\WmiCpuInfoParserTests.cs:76: var actual = WmiCpuInfoParser.Parse(cpuInfo);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\WmiCpuInfoParserTests.cs:101: var actual = WmiCpuInfoParser.Parse(cpuInfo);
+C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Perfonar\Infra\PerfonarTestExtensions.cs:12: var measurement = PerfolizerMeasurementFormatter.Instance.Parse(metrics[i]);</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 13469 | Lines: 95 | Time: 121ms</span></summary>
+        <p class="algorithm-details">tgrep search for member declaration &#39;Parse&#39;</p>
+        <pre id="expand-9-short">tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:39:var config = ConfigParser.Parse(args, new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:59:var config = ConfigParser.Parse([&quot;--job=Dry&quot;], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:74:var config = ConfigParser.Parse(
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:94:var configEasy = ConfigParser.Parse([&quot;--runOncePerIteration&quot;], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:106:var configEasy = ConfigParser.Parse([&quot;--strategy&quot;, &quot;ColdStart&quot;], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:117:var configEasy = ConfigParser.Parse([&quot;--inProcess&quot;, &quot;--strategy&quot;, &quot;Monitoring&quot;], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:137:var config = ConfigParser.Parse([], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:158:var config = ConfigParser.Parse([&quot;--job=Dry&quot;, &quot;--coreRun&quot;, fakeCoreRunPath, &quot;--cli&quot;, fakeDotnetCliPath, &quot;--packages&quot;, fakeRestorePackages],
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:176:var config = ConfigParser.Parse([&quot;--corerun&quot;, fakePath], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:223:var config = ConfigParser.Parse([&quot;--runtimes&quot;, runtime1, runtime2, &quot;--coreRun&quot;, fakePath], new OutputLogger(Output)).config;
+<span class="truncated-link" onclick="document.getElementById('expand-9-short').style.display='none'; document.getElementById('expand-9-full').style.display='block';">... truncated (85 more lines) — click to expand</span></pre>
+        <pre id="expand-9-full" class="full-result">tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:39:var config = ConfigParser.Parse(args, new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:59:var config = ConfigParser.Parse([&quot;--job=Dry&quot;], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:74:var config = ConfigParser.Parse(
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:94:var configEasy = ConfigParser.Parse([&quot;--runOncePerIteration&quot;], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:106:var configEasy = ConfigParser.Parse([&quot;--strategy&quot;, &quot;ColdStart&quot;], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:117:var configEasy = ConfigParser.Parse([&quot;--inProcess&quot;, &quot;--strategy&quot;, &quot;Monitoring&quot;], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:137:var config = ConfigParser.Parse([], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:158:var config = ConfigParser.Parse([&quot;--job=Dry&quot;, &quot;--coreRun&quot;, fakeCoreRunPath, &quot;--cli&quot;, fakeDotnetCliPath, &quot;--packages&quot;, fakeRestorePackages],
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:176:var config = ConfigParser.Parse([&quot;--corerun&quot;, fakePath], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:223:var config = ConfigParser.Parse([&quot;--runtimes&quot;, runtime1, runtime2, &quot;--coreRun&quot;, fakePath], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:239:var config = ConfigParser.Parse([&quot;--coreRun&quot;, fakePath1, fakePath2, &quot;--runtimes&quot;, runtime1, runtime2], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:253:var config = ConfigParser.Parse([&quot;--job=Dry&quot;, &quot;--coreRun&quot;, fakeCoreRunPath_1, fakeCoreRunPath_2], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:266:var config = ConfigParser.Parse([&quot;-r&quot;, &quot;mono&quot;, &quot;--monoPath&quot;, fakeMonoPath], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:277:var config = ConfigParser.Parse([&quot;--clrVersion&quot;, clrVersion], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:288:var config = ConfigParser.Parse([&quot;-r&quot;, &quot;nativeaot60&quot;, &quot;--ilcPackages&quot;, fakePath.FullName], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:315:var config = ConfigParser.Parse([&quot;-r&quot;, tfm, &quot;--cli&quot;, fakeDotnetCliPath], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:353:var config = ConfigParser.Parse(configOptionArgs, new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:363:var config = ConfigParser.Parse([], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:373:var config = ConfigParser.Parse([&quot;-r&quot;, &quot;netcoreapp3.1&quot;, &quot;--packages&quot;, fakeRestoreDirectory], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:386:var config = ConfigParser.Parse([&quot;-r&quot;, &quot;netcoreapp3.1&quot;, &quot;--buildTimeout&quot;, timeoutInSeconds.ToString()], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:398:var config = ConfigParser.Parse([&quot;-r&quot;, &quot;netcoreapp3.1&quot;], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:410:var config = ConfigParser.Parse([&quot;--wakeLock&quot;, &quot;Display&quot;], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:419:var config = ConfigParser.Parse([], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:435:var config = ConfigParser.Parse([&quot;-r&quot;, tfm], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:461:var config = ConfigParser.Parse([&quot;-r&quot;, tfm], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:475:var config = ConfigParser.Parse([&quot;-r&quot;, msBuildMoniker], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:487:var config = ConfigParser.Parse([&quot;--runtimes&quot;, &quot;net462&quot;, &quot;MONO&quot;, &quot;netcoreapp2.0&quot;, &quot;nativeaot6.0&quot;, &quot;nativeAOT7.0&quot;, &quot;nativeAOT8.0&quot;],
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:514:var config = ConfigParser.Parse(arguments, new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:533:var (isSuccess, config, options) = ConfigParser.Parse(arguments, logger);
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:562:var config = ConfigParser.Parse([&quot;--counters&quot;, $&quot;{nameof(HardwareCounter.CacheMisses)}+{nameof(HardwareCounter.InstructionRetired)}&quot;],
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:588:var config = ConfigParser.Parse([&quot;--disasm&quot;, &quot;--disasmDepth&quot;, depth.ToString()], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:604:var config = ConfigParser.Parse(args, new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:613:var config = ConfigParser.Parse([&quot;--info&quot;], new OutputLogger(Output)).options;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:627:var parsedConfig = ConfigParser.Parse([&quot;--warmupCount&quot;, &quot;2&quot;], new OutputLogger(Output), globalConfig).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:645:var parsedConfig = ConfigParser.Parse([&quot;--maxWidth&quot;, customValue.ToString()], new OutputLogger(Output), globalConfig).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:657:var parsedConfig = ConfigParser.Parse([&quot;--envVars&quot;, $&quot;{key}:{value}&quot;], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:676:var parsedConfig = ConfigParser.Parse([&quot;--platform&quot;, platform.ToString()], new OutputLogger(Output)).config;
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:695:var parsedConfiguration = ConfigParser.Parse([&quot;--noForcedGCs&quot;], new OutputLogger(Output));
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:708:var parsedConfiguration = ConfigParser.Parse([&quot;--evaluateOverhead&quot;, &quot;true&quot;], new OutputLogger(Output));
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:721:var parsedConfiguration = ConfigParser.Parse([&quot;--runtimes&quot;, &quot;wasmnet80&quot;, &quot;--wasmArgs&quot;, &quot;--expose_wasm --module&quot;, GetDummyWasmEngine()], new OutputLogger(Output));
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:735:var parsedConfiguration = ConfigParser.Parse([&quot;--runtimes&quot;, &quot;wasmnet80&quot;, &quot;--wasmArgs=--expose_wasm --module&quot;, GetDummyWasmEngine()], new OutputLogger(Output));
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:756:var parsedConfiguration = ConfigParser.Parse([$&quot;@{tempResponseFile}&quot;], new OutputLogger(Output));
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:772:var parsedConfiguration = ConfigParser.Parse([&quot;--runtimes&quot;, &quot;wasmnet80&quot;, &quot;--wasmMainJsTemplate&quot;, &quot;./dummyFile.js&quot;, GetDummyWasmEngine()], new OutputLogger(Output));
+tests/BenchmarkDotNet.Tests/TypeFilterTests.cs:214:var config = ConfigParser.Parse(args, nonNullLogger);
+tests/BenchmarkDotNet.Tests/Columns/StatisticalTestColumnTests.cs:54:var sut = new StatisticalTestColumn(Threshold.Parse(threshold));
+tests/BenchmarkDotNet.Tests/BenchmarkDotNetInfoTests.cs:15:var info = new BenchmarkDotNetInfo(Version.Parse(assemblyVersion), fullVersion);
+build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:32:var version = Version.Parse(currentVersion);
+build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:56:var version = Version.Parse(currentVersion);
+tests/BenchmarkDotNet.IntegrationTests/Diagnosers/MockInProcessDiagnoser.cs:53:int order = int.Parse(split[0]);
+tests/BenchmarkDotNet.IntegrationTests/PowerRequestsParser.cs:52:public static IEnumerable&lt;PowerRequest&gt; Parse(string input)
+build/BenchmarkDotNet.Build/Program.cs:12:var cakeArgs = CommandLineParser.Instance.Parse(args);
+src/BenchmarkDotNet.Diagnostics.Windows/Tracing/TraceLogParser.cs:16:public static IEnumerable&lt;Metric&gt; Parse(string etlFilePath, PreciseMachineCounter[] counters)
+src/BenchmarkDotNet.Diagnostics.Windows/Tracing/TraceLogParser.cs:26:return new TraceLogParser().Parse(traceLogEventSource, counters);
+src/BenchmarkDotNet.Diagnostics.Windows/Tracing/TraceLogParser.cs:35:private IEnumerable&lt;Metric&gt; Parse(TraceLogEventSource traceLogEventSource, PreciseMachineCounter[] counters)
+src/BenchmarkDotNet.Diagnostics.Windows/Tracing/NativeMemoryLogParser.cs:46:public IEnumerable&lt;Metric&gt; Parse()
+src/BenchmarkDotNet.Diagnostics.Windows/Tracing/NativeMemoryLogParser.cs:64:private IEnumerable&lt;Metric&gt; Parse(TraceLog traceLog)
+src/BenchmarkDotNet.Diagnostics.Windows/NativeMemoryProfiler.cs:54:return new NativeMemoryLogParser(traceFilePath, results.BenchmarkCase, logger, results.BuildResult.ArtifactsPaths.ProgramName).Parse();
+build/BenchmarkDotNet.Build/Meta/Repo.cs:29:var number = int.Parse(match.Groups[1].Value.Replace(&quot;,&quot;, &quot;&quot;));
+build/BenchmarkDotNet.Build/CommandLineParser.cs:20:public string[]? Parse(string[]? args)
+tests/BenchmarkDotNet.Tests/MonoDisassemblyOutputParserTests.cs:279:var disassemblyResult = MonoDisassembler.OutputParser.Parse(
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:14:var actual = WmiCpuInfoParser.Parse(string.Empty);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:22:var actual = WmiCpuInfoParser.Parse(&quot;malformedkey=malformedvalue\n\nmalformedkey2=malformedvalue2&quot;);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:44:var actual = WmiCpuInfoParser.Parse(cpuInfo);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:76:var actual = WmiCpuInfoParser.Parse(cpuInfo);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:101:var actual = WmiCpuInfoParser.Parse(cpuInfo);
+src/BenchmarkDotNet/Toolchains/Results/ExecuteResult.cs:116:private static void Parse(IReadOnlyList&lt;string&gt; results, IReadOnlyList&lt;string&gt; prefixedLines, int launchIndex, out List&lt;Measurement&gt; measurements,
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:15:var actual = LinuxCpuInfoParser.Parse(&quot;&quot;, &quot;&quot;);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:23:var actual = LinuxCpuInfoParser.Parse(&quot;malformedkey: malformedvalue\n\nmalformedkey2: malformedvalue2&quot;, string.Empty);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:32:var actual = LinuxCpuInfoParser.Parse(cpuInfo, string.Empty);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:50:var actual = LinuxCpuInfoParser.Parse(cpuInfo, string.Empty);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:67:var actual = LinuxCpuInfoParser.Parse(cpuInfo, string.Empty);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:112:var actual = LinuxCpuInfoParser.Parse(cpuInfo, lscpu);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:148:var actual = LinuxCpuInfoParser.Parse(cpuInfo, lscpu);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/SysctlCpuInfoParserTests.cs:14:var actual = SysctlCpuInfoParser.Parse(string.Empty);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/SysctlCpuInfoParserTests.cs:22:var actual = SysctlCpuInfoParser.Parse(&quot;malformedkey=malformedvalue\n\nmalformedkey2=malformedvalue2&quot;);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/SysctlCpuInfoParserTests.cs:31:var actual = SysctlCpuInfoParser.Parse(cpuInfo);
+tests/BenchmarkDotNet.Tests/Perfonar/Infra/PerfonarTestExtensions.cs:12:var measurement = PerfolizerMeasurementFormatter.Instance.Parse(metrics[i]);
+src/BenchmarkDotNet/Detectors/Cpu/Windows/WmiCpuInfoParser.cs:18:internal static CpuInfo Parse(string wmiOutput)
+src/BenchmarkDotNet/Helpers/IpcHelper.cs:31:int port = int.Parse(args[i + 1]);
+src/BenchmarkDotNet/Loggers/Broker.cs:123:int diagnoserIndex = int.Parse(lineItems[2]);
+src/BenchmarkDotNet/Loggers/Broker.cs:124:int resultsLinesCount = int.Parse(lineItems[3]);
+src/BenchmarkDotNet/Detectors/Cpu/macOS/SysctlCpuInfoParser.cs:22:internal static CpuInfo Parse(string sysctlOutput)
+src/BenchmarkDotNet/Toolchains/CsProj/CsProjGenerator.cs:124:var doc = XDocument.Parse(await GenerateBuildProject(buildPartition, artifactsPaths, logger, cancellationToken).ConfigureAwait(false));
+src/BenchmarkDotNet/Detectors/Cpu/Linux/LinuxCpuInfoParser.cs:31:internal static CpuInfo Parse(string cpuInfo, string lscpu)
+src/BenchmarkDotNet/Running/BenchmarkSwitcher.cs:124:var (isParsingSuccess, parsedConfig, options) = ConfigParser.Parse(notNullArgs, logger, notNullConfig);
+src/BenchmarkDotNet/Extensions/ReflectionExtensions.cs:94:var parameterCount = int.Parse(parts[1]);
+src/BenchmarkDotNet/Reports/Measurement.cs:119:public static Measurement Parse(string line, int processIndex)
+src/BenchmarkDotNet/Toolchains/InProcess/InProcessHost.cs:80:int diagnoserIndex = int.Parse(lineItems[2]);
+src/BenchmarkDotNet/Toolchains/InProcess/InProcessHost.cs:81:int resultsLinesCount = int.Parse(lineItems[3]);
+src/BenchmarkDotNet/ConsoleArguments/ConfigParser.cs:77:public static (bool isSuccess, IConfig? config, CommandLineOptions? options) Parse(string[] args, ILogger logger, IConfig? globalConfig = null)
+src/BenchmarkDotNet/Extensions/Polyfills/EnumExtensions.cs:17:public static TEnum Parse&lt;TEnum&gt;(string value)
+src/BenchmarkDotNet/Disassemblers/MonoDisassembler.cs:49:internal static DisassemblyResult Parse(IReadOnlyList&lt;string&gt; input, string methodName, string commandLine)
+src/BenchmarkDotNet/Engines/GcStats.cs:165:public static GcStats Parse(string line)
+src/BenchmarkDotNet/Diagnosers/ThreadingDiagnoser.cs:65:var completedWorkItemCount = long.Parse(splitResults[0]);
+src/BenchmarkDotNet/Diagnosers/ThreadingDiagnoser.cs:66:var lockContentionCount = long.Parse(splitResults[1]);</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3255 | Lines: 16 | Time: 46ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Parse&#39;, SymbolFilter.Member)</p>
+        <pre id="expand-10-short">BenchmarkDotNet.ConsoleArguments.ConfigParser.Parse(string[], BenchmarkDotNet.Loggers.ILogger, BenchmarkDotNet.Configs.IConfig?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\ConsoleArguments\ConfigParser.cs(77,86)
+BenchmarkDotNet.Detectors.Cpu.Linux.LinuxCpuInfoParser.Parse(string, string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\Linux\LinuxCpuInfoParser.cs(31,29)
+BenchmarkDotNet.Detectors.Cpu.Windows.WmiCpuInfoParser.Parse(string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\Windows\WmiCpuInfoParser.cs(18,29)
+BenchmarkDotNet.Detectors.Cpu.macOS.SysctlCpuInfoParser.Parse(string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\macOS\SysctlCpuInfoParser.cs(22,29)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.NativeMemoryLogParser.Parse() - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\NativeMemoryLogParser.cs(46,36)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.NativeMemoryLogParser.Parse(TraceLog) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\NativeMemoryLogParser.cs(64,37)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.TraceLogParser.Parse(TraceLogEventSource, BenchmarkDotNet.Diagnosers.PreciseMachineCounter[]) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\TraceLogParser.cs(35,37)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.TraceLogParser.Parse(string, BenchmarkDotNet.Diagnosers.PreciseMachineCounter[]) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\TraceLogParser.cs(16,43)
+BenchmarkDotNet.Disassemblers.MonoDisassembler.OutputParser.Parse(IReadOnlyList&lt;string&gt;, string, string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Disassemblers\MonoDisassembler.cs(49,47)
+BenchmarkDotNet.Disassemblers.MonoDisassembler.OutputParser.Parse(System.Collections.Generic.IReadOnlyList&lt;string&gt;, string, string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Disassemblers\MonoDisassembler.cs(49,47)
+<span class="truncated-link" onclick="document.getElementById('expand-10-short').style.display='none'; document.getElementById('expand-10-full').style.display='block';">... truncated (6 more lines) — click to expand</span></pre>
+        <pre id="expand-10-full" class="full-result">BenchmarkDotNet.ConsoleArguments.ConfigParser.Parse(string[], BenchmarkDotNet.Loggers.ILogger, BenchmarkDotNet.Configs.IConfig?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\ConsoleArguments\ConfigParser.cs(77,86)
+BenchmarkDotNet.Detectors.Cpu.Linux.LinuxCpuInfoParser.Parse(string, string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\Linux\LinuxCpuInfoParser.cs(31,29)
+BenchmarkDotNet.Detectors.Cpu.Windows.WmiCpuInfoParser.Parse(string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\Windows\WmiCpuInfoParser.cs(18,29)
+BenchmarkDotNet.Detectors.Cpu.macOS.SysctlCpuInfoParser.Parse(string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\macOS\SysctlCpuInfoParser.cs(22,29)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.NativeMemoryLogParser.Parse() - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\NativeMemoryLogParser.cs(46,36)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.NativeMemoryLogParser.Parse(TraceLog) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\NativeMemoryLogParser.cs(64,37)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.TraceLogParser.Parse(TraceLogEventSource, BenchmarkDotNet.Diagnosers.PreciseMachineCounter[]) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\TraceLogParser.cs(35,37)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.TraceLogParser.Parse(string, BenchmarkDotNet.Diagnosers.PreciseMachineCounter[]) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\TraceLogParser.cs(16,43)
+BenchmarkDotNet.Disassemblers.MonoDisassembler.OutputParser.Parse(IReadOnlyList&lt;string&gt;, string, string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Disassemblers\MonoDisassembler.cs(49,47)
+BenchmarkDotNet.Disassemblers.MonoDisassembler.OutputParser.Parse(System.Collections.Generic.IReadOnlyList&lt;string&gt;, string, string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Disassemblers\MonoDisassembler.cs(49,47)
+BenchmarkDotNet.Engines.GcStats.Parse(string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Engines\GcStats.cs(165,31)
+BenchmarkDotNet.IntegrationTests.PowerRequestsParser.Parse(string) - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\PowerRequestsParser.cs(52,45)
+BenchmarkDotNet.Reports.Measurement.Parse(string, int) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Reports\Measurement.cs(119,35)
+BenchmarkDotNet.Toolchains.Results.ExecuteResult.Parse(IReadOnlyList&lt;string&gt;, IReadOnlyList&lt;string&gt;, int, out List&lt;BenchmarkDotNet.Reports.Measurement&gt;, out List&lt;string&gt;, out BenchmarkDotNet.Engines.GcStats) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\Results\ExecuteResult.cs(116,29)
+BenchmarkDotNet.Toolchains.Results.ExecuteResult.Parse(System.Collections.Generic.IReadOnlyList&lt;string&gt;, System.Collections.Generic.IReadOnlyList&lt;string&gt;, int, out System.Collections.Generic.List&lt;BenchmarkDotNet.Reports.Measurement&gt;, out System.Collections.Generic.List&lt;string&gt;, out BenchmarkDotNet.Engines.GcStats) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\Results\ExecuteResult.cs(116,29)
+System.EnumExtensions.extension(Enum).Parse&lt;TEnum&gt;(string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Extensions\Polyfills\EnumExtensions.cs(17,29)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3255 | Lines: 16 | Time: 24ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Parse&#39;, SymbolFilter.Member)</p>
+        <pre id="expand-11-short">BenchmarkDotNet.ConsoleArguments.ConfigParser.Parse(string[], BenchmarkDotNet.Loggers.ILogger, BenchmarkDotNet.Configs.IConfig?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\ConsoleArguments\ConfigParser.cs(77,86)
+BenchmarkDotNet.Detectors.Cpu.Linux.LinuxCpuInfoParser.Parse(string, string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\Linux\LinuxCpuInfoParser.cs(31,29)
+BenchmarkDotNet.Detectors.Cpu.Windows.WmiCpuInfoParser.Parse(string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\Windows\WmiCpuInfoParser.cs(18,29)
+BenchmarkDotNet.Detectors.Cpu.macOS.SysctlCpuInfoParser.Parse(string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\macOS\SysctlCpuInfoParser.cs(22,29)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.NativeMemoryLogParser.Parse() - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\NativeMemoryLogParser.cs(46,36)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.NativeMemoryLogParser.Parse(TraceLog) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\NativeMemoryLogParser.cs(64,37)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.TraceLogParser.Parse(TraceLogEventSource, BenchmarkDotNet.Diagnosers.PreciseMachineCounter[]) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\TraceLogParser.cs(35,37)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.TraceLogParser.Parse(string, BenchmarkDotNet.Diagnosers.PreciseMachineCounter[]) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\TraceLogParser.cs(16,43)
+BenchmarkDotNet.Disassemblers.MonoDisassembler.OutputParser.Parse(IReadOnlyList&lt;string&gt;, string, string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Disassemblers\MonoDisassembler.cs(49,47)
+BenchmarkDotNet.Disassemblers.MonoDisassembler.OutputParser.Parse(System.Collections.Generic.IReadOnlyList&lt;string&gt;, string, string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Disassemblers\MonoDisassembler.cs(49,47)
+<span class="truncated-link" onclick="document.getElementById('expand-11-short').style.display='none'; document.getElementById('expand-11-full').style.display='block';">... truncated (6 more lines) — click to expand</span></pre>
+        <pre id="expand-11-full" class="full-result">BenchmarkDotNet.ConsoleArguments.ConfigParser.Parse(string[], BenchmarkDotNet.Loggers.ILogger, BenchmarkDotNet.Configs.IConfig?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\ConsoleArguments\ConfigParser.cs(77,86)
+BenchmarkDotNet.Detectors.Cpu.Linux.LinuxCpuInfoParser.Parse(string, string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\Linux\LinuxCpuInfoParser.cs(31,29)
+BenchmarkDotNet.Detectors.Cpu.Windows.WmiCpuInfoParser.Parse(string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\Windows\WmiCpuInfoParser.cs(18,29)
+BenchmarkDotNet.Detectors.Cpu.macOS.SysctlCpuInfoParser.Parse(string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\macOS\SysctlCpuInfoParser.cs(22,29)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.NativeMemoryLogParser.Parse() - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\NativeMemoryLogParser.cs(46,36)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.NativeMemoryLogParser.Parse(TraceLog) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\NativeMemoryLogParser.cs(64,37)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.TraceLogParser.Parse(TraceLogEventSource, BenchmarkDotNet.Diagnosers.PreciseMachineCounter[]) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\TraceLogParser.cs(35,37)
+BenchmarkDotNet.Diagnostics.Windows.Tracing.TraceLogParser.Parse(string, BenchmarkDotNet.Diagnosers.PreciseMachineCounter[]) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet.Diagnostics.Windows\Tracing\TraceLogParser.cs(16,43)
+BenchmarkDotNet.Disassemblers.MonoDisassembler.OutputParser.Parse(IReadOnlyList&lt;string&gt;, string, string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Disassemblers\MonoDisassembler.cs(49,47)
+BenchmarkDotNet.Disassemblers.MonoDisassembler.OutputParser.Parse(System.Collections.Generic.IReadOnlyList&lt;string&gt;, string, string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Disassemblers\MonoDisassembler.cs(49,47)
+BenchmarkDotNet.Engines.GcStats.Parse(string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Engines\GcStats.cs(165,31)
+BenchmarkDotNet.IntegrationTests.PowerRequestsParser.Parse(string) - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\PowerRequestsParser.cs(52,45)
+BenchmarkDotNet.Reports.Measurement.Parse(string, int) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Reports\Measurement.cs(119,35)
+BenchmarkDotNet.Toolchains.Results.ExecuteResult.Parse(IReadOnlyList&lt;string&gt;, IReadOnlyList&lt;string&gt;, int, out List&lt;BenchmarkDotNet.Reports.Measurement&gt;, out List&lt;string&gt;, out BenchmarkDotNet.Engines.GcStats) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\Results\ExecuteResult.cs(116,29)
+BenchmarkDotNet.Toolchains.Results.ExecuteResult.Parse(System.Collections.Generic.IReadOnlyList&lt;string&gt;, System.Collections.Generic.IReadOnlyList&lt;string&gt;, int, out System.Collections.Generic.List&lt;BenchmarkDotNet.Reports.Measurement&gt;, out System.Collections.Generic.List&lt;string&gt;, out BenchmarkDotNet.Engines.GcStats) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\Results\ExecuteResult.cs(116,29)
+System.EnumExtensions.extension(Enum).Parse&lt;TEnum&gt;(string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Extensions\Polyfills\EnumExtensions.cs(17,29)</pre>
+      </details>
+    </details>
+  </section>
+  <script>
+    document.querySelector('[data-action="expand-all"]').addEventListener('click', () => document.querySelectorAll('details').forEach(details => details.open = true));
+    document.querySelector('[data-action="collapse-algorithms"]').addEventListener('click', () => document.querySelectorAll('details.algorithm').forEach(details => details.open = false));
+    document.querySelector('[data-action="collapse-all"]').addEventListener('click', () => document.querySelectorAll('details').forEach(details => details.open = false));
+  </script>
+</body>
+</html>

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>LspVGrepTool Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; color: #1f2937; }
+    h1, h2, h3 { margin-bottom: 0.5rem; }
+    .actions { display: flex; gap: 0.5rem; margin: 1rem 0; }
+    button { border: 1px solid #b8c2d1; border-radius: 6px; background: #fff; color: #1f2937; padding: 0.35rem 0.65rem; cursor: pointer; }
+    button:hover { background: #eef2f7; }
+    details { background: #fff; }
+    summary { cursor: pointer; }
+    .query { border: 1px solid #d1d5db; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem; }
+    .query[open] > summary { border-bottom: 1px solid #e5e7eb; margin-bottom: 0.75rem; padding-bottom: 0.75rem; }
+    .algorithm { border-top: 1px solid #e5e7eb; padding-top: 0.75rem; margin-top: 0.75rem; }
+    .algorithm[open] > summary { margin-bottom: 0.5rem; }
+    .summary-title { font-weight: 700; }
+    .summary-meta { color: #4b5563; margin-left: 0.75rem; font-size: 0.92rem; }
+    .algorithm-details { margin: 0.5rem 0; color: #4b5563; }
+    .status { font-weight: bold; }
+    .status-failed { color: #b91c1c; }
+    .status-succeeded { color: #047857; }
+    dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1rem; }
+    dt { font-weight: bold; }
+    pre { background: #f9fafb; border-radius: 6px; padding: 1rem; overflow-x: auto; white-space: pre-wrap; }
+    .truncated-link { color: #2563eb; cursor: pointer; font-style: italic; }
+    .truncated-link:hover { text-decoration: underline; }
+    .full-result { display: none; }
+  </style>
+</head>
+<body>
+  <h1>LspVGrepTool Report</h1>
+  <p><strong>Directory:</strong> C:\repos\YoutubeExplode</p>
+  <p><strong>Commit:</strong> a0daac2b47b430639334783dd6c3b272f4e669d4</p>
+  <p><strong>LS cache:</strong> not used (enabled)</p>
+  <p><strong>Roslyn target:</strong> Solution - C:\repos\YoutubeExplode\YoutubeExplode.slnx (loaded in 6.1s)</p>
+  <p><strong>tgrep index:</strong> built in 167ms</p>
+  <div class="actions">
+    <button type="button" data-action="expand-all">Expand all</button>
+    <button type="button" data-action="collapse-algorithms">Collapse algorithms</button>
+    <button type="button" data-action="collapse-all">Collapse all</button>
+  </div>
+  <section>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: YoutubeClient)</span><span class="summary-meta">10 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>YoutubeClient</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 100 | Lines: 1 | Time: 639ms</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) YoutubeClient&#39;</p>
+        <pre>C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:16: public class YoutubeClient : IDisposable</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 75 | Lines: 1 | Time: 51ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) YoutubeClient&#39;</p>
+        <pre>YoutubeExplode/YoutubeClient.cs:16:public class YoutubeClient : IDisposable</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 7931 | Lines: 71 | Time: 614ms</span></summary>
+        <p class="algorithm-details">string search for &#39;YoutubeClient&#39;</p>
+        <pre id="expand-0-short">C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:16: public class YoutubeClient : IDisposable
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:21: /// Initializes an instance of &lt;see cref=&quot;YoutubeClient&quot; /&gt;.
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:23: public YoutubeClient(HttpClient http, IReadOnlyList&lt;Cookie&gt; initialCookies)
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:34: /// Initializes an instance of &lt;see cref=&quot;YoutubeClient&quot; /&gt;.
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:36: public YoutubeClient(HttpClient http)
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:40: /// Initializes an instance of &lt;see cref=&quot;YoutubeClient&quot; /&gt;.
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:42: public YoutubeClient(IReadOnlyList&lt;Cookie&gt; initialCookies)
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:46: /// Initializes an instance of &lt;see cref=&quot;YoutubeClient&quot; /&gt;.
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:48: public YoutubeClient()
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeHttpHandler.cs:150: + &quot;Alternatively, inject cookies corresponding to a pre-authenticated user when initializing an instance of `YoutubeClient`.&quot;
+<span class="truncated-link" onclick="document.getElementById('expand-0-short').style.display='none'; document.getElementById('expand-0-full').style.display='block';">... truncated (61 more lines) — click to expand</span></pre>
+        <pre id="expand-0-full" class="full-result">C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:16: public class YoutubeClient : IDisposable
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:21: /// Initializes an instance of &lt;see cref=&quot;YoutubeClient&quot; /&gt;.
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:23: public YoutubeClient(HttpClient http, IReadOnlyList&lt;Cookie&gt; initialCookies)
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:34: /// Initializes an instance of &lt;see cref=&quot;YoutubeClient&quot; /&gt;.
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:36: public YoutubeClient(HttpClient http)
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:40: /// Initializes an instance of &lt;see cref=&quot;YoutubeClient&quot; /&gt;.
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:42: public YoutubeClient(IReadOnlyList&lt;Cookie&gt; initialCookies)
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:46: /// Initializes an instance of &lt;see cref=&quot;YoutubeClient&quot; /&gt;.
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:48: public YoutubeClient()
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeHttpHandler.cs:150: + &quot;Alternatively, inject cookies corresponding to a pre-authenticated user when initializing an instance of `YoutubeClient`.&quot;
+C:\repos\YoutubeExplode\YoutubeExplode.Converter.Tests\EnvironmentSpecs.cs:21: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Converter.Tests\GeneralSpecs.cs:27: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Converter.Tests\GeneralSpecs.cs:43: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Converter.Tests\GeneralSpecs.cs:59: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Converter.Tests\GeneralSpecs.cs:75: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Converter.Tests\GeneralSpecs.cs:91: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Converter.Tests\GeneralSpecs.cs:147: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Converter.Tests\GeneralSpecs.cs:203: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Converter.Tests\GeneralSpecs.cs:226: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Converter.Tests\GeneralSpecs.cs:254: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Converter.Tests\SubtitleSpecs.cs:24: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Converter.Tests\SubtitleSpecs.cs:62: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Demo.Cli\Program.cs:18: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Demo.Gui\ViewModels\MainViewModel.cs:23: private readonly YoutubeClient _youtube = new();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ChannelSpecs.cs:16: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ChannelSpecs.cs:32: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ChannelSpecs.cs:48: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ChannelSpecs.cs:64: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ChannelSpecs.cs:82: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ChannelSpecs.cs:98: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ClosedCaptionSpecs.cs:17: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ClosedCaptionSpecs.cs:56: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ClosedCaptionSpecs.cs:74: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ClosedCaptionSpecs.cs:92: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ClosedCaptionSpecs.cs:112: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ClosedCaptionSpecs.cs:135: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\PlaylistSpecs.cs:18: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\PlaylistSpecs.cs:42: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\PlaylistSpecs.cs:57: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\PlaylistSpecs.cs:79: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\PlaylistSpecs.cs:97: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\PlaylistSpecs.cs:136: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\PlaylistSpecs.cs:171: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\PlaylistSpecs.cs:184: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\SearchSpecs.cs:16: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\SearchSpecs.cs:34: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\SearchSpecs.cs:50: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\SearchSpecs.cs:68: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\SearchSpecs.cs:84: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\SearchSpecs.cs:97: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\SearchSpecs.cs:120: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:21: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:64: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:119: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:144: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:157: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:175: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:190: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:211: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:240: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:259: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:278: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:297: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:315: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:328: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:344: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\VideoSpecs.cs:18: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\VideoSpecs.cs:62: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\VideoSpecs.cs:77: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\VideoSpecs.cs:99: using var youtube = new YoutubeClient();
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\VideoSpecs.cs:121: using var youtube = new YoutubeClient();</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 6086 | Lines: 71 | Time: 57ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;YoutubeClient&#39;</p>
+        <pre id="expand-1-short">YoutubeExplode.Tests/VideoSpecs.cs:18:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/VideoSpecs.cs:62:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/VideoSpecs.cs:77:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/VideoSpecs.cs:99:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/VideoSpecs.cs:121:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/SearchSpecs.cs:16:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/SearchSpecs.cs:34:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/SearchSpecs.cs:50:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/SearchSpecs.cs:68:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/SearchSpecs.cs:84:using var youtube = new YoutubeClient();
+<span class="truncated-link" onclick="document.getElementById('expand-1-short').style.display='none'; document.getElementById('expand-1-full').style.display='block';">... truncated (61 more lines) — click to expand</span></pre>
+        <pre id="expand-1-full" class="full-result">YoutubeExplode.Tests/VideoSpecs.cs:18:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/VideoSpecs.cs:62:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/VideoSpecs.cs:77:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/VideoSpecs.cs:99:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/VideoSpecs.cs:121:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/SearchSpecs.cs:16:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/SearchSpecs.cs:34:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/SearchSpecs.cs:50:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/SearchSpecs.cs:68:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/SearchSpecs.cs:84:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/SearchSpecs.cs:97:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/SearchSpecs.cs:120:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/PlaylistSpecs.cs:18:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/PlaylistSpecs.cs:42:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/PlaylistSpecs.cs:57:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/PlaylistSpecs.cs:79:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/PlaylistSpecs.cs:97:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/PlaylistSpecs.cs:136:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/PlaylistSpecs.cs:171:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/PlaylistSpecs.cs:184:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/ClosedCaptionSpecs.cs:17:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/ClosedCaptionSpecs.cs:56:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/ClosedCaptionSpecs.cs:74:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/ClosedCaptionSpecs.cs:92:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/ClosedCaptionSpecs.cs:112:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/ClosedCaptionSpecs.cs:135:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/ChannelSpecs.cs:16:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/ChannelSpecs.cs:32:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/ChannelSpecs.cs:48:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/ChannelSpecs.cs:64:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/ChannelSpecs.cs:82:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/ChannelSpecs.cs:98:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:21:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:64:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:119:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:144:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:157:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:175:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:190:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:211:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:240:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:259:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:278:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:297:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:315:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:328:using var youtube = new YoutubeClient();
+YoutubeExplode.Tests/StreamSpecs.cs:344:using var youtube = new YoutubeClient();
+YoutubeExplode/YoutubeHttpHandler.cs:150:+ &quot;Alternatively, inject cookies corresponding to a pre-authenticated user when initializing an instance of `YoutubeClient`.&quot;
+YoutubeExplode/YoutubeClient.cs:16:public class YoutubeClient : IDisposable
+YoutubeExplode/YoutubeClient.cs:21:/// Initializes an instance of &lt;see cref=&quot;YoutubeClient&quot; /&gt;.
+YoutubeExplode/YoutubeClient.cs:23:public YoutubeClient(HttpClient http, IReadOnlyList&lt;Cookie&gt; initialCookies)
+YoutubeExplode/YoutubeClient.cs:34:/// Initializes an instance of &lt;see cref=&quot;YoutubeClient&quot; /&gt;.
+YoutubeExplode/YoutubeClient.cs:36:public YoutubeClient(HttpClient http)
+YoutubeExplode/YoutubeClient.cs:40:/// Initializes an instance of &lt;see cref=&quot;YoutubeClient&quot; /&gt;.
+YoutubeExplode/YoutubeClient.cs:42:public YoutubeClient(IReadOnlyList&lt;Cookie&gt; initialCookies)
+YoutubeExplode/YoutubeClient.cs:46:/// Initializes an instance of &lt;see cref=&quot;YoutubeClient&quot; /&gt;.
+YoutubeExplode/YoutubeClient.cs:48:public YoutubeClient()
+YoutubeExplode.Converter.Tests/GeneralSpecs.cs:27:using var youtube = new YoutubeClient();
+YoutubeExplode.Converter.Tests/GeneralSpecs.cs:43:using var youtube = new YoutubeClient();
+YoutubeExplode.Converter.Tests/GeneralSpecs.cs:59:using var youtube = new YoutubeClient();
+YoutubeExplode.Converter.Tests/GeneralSpecs.cs:75:using var youtube = new YoutubeClient();
+YoutubeExplode.Converter.Tests/GeneralSpecs.cs:91:using var youtube = new YoutubeClient();
+YoutubeExplode.Converter.Tests/GeneralSpecs.cs:147:using var youtube = new YoutubeClient();
+YoutubeExplode.Converter.Tests/GeneralSpecs.cs:203:using var youtube = new YoutubeClient();
+YoutubeExplode.Converter.Tests/GeneralSpecs.cs:226:using var youtube = new YoutubeClient();
+YoutubeExplode.Converter.Tests/GeneralSpecs.cs:254:using var youtube = new YoutubeClient();
+YoutubeExplode.Converter.Tests/EnvironmentSpecs.cs:21:using var youtube = new YoutubeClient();
+YoutubeExplode.Converter.Tests/SubtitleSpecs.cs:24:using var youtube = new YoutubeClient();
+YoutubeExplode.Converter.Tests/SubtitleSpecs.cs:62:using var youtube = new YoutubeClient();
+YoutubeExplode.Demo.Gui/ViewModels/MainViewModel.cs:23:private readonly YoutubeClient _youtube = new();
+YoutubeExplode.Demo.Cli/Program.cs:18:using var youtube = new YoutubeClient();</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 93 | Lines: 1 | Time: 834ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;YoutubeClient&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.YoutubeClient - C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs(16,14)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 93 | Lines: 1 | Time: 4ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;YoutubeClient&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.YoutubeClient - C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs(16,14)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 93 | Lines: 1 | Time: 237ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;YoutubeClient&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.YoutubeClient - C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs(16,14)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 93 | Lines: 1 | Time: 4ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;YoutubeClient&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.YoutubeClient - C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs(16,14)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 93 | Lines: 1 | Time: 380ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;YoutubeClient&#39;) without SymbolFilter</p>
+        <pre>YoutubeExplode.YoutubeClient - C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs(16,14)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 93 | Lines: 1 | Time: 17ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;YoutubeClient&#39;) without SymbolFilter</p>
+        <pre>YoutubeExplode.YoutubeClient - C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs(16,14)</pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: ChannelClient)</span><span class="summary-meta">10 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>ChannelClient</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 112 | Lines: 1 | Time: 662ms</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) ChannelClient&#39;</p>
+        <pre>C:\repos\YoutubeExplode\YoutubeExplode\Channels\ChannelClient.cs:19: public class ChannelClient(HttpClient http)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 87 | Lines: 1 | Time: 42ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) ChannelClient&#39;</p>
+        <pre>YoutubeExplode/Channels/ChannelClient.cs:19:public class ChannelClient(HttpClient http)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 317 | Lines: 3 | Time: 653ms</span></summary>
+        <p class="algorithm-details">string search for &#39;ChannelClient&#39;</p>
+        <pre>C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:29: Channels = new ChannelClient(_youtubeHttp);
+C:\repos\YoutubeExplode\YoutubeExplode\YoutubeClient.cs:64: public ChannelClient Channels { get; }
+C:\repos\YoutubeExplode\YoutubeExplode\Channels\ChannelClient.cs:19: public class ChannelClient(HttpClient http)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 240 | Lines: 3 | Time: 42ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;ChannelClient&#39;</p>
+        <pre>YoutubeExplode/YoutubeClient.cs:29:Channels = new ChannelClient(_youtubeHttp);
+YoutubeExplode/YoutubeClient.cs:64:public ChannelClient Channels { get; }
+YoutubeExplode/Channels/ChannelClient.cs:19:public class ChannelClient(HttpClient http)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 111 | Lines: 1 | Time: 7ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;ChannelClient&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.Channels.ChannelClient - C:\repos\YoutubeExplode\YoutubeExplode\Channels\ChannelClient.cs(19,14)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 111 | Lines: 1 | Time: 4ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;ChannelClient&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.Channels.ChannelClient - C:\repos\YoutubeExplode\YoutubeExplode\Channels\ChannelClient.cs(19,14)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 111 | Lines: 1 | Time: 3ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ChannelClient&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.Channels.ChannelClient - C:\repos\YoutubeExplode\YoutubeExplode\Channels\ChannelClient.cs(19,14)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 111 | Lines: 1 | Time: 3ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ChannelClient&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.Channels.ChannelClient - C:\repos\YoutubeExplode\YoutubeExplode\Channels\ChannelClient.cs(19,14)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 111 | Lines: 1 | Time: 17ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ChannelClient&#39;) without SymbolFilter</p>
+        <pre>YoutubeExplode.Channels.ChannelClient - C:\repos\YoutubeExplode\YoutubeExplode\Channels\ChannelClient.cs(19,14)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 111 | Lines: 1 | Time: 16ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ChannelClient&#39;) without SymbolFilter</p>
+        <pre>YoutubeExplode.Channels.ChannelClient - C:\repos\YoutubeExplode\YoutubeExplode\Channels\ChannelClient.cs(19,14)</pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: VideoWatchPage)</span><span class="summary-meta">10 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>VideoWatchPage</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 236 | Lines: 2 | Time: 611ms</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) VideoWatchPage&#39;</p>
+        <pre>C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs:16: internal partial class VideoWatchPage(IHtmlDocument content)
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs:121: internal partial class VideoWatchPage</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 185 | Lines: 2 | Time: 43ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) VideoWatchPage&#39;</p>
+        <pre>YoutubeExplode/Bridge/VideoWatchPage.cs:16:internal partial class VideoWatchPage(IHtmlDocument content)
+YoutubeExplode/Bridge/VideoWatchPage.cs:121:internal partial class VideoWatchPage</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 707 | Lines: 6 | Time: 628ms</span></summary>
+        <p class="algorithm-details">string search for &#39;VideoWatchPage&#39;</p>
+        <pre>C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs:16: internal partial class VideoWatchPage(IHtmlDocument content)
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs:121: internal partial class VideoWatchPage
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs:123: public static VideoWatchPage? TryParse(string raw)
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs:130: return new VideoWatchPage(content);
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoController.cs:57: public async ValueTask&lt;VideoWatchPage&gt; GetVideoWatchPageAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoController.cs:64: var watchPage = VideoWatchPage.TryParse(</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 552 | Lines: 6 | Time: 40ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;VideoWatchPage&#39;</p>
+        <pre>YoutubeExplode/Videos/VideoController.cs:57:public async ValueTask&lt;VideoWatchPage&gt; GetVideoWatchPageAsync(
+YoutubeExplode/Videos/VideoController.cs:64:var watchPage = VideoWatchPage.TryParse(
+YoutubeExplode/Bridge/VideoWatchPage.cs:16:internal partial class VideoWatchPage(IHtmlDocument content)
+YoutubeExplode/Bridge/VideoWatchPage.cs:121:internal partial class VideoWatchPage
+YoutubeExplode/Bridge/VideoWatchPage.cs:123:public static VideoWatchPage? TryParse(string raw)
+YoutubeExplode/Bridge/VideoWatchPage.cs:130:return new VideoWatchPage(content);</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 221 | Lines: 2 | Time: 3ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;VideoWatchPage&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.Bridge.VideoWatchPage - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs(121,24)
+YoutubeExplode.Bridge.VideoWatchPage - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs(16,24)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 221 | Lines: 2 | Time: 1ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;VideoWatchPage&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.Bridge.VideoWatchPage - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs(121,24)
+YoutubeExplode.Bridge.VideoWatchPage - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs(16,24)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 221 | Lines: 2 | Time: 3ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;VideoWatchPage&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.Bridge.VideoWatchPage - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs(121,24)
+YoutubeExplode.Bridge.VideoWatchPage - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs(16,24)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 221 | Lines: 2 | Time: 3ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;VideoWatchPage&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.Bridge.VideoWatchPage - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs(121,24)
+YoutubeExplode.Bridge.VideoWatchPage - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs(16,24)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 221 | Lines: 2 | Time: 21ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;VideoWatchPage&#39;) without SymbolFilter</p>
+        <pre>YoutubeExplode.Bridge.VideoWatchPage - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs(121,24)
+YoutubeExplode.Bridge.VideoWatchPage - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs(16,24)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 221 | Lines: 2 | Time: 20ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;VideoWatchPage&#39;) without SymbolFilter</p>
+        <pre>YoutubeExplode.Bridge.VideoWatchPage - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs(121,24)
+YoutubeExplode.Bridge.VideoWatchPage - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs(16,24)</pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-type-definition (name: PlayerResponse)</span><span class="summary-meta">10 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>PlayerResponse</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 450 | Lines: 4 | Time: 647ms</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) PlayerResponse&#39;</p>
+        <pre>C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:15: internal partial class PlayerResponse(JsonElement content)
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:174: internal partial class PlayerResponse
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:205: internal partial class PlayerResponse
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:324: internal partial class PlayerResponse</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 347 | Lines: 4 | Time: 43ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) PlayerResponse&#39;</p>
+        <pre>YoutubeExplode/Bridge/PlayerResponse.cs:15:internal partial class PlayerResponse(JsonElement content)
+YoutubeExplode/Bridge/PlayerResponse.cs:174:internal partial class PlayerResponse
+YoutubeExplode/Bridge/PlayerResponse.cs:205:internal partial class PlayerResponse
+YoutubeExplode/Bridge/PlayerResponse.cs:324:internal partial class PlayerResponse</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 5560 | Lines: 47 | Time: 634ms</span></summary>
+        <p class="algorithm-details">string search for &#39;PlayerResponse&#39;</p>
+        <pre id="expand-2-short">C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:15: internal partial class PlayerResponse(JsonElement content)
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:110: ?.GetPropertyOrNull(&quot;playerResponse&quot;)
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:174: internal partial class PlayerResponse
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:205: internal partial class PlayerResponse
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:324: internal partial class PlayerResponse
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:326: public static PlayerResponse Parse(string raw) =&gt; new(Json.Parse(raw));
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs:101: public PlayerResponse? PlayerResponse =&gt;
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs:112: ?.Pipe(j =&gt; new PlayerResponse(j))
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs:118: ?.Pipe(j =&gt; new PlayerResponse(j));
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs:39: var playerResponse =
+<span class="truncated-link" onclick="document.getElementById('expand-2-short').style.display='none'; document.getElementById('expand-2-full').style.display='block';">... truncated (37 more lines) — click to expand</span></pre>
+        <pre id="expand-2-full" class="full-result">C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:15: internal partial class PlayerResponse(JsonElement content)
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:110: ?.GetPropertyOrNull(&quot;playerResponse&quot;)
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:174: internal partial class PlayerResponse
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:205: internal partial class PlayerResponse
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:324: internal partial class PlayerResponse
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs:326: public static PlayerResponse Parse(string raw) =&gt; new(Json.Parse(raw));
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs:101: public PlayerResponse? PlayerResponse =&gt;
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs:112: ?.Pipe(j =&gt; new PlayerResponse(j))
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\VideoWatchPage.cs:118: ?.Pipe(j =&gt; new PlayerResponse(j));
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs:39: var playerResponse =
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs:40: watchPage.PlayerResponse
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs:44: playerResponse.Title
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs:50: playerResponse.Author
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs:54: playerResponse.ChannelId
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs:58: playerResponse.UploadDate
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs:62: var thumbnails = playerResponse
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs:89: playerResponse.Description ?? &quot;&quot;,
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs:90: playerResponse.Duration,
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs:92: playerResponse.Keywords,
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs:95: playerResponse.ViewCount ?? 0,
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoController.cs:88: public async ValueTask&lt;PlayerResponse&gt; GetPlayerResponseAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoController.cs:141: var playerResponse = PlayerResponse.Parse(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoController.cs:145: if (!playerResponse.IsAvailable)
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoController.cs:148: return playerResponse;
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoController.cs:151: public async ValueTask&lt;PlayerResponse&gt; GetPlayerResponseAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoController.cs:197: var playerResponse = PlayerResponse.Parse(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoController.cs:201: if (!playerResponse.IsAvailable)
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoController.cs:204: return playerResponse;
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\ClosedCaptions\ClosedCaptionClient.cs:28: var playerResponse = await _controller.GetPlayerResponseAsync(videoId, cancellationToken);
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\ClosedCaptions\ClosedCaptionClient.cs:30: foreach (var trackData in playerResponse.ClosedCaptionTracks)
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:208: PlayerResponse playerResponse,
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:215: if (!string.IsNullOrWhiteSpace(playerResponse.PreviewVideoId))
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:219: playerResponse.PreviewVideoId
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:224: if (!playerResponse.IsPlayable)
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:227: $&quot;Video &#39;{videoId}&#39; is unplayable. Reason: &#39;{playerResponse.PlayabilityError}&#39;.&quot;
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:232: streamInfos.AddRange(await GetStreamInfosAsync(playerResponse.Streams, cancellationToken));
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:235: if (!string.IsNullOrWhiteSpace(playerResponse.DashManifestUrl))
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:240: playerResponse.DashManifestUrl,
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:272: var playerResponse = await _controller.GetPlayerResponseAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:277: return await GetStreamInfosAsync(videoId, playerResponse, cancellationToken);
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:287: var playerResponse = await _controller.GetPlayerResponseAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:293: return await GetStreamInfosAsync(videoId, playerResponse, cancellationToken);
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:325: var playerResponse = await _controller.GetPlayerResponseAsync(videoId, cancellationToken);
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:326: if (!playerResponse.IsPlayable)
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:329: $&quot;Video &#39;{videoId}&#39; is unplayable. Reason: &#39;{playerResponse.PlayabilityError}&#39;.&quot;
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:333: if (string.IsNullOrWhiteSpace(playerResponse.HlsManifestUrl))
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:340: return playerResponse.HlsManifestUrl;</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1244 | Lines: 14 | Time: 45ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;PlayerResponse&#39;</p>
+        <pre id="expand-3-short">YoutubeExplode/Videos/VideoController.cs:88:public async ValueTask&lt;PlayerResponse&gt; GetPlayerResponseAsync(
+YoutubeExplode/Videos/VideoController.cs:141:var playerResponse = PlayerResponse.Parse(
+YoutubeExplode/Videos/VideoController.cs:151:public async ValueTask&lt;PlayerResponse&gt; GetPlayerResponseAsync(
+YoutubeExplode/Videos/VideoController.cs:197:var playerResponse = PlayerResponse.Parse(
+YoutubeExplode/Videos/VideoClient.cs:40:watchPage.PlayerResponse
+YoutubeExplode/Videos/Streams/StreamClient.cs:208:PlayerResponse playerResponse,
+YoutubeExplode/Bridge/PlayerResponse.cs:15:internal partial class PlayerResponse(JsonElement content)
+YoutubeExplode/Bridge/PlayerResponse.cs:174:internal partial class PlayerResponse
+YoutubeExplode/Bridge/PlayerResponse.cs:205:internal partial class PlayerResponse
+YoutubeExplode/Bridge/PlayerResponse.cs:324:internal partial class PlayerResponse
+<span class="truncated-link" onclick="document.getElementById('expand-3-short').style.display='none'; document.getElementById('expand-3-full').style.display='block';">... truncated (4 more lines) — click to expand</span></pre>
+        <pre id="expand-3-full" class="full-result">YoutubeExplode/Videos/VideoController.cs:88:public async ValueTask&lt;PlayerResponse&gt; GetPlayerResponseAsync(
+YoutubeExplode/Videos/VideoController.cs:141:var playerResponse = PlayerResponse.Parse(
+YoutubeExplode/Videos/VideoController.cs:151:public async ValueTask&lt;PlayerResponse&gt; GetPlayerResponseAsync(
+YoutubeExplode/Videos/VideoController.cs:197:var playerResponse = PlayerResponse.Parse(
+YoutubeExplode/Videos/VideoClient.cs:40:watchPage.PlayerResponse
+YoutubeExplode/Videos/Streams/StreamClient.cs:208:PlayerResponse playerResponse,
+YoutubeExplode/Bridge/PlayerResponse.cs:15:internal partial class PlayerResponse(JsonElement content)
+YoutubeExplode/Bridge/PlayerResponse.cs:174:internal partial class PlayerResponse
+YoutubeExplode/Bridge/PlayerResponse.cs:205:internal partial class PlayerResponse
+YoutubeExplode/Bridge/PlayerResponse.cs:324:internal partial class PlayerResponse
+YoutubeExplode/Bridge/PlayerResponse.cs:326:public static PlayerResponse Parse(string raw) =&gt; new(Json.Parse(raw));
+YoutubeExplode/Bridge/VideoWatchPage.cs:101:public PlayerResponse? PlayerResponse =&gt;
+YoutubeExplode/Bridge/VideoWatchPage.cs:112:?.Pipe(j =&gt; new PlayerResponse(j))
+YoutubeExplode/Bridge/VideoWatchPage.cs:118:?.Pipe(j =&gt; new PlayerResponse(j));</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 445 | Lines: 4 | Time: 2ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;PlayerResponse&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(15,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(174,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(205,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(324,24)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 445 | Lines: 4 | Time: 1ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;PlayerResponse&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(15,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(174,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(205,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(324,24)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 445 | Lines: 4 | Time: 1ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;PlayerResponse&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(15,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(174,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(205,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(324,24)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 445 | Lines: 4 | Time: 1ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;PlayerResponse&#39;, SymbolFilter.Type)</p>
+        <pre>YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(15,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(174,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(205,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(324,24)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 445 | Lines: 4 | Time: 5ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;PlayerResponse&#39;) without SymbolFilter</p>
+        <pre>YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(15,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(174,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(205,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(324,24)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 445 | Lines: 4 | Time: 4ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;PlayerResponse&#39;) without SymbolFilter</p>
+        <pre>YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(15,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(174,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(205,24)
+YoutubeExplode.Bridge.PlayerResponse - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\PlayerResponse.cs(324,24)</pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-derived-types (name: Channel)</span><span class="summary-meta">4 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>Channel</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-derived-types-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 657ms</span></summary>
+        <p class="algorithm-details">string search for &#39;(class|record|struct) \w+ ... Channel&#39;</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-derived-types-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 74ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;(class|record|struct) \w+ ... Channel&#39;</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-derived-types (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 147ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDerivedClassesAsync(System.Threading.Channels.Channel)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-derived-types (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 2ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDerivedClassesAsync(System.Threading.Channels.Channel)</p>
+        <pre></pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-interface-implementation (name: ICipherOperation)</span><span class="summary-meta">4 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>ICipherOperation</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-interface-implementation-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 432 | Lines: 3 | Time: 653ms</span></summary>
+        <p class="algorithm-details">string search for &#39;: ...ICipherOperation&#39;</p>
+        <pre>C:\repos\YoutubeExplode\YoutubeExplode\Bridge\Cipher\ReverseCipherOperation.cs:6: internal class ReverseCipherOperation : ICipherOperation
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\Cipher\SpliceCipherOperation.cs:5: internal class SpliceCipherOperation(int index) : ICipherOperation
+C:\repos\YoutubeExplode\YoutubeExplode\Bridge\Cipher\SwapCipherOperation.cs:6: internal class SwapCipherOperation(int index) : ICipherOperation</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-interface-implementation-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 355 | Lines: 3 | Time: 45ms</span></summary>
+        <p class="algorithm-details">tgrep search for &#39;: ...ICipherOperation&#39;</p>
+        <pre>YoutubeExplode/Bridge/Cipher/ReverseCipherOperation.cs:6:internal class ReverseCipherOperation : ICipherOperation
+YoutubeExplode/Bridge/Cipher/SpliceCipherOperation.cs:5:internal class SpliceCipherOperation(int index) : ICipherOperation
+YoutubeExplode/Bridge/Cipher/SwapCipherOperation.cs:6:internal class SwapCipherOperation(int index) : ICipherOperation</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-implementations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 410 | Lines: 3 | Time: 55ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindImplementationsAsync(YoutubeExplode.Bridge.Cipher.ICipherOperation)</p>
+        <pre>YoutubeExplode.Bridge.Cipher.ReverseCipherOperation - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\Cipher\ReverseCipherOperation.cs(6,16)
+YoutubeExplode.Bridge.Cipher.SpliceCipherOperation - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\Cipher\SpliceCipherOperation.cs(5,16)
+YoutubeExplode.Bridge.Cipher.SwapCipherOperation - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\Cipher\SwapCipherOperation.cs(6,16)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-implementations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 410 | Lines: 3 | Time: 1ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindImplementationsAsync(YoutubeExplode.Bridge.Cipher.ICipherOperation)</p>
+        <pre>YoutubeExplode.Bridge.Cipher.ReverseCipherOperation - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\Cipher\ReverseCipherOperation.cs(6,16)
+YoutubeExplode.Bridge.Cipher.SpliceCipherOperation - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\Cipher\SpliceCipherOperation.cs(5,16)
+YoutubeExplode.Bridge.Cipher.SwapCipherOperation - C:\repos\YoutubeExplode\YoutubeExplode\Bridge\Cipher\SwapCipherOperation.cs(6,16)</pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-member-definition (name: GetAsync)</span><span class="summary-meta">4 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>GetAsync</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3283 | Lines: 25 | Time: 698ms</span></summary>
+        <p class="algorithm-details">string search for member declaration &#39;GetAsync&#39;</p>
+        <pre id="expand-4-short">C:\repos\YoutubeExplode\YoutubeExplode\Channels\ChannelClient.cs:55: public async ValueTask&lt;Channel&gt; GetAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Playlists\PlaylistClient.cs:24: public async ValueTask&lt;Playlist&gt; GetAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs:32: public async ValueTask&lt;Video&gt; GetAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\ClosedCaptions\ClosedCaptionClient.cs:114: public async ValueTask&lt;ClosedCaptionTrack&gt; GetAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\ClosedCaptions\ClosedCaptionClient.cs:143: var track = await GetAsync(trackInfo, cancellationToken);
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:71: using var response = await http.GetAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:346: public async ValueTask&lt;Stream&gt; GetAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:367: using var input = await GetAsync(streamInfo, cancellationToken);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ChannelSpecs.cs:19: var channel = await youtube.Channels.GetAsync(ChannelIds.Normal);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ChannelSpecs.cs:85: var channel = await youtube.Channels.GetAsync(channelId);
+<span class="truncated-link" onclick="document.getElementById('expand-4-short').style.display='none'; document.getElementById('expand-4-full').style.display='block';">... truncated (15 more lines) — click to expand</span></pre>
+        <pre id="expand-4-full" class="full-result">C:\repos\YoutubeExplode\YoutubeExplode\Channels\ChannelClient.cs:55: public async ValueTask&lt;Channel&gt; GetAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Playlists\PlaylistClient.cs:24: public async ValueTask&lt;Playlist&gt; GetAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs:32: public async ValueTask&lt;Video&gt; GetAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\ClosedCaptions\ClosedCaptionClient.cs:114: public async ValueTask&lt;ClosedCaptionTrack&gt; GetAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\ClosedCaptions\ClosedCaptionClient.cs:143: var track = await GetAsync(trackInfo, cancellationToken);
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:71: using var response = await http.GetAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:346: public async ValueTask&lt;Stream&gt; GetAsync(
+C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs:367: using var input = await GetAsync(streamInfo, cancellationToken);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ChannelSpecs.cs:19: var channel = await youtube.Channels.GetAsync(ChannelIds.Normal);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ChannelSpecs.cs:85: var channel = await youtube.Channels.GetAsync(channelId);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ClosedCaptionSpecs.cs:64: var track = await youtube.Videos.ClosedCaptions.GetAsync(trackInfo);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ClosedCaptionSpecs.cs:82: var track = await youtube.Videos.ClosedCaptions.GetAsync(trackInfo);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ClosedCaptionSpecs.cs:100: var track = await youtube.Videos.ClosedCaptions.GetAsync(trackInfo);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\ClosedCaptionSpecs.cs:120: var track = await youtube.Videos.ClosedCaptions.GetAsync(trackInfo);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\PlaylistSpecs.cs:21: var playlist = await youtube.Playlists.GetAsync(PlaylistIds.Normal);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\PlaylistSpecs.cs:45: var act = async () =&gt; await youtube.Playlists.GetAsync(PlaylistIds.Private);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\PlaylistSpecs.cs:60: var act = async () =&gt; await youtube.Playlists.GetAsync(PlaylistIds.NonExisting);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\PlaylistSpecs.cs:82: var playlist = await youtube.Playlists.GetAsync(playlistId);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:218: using var stream = await youtube.Videos.Streams.GetAsync(streamInfo);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\StreamSpecs.cs:303: using var stream = await youtube.Videos.Streams.GetAsync(streamInfo);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\VideoSpecs.cs:21: var video = await youtube.Videos.GetAsync(VideoIds.Normal);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\VideoSpecs.cs:65: var act = async () =&gt; await youtube.Videos.GetAsync(VideoIds.Private);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\VideoSpecs.cs:80: var act = async () =&gt; await youtube.Videos.GetAsync(VideoIds.Deleted);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\VideoSpecs.cs:102: var video = await youtube.Videos.GetAsync(videoId);
+C:\repos\YoutubeExplode\YoutubeExplode.Tests\VideoSpecs.cs:124: var video = await youtube.Videos.GetAsync(VideoIds.Normal);</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2634 | Lines: 25 | Time: 54ms</span></summary>
+        <p class="algorithm-details">tgrep search for member declaration &#39;GetAsync&#39;</p>
+        <pre id="expand-5-short">YoutubeExplode.Tests/VideoSpecs.cs:21:var video = await youtube.Videos.GetAsync(VideoIds.Normal);
+YoutubeExplode.Tests/VideoSpecs.cs:65:var act = async () =&gt; await youtube.Videos.GetAsync(VideoIds.Private);
+YoutubeExplode.Tests/VideoSpecs.cs:80:var act = async () =&gt; await youtube.Videos.GetAsync(VideoIds.Deleted);
+YoutubeExplode.Tests/VideoSpecs.cs:102:var video = await youtube.Videos.GetAsync(videoId);
+YoutubeExplode.Tests/VideoSpecs.cs:124:var video = await youtube.Videos.GetAsync(VideoIds.Normal);
+YoutubeExplode.Tests/PlaylistSpecs.cs:21:var playlist = await youtube.Playlists.GetAsync(PlaylistIds.Normal);
+YoutubeExplode.Tests/PlaylistSpecs.cs:45:var act = async () =&gt; await youtube.Playlists.GetAsync(PlaylistIds.Private);
+YoutubeExplode.Tests/PlaylistSpecs.cs:60:var act = async () =&gt; await youtube.Playlists.GetAsync(PlaylistIds.NonExisting);
+YoutubeExplode.Tests/PlaylistSpecs.cs:82:var playlist = await youtube.Playlists.GetAsync(playlistId);
+YoutubeExplode.Tests/ClosedCaptionSpecs.cs:64:var track = await youtube.Videos.ClosedCaptions.GetAsync(trackInfo);
+<span class="truncated-link" onclick="document.getElementById('expand-5-short').style.display='none'; document.getElementById('expand-5-full').style.display='block';">... truncated (15 more lines) — click to expand</span></pre>
+        <pre id="expand-5-full" class="full-result">YoutubeExplode.Tests/VideoSpecs.cs:21:var video = await youtube.Videos.GetAsync(VideoIds.Normal);
+YoutubeExplode.Tests/VideoSpecs.cs:65:var act = async () =&gt; await youtube.Videos.GetAsync(VideoIds.Private);
+YoutubeExplode.Tests/VideoSpecs.cs:80:var act = async () =&gt; await youtube.Videos.GetAsync(VideoIds.Deleted);
+YoutubeExplode.Tests/VideoSpecs.cs:102:var video = await youtube.Videos.GetAsync(videoId);
+YoutubeExplode.Tests/VideoSpecs.cs:124:var video = await youtube.Videos.GetAsync(VideoIds.Normal);
+YoutubeExplode.Tests/PlaylistSpecs.cs:21:var playlist = await youtube.Playlists.GetAsync(PlaylistIds.Normal);
+YoutubeExplode.Tests/PlaylistSpecs.cs:45:var act = async () =&gt; await youtube.Playlists.GetAsync(PlaylistIds.Private);
+YoutubeExplode.Tests/PlaylistSpecs.cs:60:var act = async () =&gt; await youtube.Playlists.GetAsync(PlaylistIds.NonExisting);
+YoutubeExplode.Tests/PlaylistSpecs.cs:82:var playlist = await youtube.Playlists.GetAsync(playlistId);
+YoutubeExplode.Tests/ClosedCaptionSpecs.cs:64:var track = await youtube.Videos.ClosedCaptions.GetAsync(trackInfo);
+YoutubeExplode.Tests/ClosedCaptionSpecs.cs:82:var track = await youtube.Videos.ClosedCaptions.GetAsync(trackInfo);
+YoutubeExplode.Tests/ClosedCaptionSpecs.cs:100:var track = await youtube.Videos.ClosedCaptions.GetAsync(trackInfo);
+YoutubeExplode.Tests/ClosedCaptionSpecs.cs:120:var track = await youtube.Videos.ClosedCaptions.GetAsync(trackInfo);
+YoutubeExplode.Tests/ChannelSpecs.cs:19:var channel = await youtube.Channels.GetAsync(ChannelIds.Normal);
+YoutubeExplode.Tests/ChannelSpecs.cs:85:var channel = await youtube.Channels.GetAsync(channelId);
+YoutubeExplode.Tests/StreamSpecs.cs:218:using var stream = await youtube.Videos.Streams.GetAsync(streamInfo);
+YoutubeExplode.Tests/StreamSpecs.cs:303:using var stream = await youtube.Videos.Streams.GetAsync(streamInfo);
+YoutubeExplode/Videos/VideoClient.cs:32:public async ValueTask&lt;Video&gt; GetAsync(
+YoutubeExplode/Playlists/PlaylistClient.cs:24:public async ValueTask&lt;Playlist&gt; GetAsync(
+YoutubeExplode/Channels/ChannelClient.cs:55:public async ValueTask&lt;Channel&gt; GetAsync(
+YoutubeExplode/Videos/ClosedCaptions/ClosedCaptionClient.cs:114:public async ValueTask&lt;ClosedCaptionTrack&gt; GetAsync(
+YoutubeExplode/Videos/ClosedCaptions/ClosedCaptionClient.cs:143:var track = await GetAsync(trackInfo, cancellationToken);
+YoutubeExplode/Videos/Streams/StreamClient.cs:71:using var response = await http.GetAsync(
+YoutubeExplode/Videos/Streams/StreamClient.cs:346:public async ValueTask&lt;Stream&gt; GetAsync(
+YoutubeExplode/Videos/Streams/StreamClient.cs:367:using var input = await GetAsync(streamInfo, cancellationToken);</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1999 | Lines: 10 | Time: 17ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;GetAsync&#39;, SymbolFilter.Member)</p>
+        <pre>YoutubeExplode.Channels.ChannelClient.GetAsync(YoutubeExplode.Channels.ChannelId, CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Channels\ChannelClient.cs(55,37)
+YoutubeExplode.Channels.ChannelClient.GetAsync(YoutubeExplode.Channels.ChannelId, System.Threading.CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Channels\ChannelClient.cs(55,37)
+YoutubeExplode.Playlists.PlaylistClient.GetAsync(YoutubeExplode.Playlists.PlaylistId, CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Playlists\PlaylistClient.cs(24,38)
+YoutubeExplode.Playlists.PlaylistClient.GetAsync(YoutubeExplode.Playlists.PlaylistId, System.Threading.CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Playlists\PlaylistClient.cs(24,38)
+YoutubeExplode.Videos.ClosedCaptions.ClosedCaptionClient.GetAsync(YoutubeExplode.Videos.ClosedCaptions.ClosedCaptionTrackInfo, CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Videos\ClosedCaptions\ClosedCaptionClient.cs(114,48)
+YoutubeExplode.Videos.ClosedCaptions.ClosedCaptionClient.GetAsync(YoutubeExplode.Videos.ClosedCaptions.ClosedCaptionTrackInfo, System.Threading.CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Videos\ClosedCaptions\ClosedCaptionClient.cs(114,48)
+YoutubeExplode.Videos.Streams.StreamClient.GetAsync(YoutubeExplode.Videos.Streams.IStreamInfo, CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs(346,36)
+YoutubeExplode.Videos.Streams.StreamClient.GetAsync(YoutubeExplode.Videos.Streams.IStreamInfo, System.Threading.CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs(346,36)
+YoutubeExplode.Videos.VideoClient.GetAsync(YoutubeExplode.Videos.VideoId, CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs(32,35)
+YoutubeExplode.Videos.VideoClient.GetAsync(YoutubeExplode.Videos.VideoId, System.Threading.CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs(32,35)</pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1999 | Lines: 10 | Time: 35ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;GetAsync&#39;, SymbolFilter.Member)</p>
+        <pre>YoutubeExplode.Channels.ChannelClient.GetAsync(YoutubeExplode.Channels.ChannelId, CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Channels\ChannelClient.cs(55,37)
+YoutubeExplode.Channels.ChannelClient.GetAsync(YoutubeExplode.Channels.ChannelId, System.Threading.CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Channels\ChannelClient.cs(55,37)
+YoutubeExplode.Playlists.PlaylistClient.GetAsync(YoutubeExplode.Playlists.PlaylistId, CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Playlists\PlaylistClient.cs(24,38)
+YoutubeExplode.Playlists.PlaylistClient.GetAsync(YoutubeExplode.Playlists.PlaylistId, System.Threading.CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Playlists\PlaylistClient.cs(24,38)
+YoutubeExplode.Videos.ClosedCaptions.ClosedCaptionClient.GetAsync(YoutubeExplode.Videos.ClosedCaptions.ClosedCaptionTrackInfo, CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Videos\ClosedCaptions\ClosedCaptionClient.cs(114,48)
+YoutubeExplode.Videos.ClosedCaptions.ClosedCaptionClient.GetAsync(YoutubeExplode.Videos.ClosedCaptions.ClosedCaptionTrackInfo, System.Threading.CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Videos\ClosedCaptions\ClosedCaptionClient.cs(114,48)
+YoutubeExplode.Videos.Streams.StreamClient.GetAsync(YoutubeExplode.Videos.Streams.IStreamInfo, CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs(346,36)
+YoutubeExplode.Videos.Streams.StreamClient.GetAsync(YoutubeExplode.Videos.Streams.IStreamInfo, System.Threading.CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Videos\Streams\StreamClient.cs(346,36)
+YoutubeExplode.Videos.VideoClient.GetAsync(YoutubeExplode.Videos.VideoId, CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs(32,35)
+YoutubeExplode.Videos.VideoClient.GetAsync(YoutubeExplode.Videos.VideoId, System.Threading.CancellationToken) - C:\repos\YoutubeExplode\YoutubeExplode\Videos\VideoClient.cs(32,35)</pre>
+      </details>
+    </details>
+    <details class="query" open>
+      <summary><span class="summary-title">find-member-definition (name: Execute)</span><span class="summary-meta">4 algorithms</span></summary>
+      <dl>
+        <dt>name</dt><dd>Execute</dd>
+      </dl>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 1.0s</span></summary>
+        <p class="algorithm-details">string search for member declaration &#39;Execute&#39;</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 60ms</span></summary>
+        <p class="algorithm-details">tgrep search for member declaration &#39;Execute&#39;</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 2ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Execute&#39;, SymbolFilter.Member)</p>
+        <pre></pre>
+      </details>
+      <details class="algorithm">
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 1ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Execute&#39;, SymbolFilter.Member)</p>
+        <pre></pre>
+      </details>
+    </details>
+  </section>
+  <script>
+    document.querySelector('[data-action="expand-all"]').addEventListener('click', () => document.querySelectorAll('details').forEach(details => details.open = true));
+    document.querySelector('[data-action="collapse-algorithms"]').addEventListener('click', () => document.querySelectorAll('details.algorithm').forEach(details => details.open = false));
+    document.querySelector('[data-action="collapse-all"]').addEventListener('click', () => document.querySelectorAll('details').forEach(details => details.open = false));
+  </script>
+</body>
+</html>
