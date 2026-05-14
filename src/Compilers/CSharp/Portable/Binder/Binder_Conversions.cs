@@ -3676,7 +3676,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             if ((selectedMethod.HasParameterContainingPointerType() || selectedMethod.ReturnType.ContainsPointerOrFunctionPointer())
-                && ReportUnsafeIfNotAllowed(syntax, diagnostics, disallowedUnder: MemorySafetyRules.Legacy))
+                && ReportUnsafeIfNotAllowed(syntax, diagnostics, disallowedUnder: MemorySafetyRules.Legacy, unsafeMemberAccessOpt: selectedMethod))
             {
                 return true;
             }

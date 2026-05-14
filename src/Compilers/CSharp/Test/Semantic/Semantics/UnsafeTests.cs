@@ -3047,6 +3047,7 @@ unsafe class C<T>
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (28,6): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      int* Unsafe() { return null; } //CS0214
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
@@ -3071,7 +3072,16 @@ unsafe class C<T>
                 // (24,13): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //             Unsafe(null); //CS0214
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Unsafe(null)")
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 8, 13),
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 13, 21),
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 18, 21),
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 19, 21),
+                    UnsafeMemberOperationCompat("Unsafe(null)", "C.Unsafe(int*)", 24, 13),
+                ]);
         }
 
         [Fact]
@@ -3130,6 +3140,7 @@ unsafe class C<T>
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (4,6): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      int* Field = Unsafe(); //CS0214 * 2
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
@@ -3165,7 +3176,22 @@ unsafe class C<T>
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Unsafe()"),
                 // (49,13): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      static int* Unsafe() { return null; } //CS0214
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"));
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*")
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 4, 19),
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 8, 9),
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 13, 9),
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 18, 9),
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 23, 15),
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 24, 18),
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 29, 15),
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 34, 15),
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 39, 9),
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 45, 9),
+                ]);
         }
 
         [Fact]
@@ -3218,7 +3244,15 @@ unsafe class C<T>
             };
 
             CompareUnsafeDiagnostics(template, expectedWithoutUnsafe, expectedWithUnsafe,
-                expectedWithoutUnsafePreview: expectedWithUnsafe);
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 4, 25),
+                    // (4,25): error CS1736: Default parameter value for 'p' must be a compile-time constant
+                    //      void Test(int* p = Unsafe()) //CS0214 * 2
+                    Diagnostic(ErrorCode.ERR_DefaultValueMustBeConstant, "Unsafe()").WithArguments("p"),
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 6, 34),
+                    UnsafeMemberOperationCompat("Unsafe()", "C.Unsafe()", 10, 13),
+                ]);
         }
 
         [Fact]
@@ -3506,6 +3540,7 @@ class C : I
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (12,29): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      static void Goo(params int*[] x) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
@@ -3536,7 +3571,15 @@ class C : I
                 // (9,11): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { Goo(new int*[2]); }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Goo(new int*[2])")
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("Goo()", "C.Goo(params int*[])", 6, 11),
+                    UnsafeMemberOperationCompat("Goo(null)", "C.Goo(params int*[])", 7, 11),
+                    UnsafeMemberOperationCompat("Goo((int*)1)", "C.Goo(params int*[])", 8, 11),
+                    UnsafeMemberOperationCompat("Goo(new int*[2])", "C.Goo(params int*[])", 9, 11),
+                ]);
         }
 
         [WorkItem(544938, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/544938")]
@@ -3558,6 +3601,7 @@ class C : I
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (11,22): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      static void Goo(int* p = null) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
@@ -3579,7 +3623,14 @@ class C : I
                 // (8,11): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { Goo((int*)1); }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Goo((int*)1)")
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("Goo()", "C.Goo(int*)", 6, 11),
+                    UnsafeMemberOperationCompat("Goo(null)", "C.Goo(int*)", 7, 11),
+                    UnsafeMemberOperationCompat("Goo((int*)1)", "C.Goo(int*)", 8, 11),
+                ]);
         }
 
         [WorkItem(544938, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/544938")]
@@ -3603,6 +3654,7 @@ class C : I
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (13,29): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      delegate void D(params int*[] x);
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
@@ -3633,7 +3685,15 @@ class C : I
                 // (10,11): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { d(new int*[2]); }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "d(new int*[2])")
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("d()", "C.D.Invoke(params int*[])", 7, 11),
+                    UnsafeMemberOperationCompat("d(null)", "C.D.Invoke(params int*[])", 8, 11),
+                    UnsafeMemberOperationCompat("d((int*)1)", "C.D.Invoke(params int*[])", 9, 11),
+                    UnsafeMemberOperationCompat("d(new int*[2])", "C.D.Invoke(params int*[])", 10, 11),
+                ]);
         }
 
         [Fact]
@@ -3656,6 +3716,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (13,39): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      delegate void D(params Container<int*[]>[] x);
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(13, 39),
@@ -3677,7 +3738,14 @@ class Container<T> {{ }}
                 // (10,11): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { d(new Container<int*[]>[2]); }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "d(new Container<int*[]>[2])").WithLocation(10, 11)
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("d()", "C.D.Invoke(params Container<int*[]>[])", 8, 11),
+                    UnsafeMemberOperationCompat("d(null)", "C.D.Invoke(params Container<int*[]>[])", 9, 11),
+                    UnsafeMemberOperationCompat("d(new Container<int*[]>[2])", "C.D.Invoke(params Container<int*[]>[])", 10, 11),
+                ]);
         }
 
         [WorkItem(544938, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/544938")]
@@ -3700,6 +3768,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (12,22): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      delegate void D(int* p = null);
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
@@ -3721,7 +3790,14 @@ class Container<T> {{ }}
                 // (9,11): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { d((int*)1); }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "d((int*)1)")
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("d()", "C.D.Invoke(int*)", 7, 11),
+                    UnsafeMemberOperationCompat("d(null)", "C.D.Invoke(int*)", 8, 11),
+                    UnsafeMemberOperationCompat("d((int*)1)", "C.D.Invoke(int*)", 9, 11),
+                ]);
         }
 
         [WorkItem(544938, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/544938")]
@@ -3745,6 +3821,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (13,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      C(params int*[] x) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
@@ -3775,7 +3852,15 @@ class Container<T> {{ }}
                 // (10,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { c = new C(new int*[2]); }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new C(new int*[2])")
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("new C()", "C.C(params int*[])", 7, 15),
+                    UnsafeMemberOperationCompat("new C(null)", "C.C(params int*[])", 8, 15),
+                    UnsafeMemberOperationCompat("new C((int*)1)", "C.C(params int*[])", 9, 15),
+                    UnsafeMemberOperationCompat("new C(new int*[2])", "C.C(params int*[])", 10, 15),
+                ]);
         }
 
         [Fact]
@@ -3798,6 +3883,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (13,25): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      C(params Container<int*[]>[] x) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(13, 25),
@@ -3819,7 +3905,14 @@ class Container<T> {{ }}
                 // (10,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { c = new C(new Container<int*[]>[2]); }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new C(new Container<int*[]>[2])").WithLocation(10, 15)
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("new C()", "C.C(params Container<int*[]>[])", 8, 15),
+                    UnsafeMemberOperationCompat("new C(null)", "C.C(params Container<int*[]>[])", 9, 15),
+                    UnsafeMemberOperationCompat("new C(new Container<int*[]>[2])", "C.C(params Container<int*[]>[])", 10, 15),
+                ]);
         }
 
         [WorkItem(544938, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/544938")]
@@ -3842,6 +3935,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (12,8): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      C(int* p = null) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
@@ -3863,7 +3957,14 @@ class Container<T> {{ }}
                 // (9,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { c = new C((int*)1); }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new C((int*)1)")
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("new C()", "C.C(int*)", 7, 15),
+                    UnsafeMemberOperationCompat("new C(null)", "C.C(int*)", 8, 15),
+                    UnsafeMemberOperationCompat("new C((int*)1)", "C.C(int*)", 9, 15),
+                ]);
         }
 
         [WorkItem(544938, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/544938")]
@@ -3887,6 +3988,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (13,29): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      int this[int x, params int*[] a] { get { return 0; } set { } }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
@@ -3902,7 +4004,15 @@ class Container<T> {{ }}
                 // (10,24): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { int x = c[1, new int*[2]]; }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new int*[2]")
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("c[1]", "C.this[int, params int*[]].get", 7, 19),
+                    UnsafeMemberOperationCompat("c[1, null]", "C.this[int, params int*[]].get", 8, 19),
+                    UnsafeMemberOperationCompat("c[1, (int*)1]", "C.this[int, params int*[]].get", 9, 19),
+                    UnsafeMemberOperationCompat("c[1, new int*[2]]", "C.this[int, params int*[]].get", 10, 19),
+                ]);
         }
 
         [Fact]
@@ -3926,6 +4036,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (14,39): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      int this[int x, params Container<int*[]>[] a] { get { return 0; } set { } }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(14, 39),
@@ -3935,7 +4046,14 @@ class Container<T> {{ }}
                 // (11,24): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { int x = c[1, new Container<int*[]>[2]]; }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "new Container<int*[]>[2]").WithLocation(11, 24)
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("c[1]", "C.this[int, params Container<int*[]>[]].get", 9, 19),
+                    UnsafeMemberOperationCompat("c[1, null]", "C.this[int, params Container<int*[]>[]].get", 10, 19),
+                    UnsafeMemberOperationCompat("c[1, new Container<int*[]>[2]]", "C.this[int, params Container<int*[]>[]].get", 11, 19),
+                ]);
         }
 
         [WorkItem(544938, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/544938")]
@@ -3958,6 +4076,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (12,22): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      int this[int x, int* p = null] { get { return 0; } set { } }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
@@ -3967,7 +4086,14 @@ class Container<T> {{ }}
                 // (9,24): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { int x = c[1, (int*)1]; }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "(int*)1")
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("c[1]", "C.this[int, int*].get", 7, 19),
+                    UnsafeMemberOperationCompat("c[1, null]", "C.this[int, int*].get", 8, 19),
+                    UnsafeMemberOperationCompat("c[1, (int*)1]", "C.this[int, int*].get", 9, 19),
+                ]);
         }
 
         [WorkItem(544938, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/544938")]
@@ -3999,13 +4125,27 @@ class Container<T> {{ }}
                 // CONSIDER: this differs slightly from dev10, but is clearer.
                 // (2,2): error CS0181: Attribute constructor parameter 'a' has type 'int*[]', which is not a valid attribute parameter type
                 // [A]
-                Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("a", "int*[]")
+                Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("a", "int*[]"),
                 },
                 expectedWithoutUnsafePreview:
                 [
                 // (2,2): error CS0181: Attribute constructor parameter 'a' has type 'int*[]', which is not a valid attribute parameter type
                 // [A]
-                Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("a", "int*[]")
+                Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("a", "int*[]"),
+                UnsafeMemberOperationCompat("A", "A.A(params int*[])", 2, 2),
+                ],
+                expectedWithUnsafeOnMembers:
+                [
+                // (2,2): error CS0181: Attribute constructor parameter 'a' has type 'int*[]', which is not a valid attribute parameter type
+                // [A]
+                Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("a", "int*[]"),
+                UnsafeMemberOperationCompat("A", "A.A(params int*[])", 2, 2),
+                ],
+                expectedWithUnsafeOnTypeAndMembers:
+                [
+                // (2,2): error CS0181: Attribute constructor parameter 'a' has type 'int*[]', which is not a valid attribute parameter type
+                // [A]
+                Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("a", "int*[]"),
                 ]);
         }
 
@@ -4038,13 +4178,27 @@ class Container<T> {{ }}
                 // CONSIDER: this differs slightly from dev10, but is clearer.
                 // (2,2): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
                 // [A]
-                Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*")
+                Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*"),
                 },
                 expectedWithoutUnsafePreview:
                 [
                 // (2,2): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
                 // [A]
-                Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*")
+                Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*"),
+                UnsafeMemberOperationCompat("A", "A.A(int*)", 2, 2),
+                ],
+                expectedWithUnsafeOnMembers:
+                [
+                // (2,2): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
+                // [A]
+                Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*"),
+                UnsafeMemberOperationCompat("A", "A.A(int*)", 2, 2),
+                ],
+                expectedWithUnsafeOnTypeAndMembers:
+                [
+                // (2,2): error CS0181: Attribute constructor parameter 'p' has type 'int*', which is not a valid attribute parameter type
+                // [A]
+                Diagnostic(ErrorCode.ERR_BadAttributeParamType, "A").WithArguments("p", "int*"),
                 ]);
         }
 
@@ -4069,6 +4223,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (9,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { d = Goo; }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Goo"),
@@ -4078,7 +4233,13 @@ class Container<T> {{ }}
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
                 // (13,22): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      static void Goo(int* x = null) { }
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"));
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*")
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("Goo", "C.Goo(int*)", 9, 15),
+                ]);
         }
 
         [Fact]
@@ -4101,6 +4262,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (9,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { d = Goo; }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Goo"),
@@ -4110,7 +4272,13 @@ class Container<T> {{ }}
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
                 // (13,22): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      static void Goo(int* x = null) { }
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"));
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*")
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("Goo", "C.Goo()", 9, 15),
+                ]);
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67330")]
@@ -4133,6 +4301,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (13,22): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      static void Goo(int*[] x = null) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(13, 22),
@@ -4141,7 +4310,13 @@ class Container<T> {{ }}
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(12, 22),
                 // (9,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { d = Goo; }
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Goo").WithLocation(9, 15));
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Goo").WithLocation(9, 15)
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("Goo", "C.Goo(int*[])", 9, 15),
+                ]);
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67330")]
@@ -4164,6 +4339,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (13,13): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      static int*[] Goo() { throw null; }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(13, 13),
@@ -4172,7 +4348,13 @@ class Container<T> {{ }}
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(12, 15),
                 // (9,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { d = Goo; }
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Goo").WithLocation(9, 15));
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Goo").WithLocation(9, 15)
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("Goo", "C.Goo()", 9, 15),
+                ]);
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67330")]
@@ -4195,6 +4377,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (13,24): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      static void Goo(C<int*[]> x = null) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(13, 24),
@@ -4203,7 +4386,13 @@ class Container<T> {{ }}
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(12, 24),
                 // (9,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { d = Goo; }
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Goo").WithLocation(9, 15));
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Goo").WithLocation(9, 15)
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("Goo", "C<T>.Goo(C<int*[]>)", 9, 15),
+                ]);
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/67330")]
@@ -4226,6 +4415,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (13,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      static C<int*[]> Goo() { throw null; }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(13, 15),
@@ -4234,7 +4424,13 @@ class Container<T> {{ }}
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(12, 17),
                 // (9,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         { d = Goo; }
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Goo").WithLocation(9, 15));
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Goo").WithLocation(9, 15)
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("Goo", "C<T>.Goo()", 9, 15),
+                ]);
         }
 
         private static void CompareUnsafeDiagnostics(string template, params DiagnosticDescription[] expectedWithoutUnsafe)
@@ -4246,7 +4442,7 @@ class Container<T> {{ }}
             CompareUnsafeDiagnostics(template, expectedWithoutUnsafe, expectedWithUnsafe: [], expectedWithoutUnsafePreview: expectedWithoutUnsafePreview);
         }
 
-        private static void CompareUnsafeDiagnostics(string template, DiagnosticDescription[] expectedWithoutUnsafe, DiagnosticDescription[] expectedWithUnsafe, DiagnosticDescription[] expectedWithoutUnsafePreview = null)
+        private static void CompareUnsafeDiagnostics(string template, DiagnosticDescription[] expectedWithoutUnsafe, DiagnosticDescription[] expectedWithUnsafe, DiagnosticDescription[] expectedWithoutUnsafePreview = null, DiagnosticDescription[] expectedWithUnsafeOnMembers = null, DiagnosticDescription[] expectedWithUnsafeOnTypeAndMembers = null)
         {
             // NOTE: ERR_UnsafeNeeded is not affected by the presence/absence of the /unsafe flag.
             var withoutUnsafe = string.Format(template, "", "");
@@ -4268,10 +4464,18 @@ class Container<T> {{ }}
             CreateCompilation(withUnsafeOnType, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedWithUnsafe);
 
             var withUnsafeOnMembers = string.Format(template, "", "unsafe");
-            CreateCompilation(withUnsafeOnMembers, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedWithUnsafe);
+            expectedWithUnsafeOnMembers ??= expectedWithUnsafe;
+            CreateCompilation(withUnsafeOnMembers, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedWithUnsafeOnMembers);
 
             var withUnsafeOnTypeAndMembers = string.Format(template, "unsafe", "unsafe");
-            CreateCompilation(withUnsafeOnTypeAndMembers, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedWithUnsafe);
+            expectedWithUnsafeOnTypeAndMembers ??= expectedWithUnsafeOnMembers;
+            CreateCompilation(withUnsafeOnTypeAndMembers, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedWithUnsafeOnTypeAndMembers);
+        }
+
+        private static DiagnosticDescription UnsafeMemberOperationCompat(string squiggledText, string member, int line, int column)
+        {
+            // error CS9363: '<member>' must be used in an unsafe context because it has pointers in its signature
+            return Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, squiggledText).WithArguments(member).WithLocation(line, column);
         }
 
         /// <summary>
@@ -4303,6 +4507,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (4,22): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      static void Goo(void* p) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "void*"),
@@ -4312,7 +4517,12 @@ class Container<T> {{ }}
                 // (7,9): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         Goo(null);
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Goo(null)")
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("Goo(null)", "Test.Goo(void*)", 7, 9),
+                ]);
         }
 
         [Fact]
@@ -4330,6 +4540,7 @@ class Container<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (4,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      static void M(void*[] p) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "void*").WithLocation(4, 20),
@@ -4339,7 +4550,12 @@ class Container<T> {{ }}
                 // (7,11): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         M(null);
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(7, 11)
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("M(null)", "Test.M(void*[])", 7, 9),
+                ]);
         }
 
         [Fact]
@@ -4358,6 +4574,7 @@ class C<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (5,22): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      static void M(C<void*[]>[] p) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "void*").WithLocation(5, 22),
@@ -4367,7 +4584,12 @@ class C<T> {{ }}
                 // (8,11): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         M(null);
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(8, 11)
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("M(null)", "Test.M(C<void*[]>[])", 8, 9),
+                ]);
         }
 
         [WorkItem(544097, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/544097")]
@@ -4396,6 +4618,7 @@ class C<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (5,38): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      public static implicit operator int*(Test t) { return null; }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
@@ -4423,7 +4646,15 @@ class C<T> {{ }}
                 // (16,21): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //             int x = M(this); //CS0214
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "M(this)")
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("M(null)", "Test.M(params int*[])", 10, 21),
+                    UnsafeMemberOperationCompat("M(null, null)", "Test.M(params int*[])", 13, 21),
+                    UnsafeMemberOperationCompat("M(this)", "Test.M(params int*[])", 16, 21),
+                    UnsafeMemberOperationCompat("this", "Test.implicit operator int*(Test)", 16, 23),
+                ]);
         }
 
         [Fact]
@@ -4452,6 +4683,7 @@ class C<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (6,38): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      public static implicit operator int*(Test t) { return null; } // 2
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(6, 38),
@@ -4479,7 +4711,15 @@ class C<T> {{ }}
                 // (17,21): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //             int x = M(this); // 5
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "M(this)").WithLocation(17, 21)
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("M(null)", "Test.M(params int*[])", 11, 21),
+                    UnsafeMemberOperationCompat("M(null, null)", "Test.M(params int*[])", 14, 21),
+                    UnsafeMemberOperationCompat("M(this)", "Test.M(params int*[])", 17, 21),
+                    UnsafeMemberOperationCompat("this", "Test.implicit operator int*(Test)", 17, 23),
+                ]);
         }
 
         [WorkItem(544097, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/544097")]
@@ -4508,12 +4748,22 @@ class C<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (4,15): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      int this[int* p] { get { return 0; } set { } }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
                 // (5,38): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      public static implicit operator int*(Test t) { return null; }
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"));
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*")
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("this[null]", "Test.this[params int*[]].get", 10, 21),
+                    UnsafeMemberOperationCompat("this[null, null]", "Test.this[params int*[]].get", 13, 21),
+                    UnsafeMemberOperationCompat("this[this]", "Test.this[params int*[]].get", 16, 21),
+                    UnsafeMemberOperationCompat("this", "Test.implicit operator int*(Test)", 16, 26),
+                ]);
         }
 
         [Fact]
@@ -4542,13 +4792,22 @@ class C<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (5,24): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      int this[params C<int*[]>[] p] { get { return 0; } set { } }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(5, 24),
                 // (6,40): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      public static implicit operator C<int*[]>(Test t) { return null; }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(6, 40)
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("this[null]", "Test.this[params C<int*[]>[]].get", 11, 21),
+                    UnsafeMemberOperationCompat("this[null, null]", "Test.this[params C<int*[]>[]].get", 14, 21),
+                    UnsafeMemberOperationCompat("this[this]", "Test.this[params C<int*[]>[]].get", 17, 21),
+                    UnsafeMemberOperationCompat("this", "Test.implicit operator C<int*[]>(Test)", 17, 26),
+                ]);
         }
 
         [WorkItem(544097, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/544097")]
@@ -4568,6 +4827,7 @@ class C<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (4,18): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      public Base(int* p) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
@@ -4577,7 +4837,12 @@ class C<T> {{ }}
                 // (9,25): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      public Derived() : base(null) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "base")
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat(": base(null)", "Base.Base(int*)", 9, 23),
+                ]);
         }
 
         [Fact]
@@ -4596,6 +4861,7 @@ class C<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (4,18): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      public Base(int*[] p) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(4, 18),
@@ -4605,7 +4871,12 @@ class C<T> {{ }}
                 // (9,30): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      public Derived() : base(null) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(9, 30)
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat(": base(null)", "Base.Base(int*[])", 9, 23),
+                ]);
         }
 
         [Fact]
@@ -4625,6 +4896,7 @@ class C<T> {{ }}
 ";
 
             CompareUnsafeDiagnostics(template,
+                [
                 // (5,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      public Base(C<int*[]>[] p) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(5, 20),
@@ -4634,7 +4906,12 @@ class C<T> {{ }}
                 // (10,30): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      public Derived() : base(null) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "null").WithLocation(10, 30)
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat(": base(null)", "Base.Base(C<int*[]>[])", 10, 23),
+                ]);
         }
 
         [WorkItem(544286, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/544286")]
@@ -12119,6 +12396,7 @@ public class Test
 }}
 ";
             CompareUnsafeDiagnostics(template,
+                [
                 // (4,22): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      public A(params int*[] x) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
@@ -12127,7 +12405,14 @@ public class Test
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "B"),
                 // (10,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      B(double x) : base() { }
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "base"));
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "base")
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("B(int x) { }", "A.A(params int*[])", 9, 6),
+                    UnsafeMemberOperationCompat(": base()", "A.A(params int*[])", 10, 18),
+                ]);
         }
 
         [Fact]
@@ -12148,6 +12433,7 @@ class C<T> {{ }}
 }}
 ";
             CompareUnsafeDiagnostics(template,
+                [
                 // (6,24): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      public A(params C<int*[]>[] x) { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(6, 24),
@@ -12157,7 +12443,13 @@ class C<T> {{ }}
                 // (12,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //      B(double x) : base() { }
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "base").WithLocation(12, 20)
-                );
+                ],
+                expectedWithUnsafe: [],
+                expectedWithoutUnsafePreview:
+                [
+                    UnsafeMemberOperationCompat("B(int x) { }", "A.A(params C<int*[]>[])", 11, 6),
+                    UnsafeMemberOperationCompat(": base()", "A.A(params C<int*[]>[])", 12, 18),
+                ]);
         }
 
         [WorkItem(545985, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/545985")]

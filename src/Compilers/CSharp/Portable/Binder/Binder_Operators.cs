@@ -477,6 +477,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     ReportDiagnosticsIfObsolete(diagnostics, method, node, hasBaseReceiver: false);
                     ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, method, node);
+                    ReportUnsafeMemberAccessCompatDiagnostic(method, node, diagnostics);
                     ReportDiagnosticsIfUnmanagedCallersOnly(diagnostics, method, node, isDelegateConversion: false);
 
                     BoundValuePlaceholder? leftPlaceholder = null;
@@ -745,6 +746,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     CheckReceiverAndRuntimeSupportForSymbolAccess(node, receiverOpt, method, diagnostics);
                     ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, method, node.OperatorToken);
+                    ReportUnsafeMemberAccessCompatDiagnostic(method, node.OperatorToken, diagnostics);
                 }
 
                 if (eventSymbol.IsWindowsRuntimeEvent)
@@ -2219,6 +2221,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ReportUseSite(operatorMethod, diagnostics, node);
                 ReportDiagnosticsIfObsolete(diagnostics, operatorMethod, node, hasBaseReceiver: false);
                 ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, operatorMethod, node);
+                ReportUnsafeMemberAccessCompatDiagnostic(operatorMethod, node, diagnostics);
 
                 if (operatorMethod.ContainingType.IsInterface &&
                     operatorMethod.ContainingModule != Compilation.SourceModule)
@@ -3560,6 +3563,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     ReportDiagnosticsIfObsolete(diagnostics, method, node, hasBaseReceiver: false);
                     ReportDiagnosticsIfUnsafeMemberAccess(diagnostics, method, node);
+                    ReportUnsafeMemberAccessCompatDiagnostic(method, node, diagnostics);
                     ReportDiagnosticsIfUnmanagedCallersOnly(diagnostics, method, node, isDelegateConversion: false);
 
                     BoundValuePlaceholder? operandPlaceholder = null;

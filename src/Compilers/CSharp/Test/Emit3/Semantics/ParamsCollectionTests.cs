@@ -13548,10 +13548,26 @@ class Program
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "Params.Test(2, 3)").WithLocation(7, 9)
                 );
 
+            var expectedDiagnostics = new[]
+            {
+                // (5,9): error CS9363: 'MyCollectionOfInt.MyCollectionOfInt(void*)' must be used in an unsafe context because it has pointers in its signature
+                //         Params.Test();
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "Params.Test()").WithArguments("MyCollectionOfInt.MyCollectionOfInt(void*)").WithLocation(5, 9),
+                // (6,9): error CS9363: 'MyCollectionOfInt.MyCollectionOfInt(void*)' must be used in an unsafe context because it has pointers in its signature
+                //         Params.Test(1);
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "Params.Test(1)").WithArguments("MyCollectionOfInt.MyCollectionOfInt(void*)").WithLocation(6, 9),
+                // (7,9): error CS9363: 'MyCollectionOfInt.MyCollectionOfInt(void*)' must be used in an unsafe context because it has pointers in its signature
+                //         Params.Test(2, 3);
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "Params.Test(2, 3)").WithArguments("MyCollectionOfInt.MyCollectionOfInt(void*)").WithLocation(7, 9),
+            };
+
             comp4 = CreateCompilation(source4, references: [comp1Ref, comp3.ToMetadataReference()], options: TestOptions.ReleaseExe);
-            comp4.VerifyEmitDiagnostics();
+            comp4.VerifyEmitDiagnostics(expectedDiagnostics);
             comp4 = CreateCompilation(source4, references: [comp1Ref, comp3.ToMetadataReference()], parseOptions: TestOptions.RegularNext, options: TestOptions.ReleaseExe);
-            comp4.VerifyEmitDiagnostics();
+            comp4.VerifyEmitDiagnostics(expectedDiagnostics);
+
+            var comp3Unsafe = CreateCompilation(source3.Replace("public static void Test", "public static unsafe void Test"), references: [comp1.ToMetadataReference()], options: TestOptions.UnsafeDebugDll);
+            comp3Unsafe.VerifyEmitDiagnostics();
 
             string source5 = """
 class Program
@@ -13565,7 +13581,7 @@ class Program
 }
 """;
 
-            var comp5 = CreateCompilation(source5, references: [comp1Ref, comp3.ToMetadataReference()], options: TestOptions.UnsafeReleaseExe);
+            var comp5 = CreateCompilation(source5, references: [comp1.ToMetadataReference(), comp3Unsafe.ToMetadataReference()], options: TestOptions.UnsafeReleaseExe);
             CompileAndVerify(
                 comp5,
                 verify: ExecutionConditionUtil.IsMonoOrCoreClr ? Verification.Passes : Verification.Skipped,
@@ -13654,10 +13670,26 @@ class Program
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "3").WithLocation(7, 24)
                 );
 
+            var expectedDiagnostics = new[]
+            {
+                // (6,21): error CS9363: 'MyCollectionOfInt.Add(int, void*)' must be used in an unsafe context because it has pointers in its signature
+                //         Params.Test(1);
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "1").WithArguments("MyCollectionOfInt.Add(int, void*)").WithLocation(6, 21),
+                // (7,21): error CS9363: 'MyCollectionOfInt.Add(int, void*)' must be used in an unsafe context because it has pointers in its signature
+                //         Params.Test(2, 3);
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "2").WithArguments("MyCollectionOfInt.Add(int, void*)").WithLocation(7, 21),
+                // (7,24): error CS9363: 'MyCollectionOfInt.Add(int, void*)' must be used in an unsafe context because it has pointers in its signature
+                //         Params.Test(2, 3);
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "3").WithArguments("MyCollectionOfInt.Add(int, void*)").WithLocation(7, 24),
+            };
+
             comp4 = CreateCompilation(source4, references: [comp1Ref, comp3.ToMetadataReference()], options: TestOptions.ReleaseExe);
-            comp4.VerifyEmitDiagnostics();
+            comp4.VerifyEmitDiagnostics(expectedDiagnostics);
             comp4 = CreateCompilation(source4, references: [comp1Ref, comp3.ToMetadataReference()], parseOptions: TestOptions.RegularNext, options: TestOptions.ReleaseExe);
-            comp4.VerifyEmitDiagnostics();
+            comp4.VerifyEmitDiagnostics(expectedDiagnostics);
+
+            var comp3Unsafe = CreateCompilation(source3.Replace("public static void Test", "public static unsafe void Test"), references: [comp1.ToMetadataReference()], options: TestOptions.UnsafeDebugDll);
+            comp3Unsafe.VerifyEmitDiagnostics();
 
             string source5 = """
 class Program
@@ -13671,7 +13703,7 @@ class Program
 }
 """;
 
-            var comp5 = CreateCompilation(source5, references: [comp1Ref, comp3.ToMetadataReference()], options: TestOptions.UnsafeReleaseExe);
+            var comp5 = CreateCompilation(source5, references: [comp1.ToMetadataReference(), comp3Unsafe.ToMetadataReference()], options: TestOptions.UnsafeReleaseExe);
             CompileAndVerify(
                 comp5,
                 verify: ExecutionConditionUtil.IsMonoOrCoreClr ? Verification.Passes : Verification.Skipped,

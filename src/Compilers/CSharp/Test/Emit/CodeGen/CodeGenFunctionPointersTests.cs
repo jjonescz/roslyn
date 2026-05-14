@@ -11725,8 +11725,15 @@ class C<T> {}
                 Diagnostic(ErrorCode.ERR_UnsafeNeeded, "default").WithLocation(11, 4)
                 );
 
-            CreateCompilation(source, options: TestOptions.UnsafeDebugDll).VerifyDiagnostics();
-            CreateCompilation(source, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeDebugDll).VerifyDiagnostics();
+            var expectedDiagnostics = new[]
+            {
+                // (11,4): error CS9363: 'A.A(B<delegate*<void>[]>.E)' must be used in an unsafe context because it has pointers in its signature
+                // [A(default)]
+                Diagnostic(ErrorCode.ERR_UnsafeMemberOperationCompat, "default").WithArguments("A.A(B<delegate*<void>[]>.E)").WithLocation(11, 4),
+            };
+
+            CreateCompilation(source, options: TestOptions.UnsafeDebugDll).VerifyDiagnostics(expectedDiagnostics);
+            CreateCompilation(source, parseOptions: TestOptions.RegularNext, options: TestOptions.UnsafeDebugDll).VerifyDiagnostics(expectedDiagnostics);
         }
 
         [Theory, CombinatorialData, WorkItem(65594, "https://github.com/dotnet/roslyn/issues/65594")]
@@ -11773,7 +11780,7 @@ class C<T> {}
             var source = $$"""
                 class A : System.Attribute
                 {
-                    public unsafe B<delegate*<void>[]>.E P { get; set; }
+                    public B<delegate*<void>[]>.E P { get; set; }
                 }
 
                 {{kind}} B<T>
@@ -11786,10 +11793,12 @@ class C<T> {}
                 """;
 
             // https://github.com/dotnet/roslyn/issues/48765 tracks enabling support for this scenario.
-            CreateCompilation(source, options: TestOptions.UnsafeDebugDll).VerifyEmitDiagnostics(
+            CreateCompilation(source, options: TestOptions.UnsafeDebugDll.WithUpdatedMemorySafetyRules()).VerifyEmitDiagnostics(
                 // (11,2): error CS8911: Using a function pointer type in this context is not supported.
                 // [A(P = default)]
                 Diagnostic(ErrorCode.ERR_FunctionPointerTypesInAttributeNotSupported, "A(P = default)").WithLocation(11, 2));
+
+            CreateCompilation(source, options: TestOptions.UnsafeDebugDll).VerifyDiagnostics();
         }
 
         [Theory, CombinatorialData, WorkItem(65594, "https://github.com/dotnet/roslyn/issues/65594")]

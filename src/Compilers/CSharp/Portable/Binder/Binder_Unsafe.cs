@@ -39,7 +39,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private void ReportDiagnosticsIfUnsafeMemberAccess<T>(DiagnosticBag diagnostics, Symbol symbol, T arg, Func<T, Location?> location)
         {
             var useUpdatedMemorySafetyRules = this.Compilation.SourceModule.UseUpdatedMemorySafetyRules;
-            if (!useUpdatedMemorySafetyRules && symbol.CallerUnsafeMode != CallerUnsafeMode.Implicit)
+            if (!useUpdatedMemorySafetyRules)
             {
                 return;
             }
@@ -101,6 +101,34 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
+        internal void ReportUnsafeMemberAccessCompatDiagnostic(
+            Symbol symbol,
+            SyntaxNodeOrToken node,
+            BindingDiagnosticBag diagnostics)
+        {
+            if (diagnostics.DiagnosticBag is { } bag)
+            {
+                ReportUnsafeMemberAccessCompatDiagnostic(symbol, node, static node => node.GetLocation(), bag);
+            }
+        }
+
+        private bool ReportUnsafeMemberAccessCompatDiagnostic<T>(
+            Symbol symbol,
+            T arg,
+            Func<T, Location?> location,
+            DiagnosticBag diagnostics)
+        {
+            if (!Compilation.SourceModule.UseUpdatedMemorySafetyRules &&
+                symbol.CallerUnsafeMode == CallerUnsafeMode.Implicit)
+            {
+                return ReportUnsafeIfNotAllowed(arg, location, diagnostics, disallowedUnder: MemorySafetyRules.Updated,
+                    customErrorCode: ErrorCode.ERR_UnsafeMemberOperationCompat,
+                    customArgs: [symbol]);
+            }
+
+            return false;
+        }
+
         private void ReportDiagnosticsIfUnsafeMemberAccess<T>(DiagnosticBag diagnostics, Symbol symbol, T arg, Func<T, Location?> location, bool forConstructorConstraint, ReadOnlySpan<object> additionalArgs = default)
         {
             Debug.Assert(this.Compilation.SourceModule.UseUpdatedMemorySafetyRules || symbol.CallerUnsafeMode == CallerUnsafeMode.Implicit);
@@ -159,10 +187,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             MemorySafetyRules disallowedUnder,
             TypeSymbol? sizeOfTypeOpt = null,
             ErrorCode? customErrorCode = null,
-            object[]? customArgs = null)
+            object[]? customArgs = null,
+            Symbol? unsafeMemberAccessOpt = null)
         {
             return diagnostics.DiagnosticBag is { } bag &&
-                ReportUnsafeIfNotAllowed(node, bag, disallowedUnder, sizeOfTypeOpt, customErrorCode, customArgs);
+                ReportUnsafeIfNotAllowed(node, bag, disallowedUnder, sizeOfTypeOpt, customErrorCode, customArgs, unsafeMemberAccessOpt);
         }
 
         internal bool ReportUnsafeIfNotAllowed(
@@ -171,7 +200,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             MemorySafetyRules disallowedUnder,
             TypeSymbol? sizeOfTypeOpt = null,
             ErrorCode? customErrorCode = null,
-            object[]? customArgs = null)
+            object[]? customArgs = null,
+            Symbol? unsafeMemberAccessOpt = null)
         {
             Debug.Assert((node.Kind() == SyntaxKind.SizeOfExpression) == ((object?)sizeOfTypeOpt != null), "Should have a type for (only) sizeof expressions.");
             return ReportUnsafeIfNotAllowed(
@@ -181,7 +211,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 disallowedUnder,
                 sizeOfTypeOpt,
                 customErrorCode,
-                customArgs);
+                customArgs,
+                unsafeMemberAccessOpt);
         }
 
         internal bool ReportUnsafeIfNotAllowed(
@@ -189,10 +220,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             BindingDiagnosticBag diagnostics,
             MemorySafetyRules disallowedUnder,
             ErrorCode? customErrorCode = null,
-            object[]? customArgs = null)
+            object[]? customArgs = null,
+            Symbol? unsafeMemberAccessOpt = null)
         {
             return diagnostics.DiagnosticBag is { } bag &&
-                ReportUnsafeIfNotAllowed(location, bag, disallowedUnder, customErrorCode, customArgs);
+                ReportUnsafeIfNotAllowed(location, bag, disallowedUnder, customErrorCode, customArgs, unsafeMemberAccessOpt);
         }
 
         internal bool ReportUnsafeIfNotAllowed(
@@ -200,7 +232,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             DiagnosticBag diagnostics,
             MemorySafetyRules disallowedUnder,
             ErrorCode? customErrorCode = null,
-            object[]? customArgs = null)
+            object[]? customArgs = null,
+            Symbol? unsafeMemberAccessOpt = null)
         {
             return ReportUnsafeIfNotAllowed(
                 location,
@@ -209,7 +242,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 disallowedUnder,
                 sizeOfTypeOpt: null,
                 customErrorCode,
-                customArgs);
+                customArgs,
+                unsafeMemberAccessOpt);
         }
 
         /// <param name="disallowedUnder">
@@ -223,12 +257,18 @@ namespace Microsoft.CodeAnalysis.CSharp
             MemorySafetyRules disallowedUnder,
             TypeSymbol? sizeOfTypeOpt = null,
             ErrorCode? customErrorCode = null,
-            object[]? customArgs = null)
+            object[]? customArgs = null,
+            Symbol? unsafeMemberAccessOpt = null)
         {
+            Debug.Assert(unsafeMemberAccessOpt is null ||
+                (disallowedUnder is MemorySafetyRules.Legacy && sizeOfTypeOpt is null && customErrorCode is null && customArgs is null));
+
             var diagnosticInfo = GetUnsafeDiagnosticInfo(disallowedUnder, sizeOfTypeOpt, customErrorCode, customArgs);
             if (diagnosticInfo == null)
             {
-                return false;
+                return unsafeMemberAccessOpt is not null &&
+                    disallowedUnder is MemorySafetyRules.Legacy &&
+                    ReportUnsafeMemberAccessCompatDiagnostic(unsafeMemberAccessOpt, arg, location, diagnostics);
             }
 
             diagnostics.Add(new CSDiagnostic(diagnosticInfo, location(arg)));

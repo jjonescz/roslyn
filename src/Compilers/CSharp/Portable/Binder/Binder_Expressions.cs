@@ -602,7 +602,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 TypeSymbol exprType = expr.Type;
                 if ((object)exprType != null && exprType.ContainsPointerOrFunctionPointer())
                 {
-                    ReportUnsafeIfNotAllowed(node, diagnostics, disallowedUnder: MemorySafetyRules.Legacy);
+                    ReportUnsafeIfNotAllowed(node, diagnostics, disallowedUnder: MemorySafetyRules.Legacy,
+                        unsafeMemberAccessOpt: expr is BoundCall { Method: { } method } ? method : null);
                     //CONSIDER: Return a bad expression so that HasErrors is true?
                 }
             }
@@ -3725,7 +3726,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (!methodResult.Member.IsIndexer() && !argument.HasAnyErrors && parameterTypeWithAnnotations.Type.ContainsPointerOrFunctionPointer())
                 {
                     // CONSIDER: dev10 uses the call syntax, but this seems clearer.
-                    ReportUnsafeIfNotAllowed(argument.Syntax, diagnostics, disallowedUnder: MemorySafetyRules.Legacy);
+                    ReportUnsafeIfNotAllowed(argument.Syntax, diagnostics, disallowedUnder: MemorySafetyRules.Legacy,
+                        // Normal calls are handled elsewhere, handle only attribute arguments here to avoid duplicate diagnostics.
+                        unsafeMemberAccessOpt: InAttributeArgument ? methodResult.Member : null);
                     //CONSIDER: Return a bad expression so that HasErrors is true?
                 }
             }
@@ -5103,7 +5106,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     // Don't worry about double reporting (i.e. for both the argument and the parameter)
                     // because only one unsafe diagnostic is allowed per scope - the others are suppressed.
-                    hasErrors = ReportUnsafeIfNotAllowed(errorLocation, diagnostics, disallowedUnder: MemorySafetyRules.Legacy);
+                    hasErrors = ReportUnsafeIfNotAllowed(errorLocation, diagnostics, disallowedUnder: MemorySafetyRules.Legacy, unsafeMemberAccessOpt: resultMember);
                 }
 
                 ReportDiagnosticsIfObsolete(diagnostics, resultMember, nonNullSyntax, hasBaseReceiver: isBaseConstructorInitializer);
@@ -6953,7 +6956,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // Don't worry about double reporting (i.e. for both the argument and the parameter)
                 // because only one unsafe diagnostic is allowed per scope - the others are suppressed.
-                hasError = ReportUnsafeIfNotAllowed(node, diagnostics, disallowedUnder: MemorySafetyRules.Legacy) || hasError;
+                hasError = ReportUnsafeIfNotAllowed(node, diagnostics, disallowedUnder: MemorySafetyRules.Legacy, unsafeMemberAccessOpt: method) || hasError;
             }
 
             ReportDiagnosticsIfObsolete(diagnostics, method, node, hasBaseReceiver: false);
