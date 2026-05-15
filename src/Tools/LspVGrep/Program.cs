@@ -213,7 +213,7 @@ internal static class Program
         }
 
         Log($"Rendering combined report to '{outputPath}'.");
-        var html = CombinedReportRenderer.Render(reports);
+        var html = CombinedReportRenderer.Render(reports, outputDirectory ?? Environment.CurrentDirectory);
         await File.WriteAllTextAsync(outputPath, html, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), cancellationToken);
         Log("Combined report written.");
 

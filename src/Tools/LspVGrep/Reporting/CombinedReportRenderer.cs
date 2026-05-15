@@ -13,10 +13,10 @@ internal static class CombinedReportRenderer
         WriteIndented = false
     };
 
-    public static string Render(IReadOnlyList<JsonSummaryReport> reports)
+    public static string Render(IReadOnlyList<JsonSummaryReport> reports, string outputDirectory)
     {
         var rows = reports
-          .SelectMany(CreateRows)
+          .SelectMany(report => CreateRows(report, outputDirectory))
           .OrderBy(static row => row.SourceLineCount ?? long.MaxValue)
           .ThenBy(static row => row.Repository, StringComparer.OrdinalIgnoreCase)
           .ThenBy(static row => row.Query, StringComparer.OrdinalIgnoreCase)
@@ -44,6 +44,8 @@ internal static class CombinedReportRenderer
     .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
     .toolbar h2 { margin: 0; font-size: 18px; }
     .toolbar-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 12px; }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
     button { border: 1px solid #b8c2d1; border-radius: 6px; background: #fff; color: #1f2937; padding: 6px 10px; cursor: pointer; }
     button:hover { background: #eef2f7; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -262,7 +264,7 @@ function renderTable(visibleRows) {
   for (const row of visibleRows) {
     const tr = document.createElement('tr');
     tr.append(
-      cell(row.repository),
+      repositoryCell(row),
       cell(row.query),
       numericCell(formatKloc(row.sourceLineCount)),
       numericCell(formatCount(row.grepResultCount)),
@@ -549,6 +551,20 @@ function cell(text) {
   return td;
 }
 
+function repositoryCell(row) {
+  const td = document.createElement('td');
+  if (!row.reportHref) {
+    td.textContent = row.repository ?? '';
+    return td;
+  }
+
+  const link = document.createElement('a');
+  link.href = row.reportHref;
+  link.textContent = row.repository ?? '';
+  td.append(link);
+  return td;
+}
+
 function numericCell(text) {
   const td = cell(text);
   td.className = 'numeric';
@@ -601,9 +617,10 @@ render();
             .Replace("ROWS_JSON", rowsJson, StringComparison.Ordinal);
     }
 
-    private static IEnumerable<CombinedReportRow> CreateRows(JsonSummaryReport report)
+    private static IEnumerable<CombinedReportRow> CreateRows(JsonSummaryReport report, string outputDirectory)
     {
         var repository = GetRepositoryName(report);
+        var reportHref = GetReportHref(report, outputDirectory);
         foreach (var query in report.Queries)
         {
             var successfulAlgorithms = query.Algorithms
@@ -624,6 +641,7 @@ render();
 
             yield return new CombinedReportRow(
                 repository,
+                reportHref,
                 report.Directory,
                 report.SourceLineCount,
                 FormatQuery(query),
@@ -701,8 +719,27 @@ render();
             : name;
     }
 
+    private static string? GetReportHref(JsonSummaryReport report, string outputDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(report.SourcePath))
+            return null;
+
+        var htmlPath = Path.ChangeExtension(report.SourcePath, ".html");
+        if (string.IsNullOrWhiteSpace(htmlPath) || !File.Exists(htmlPath))
+            return null;
+
+        var fullHtmlPath = Path.GetFullPath(htmlPath);
+        var fullOutputDirectory = Path.GetFullPath(outputDirectory);
+        var relativePath = Path.GetRelativePath(fullOutputDirectory, fullHtmlPath);
+        if (!Path.IsPathRooted(relativePath) && !relativePath.StartsWith("..", StringComparison.Ordinal))
+            return relativePath.Replace(Path.DirectorySeparatorChar, '/').Replace(Path.AltDirectorySeparatorChar, '/');
+
+        return new Uri(fullHtmlPath).AbsoluteUri;
+    }
+
     private sealed record CombinedReportRow(
         string Repository,
+        string? ReportHref,
         string Directory,
         long? SourceLineCount,
         string Query,
