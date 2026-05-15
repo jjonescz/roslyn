@@ -26,6 +26,9 @@ internal sealed class JsonSummaryReport
     [JsonPropertyName("repositoryCommitHash")]
     public string? RepositoryCommitHash { get; init; }
 
+    [JsonPropertyName("repositoryUrl")]
+    public string? RepositoryUrl { get; set; }
+
     [JsonPropertyName("sourceLineCount")]
     public long? SourceLineCount { get; init; }
 
@@ -48,6 +51,7 @@ internal sealed class JsonSummaryReport
             GeneratedAtUtc = DateTimeOffset.UtcNow,
             Directory = report.Directory,
             RepositoryCommitHash = report.RepositoryCommitHash,
+            RepositoryUrl = report.RepositoryUrl,
             SourceLineCount = report.SourceLineCount,
             LsCache = new JsonSummaryLsCache
             {

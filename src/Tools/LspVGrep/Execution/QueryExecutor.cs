@@ -28,6 +28,7 @@ internal sealed class QueryExecutor
         IReadOnlyList<QueryRequest> queries,
         QueryExecutionContext context,
         string? repositoryCommitHash,
+        string? repositoryUrl,
         long? sourceLineCount,
         TimeSpan? workspaceLoadTime,
         TimeSpan? tgrepIndexTime,
@@ -68,6 +69,7 @@ internal sealed class QueryExecutor
         return new ToolReport(
             context.DirectoryPath,
             repositoryCommitHash,
+            repositoryUrl,
             sourceLineCount,
             context.UseLscache,
             workspace?.TargetKind == RoslynLoadTargetKind.LsCache,

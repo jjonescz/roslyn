@@ -15,6 +15,11 @@ internal static class CombinedReportRenderer
 
     public static string Render(IReadOnlyList<JsonSummaryReport> reports, string outputDirectory)
     {
+        var repositories = reports
+          .Select(report => CreateRepositoryRow(report, outputDirectory))
+          .OrderBy(static row => row.SourceLineCount ?? long.MaxValue)
+          .ThenBy(static row => row.Repository, StringComparer.OrdinalIgnoreCase)
+          .ToList();
         var rows = reports
           .SelectMany(report => CreateRows(report, outputDirectory))
           .OrderBy(static row => row.SourceLineCount ?? long.MaxValue)
@@ -22,6 +27,7 @@ internal static class CombinedReportRenderer
           .ThenBy(static row => row.Query, StringComparer.OrdinalIgnoreCase)
           .ToList();
 
+        var repositoriesJson = JsonSerializer.Serialize(repositories, s_jsonOptions);
         var rowsJson = JsonSerializer.Serialize(rows, s_jsonOptions);
         var generatedAt = DateTimeOffset.UtcNow.ToString("u");
 
@@ -52,6 +58,7 @@ internal static class CombinedReportRenderer
     th, td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; text-align: left; vertical-align: top; }
     th { background: #f1f5f9; font-weight: 650; position: sticky; top: 0; z-index: 1; }
     .numeric { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .url-cell { word-break: break-all; }
     .muted { color: #667085; }
     .table-wrap { max-height: 520px; overflow: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
     .plot-wrap { min-height: 420px; }
@@ -83,7 +90,25 @@ internal static class CombinedReportRenderer
 <body>
 <main>
   <h1>LspVGrep Combined Report</h1>
-  <div class="meta">Generated GENERATED_AT from REPORT_COUNT reports.</div>
+  <div class="meta">Generated GENERATED_AT from REPORT_COUNT reports across REPOSITORY_COUNT repositories.</div>
+
+  <section class="panel">
+    <div class="toolbar">
+      <h2>Repositories (REPOSITORY_COUNT)</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Repository</th>
+            <th>URL</th>
+            <th class="numeric">kLOC</th>
+          </tr>
+        </thead>
+        <tbody id="repositoryRows"></tbody>
+      </table>
+    </div>
+  </section>
 
   <section class="panel">
     <div class="toolbar">
@@ -169,8 +194,10 @@ internal static class CombinedReportRenderer
   </section>
 </main>
 <script>
+const repositories = REPOSITORIES_JSON;
 const allRows = ROWS_JSON;
 const queryFilters = document.getElementById('queryFilters');
+const repositoryRowsBody = document.getElementById('repositoryRows');
 const rowsBody = document.getElementById('rows');
 const selectionRowsBody = document.getElementById('selectionRows');
 const chart = document.getElementById('chart');
@@ -276,6 +303,18 @@ function renderTable(visibleRows) {
       numericCell(formatMs(row.tgrepMilliseconds)),
       numericCell(formatLspMs(row, row.lspMilliseconds)));
     rowsBody.append(tr);
+  }
+}
+
+function renderRepositoryTable() {
+  repositoryRowsBody.textContent = '';
+  for (const repository of repositories) {
+    const tr = document.createElement('tr');
+    tr.append(
+      repositoryCell(repository),
+      urlCell(repository.repositoryUrl),
+      numericCell(formatKloc(repository.sourceLineCount)));
+    repositoryRowsBody.append(tr);
   }
 }
 
@@ -565,6 +604,20 @@ function repositoryCell(row) {
   return td;
 }
 
+function urlCell(url) {
+  const td = document.createElement('td');
+  td.className = 'url-cell';
+  if (!url) {
+    return td;
+  }
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.textContent = url;
+  td.append(link);
+  return td;
+}
+
 function numericCell(text) {
   const td = cell(text);
   td.className = 'numeric';
@@ -606,6 +659,7 @@ function formatLspMs(row, value) {
 }
 
 renderQueryFilters();
+renderRepositoryTable();
 renderAlgorithmSelectionTable();
 render();
 </script>
@@ -614,8 +668,18 @@ render();
 """
             .Replace("GENERATED_AT", generatedAt, StringComparison.Ordinal)
             .Replace("REPORT_COUNT", reports.Count.ToString(), StringComparison.Ordinal)
+            .Replace("REPOSITORY_COUNT", repositories.Count.ToString(), StringComparison.Ordinal)
+            .Replace("REPOSITORIES_JSON", repositoriesJson, StringComparison.Ordinal)
             .Replace("ROWS_JSON", rowsJson, StringComparison.Ordinal);
     }
+
+    private static CombinedRepositoryRow CreateRepositoryRow(JsonSummaryReport report, string outputDirectory) =>
+      new(
+        GetRepositoryName(report),
+        GetReportHref(report, outputDirectory),
+        report.RepositoryUrl,
+        report.Directory,
+        report.SourceLineCount);
 
     private static IEnumerable<CombinedReportRow> CreateRows(JsonSummaryReport report, string outputDirectory)
     {
@@ -758,4 +822,11 @@ render();
         double? LspMilliseconds,
         double? LspWithSolutionLoadMilliseconds,
         bool RoslynWorkspacePartial);
+
+    private sealed record CombinedRepositoryRow(
+      string Repository,
+      string? ReportHref,
+      string? RepositoryUrl,
+      string Directory,
+      long? SourceLineCount);
 }

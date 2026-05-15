@@ -100,6 +100,11 @@ internal static class Program
             ? "No Git commit hash was found for the inspected directory."
             : $"Inspected repository commit: {repositoryCommitHash}.");
 
+        var repositoryUrl = await GitRepositoryInfo.GetRemoteUrlAsync(resolvedDirectory, cancellationToken);
+        Log(repositoryUrl is null
+            ? "No Git remote URL was found for the inspected directory."
+            : $"Inspected repository URL: {repositoryUrl}.");
+
         Log("Counting source lines.");
         var sourceLineCount = await SourceLineCounter.CountAsync(resolvedDirectory, cancellationToken);
         Log($"Counted {sourceLineCount:N0} non-empty source lines ({sourceLineCount / 1000.0:F1} kLOC).");
@@ -161,7 +166,7 @@ internal static class Program
 
         Log($"Running {queries.Count} queries with {algorithms.Length} algorithms registered.");
         var executor = new QueryExecutor(algorithms, Log, LogProgress);
-        var report = await executor.ExecuteAsync(queries, context, repositoryCommitHash, sourceLineCount, workspaceStopwatch.Elapsed, tgrepIndexTime, cancellationToken);
+        var report = await executor.ExecuteAsync(queries, context, repositoryCommitHash, repositoryUrl, sourceLineCount, workspaceStopwatch.Elapsed, tgrepIndexTime, cancellationToken);
 
         var outputPath = ResolveOutputPath(inputPath, input.Output);
         Log($"Rendering report to '{outputPath}'.");
@@ -202,7 +207,9 @@ internal static class Program
         foreach (var reportPath in expandedReportPaths)
         {
             Log($"Reading summary JSON from '{reportPath}'.");
-            reports.Add(await JsonSummaryReport.LoadAsync(reportPath, cancellationToken));
+            var report = await JsonSummaryReport.LoadAsync(reportPath, cancellationToken);
+            report.RepositoryUrl ??= await GitRepositoryInfo.GetRemoteUrlAsync(report.Directory, cancellationToken);
+            reports.Add(report);
         }
 
         var outputPath = ResolveCombinedOutputPath(expandedReportPaths, outputPathValue);
