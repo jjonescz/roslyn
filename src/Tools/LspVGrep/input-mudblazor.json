@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "MudButton"
+      "name": "MudButton",
+      "expectedCount": 4
     },
     {
       "type": "find-type-definition",
-      "name": "MudComponentBase"
+      "name": "MudComponentBase",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "MudDialog"
+      "name": "MudDialog",
+      "expectedCount": 4
     },
     {
       "type": "find-type-definition",
-      "name": "MudTextField"
+      "name": "MudTextField",
+      "expectedCount": 4
     },
     {
       "type": "find-derived-types",
-      "name": "MudComponentBase"
+      "name": "MudComponentBase",
+      "expectedCount": 324
     },
     {
       "type": "find-interface-implementation",
-      "name": "IDisposable"
+      "name": "IDisposable",
+      "expectedCount": 116
     },
     {
       "type": "find-member-definition",
-      "name": "OnInitialized"
+      "name": "OnInitialized",
+      "expectedCount": 149
     },
     {
       "type": "find-member-definition",
-      "name": "BuildRenderTree"
+      "name": "BuildRenderTree",
+      "expectedCount": 1524
     }
   ]
 }

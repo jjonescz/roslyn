@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "YarpOptions"
+      "name": "YarpOptions",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "ReverseProxyFeature"
+      "name": "ReverseProxyFeature",
+      "expectedCount": 2
     },
     {
       "type": "find-type-definition",
-      "name": "IngressCache"
+      "name": "IngressCache",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "ServerCertificateSelector"
+      "name": "ServerCertificateSelector",
+      "expectedCount": 1
     },
     {
       "type": "find-derived-types",
-      "name": "IngressData"
+      "name": "IngressData",
+      "expectedCount": 0
     },
     {
       "type": "find-interface-implementation",
-      "name": "ICache"
+      "name": "ICache",
+      "expectedCount": 1
     },
     {
       "type": "find-member-definition",
-      "name": "Configure"
+      "name": "Configure",
+      "expectedCount": 4
     },
     {
       "type": "find-member-definition",
-      "name": "Dispose"
+      "name": "Dispose",
+      "expectedCount": 27
     }
   ]
 }

@@ -1,4 +1,4 @@
-namespace LspVGrepTool.Models;
+﻿namespace LspVGrepTool.Models;
 
 internal static class QueryTypes
 {
@@ -8,14 +8,14 @@ internal static class QueryTypes
     public const string FindMemberDefinition = "find-member-definition";
 }
 
-internal abstract record QueryRequest
+internal abstract record QueryRequest(int? ExpectedCount)
 {
     public abstract string Type { get; }
 
     public abstract IReadOnlyDictionary<string, string> GetDisplayFields();
 }
 
-internal sealed record FindTypeDefinitionQuery(string Name) : QueryRequest
+internal sealed record FindTypeDefinitionQuery(string Name, int? ExpectedCount = null) : QueryRequest(ExpectedCount)
 {
     public override string Type => QueryTypes.FindTypeDefinition;
 
@@ -26,7 +26,7 @@ internal sealed record FindTypeDefinitionQuery(string Name) : QueryRequest
         };
 }
 
-internal sealed record FindInterfaceImplementationQuery(string Name) : QueryRequest
+internal sealed record FindInterfaceImplementationQuery(string Name, int? ExpectedCount = null) : QueryRequest(ExpectedCount)
 {
     public override string Type => QueryTypes.FindInterfaceImplementation;
 
@@ -37,7 +37,7 @@ internal sealed record FindInterfaceImplementationQuery(string Name) : QueryRequ
         };
 }
 
-internal sealed record FindDerivedTypesQuery(string Name) : QueryRequest
+internal sealed record FindDerivedTypesQuery(string Name, int? ExpectedCount = null) : QueryRequest(ExpectedCount)
 {
     public override string Type => QueryTypes.FindDerivedTypes;
 
@@ -48,7 +48,7 @@ internal sealed record FindDerivedTypesQuery(string Name) : QueryRequest
         };
 }
 
-internal sealed record FindMemberDefinitionQuery(string Name) : QueryRequest
+internal sealed record FindMemberDefinitionQuery(string Name, int? ExpectedCount = null) : QueryRequest(ExpectedCount)
 {
     public override string Type => QueryTypes.FindMemberDefinition;
 

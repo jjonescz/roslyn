@@ -59,7 +59,7 @@ internal sealed class QueryExecutor
                 }
             }
 
-            queryReports.Add(new QueryExecutionReport(query.Type, query.GetDisplayFields(), results));
+            queryReports.Add(new QueryExecutionReport(query.Type, query.GetDisplayFields(), query.ExpectedCount, results));
         }
 
         executionStopwatch.Stop();

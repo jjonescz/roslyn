@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "Project"
+      "name": "Project",
+      "expectedCount": 2
     },
     {
       "type": "find-type-definition",
-      "name": "ProjectInstance"
+      "name": "ProjectInstance",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "TaskItem"
+      "name": "TaskItem",
+      "expectedCount": 3
     },
     {
       "type": "find-derived-types",
-      "name": "Task"
+      "name": "Task",
+      "expectedCount": 153
     },
     {
       "type": "find-interface-implementation",
-      "name": "ITask"
+      "name": "ITask",
+      "expectedCount": 168
     },
     {
       "type": "find-member-definition",
-      "name": "Execute"
+      "name": "Execute",
+      "expectedCount": 163
     },
     {
       "type": "find-type-definition",
-      "name": "BuildManager"
+      "name": "BuildManager",
+      "expectedCount": 1
     },
     {
       "type": "find-member-definition",
-      "name": "Build"
+      "name": "Build",
+      "expectedCount": 41
     }
   ]
 }

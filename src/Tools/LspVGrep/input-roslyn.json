@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "SyntaxNode"
+      "name": "SyntaxNode",
+      "expectedCount": 2
     },
     {
       "type": "find-type-definition",
-      "name": "SyntaxKind"
+      "name": "SyntaxKind",
+      "expectedCount": 2
     },
     {
       "type": "find-type-definition",
-      "name": "ISymbol"
+      "name": "ISymbol",
+      "expectedCount": 1
     },
     {
       "type": "find-derived-types",
-      "name": "BoundNode"
+      "name": "BoundNode",
+      "expectedCount": 469
     },
     {
       "type": "find-interface-implementation",
-      "name": "ISymbol"
+      "name": "ISymbol",
+      "expectedCount": 0
     },
     {
       "type": "find-member-definition",
-      "name": "GetHashCode"
+      "name": "GetHashCode",
+      "expectedCount": 629
     },
     {
       "type": "find-type-definition",
-      "name": "Compilation"
+      "name": "Compilation",
+      "expectedCount": 4
     },
     {
       "type": "find-member-definition",
-      "name": "EmitAsync"
+      "name": "EmitAsync",
+      "expectedCount": 0
     }
   ]
 }

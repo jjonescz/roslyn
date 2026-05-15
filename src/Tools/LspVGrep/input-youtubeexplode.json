@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "YoutubeClient"
+      "name": "YoutubeClient",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "ChannelClient"
+      "name": "ChannelClient",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "VideoWatchPage"
+      "name": "VideoWatchPage",
+      "expectedCount": 2
     },
     {
       "type": "find-type-definition",
-      "name": "PlayerResponse"
+      "name": "PlayerResponse",
+      "expectedCount": 4
     },
     {
       "type": "find-derived-types",
-      "name": "Channel"
+      "name": "Channel",
+      "expectedCount": 0
     },
     {
       "type": "find-interface-implementation",
-      "name": "ICipherOperation"
+      "name": "ICipherOperation",
+      "expectedCount": 3
     },
     {
       "type": "find-member-definition",
-      "name": "GetAsync"
+      "name": "GetAsync",
+      "expectedCount": 10
     },
     {
       "type": "find-member-definition",
-      "name": "Execute"
+      "name": "Execute",
+      "expectedCount": 0
     }
   ]
 }

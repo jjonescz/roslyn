@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "TestRunner"
+      "name": "TestRunner",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "MiddlewareAnalyzer"
+      "name": "MiddlewareAnalyzer",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "OptionsAnalyzer"
+      "name": "OptionsAnalyzer",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "StartupAnalysis"
+      "name": "StartupAnalysis",
+      "expectedCount": 1
     },
     {
       "type": "find-derived-types",
-      "name": "DiagnosticAnalyzer"
+      "name": "DiagnosticAnalyzer",
+      "expectedCount": 0
     },
     {
       "type": "find-interface-implementation",
-      "name": "IHostedService"
+      "name": "IHostedService",
+      "expectedCount": 0
     },
     {
       "type": "find-member-definition",
-      "name": "StartAsync"
+      "name": "StartAsync",
+      "expectedCount": 85
     },
     {
       "type": "find-member-definition",
-      "name": "InvokeAsync"
+      "name": "InvokeAsync",
+      "expectedCount": 183
     }
   ]
 }

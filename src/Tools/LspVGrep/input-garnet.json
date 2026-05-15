@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "GarnetServerEmbedded"
+      "name": "GarnetServerEmbedded",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "ClusterContext"
+      "name": "ClusterContext",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "ClusterOperations"
+      "name": "ClusterOperations",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "LuaRunnerOperations"
+      "name": "LuaRunnerOperations",
+      "expectedCount": 1
     },
     {
       "type": "find-derived-types",
-      "name": "NetworkBase"
+      "name": "NetworkBase",
+      "expectedCount": 2
     },
     {
       "type": "find-interface-implementation",
-      "name": "IDisposable"
+      "name": "IDisposable",
+      "expectedCount": 281
     },
     {
       "type": "find-member-definition",
-      "name": "Execute"
+      "name": "Execute",
+      "expectedCount": 15
     },
     {
       "type": "find-member-definition",
-      "name": "Dispose"
+      "name": "Dispose",
+      "expectedCount": 166
     }
   ]
 }

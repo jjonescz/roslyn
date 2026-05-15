@@ -64,6 +64,7 @@ internal sealed class JsonSummaryReport
             {
                 Type = query.Type,
                 Fields = query.Fields.ToDictionary(static field => field.Key, static field => field.Value, StringComparer.Ordinal),
+                ExpectedCount = query.ExpectedCount,
                 Algorithms = query.Algorithms.Select(static algorithm => new JsonSummaryAlgorithm
                 {
                     Name = algorithm.AlgorithmName,
@@ -169,6 +170,9 @@ internal sealed class JsonSummaryQuery
 
     [JsonPropertyName("fields")]
     public Dictionary<string, string> Fields { get; init; } = [];
+
+    [JsonPropertyName("expectedCount")]
+    public int? ExpectedCount { get; init; }
 
     [JsonPropertyName("algorithms")]
     public List<JsonSummaryAlgorithm> Algorithms { get; init; } = [];

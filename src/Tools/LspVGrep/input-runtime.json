@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "Task"
+      "name": "Task",
+      "expectedCount": 4
     },
     {
       "type": "find-type-definition",
-      "name": "Span"
+      "name": "Span",
+      "expectedCount": 2
     },
     {
       "type": "find-type-definition",
-      "name": "IServiceProvider"
+      "name": "IServiceProvider",
+      "expectedCount": 2
     },
     {
       "type": "find-derived-types",
-      "name": "Stream"
+      "name": "Stream",
+      "expectedCount": 16
     },
     {
       "type": "find-interface-implementation",
-      "name": "IDisposable"
+      "name": "IDisposable",
+      "expectedCount": 522
     },
     {
       "type": "find-member-definition",
-      "name": "GetHashCode"
+      "name": "GetHashCode",
+      "expectedCount": 1656
     },
     {
       "type": "find-type-definition",
-      "name": "ArrayPool"
+      "name": "ArrayPool",
+      "expectedCount": 2
     },
     {
       "type": "find-member-definition",
-      "name": "TryParse"
+      "name": "TryParse",
+      "expectedCount": 594
     }
   ]
 }

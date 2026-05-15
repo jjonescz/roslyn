@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "GetCimInstanceCommand"
+      "name": "GetCimInstanceCommand",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "CmdletOperationBase"
+      "name": "CmdletOperationBase",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "CimSessionWrapper"
+      "name": "CimSessionWrapper",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "ParameterDefinitionEntry"
+      "name": "ParameterDefinitionEntry",
+      "expectedCount": 1
     },
     {
       "type": "find-derived-types",
-      "name": "Cmdlet"
+      "name": "Cmdlet",
+      "expectedCount": 269
     },
     {
       "type": "find-interface-implementation",
-      "name": "IDisposable"
+      "name": "IDisposable",
+      "expectedCount": 0
     },
     {
       "type": "find-member-definition",
-      "name": "ProcessRecord"
+      "name": "ProcessRecord",
+      "expectedCount": 245
     },
     {
       "type": "find-member-definition",
-      "name": "Dispose"
+      "name": "Dispose",
+      "expectedCount": 282
     }
   ]
 }

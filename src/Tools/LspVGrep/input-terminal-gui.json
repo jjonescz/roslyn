@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "LoginViewModel"
+      "name": "LoginViewModel",
+      "expectedCount": 2
     },
     {
       "type": "find-type-definition",
-      "name": "Message"
+      "name": "Message",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "TerminalScheduler"
+      "name": "TerminalScheduler",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "View"
+      "name": "View",
+      "expectedCount": 22
     },
     {
       "type": "find-derived-types",
-      "name": "View"
+      "name": "View",
+      "expectedCount": 271
     },
     {
       "type": "find-interface-implementation",
-      "name": "IDisposable"
+      "name": "IDisposable",
+      "expectedCount": 456
     },
     {
       "type": "find-member-definition",
-      "name": "Draw"
+      "name": "Draw",
+      "expectedCount": 8
     },
     {
       "type": "find-member-definition",
-      "name": "Run"
+      "name": "Run",
+      "expectedCount": 13
     }
   ]
 }

@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "ErrorOr"
+      "name": "ErrorOr",
+      "expectedCount": 9
     },
     {
       "type": "find-type-definition",
-      "name": "Error"
+      "name": "Error",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "ErrorOrExtensions"
+      "name": "ErrorOrExtensions",
+      "expectedCount": 6
     },
     {
       "type": "find-type-definition",
-      "name": "ErrorOrFactory"
+      "name": "ErrorOrFactory",
+      "expectedCount": 1
     },
     {
       "type": "find-derived-types",
-      "name": "IErrorOr"
+      "name": "IErrorOr",
+      "expectedCount": 9
     },
     {
       "type": "find-interface-implementation",
-      "name": "IErrorOr"
+      "name": "IErrorOr",
+      "expectedCount": 9
     },
     {
       "type": "find-member-definition",
-      "name": "Match"
+      "name": "Match",
+      "expectedCount": 4
     },
     {
       "type": "find-member-definition",
-      "name": "ToString"
+      "name": "ToString",
+      "expectedCount": 1
     }
   ]
 }

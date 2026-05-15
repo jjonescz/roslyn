@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "App"
+      "name": "App",
+      "expectedCount": 2
     },
     {
       "type": "find-type-definition",
-      "name": "MainWindow"
+      "name": "MainWindow",
+      "expectedCount": 2
     },
     {
       "type": "find-type-definition",
-      "name": "BaseUIAction"
+      "name": "BaseUIAction",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "RefreshItemsAction"
+      "name": "RefreshItemsAction",
+      "expectedCount": 1
     },
     {
       "type": "find-derived-types",
-      "name": "BaseUIAction"
+      "name": "BaseUIAction",
+      "expectedCount": 22
     },
     {
       "type": "find-interface-implementation",
-      "name": "IAction"
+      "name": "IAction",
+      "expectedCount": 209
     },
     {
       "type": "find-member-definition",
-      "name": "Execute"
+      "name": "Execute",
+      "expectedCount": 4
     },
     {
       "type": "find-member-definition",
-      "name": "Dispose"
+      "name": "Dispose",
+      "expectedCount": 93
     }
   ]
 }

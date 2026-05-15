@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace LspVGrepTool.Models;
@@ -25,6 +25,9 @@ internal sealed class QueryDefinitionDto
 
     [JsonPropertyName("name")]
     public string? Name { get; init; }
+
+    [JsonPropertyName("expectedCount")]
+    public int? ExpectedCount { get; init; }
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? ExtraFields { get; init; }

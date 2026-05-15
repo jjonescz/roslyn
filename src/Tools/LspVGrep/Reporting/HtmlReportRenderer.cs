@@ -92,6 +92,11 @@ internal static class HtmlReportRenderer
                 builder.AppendLine($"        <dt>{Encode(field.Key)}</dt><dd>{Encode(field.Value)}</dd>");
             }
 
+            if (query.ExpectedCount is { } expectedCount)
+            {
+                builder.AppendLine($"        <dt>expected count</dt><dd>{expectedCount}</dd>");
+            }
+
             builder.AppendLine("      </dl>");
 
             foreach (var algorithm in query.Algorithms)

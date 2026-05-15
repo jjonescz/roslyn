@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "AvaloniaView"
+      "name": "AvaloniaView",
+      "expectedCount": 7
     },
     {
       "type": "find-type-definition",
-      "name": "ApplicationLifetime"
+      "name": "ApplicationLifetime",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "CursorFactory"
+      "name": "CursorFactory",
+      "expectedCount": 3
     },
     {
       "type": "find-type-definition",
-      "name": "ByteArrayEqualityComparer"
+      "name": "ByteArrayEqualityComparer",
+      "expectedCount": 1
     },
     {
       "type": "find-derived-types",
-      "name": "AvaloniaObject"
+      "name": "AvaloniaObject",
+      "expectedCount": 496
     },
     {
       "type": "find-interface-implementation",
-      "name": "IAndroidApplication"
+      "name": "IAndroidApplication",
+      "expectedCount": 4
     },
     {
       "type": "find-member-definition",
-      "name": "Render"
+      "name": "Render",
+      "expectedCount": 67
     },
     {
       "type": "find-member-definition",
-      "name": "Dispose"
+      "name": "Dispose",
+      "expectedCount": 468
     }
   ]
 }

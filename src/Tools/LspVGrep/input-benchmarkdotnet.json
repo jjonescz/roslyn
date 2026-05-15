@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "BuildRunner"
+      "name": "BuildRunner",
+      "expectedCount": 0
     },
     {
       "type": "find-type-definition",
-      "name": "CommandLineParser"
+      "name": "CommandLineParser",
+      "expectedCount": 0
     },
     {
       "type": "find-type-definition",
-      "name": "KnownOptions"
+      "name": "KnownOptions",
+      "expectedCount": 0
     },
     {
       "type": "find-type-definition",
-      "name": "AnalyserBase"
+      "name": "AnalyserBase",
+      "expectedCount": 1
     },
     {
       "type": "find-derived-types",
-      "name": "AnalyserBase"
+      "name": "AnalyserBase",
+      "expectedCount": 8
     },
     {
       "type": "find-interface-implementation",
-      "name": "IOption"
+      "name": "IOption",
+      "expectedCount": 0
     },
     {
       "type": "find-member-definition",
-      "name": "Run"
+      "name": "Run",
+      "expectedCount": 30
     },
     {
       "type": "find-member-definition",
-      "name": "Parse"
+      "name": "Parse",
+      "expectedCount": 16
     }
   ]
 }

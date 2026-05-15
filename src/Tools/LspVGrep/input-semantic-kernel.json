@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "Kernel"
+      "name": "Kernel",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "KernelFunction"
+      "name": "KernelFunction",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "Agent"
+      "name": "Agent",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "ChatHistory"
+      "name": "ChatHistory",
+      "expectedCount": 1
     },
     {
       "type": "find-derived-types",
-      "name": "Agent"
+      "name": "Agent",
+      "expectedCount": 18
     },
     {
       "type": "find-interface-implementation",
-      "name": "IChatCompletionService"
+      "name": "IChatCompletionService",
+      "expectedCount": 13
     },
     {
       "type": "find-member-definition",
-      "name": "InvokeAsync"
+      "name": "InvokeAsync",
+      "expectedCount": 106
     },
     {
       "type": "find-member-definition",
-      "name": "GetChatMessageContentsAsync"
+      "name": "GetChatMessageContentsAsync",
+      "expectedCount": 43
     }
   ]
 }

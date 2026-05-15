@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "CSharpDecompiler"
+      "name": "CSharpDecompiler",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "DecompilerSettings"
+      "name": "DecompilerSettings",
+      "expectedCount": 2
     },
     {
       "type": "find-type-definition",
-      "name": "XamlDecompiler"
+      "name": "XamlDecompiler",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "BamlDecompilerSettings"
+      "name": "BamlDecompilerSettings",
+      "expectedCount": 1
     },
     {
       "type": "find-derived-types",
-      "name": "XamlNode"
+      "name": "XamlNode",
+      "expectedCount": 0
     },
     {
       "type": "find-interface-implementation",
-      "name": "IHandler"
+      "name": "IHandler",
+      "expectedCount": 37
     },
     {
       "type": "find-member-definition",
-      "name": "Decompile"
+      "name": "Decompile",
+      "expectedCount": 51
     },
     {
       "type": "find-member-definition",
-      "name": "Execute"
+      "name": "Execute",
+      "expectedCount": 62
     }
   ]
 }

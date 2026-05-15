@@ -152,6 +152,25 @@ internal static class CombinedReportRenderer
   </section>
 
   <section class="panel">
+    <div class="toolbar">
+      <h2 id="accuracyChartTitle">Mean Accuracy by Repository Size</h2>
+      <div class="chart-controls">
+        <div class="legend">
+          <span><i class="swatch grep"></i>Grep</span>
+          <span><i class="swatch tgrep"></i>tgrep</span>
+          <span><i class="swatch lsp"></i>LSP</span>
+        </div>
+        <div class="scale-toggle" role="group" aria-label="Accuracy metric">
+          <button id="accuracyMetric" type="button" aria-pressed="true">Accuracy</button>
+          <button id="precisionMetric" type="button" aria-pressed="false">Precision</button>
+          <button id="recallMetric" type="button" aria-pressed="false">Recall</button>
+        </div>
+      </div>
+    </div>
+    <div id="accuracyChart" class="plot-wrap"></div>
+  </section>
+
+  <section class="panel">
     <div class="table-wrap">
       <table>
         <thead>
@@ -159,6 +178,7 @@ internal static class CombinedReportRenderer
             <th>Repository</th>
             <th>Query</th>
             <th class="numeric">kLOC</th>
+            <th class="numeric">Expected results</th>
             <th class="numeric">Grep results</th>
             <th class="numeric">tgrep results</th>
             <th class="numeric">LSP results</th>
@@ -201,12 +221,17 @@ const repositoryRowsBody = document.getElementById('repositoryRows');
 const rowsBody = document.getElementById('rows');
 const selectionRowsBody = document.getElementById('selectionRows');
 const chart = document.getElementById('chart');
+const accuracyChartTitle = document.getElementById('accuracyChartTitle');
+const accuracyChart = document.getElementById('accuracyChart');
 const fineQueryFilterButton = document.getElementById('fineQueryFilter');
 const coarseQueryFilterButton = document.getElementById('coarseQueryFilter');
 const normalXScaleButton = document.getElementById('normalXScale');
 const logXScaleButton = document.getElementById('logXScale');
 const normalScaleButton = document.getElementById('normalScale');
 const logScaleButton = document.getElementById('logScale');
+const accuracyMetricButton = document.getElementById('accuracyMetric');
+const precisionMetricButton = document.getElementById('precisionMetric');
+const recallMetricButton = document.getElementById('recallMetric');
 const seriesDefinitions = [
   { label: 'Grep', field: 'grepMilliseconds', color: '#0072b2' },
   { label: 'tgrep', field: 'tgrepMilliseconds', color: '#e69f00' },
@@ -214,12 +239,23 @@ const seriesDefinitions = [
   { label: 'LSP', field: 'lspMilliseconds', color: '#009e73' },
   { label: 'LSP + solution load', field: 'lspWithSolutionLoadMilliseconds', color: '#cc79a7', dash: '8 5' }
 ];
+const accuracySeriesDefinitions = [
+  { label: 'Grep', countField: 'grepResultCount', color: '#0072b2' },
+  { label: 'tgrep', countField: 'tgrepResultCount', color: '#e69f00' },
+  { label: 'LSP', countField: 'lspResultCount', color: '#009e73' }
+];
+const accuracyMetricLabels = {
+  accuracy: 'Accuracy',
+  precision: 'Precision',
+  recall: 'Recall'
+};
 const svgNamespace = 'http://www.w3.org/2000/svg';
 const fineQueries = [...new Set(allRows.map(row => row.query))].sort((left, right) => left.localeCompare(right));
 const coarseQueries = [...new Set(allRows.map(row => row.queryType ?? row.query))].sort((left, right) => left.localeCompare(right));
 let queryFilterMode = 'coarse';
 let xScaleMode = 'log';
 let yScaleMode = 'log';
+let accuracyMetric = 'accuracy';
 
 document.getElementById('selectAll').addEventListener('click', () => setAll(true));
 document.getElementById('selectNone').addEventListener('click', () => setAll(false));
@@ -229,6 +265,9 @@ normalXScaleButton.addEventListener('click', () => setXScaleMode('normal'));
 logXScaleButton.addEventListener('click', () => setXScaleMode('log'));
 normalScaleButton.addEventListener('click', () => setYScaleMode('normal'));
 logScaleButton.addEventListener('click', () => setYScaleMode('log'));
+accuracyMetricButton.addEventListener('click', () => setAccuracyMetric('accuracy'));
+precisionMetricButton.addEventListener('click', () => setAccuracyMetric('precision'));
+recallMetricButton.addEventListener('click', () => setAccuracyMetric('recall'));
 
 function setQueryFilterMode(mode) {
   queryFilterMode = mode;
@@ -249,6 +288,14 @@ function setXScaleMode(mode) {
   xScaleMode = mode;
   normalXScaleButton.setAttribute('aria-pressed', String(mode === 'normal'));
   logXScaleButton.setAttribute('aria-pressed', String(mode === 'log'));
+  render();
+}
+
+function setAccuracyMetric(metric) {
+  accuracyMetric = metric;
+  accuracyMetricButton.setAttribute('aria-pressed', String(metric === 'accuracy'));
+  precisionMetricButton.setAttribute('aria-pressed', String(metric === 'precision'));
+  recallMetricButton.setAttribute('aria-pressed', String(metric === 'recall'));
   render();
 }
 
@@ -284,6 +331,7 @@ function render() {
   const visibleRows = allRows.filter(row => selected.has(queryFilterMode === 'fine' ? row.query : (row.queryType ?? row.query)));
   renderTable(visibleRows);
   renderChart(visibleRows);
+  renderAccuracyChart(visibleRows);
 }
 
 function renderTable(visibleRows) {
@@ -294,6 +342,7 @@ function renderTable(visibleRows) {
       repositoryCell(row),
       cell(row.query),
       numericCell(formatKloc(row.sourceLineCount)),
+      numericCell(formatCount(row.expectedResultCount)),
       numericCell(formatCount(row.grepResultCount)),
       numericCell(formatCount(row.tgrepResultCount)),
       numericCell(formatLspCount(row)),
@@ -385,6 +434,29 @@ function renderChart(visibleRows) {
   chart.append(createPlot(pointsBySeries, allPoints, xScaleMode, yScaleMode));
 }
 
+function renderAccuracyChart(visibleRows) {
+  accuracyChart.textContent = '';
+  const metricLabel = accuracyMetricLabels[accuracyMetric];
+  accuracyChartTitle.textContent = `Mean ${metricLabel} by Repository Size`;
+  const groups = groupRowsByRepository(visibleRows);
+  const pointsBySeries = accuracySeriesDefinitions.map(definition => ({
+    ...definition,
+    points: groups
+      .map(group => createAccuracyPoint(group, definition.countField, accuracyMetric))
+      .filter(point => point !== null)
+  }));
+  const allPoints = pointsBySeries.flatMap(series => series.points);
+  if (allPoints.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'plot-empty';
+    empty.textContent = 'No expected-count data for the selected queries.';
+    accuracyChart.append(empty);
+    return;
+  }
+
+  accuracyChart.append(createAccuracyPlot(pointsBySeries, allPoints, metricLabel, xScaleMode));
+}
+
 function groupRowsByRepository(rows) {
   const groups = new Map();
   for (const row of rows) {
@@ -421,6 +493,44 @@ function createPoint(group, field) {
     milliseconds: median(values),
     sampleCount: values.length
   };
+}
+
+function createAccuracyPoint(group, countField, metric) {
+  const values = group.rows
+    .map(row => computeMetric(row.expectedResultCount, row[countField], metric))
+    .filter(value => value !== null && value !== undefined);
+  if (values.length === 0) {
+    return null;
+  }
+
+  return {
+    repository: group.repository,
+    sourceLineCount: group.sourceLineCount,
+    kLoc: group.sourceLineCount / 1000,
+    value: average(values),
+    sampleCount: values.length
+  };
+}
+
+function computeMetric(expectedCount, actualCount, metric) {
+  if (expectedCount === null || expectedCount === undefined || actualCount === null || actualCount === undefined) {
+    return null;
+  }
+
+  if (metric === 'accuracy') {
+    return actualCount === expectedCount ? 1 : 0;
+  }
+
+  const truePositiveCount = Math.min(actualCount, expectedCount);
+  if (metric === 'precision') {
+    return actualCount === 0 ? (expectedCount === 0 ? 1 : 0) : truePositiveCount / actualCount;
+  }
+
+  if (metric === 'recall') {
+    return expectedCount === 0 ? (actualCount === 0 ? 1 : 0) : truePositiveCount / expectedCount;
+  }
+
+  return null;
 }
 
 function createPlot(pointsBySeries, allPoints, xScaleMode, yScaleMode) {
@@ -462,6 +572,37 @@ function createPlot(pointsBySeries, allPoints, xScaleMode, yScaleMode) {
 
   svg.append(svgElement('text', { class: 'axis-label', x: margin.left + plotWidth / 2, y: height - 12, 'text-anchor': 'middle' }, isLogXScale ? 'Repository size (log kLOC)' : 'Repository size (kLOC)'));
   svg.append(svgElement('text', { class: 'axis-label', x: 18, y: margin.top + plotHeight / 2, 'text-anchor': 'middle', transform: `rotate(-90 18 ${margin.top + plotHeight / 2})` }, isLogYScale ? 'Time (log scale)' : 'Time (normal scale)'));
+  return svg;
+}
+
+function createAccuracyPlot(pointsBySeries, allPoints, metricLabel, xScaleMode) {
+  const width = 980;
+  const height = 430;
+  const margin = { top: 20, right: 28, bottom: 58, left: 82 };
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
+  const xValues = allPoints.map(point => point.kLoc);
+  const isLogXScale = xScaleMode === 'log';
+  const xExtent = createDomain(xValues, isLogXScale);
+  const xMin = xExtent.min;
+  const xMax = xExtent.max;
+  const xScale = isLogXScale
+    ? value => {
+        const logXMin = Math.log10(xMin);
+        const logXMax = Math.log10(xMax);
+        return margin.left + ((Math.log10(value) - logXMin) / (logXMax - logXMin)) * plotWidth;
+      }
+    : value => margin.left + ((value - xMin) / (xMax - xMin)) * plotWidth;
+  const yScale = value => margin.top + (1 - value) * plotHeight;
+  const svg = svgElement('svg', { class: 'plot-svg', viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': `${metricLabel} by repository size, x-axis ${xScaleMode} scale` });
+
+  renderAccuracyGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xMax, xScaleMode);
+  for (const series of pointsBySeries) {
+    renderAccuracySeries(svg, series, xScale, yScale, metricLabel);
+  }
+
+  svg.append(svgElement('text', { class: 'axis-label', x: margin.left + plotWidth / 2, y: height - 12, 'text-anchor': 'middle' }, isLogXScale ? 'Repository size (log kLOC)' : 'Repository size (kLOC)'));
+  svg.append(svgElement('text', { class: 'axis-label', x: 18, y: margin.top + plotHeight / 2, 'text-anchor': 'middle', transform: `rotate(-90 18 ${margin.top + plotHeight / 2})` }, `${metricLabel} (%)`));
   return svg;
 }
 
@@ -511,6 +652,27 @@ function renderGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xM
   svg.append(svgElement('line', { class: 'axis', x1: margin.left, y1: margin.top, x2: margin.left, y2: margin.top + plotHeight }));
 }
 
+function renderAccuracyGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xMax, xScaleMode) {
+  const xTicks = xScaleMode === 'log'
+    ? createLogTicks(xMin, xMax)
+    : createLinearTicks(xMin, xMax, 5);
+  const yTicks = [0, 0.25, 0.5, 0.75, 1];
+  for (const tick of xTicks) {
+    const x = xScale(tick);
+    svg.append(svgElement('line', { class: 'grid', x1: x, y1: margin.top, x2: x, y2: margin.top + plotHeight }));
+    svg.append(svgElement('text', { class: 'tick-label', x, y: margin.top + plotHeight + 20, 'text-anchor': 'middle' }, formatKloc(tick * 1000)));
+  }
+
+  for (const tick of yTicks) {
+    const y = yScale(tick);
+    svg.append(svgElement('line', { class: 'grid', x1: margin.left, y1: y, x2: margin.left + plotWidth, y2: y }));
+    svg.append(svgElement('text', { class: 'tick-label', x: margin.left - 10, y: y + 4, 'text-anchor': 'end' }, formatPercent(tick)));
+  }
+
+  svg.append(svgElement('line', { class: 'axis', x1: margin.left, y1: margin.top + plotHeight, x2: margin.left + plotWidth, y2: margin.top + plotHeight }));
+  svg.append(svgElement('line', { class: 'axis', x1: margin.left, y1: margin.top, x2: margin.left, y2: margin.top + plotHeight }));
+}
+
 function renderSeries(svg, series, xScale, yScale) {
   const points = [...series.points].sort((left, right) => left.kLoc - right.kLoc);
   if (points.length >= 2) {
@@ -535,6 +697,29 @@ function renderSeries(svg, series, xScale, yScale) {
       fill: series.color
     });
     circle.append(svgElement('title', {}, `${series.label}\n${point.repository}\n${formatKloc(point.sourceLineCount)} kLOC\n${formatMs(point.milliseconds)} median across ${point.sampleCount} selected queries`));
+    svg.append(circle);
+  }
+}
+
+function renderAccuracySeries(svg, series, xScale, yScale, metricLabel) {
+  const points = [...series.points].sort((left, right) => left.kLoc - right.kLoc);
+  if (points.length >= 2) {
+    svg.append(svgElement('polyline', {
+      class: 'series-line',
+      stroke: series.color,
+      points: points.map(point => `${xScale(point.kLoc)},${yScale(point.value)}`).join(' ')
+    }));
+  }
+
+  for (const point of points) {
+    const circle = svgElement('circle', {
+      class: 'point',
+      cx: xScale(point.kLoc),
+      cy: yScale(point.value),
+      r: 5,
+      fill: series.color
+    });
+    circle.append(svgElement('title', {}, `${series.label}\n${point.repository}\n${formatKloc(point.sourceLineCount)} kLOC\n${formatPercent(point.value)} mean ${metricLabel.toLowerCase()} across ${point.sampleCount} selected queries`));
     svg.append(circle);
   }
 }
@@ -582,6 +767,10 @@ function median(values) {
   return values.length % 2 === 0
     ? (values[middle - 1] + values[middle]) / 2
     : values[middle];
+}
+
+function average(values) {
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function cell(text) {
@@ -650,6 +839,14 @@ function formatMs(value) {
     : `${Math.round(value)}ms`;
 }
 
+function formatPercent(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  return `${Math.round(value * 100)}%`;
+}
+
 function formatLspCount(row) {
   return row.roslynWorkspacePartial ? 'partial' : formatCount(row.lspResultCount);
 }
@@ -696,6 +893,7 @@ render();
             var roslynWorkspacePartial = report.RoslynTarget?.IsPartial == true;
             var lspWarm = roslynWorkspacePartial ? null : SelectLspAlgorithm(successfulAlgorithms, pass: 2);
             var lsp = lspWarm ?? (roslynWorkspacePartial ? null : SelectLspAlgorithm(successfulAlgorithms, pass: 1));
+            var expectedCount = query.ExpectedCount ?? (roslynWorkspacePartial ? tgrep?.LineCount : lsp?.LineCount);
             var tgrepWithIndex = report.TgrepIndex?.BuildTimeMilliseconds is { } indexMilliseconds && tgrep?.ElapsedMilliseconds is { } tgrepMilliseconds
               ? indexMilliseconds + tgrepMilliseconds
               : (double?)null;
@@ -710,6 +908,7 @@ render();
                 report.SourceLineCount,
                 FormatQuery(query),
                 query.Type,
+                expectedCount,
                 grep?.Name,
                 tgrep?.Name,
                 lsp?.Name,
@@ -808,6 +1007,7 @@ render();
         long? SourceLineCount,
         string Query,
         string QueryType,
+        int? ExpectedResultCount,
         string? GrepAlgorithmName,
         string? TgrepAlgorithmName,
         string? LspAlgorithmName,

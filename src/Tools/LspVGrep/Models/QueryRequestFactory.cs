@@ -1,4 +1,4 @@
-namespace LspVGrepTool.Models;
+﻿namespace LspVGrepTool.Models;
 
 internal static class QueryRequestFactory
 {
@@ -34,6 +34,11 @@ internal static class QueryRequestFactory
             throw new InvalidDataException($"Query #{index + 1} is missing a non-empty 'type' field.");
         }
 
+        if (definition.ExpectedCount < 0)
+        {
+            throw new InvalidDataException($"Query #{index + 1} has a negative 'expectedCount' value.");
+        }
+
         return definition.Type switch
         {
             QueryTypes.FindTypeDefinition => CreateFindTypeDefinitionQuery(definition, index),
@@ -53,7 +58,7 @@ internal static class QueryRequestFactory
                 $"Query #{index + 1} with type '{QueryTypes.FindTypeDefinition}' requires a non-empty 'name' field.");
         }
 
-        return new FindTypeDefinitionQuery(definition.Name);
+        return new FindTypeDefinitionQuery(definition.Name, definition.ExpectedCount);
     }
 
     private static TQuery CreateNameOnlyQuery<TQuery>(QueryDefinitionDto definition, int index)
@@ -65,6 +70,6 @@ internal static class QueryRequestFactory
                 $"Query #{index + 1} with type '{definition.Type}' requires a non-empty 'name' field.");
         }
 
-        return (TQuery)Activator.CreateInstance(typeof(TQuery), definition.Name)!;
+        return (TQuery)Activator.CreateInstance(typeof(TQuery), definition.Name, definition.ExpectedCount)!;
     }
 }

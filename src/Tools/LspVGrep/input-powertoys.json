@@ -4,35 +4,43 @@
   "queries": [
     {
       "type": "find-type-definition",
-      "name": "StringMatcher"
+      "name": "StringMatcher",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "MatchResult"
+      "name": "MatchResult",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "ThemeManager"
+      "name": "ThemeManager",
+      "expectedCount": 1
     },
     {
       "type": "find-type-definition",
-      "name": "PluginInitContext"
+      "name": "PluginInitContext",
+      "expectedCount": 1
     },
     {
       "type": "find-derived-types",
-      "name": "BaseModel"
+      "name": "BaseModel",
+      "expectedCount": 9
     },
     {
       "type": "find-interface-implementation",
-      "name": "IPlugin"
+      "name": "IPlugin",
+      "expectedCount": 20
     },
     {
       "type": "find-member-definition",
-      "name": "Query"
+      "name": "Query",
+      "expectedCount": 85
     },
     {
       "type": "find-member-definition",
-      "name": "Dispose"
+      "name": "Dispose",
+      "expectedCount": 41
     }
   ]
 }

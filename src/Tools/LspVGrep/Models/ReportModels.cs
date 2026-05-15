@@ -19,6 +19,7 @@ internal sealed record ToolReport(
 internal sealed record QueryExecutionReport(
     string Type,
     IReadOnlyDictionary<string, string> Fields,
+    int? ExpectedCount,
     IReadOnlyList<AlgorithmExecutionResult> Algorithms);
 
 internal enum AlgorithmOutcome
