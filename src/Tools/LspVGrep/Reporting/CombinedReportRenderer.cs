@@ -160,11 +160,6 @@ internal static class CombinedReportRenderer
           <span><i class="swatch tgrep"></i>tgrep</span>
           <span><i class="swatch lsp"></i>LSP</span>
         </div>
-        <div class="scale-toggle" role="group" aria-label="Accuracy metric">
-          <button id="accuracyMetric" type="button" aria-pressed="true">Accuracy</button>
-          <button id="precisionMetric" type="button" aria-pressed="false">Precision</button>
-          <button id="recallMetric" type="button" aria-pressed="false">Recall</button>
-        </div>
       </div>
     </div>
     <div id="accuracyChart" class="plot-wrap"></div>
@@ -221,7 +216,6 @@ const repositoryRowsBody = document.getElementById('repositoryRows');
 const rowsBody = document.getElementById('rows');
 const selectionRowsBody = document.getElementById('selectionRows');
 const chart = document.getElementById('chart');
-const accuracyChartTitle = document.getElementById('accuracyChartTitle');
 const accuracyChart = document.getElementById('accuracyChart');
 const fineQueryFilterButton = document.getElementById('fineQueryFilter');
 const coarseQueryFilterButton = document.getElementById('coarseQueryFilter');
@@ -229,9 +223,6 @@ const normalXScaleButton = document.getElementById('normalXScale');
 const logXScaleButton = document.getElementById('logXScale');
 const normalScaleButton = document.getElementById('normalScale');
 const logScaleButton = document.getElementById('logScale');
-const accuracyMetricButton = document.getElementById('accuracyMetric');
-const precisionMetricButton = document.getElementById('precisionMetric');
-const recallMetricButton = document.getElementById('recallMetric');
 const seriesDefinitions = [
   { label: 'Grep', field: 'grepMilliseconds', color: '#0072b2' },
   { label: 'tgrep', field: 'tgrepMilliseconds', color: '#e69f00' },
@@ -244,18 +235,12 @@ const accuracySeriesDefinitions = [
   { label: 'tgrep', countField: 'tgrepResultCount', color: '#e69f00' },
   { label: 'LSP', countField: 'lspResultCount', color: '#009e73' }
 ];
-const accuracyMetricLabels = {
-  accuracy: 'Accuracy',
-  precision: 'Precision',
-  recall: 'Recall'
-};
 const svgNamespace = 'http://www.w3.org/2000/svg';
 const fineQueries = [...new Set(allRows.map(row => row.query))].sort((left, right) => left.localeCompare(right));
 const coarseQueries = [...new Set(allRows.map(row => row.queryType ?? row.query))].sort((left, right) => left.localeCompare(right));
 let queryFilterMode = 'coarse';
 let xScaleMode = 'log';
 let yScaleMode = 'log';
-let accuracyMetric = 'accuracy';
 
 document.getElementById('selectAll').addEventListener('click', () => setAll(true));
 document.getElementById('selectNone').addEventListener('click', () => setAll(false));
@@ -265,9 +250,6 @@ normalXScaleButton.addEventListener('click', () => setXScaleMode('normal'));
 logXScaleButton.addEventListener('click', () => setXScaleMode('log'));
 normalScaleButton.addEventListener('click', () => setYScaleMode('normal'));
 logScaleButton.addEventListener('click', () => setYScaleMode('log'));
-accuracyMetricButton.addEventListener('click', () => setAccuracyMetric('accuracy'));
-precisionMetricButton.addEventListener('click', () => setAccuracyMetric('precision'));
-recallMetricButton.addEventListener('click', () => setAccuracyMetric('recall'));
 
 function setQueryFilterMode(mode) {
   queryFilterMode = mode;
@@ -288,14 +270,6 @@ function setXScaleMode(mode) {
   xScaleMode = mode;
   normalXScaleButton.setAttribute('aria-pressed', String(mode === 'normal'));
   logXScaleButton.setAttribute('aria-pressed', String(mode === 'log'));
-  render();
-}
-
-function setAccuracyMetric(metric) {
-  accuracyMetric = metric;
-  accuracyMetricButton.setAttribute('aria-pressed', String(metric === 'accuracy'));
-  precisionMetricButton.setAttribute('aria-pressed', String(metric === 'precision'));
-  recallMetricButton.setAttribute('aria-pressed', String(metric === 'recall'));
   render();
 }
 
@@ -436,13 +410,11 @@ function renderChart(visibleRows) {
 
 function renderAccuracyChart(visibleRows) {
   accuracyChart.textContent = '';
-  const metricLabel = accuracyMetricLabels[accuracyMetric];
-  accuracyChartTitle.textContent = `Mean ${metricLabel} by Repository Size`;
   const groups = groupRowsByRepository(visibleRows);
   const pointsBySeries = accuracySeriesDefinitions.map(definition => ({
     ...definition,
     points: groups
-      .map(group => createAccuracyPoint(group, definition.countField, accuracyMetric))
+      .map(group => createAccuracyPoint(group, definition.countField))
       .filter(point => point !== null)
   }));
   const allPoints = pointsBySeries.flatMap(series => series.points);
@@ -454,7 +426,7 @@ function renderAccuracyChart(visibleRows) {
     return;
   }
 
-  accuracyChart.append(createAccuracyPlot(pointsBySeries, allPoints, metricLabel, xScaleMode));
+  accuracyChart.append(createAccuracyPlot(pointsBySeries, allPoints, xScaleMode));
 }
 
 function groupRowsByRepository(rows) {
@@ -495,9 +467,9 @@ function createPoint(group, field) {
   };
 }
 
-function createAccuracyPoint(group, countField, metric) {
+function createAccuracyPoint(group, countField) {
   const values = group.rows
-    .map(row => computeMetric(row.expectedResultCount, row[countField], metric))
+    .map(row => computeAccuracy(row.expectedResultCount, row[countField]))
     .filter(value => value !== null && value !== undefined);
   if (values.length === 0) {
     return null;
@@ -512,25 +484,12 @@ function createAccuracyPoint(group, countField, metric) {
   };
 }
 
-function computeMetric(expectedCount, actualCount, metric) {
+function computeAccuracy(expectedCount, actualCount) {
   if (expectedCount === null || expectedCount === undefined || actualCount === null || actualCount === undefined) {
     return null;
   }
 
-  if (metric === 'accuracy') {
-    return actualCount === expectedCount ? 1 : 0;
-  }
-
-  const truePositiveCount = Math.min(actualCount, expectedCount);
-  if (metric === 'precision') {
-    return actualCount === 0 ? (expectedCount === 0 ? 1 : 0) : truePositiveCount / actualCount;
-  }
-
-  if (metric === 'recall') {
-    return expectedCount === 0 ? (actualCount === 0 ? 1 : 0) : truePositiveCount / expectedCount;
-  }
-
-  return null;
+  return actualCount === expectedCount ? 1 : 0;
 }
 
 function createPlot(pointsBySeries, allPoints, xScaleMode, yScaleMode) {
@@ -575,7 +534,7 @@ function createPlot(pointsBySeries, allPoints, xScaleMode, yScaleMode) {
   return svg;
 }
 
-function createAccuracyPlot(pointsBySeries, allPoints, metricLabel, xScaleMode) {
+function createAccuracyPlot(pointsBySeries, allPoints, xScaleMode) {
   const width = 980;
   const height = 430;
   const margin = { top: 20, right: 28, bottom: 58, left: 82 };
@@ -594,15 +553,15 @@ function createAccuracyPlot(pointsBySeries, allPoints, metricLabel, xScaleMode) 
       }
     : value => margin.left + ((value - xMin) / (xMax - xMin)) * plotWidth;
   const yScale = value => margin.top + (1 - value) * plotHeight;
-  const svg = svgElement('svg', { class: 'plot-svg', viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': `${metricLabel} by repository size, x-axis ${xScaleMode} scale` });
+  const svg = svgElement('svg', { class: 'plot-svg', viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': `Accuracy by repository size, x-axis ${xScaleMode} scale` });
 
   renderAccuracyGrid(svg, margin, plotWidth, plotHeight, xScale, yScale, xMin, xMax, xScaleMode);
   for (const series of pointsBySeries) {
-    renderAccuracySeries(svg, series, xScale, yScale, metricLabel);
+    renderAccuracySeries(svg, series, xScale, yScale);
   }
 
   svg.append(svgElement('text', { class: 'axis-label', x: margin.left + plotWidth / 2, y: height - 12, 'text-anchor': 'middle' }, isLogXScale ? 'Repository size (log kLOC)' : 'Repository size (kLOC)'));
-  svg.append(svgElement('text', { class: 'axis-label', x: 18, y: margin.top + plotHeight / 2, 'text-anchor': 'middle', transform: `rotate(-90 18 ${margin.top + plotHeight / 2})` }, `${metricLabel} (%)`));
+  svg.append(svgElement('text', { class: 'axis-label', x: 18, y: margin.top + plotHeight / 2, 'text-anchor': 'middle', transform: `rotate(-90 18 ${margin.top + plotHeight / 2})` }, 'Accuracy (%)'));
   return svg;
 }
 
@@ -701,7 +660,7 @@ function renderSeries(svg, series, xScale, yScale) {
   }
 }
 
-function renderAccuracySeries(svg, series, xScale, yScale, metricLabel) {
+function renderAccuracySeries(svg, series, xScale, yScale) {
   const points = [...series.points].sort((left, right) => left.kLoc - right.kLoc);
   if (points.length >= 2) {
     svg.append(svgElement('polyline', {
@@ -719,7 +678,7 @@ function renderAccuracySeries(svg, series, xScale, yScale, metricLabel) {
       r: 5,
       fill: series.color
     });
-    circle.append(svgElement('title', {}, `${series.label}\n${point.repository}\n${formatKloc(point.sourceLineCount)} kLOC\n${formatPercent(point.value)} mean ${metricLabel.toLowerCase()} across ${point.sampleCount} selected queries`));
+    circle.append(svgElement('title', {}, `${series.label}\n${point.repository}\n${formatKloc(point.sourceLineCount)} kLOC\n${formatPercent(point.value)} mean accuracy across ${point.sampleCount} selected queries`));
     svg.append(circle);
   }
 }
