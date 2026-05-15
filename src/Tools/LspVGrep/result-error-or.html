@@ -34,8 +34,8 @@
   <p><strong>Directory:</strong> C:\repos\error-or</p>
   <p><strong>Commit:</strong> 558a1ad0236ad293e2cd0a0e0a0f954b26166946</p>
   <p><strong>LS cache:</strong> not used (enabled)</p>
-  <p><strong>Roslyn target:</strong> Solution - C:\repos\error-or\ErrorOr.slnx (loaded in 5.3s)</p>
-  <p><strong>tgrep index:</strong> built in 143ms</p>
+  <p><strong>Roslyn target:</strong> Solution - C:\repos\error-or\ErrorOr.slnx (loaded in 7.0s)</p>
+  <p><strong>tgrep index:</strong> built in 298ms</p>
   <div class="actions">
     <button type="button" data-action="expand-all">Expand all</button>
     <button type="button" data-action="collapse-algorithms">Collapse algorithms</button>
@@ -48,7 +48,7 @@
         <dt>name</dt><dd>ErrorOr</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1092 | Lines: 9 | Time: 612ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1092 | Lines: 9 | Time: 904ms</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) ErrorOr&#39;</p>
         <pre>C:\repos\error-or\src\ErrorOr\ErrorOr.cs:11: public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
 C:\repos\error-or\src\ErrorOr\ErrorOr.Else.cs:3: public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
@@ -61,20 +61,20 @@ C:\repos\error-or\src\ErrorOr\ErrorOr.Switch.cs:3: public readonly partial recor
 C:\repos\error-or\src\ErrorOr\ErrorOr.Then.cs:3: public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 913 | Lines: 9 | Time: 78ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 913 | Lines: 9 | Time: 72ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) ErrorOr&#39;</p>
-        <pre>src/ErrorOr/ErrorOr.cs:11:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
-src/ErrorOr/ErrorOr.Else.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
-src/ErrorOr/ErrorOr.Then.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
+        <pre>src/ErrorOr/ErrorOr.Then.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
 src/ErrorOr/ErrorOr.Switch.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
 src/ErrorOr/ErrorOr.Recordable.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt;
 src/ErrorOr/ErrorOr.Match.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
 src/ErrorOr/ErrorOr.ImplicitConverters.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
 src/ErrorOr/ErrorOr.FailIf.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
-src/ErrorOr/ErrorOr.Equality.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt;</pre>
+src/ErrorOr/ErrorOr.Equality.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt;
+src/ErrorOr/ErrorOr.Else.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
+src/ErrorOr/ErrorOr.cs:11:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 84990 | Lines: 669 | Time: 698ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 84990 | Lines: 669 | Time: 608ms</span></summary>
         <p class="algorithm-details">string search for &#39;ErrorOr&#39;</p>
         <pre id="expand-0-short">C:\repos\error-or\src\ErrorOr\CollectionExpression.cs:1: namespace ErrorOr;
 C:\repos\error-or\src\ErrorOr\CollectionExpression.cs:9: /// Creates &lt;see cref=&quot;ErrorOr{TValue}&quot;/&gt; from read-only span of errors.
@@ -758,7 +758,7 @@ C:\repos\error-or\tests\Errors\Error.EqualityTests.cs:1: using ErrorOr;
 C:\repos\error-or\tests\Errors\ErrorTests.cs:1: using ErrorOr;</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 59566 | Lines: 573 | Time: 75ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 59566 | Lines: 573 | Time: 70ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;ErrorOr&#39;</p>
         <pre id="expand-1-short">tests/Errors/ErrorTests.cs:1:using ErrorOr;
 tests/Errors/Error.EqualityTests.cs:1:﻿using ErrorOr;
@@ -1102,43 +1102,6 @@ tests/ErrorOr/ErrorOr.ElseAsyncTests.cs:234:ErrorOr&lt;string&gt; result = await
 tests/ErrorOr/ErrorOr.ElseAsyncTests.cs:248:ErrorOr&lt;string&gt; errorOrString = &quot;5&quot;;
 tests/ErrorOr/ErrorOr.ElseAsyncTests.cs:251:ErrorOr&lt;string&gt; result = await errorOrString
 src/Results/Results.cs:1:namespace ErrorOr;
-src/Errors/KnownErrors.cs:1:namespace ErrorOr;
-src/Errors/KnownErrors.cs:6:code: &quot;ErrorOr.NoFirstError&quot;,
-src/Errors/KnownErrors.cs:7:description: &quot;First error cannot be retrieved from a successful ErrorOr.&quot;);
-src/Errors/KnownErrors.cs:10:code: &quot;ErrorOr.NoErrors&quot;,
-src/Errors/KnownErrors.cs:11:description: &quot;Error list cannot be retrieved from a successful ErrorOr.&quot;);
-src/Errors/KnownErrors.cs:14:code: &quot;ErrorOr.EmptyInitialErrors&quot;,
-src/Errors/KnownErrors.cs:15:description: &quot;Error list cannot be null or empty when initializing ErrorOr.&quot;);
-src/Errors/ErrorType.cs:1:namespace ErrorOr;
-src/Errors/Error.cs:1:namespace ErrorOr;
-src/ErrorOr/CollectionExpression.cs:1:namespace ErrorOr;
-src/ErrorOr/CollectionExpression.cs:9:/// Creates &lt;see cref=&quot;ErrorOr{TValue}&quot;/&gt; from read-only span of errors.
-src/ErrorOr/CollectionExpression.cs:15:public static ErrorOr&lt;TValue&gt; CreateErrorOr&lt;TValue&gt;(ReadOnlySpan&lt;Error&gt; errors)
-src/ErrorOr/ErrorOr.cs:4:namespace ErrorOr;
-src/ErrorOr/ErrorOr.cs:11:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
-src/ErrorOr/ErrorOr.cs:16:private ErrorOr(TValue value) =&gt; _value = value;
-src/ErrorOr/ErrorOr.cs:18:private ErrorOr(Error error) =&gt; _errors = [error];
-src/ErrorOr/ErrorOr.cs:20:private ErrorOr(List&lt;Error&gt; errors) =&gt; _errors = errors?.Count == 0 ? null : errors;
-src/ErrorOr/ErrorOr.cs:75:/// Creates an &lt;see cref=&quot;ErrorOr{TValue}&quot;/&gt; from a list of errors.
-src/ErrorOr/ErrorOr.cs:78:public static ErrorOr&lt;TValue&gt; From(List&lt;Error&gt; errors) =&gt; errors;
-src/ErrorOr/ErrorOr.Else.cs:1:namespace ErrorOr;
-src/ErrorOr/ErrorOr.Else.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
-src/ErrorOr/ErrorOr.Else.cs:10:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, Error&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:25:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, List&lt;Error&gt;&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:40:public ErrorOr&lt;TValue&gt; Else(Error error)
-src/ErrorOr/ErrorOr.Else.cs:55:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, TValue&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:70:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, ErrorOr&lt;TValue&gt;&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:85:public ErrorOr&lt;TValue&gt; Else(TValue onError)
-src/ErrorOr/ErrorOr.Else.cs:99:/// &lt;returns&gt;The original &lt;see cref=&quot;ErrorOr&quot;/&gt; instance.&lt;/returns&gt;
-src/ErrorOr/ErrorOr.Else.cs:100:public ErrorOr&lt;TValue&gt; ElseDo(Action&lt;List&lt;Error&gt;&gt; action)
-src/ErrorOr/ErrorOr.Else.cs:116:/// &lt;returns&gt;The original &lt;see cref=&quot;ErrorOr&quot;/&gt; instance.&lt;/returns&gt;
-src/ErrorOr/ErrorOr.Else.cs:117:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseDoAsync(Func&lt;List&lt;Error&gt;, Task&gt; action)
-src/ErrorOr/ErrorOr.Else.cs:134:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;TValue&gt;&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:149:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;ErrorOr&lt;TValue&gt;&gt;&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:164:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;Error&gt;&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:179:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;List&lt;Error&gt;&gt;&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:194:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Task&lt;Error&gt; error)
-src/ErrorOr/ErrorOr.Else.cs:209:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Task&lt;TValue&gt; onError)
 src/ErrorOr/IRecordingSerializer.cs:1:﻿namespace ErrorOr;
 src/ErrorOr/IRecordingSerializer.cs:4:/// Defines a serialization strategy for recording the state of an &lt;see cref=&quot;ErrorOr{TValue}&quot;/&gt; instance
 src/ErrorOr/IRecordingSerializer.cs:9:/// Implement this interface to record &lt;see cref=&quot;ErrorOr{TValue}&quot;/&gt; state in a custom format
@@ -1343,10 +1306,47 @@ src/ErrorOr/ErrorOr.ElseExtensions.cs:166:public static async Task&lt;ErrorOr&lt
 src/ErrorOr/ErrorOr.ElseExtensions.cs:177:/// &lt;param name=&quot;errorOr&quot;&gt;The &lt;see cref=&quot;ErrorOr&quot;/&gt; instance.&lt;/param&gt;
 src/ErrorOr/ErrorOr.ElseExtensions.cs:180:public static async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseDo&lt;TValue&gt;(this Task&lt;ErrorOr&lt;TValue&gt;&gt; errorOr, Action&lt;List&lt;Error&gt;&gt; action)
 src/ErrorOr/ErrorOr.ElseExtensions.cs:191:/// &lt;param name=&quot;errorOr&quot;&gt;The &lt;see cref=&quot;ErrorOr&quot;/&gt; instance.&lt;/param&gt;
-src/ErrorOr/ErrorOr.ElseExtensions.cs:194:public static async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseDoAsync&lt;TValue&gt;(this Task&lt;ErrorOr&lt;TValue&gt;&gt; errorOr, Func&lt;List&lt;Error&gt;, Task&gt; action)</pre>
+src/ErrorOr/ErrorOr.ElseExtensions.cs:194:public static async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseDoAsync&lt;TValue&gt;(this Task&lt;ErrorOr&lt;TValue&gt;&gt; errorOr, Func&lt;List&lt;Error&gt;, Task&gt; action)
+src/ErrorOr/ErrorOr.Else.cs:1:namespace ErrorOr;
+src/ErrorOr/ErrorOr.Else.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
+src/ErrorOr/ErrorOr.Else.cs:10:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, Error&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:25:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, List&lt;Error&gt;&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:40:public ErrorOr&lt;TValue&gt; Else(Error error)
+src/ErrorOr/ErrorOr.Else.cs:55:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, TValue&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:70:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, ErrorOr&lt;TValue&gt;&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:85:public ErrorOr&lt;TValue&gt; Else(TValue onError)
+src/ErrorOr/ErrorOr.Else.cs:99:/// &lt;returns&gt;The original &lt;see cref=&quot;ErrorOr&quot;/&gt; instance.&lt;/returns&gt;
+src/ErrorOr/ErrorOr.Else.cs:100:public ErrorOr&lt;TValue&gt; ElseDo(Action&lt;List&lt;Error&gt;&gt; action)
+src/ErrorOr/ErrorOr.Else.cs:116:/// &lt;returns&gt;The original &lt;see cref=&quot;ErrorOr&quot;/&gt; instance.&lt;/returns&gt;
+src/ErrorOr/ErrorOr.Else.cs:117:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseDoAsync(Func&lt;List&lt;Error&gt;, Task&gt; action)
+src/ErrorOr/ErrorOr.Else.cs:134:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;TValue&gt;&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:149:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;ErrorOr&lt;TValue&gt;&gt;&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:164:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;Error&gt;&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:179:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;List&lt;Error&gt;&gt;&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:194:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Task&lt;Error&gt; error)
+src/ErrorOr/ErrorOr.Else.cs:209:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Task&lt;TValue&gt; onError)
+src/ErrorOr/ErrorOr.cs:4:namespace ErrorOr;
+src/ErrorOr/ErrorOr.cs:11:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
+src/ErrorOr/ErrorOr.cs:16:private ErrorOr(TValue value) =&gt; _value = value;
+src/ErrorOr/ErrorOr.cs:18:private ErrorOr(Error error) =&gt; _errors = [error];
+src/ErrorOr/ErrorOr.cs:20:private ErrorOr(List&lt;Error&gt; errors) =&gt; _errors = errors?.Count == 0 ? null : errors;
+src/ErrorOr/ErrorOr.cs:75:/// Creates an &lt;see cref=&quot;ErrorOr{TValue}&quot;/&gt; from a list of errors.
+src/ErrorOr/ErrorOr.cs:78:public static ErrorOr&lt;TValue&gt; From(List&lt;Error&gt; errors) =&gt; errors;
+src/ErrorOr/CollectionExpression.cs:1:namespace ErrorOr;
+src/ErrorOr/CollectionExpression.cs:9:/// Creates &lt;see cref=&quot;ErrorOr{TValue}&quot;/&gt; from read-only span of errors.
+src/ErrorOr/CollectionExpression.cs:15:public static ErrorOr&lt;TValue&gt; CreateErrorOr&lt;TValue&gt;(ReadOnlySpan&lt;Error&gt; errors)
+src/Errors/KnownErrors.cs:1:namespace ErrorOr;
+src/Errors/KnownErrors.cs:6:code: &quot;ErrorOr.NoFirstError&quot;,
+src/Errors/KnownErrors.cs:7:description: &quot;First error cannot be retrieved from a successful ErrorOr.&quot;);
+src/Errors/KnownErrors.cs:10:code: &quot;ErrorOr.NoErrors&quot;,
+src/Errors/KnownErrors.cs:11:description: &quot;Error list cannot be retrieved from a successful ErrorOr.&quot;);
+src/Errors/KnownErrors.cs:14:code: &quot;ErrorOr.EmptyInitialErrors&quot;,
+src/Errors/KnownErrors.cs:15:description: &quot;Error list cannot be null or empty when initializing ErrorOr.&quot;);
+src/Errors/ErrorType.cs:1:namespace ErrorOr;
+src/Errors/Error.cs:1:namespace ErrorOr;</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 734 | Lines: 9 | Time: 790ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 734 | Lines: 9 | Time: 844ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;ErrorOr&#39;, SymbolFilter.Type)</p>
         <pre>ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Else.cs(3,39)
 ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Equality.cs(3,39)
@@ -1372,7 +1372,7 @@ ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Then.cs(3,
 ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.cs(11,39)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1896 | Lines: 22 | Time: 142ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1896 | Lines: 22 | Time: 144ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ErrorOr&#39;, SymbolFilter.Type)</p>
         <pre id="expand-2-short">ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Else.cs(3,39)
 ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Equality.cs(3,39)
@@ -1446,7 +1446,7 @@ Tests.ErrorOrRecordableTests - C:\repos\error-or\tests\ErrorOr\ErrorOr.Recordabl
 Tests.ToErrorOrTests - C:\repos\error-or\tests\ErrorOr\ErrorOr.ToErrorOrTests.cs(6,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1896 | Lines: 22 | Time: 211ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1896 | Lines: 22 | Time: 192ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ErrorOr&#39;) without SymbolFilter</p>
         <pre id="expand-4-short">ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Else.cs(3,39)
 ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Equality.cs(3,39)
@@ -1526,17 +1526,17 @@ Tests.ToErrorOrTests - C:\repos\error-or\tests\ErrorOr\ErrorOr.ToErrorOrTests.cs
         <dt>name</dt><dd>Error</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 76 | Lines: 1 | Time: 570ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 76 | Lines: 1 | Time: 538ms</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) Error&#39;</p>
         <pre>C:\repos\error-or\src\Errors\Error.cs:6: public readonly record struct Error</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 57 | Lines: 1 | Time: 91ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 57 | Lines: 1 | Time: 71ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) Error&#39;</p>
         <pre>src/Errors/Error.cs:6:public readonly record struct Error</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 82644 | Lines: 620 | Time: 620ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 82644 | Lines: 620 | Time: 605ms</span></summary>
         <p class="algorithm-details">string search for &#39;Error&#39;</p>
         <pre id="expand-6-short">C:\repos\error-or\src\ErrorOr\CollectionExpression.cs:13: /// &lt;returns&gt;Error or vale.&lt;/returns&gt;
 C:\repos\error-or\src\ErrorOr\CollectionExpression.cs:15: public static ErrorOr&lt;TValue&gt; CreateErrorOr&lt;TValue&gt;(ReadOnlySpan&lt;Error&gt; errors)
@@ -2171,7 +2171,7 @@ C:\repos\error-or\tests\Errors\ErrorTests.cs:101: error.NumericType.Should().Be(
 C:\repos\error-or\tests\Errors\ErrorTests.cs:102: error.Metadata.Should().BeEquivalentTo(Dictionary);</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 41633 | Lines: 383 | Time: 73ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 41633 | Lines: 383 | Time: 70ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;Error&#39;</p>
         <pre id="expand-7-short">tests/Errors/ErrorTests.cs:20:Error error = Error.Failure(ErrorCode, ErrorDescription, Dictionary);
 tests/Errors/ErrorTests.cs:30:Error error = Error.Unexpected(ErrorCode, ErrorDescription, Dictionary);
@@ -2451,60 +2451,6 @@ tests/ErrorOr/ErrorOr.ElseAsyncTests.cs:220:.ElseAsync(errors =&gt; Task.FromRes
 tests/ErrorOr/ErrorOr.ElseAsyncTests.cs:231:ErrorOr&lt;string&gt; errorOrString = Error.NotFound();
 tests/ErrorOr/ErrorOr.ElseAsyncTests.cs:237:.ElseAsync(errors =&gt; Task.FromResult(new List&lt;Error&gt; { Error.Unexpected() }));
 tests/ErrorOr/ErrorOr.ElseAsyncTests.cs:254:.ElseAsync(errors =&gt; Task.FromResult(new List&lt;Error&gt; { Error.Unexpected() }));
-src/Errors/KnownErrors.cs:5:public static Error NoFirstError { get; } = Error.Unexpected(
-src/Errors/KnownErrors.cs:9:public static Error NoErrors { get; } = Error.Unexpected(
-src/Errors/KnownErrors.cs:11:description: &quot;Error list cannot be retrieved from a successful ErrorOr.&quot;);
-src/Errors/KnownErrors.cs:13:public static Error EmptyInitialErrors { get; } = Error.Unexpected(
-src/Errors/KnownErrors.cs:15:description: &quot;Error list cannot be null or empty when initializing ErrorOr.&quot;);
-src/Errors/KnownErrors.cs:17:public static List&lt;Error&gt; CachedNoErrorsList { get; } = new (1) { NoErrors };
-src/Errors/KnownErrors.cs:19:public static List&lt;Error&gt; CachedInvalidInitialErrorsList { get; } = new(1) { EmptyInitialErrors };
-src/Errors/KnownErrors.cs:21:public static List&lt;Error&gt; CachedEmptyErrorsList { get; } = new (0);
-src/Errors/ErrorType.cs:4:/// Error types.
-src/Errors/Error.cs:6:public readonly record struct Error
-src/Errors/Error.cs:8:private Error(string code, string description, ErrorType type, Dictionary&lt;string, object&gt;? metadata)
-src/Errors/Error.cs:43:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; of type &lt;see cref=&quot;ErrorType.Failure&quot;/&gt; from a code and description.
-src/Errors/Error.cs:48:public static Error Failure(
-src/Errors/Error.cs:55:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; of type &lt;see cref=&quot;ErrorType.Unexpected&quot;/&gt; from a code and description.
-src/Errors/Error.cs:60:public static Error Unexpected(
-src/Errors/Error.cs:67:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; of type &lt;see cref=&quot;ErrorType.Validation&quot;/&gt; from a code and description.
-src/Errors/Error.cs:72:public static Error Validation(
-src/Errors/Error.cs:79:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; of type &lt;see cref=&quot;ErrorType.Conflict&quot;/&gt; from a code and description.
-src/Errors/Error.cs:84:public static Error Conflict(
-src/Errors/Error.cs:91:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; of type &lt;see cref=&quot;ErrorType.NotFound&quot;/&gt; from a code and description.
-src/Errors/Error.cs:96:public static Error NotFound(
-src/Errors/Error.cs:103:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; of type &lt;see cref=&quot;ErrorType.Unauthorized&quot;/&gt; from a code and description.
-src/Errors/Error.cs:108:public static Error Unauthorized(
-src/Errors/Error.cs:115:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; of type &lt;see cref=&quot;ErrorType.Forbidden&quot;/&gt; from a code and description.
-src/Errors/Error.cs:120:public static Error Forbidden(
-src/Errors/Error.cs:127:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; with the given numeric &lt;paramref name=&quot;type&quot;/&gt;,
-src/Errors/Error.cs:134:public static Error Custom(
-src/Errors/Error.cs:141:public bool Equals(Error other)
-src/ErrorOr/CollectionExpression.cs:13:/// &lt;returns&gt;Error or vale.&lt;/returns&gt;
-src/ErrorOr/CollectionExpression.cs:15:public static ErrorOr&lt;TValue&gt; CreateErrorOr&lt;TValue&gt;(ReadOnlySpan&lt;Error&gt; errors)
-src/ErrorOr/CollectionExpression.cs:25:/// &lt;returns&gt;Error or vale.&lt;/returns&gt;
-src/ErrorOr/CollectionExpression.cs:27:public static IErrorOr&lt;TValue&gt; CreateIErrorOrValue&lt;TValue&gt;(ReadOnlySpan&lt;Error&gt; errors)
-src/ErrorOr/CollectionExpression.cs:36:/// &lt;returns&gt;Error or vale.&lt;/returns&gt;
-src/ErrorOr/CollectionExpression.cs:38:public static IErrorOr CreateIErrorOr(ReadOnlySpan&lt;Error&gt; errors)
-src/ErrorOr/ErrorOr.cs:14:private readonly List&lt;Error&gt;? _errors = null;
-src/ErrorOr/ErrorOr.cs:18:private ErrorOr(Error error) =&gt; _errors = [error];
-src/ErrorOr/ErrorOr.cs:20:private ErrorOr(List&lt;Error&gt; errors) =&gt; _errors = errors?.Count == 0 ? null : errors;
-src/ErrorOr/ErrorOr.cs:43:public List&lt;Error&gt; Errors =&gt; IsError ? _errors : KnownErrors.CachedNoErrorsList;
-src/ErrorOr/ErrorOr.cs:48:public List&lt;Error&gt; ErrorsOrEmptyList =&gt; IsError ? _errors : KnownErrors.CachedEmptyErrorsList;
-src/ErrorOr/ErrorOr.cs:58:public Error FirstError
-src/ErrorOr/ErrorOr.cs:72:public IEnumerator&lt;Error&gt; GetEnumerator() =&gt; _errors!.GetEnumerator();
-src/ErrorOr/ErrorOr.cs:78:public static ErrorOr&lt;TValue&gt; From(List&lt;Error&gt; errors) =&gt; errors;
-src/ErrorOr/ErrorOr.Else.cs:10:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, Error&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:25:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, List&lt;Error&gt;&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:40:public ErrorOr&lt;TValue&gt; Else(Error error)
-src/ErrorOr/ErrorOr.Else.cs:55:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, TValue&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:70:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, ErrorOr&lt;TValue&gt;&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:100:public ErrorOr&lt;TValue&gt; ElseDo(Action&lt;List&lt;Error&gt;&gt; action)
-src/ErrorOr/ErrorOr.Else.cs:117:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseDoAsync(Func&lt;List&lt;Error&gt;, Task&gt; action)
-src/ErrorOr/ErrorOr.Else.cs:134:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;TValue&gt;&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:149:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;ErrorOr&lt;TValue&gt;&gt;&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:164:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;Error&gt;&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:179:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;List&lt;Error&gt;&gt;&gt; onError)
-src/ErrorOr/ErrorOr.Else.cs:194:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Task&lt;Error&gt; error)
 src/ErrorOr/IRecordingSerializer.cs:28:TOutput SerializeErrors(List&lt;Error&gt; errors);
 src/ErrorOr/IErrorOr.cs:26:List&lt;Error&gt;? Errors { get; }
 src/ErrorOr/IErrorOr.cs:39:/// Gets enumerator with &lt;see cref=&quot;Error&quot;/&gt; objects.
@@ -2566,10 +2512,64 @@ src/ErrorOr/ErrorOr.ElseExtensions.cs:138:public static async Task&lt;ErrorOr&lt
 src/ErrorOr/ErrorOr.ElseExtensions.cs:152:public static async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync&lt;TValue&gt;(this Task&lt;ErrorOr&lt;TValue&gt;&gt; errorOr, Func&lt;List&lt;Error&gt;, Task&lt;List&lt;Error&gt;&gt;&gt; onError)
 src/ErrorOr/ErrorOr.ElseExtensions.cs:166:public static async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync&lt;TValue&gt;(this Task&lt;ErrorOr&lt;TValue&gt;&gt; errorOr, Task&lt;Error&gt; onError)
 src/ErrorOr/ErrorOr.ElseExtensions.cs:180:public static async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseDo&lt;TValue&gt;(this Task&lt;ErrorOr&lt;TValue&gt;&gt; errorOr, Action&lt;List&lt;Error&gt;&gt; action)
-src/ErrorOr/ErrorOr.ElseExtensions.cs:194:public static async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseDoAsync&lt;TValue&gt;(this Task&lt;ErrorOr&lt;TValue&gt;&gt; errorOr, Func&lt;List&lt;Error&gt;, Task&gt; action)</pre>
+src/ErrorOr/ErrorOr.ElseExtensions.cs:194:public static async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseDoAsync&lt;TValue&gt;(this Task&lt;ErrorOr&lt;TValue&gt;&gt; errorOr, Func&lt;List&lt;Error&gt;, Task&gt; action)
+src/ErrorOr/ErrorOr.Else.cs:10:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, Error&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:25:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, List&lt;Error&gt;&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:40:public ErrorOr&lt;TValue&gt; Else(Error error)
+src/ErrorOr/ErrorOr.Else.cs:55:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, TValue&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:70:public ErrorOr&lt;TValue&gt; Else(Func&lt;List&lt;Error&gt;, ErrorOr&lt;TValue&gt;&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:100:public ErrorOr&lt;TValue&gt; ElseDo(Action&lt;List&lt;Error&gt;&gt; action)
+src/ErrorOr/ErrorOr.Else.cs:117:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseDoAsync(Func&lt;List&lt;Error&gt;, Task&gt; action)
+src/ErrorOr/ErrorOr.Else.cs:134:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;TValue&gt;&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:149:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;ErrorOr&lt;TValue&gt;&gt;&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:164:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;Error&gt;&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:179:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Func&lt;List&lt;Error&gt;, Task&lt;List&lt;Error&gt;&gt;&gt; onError)
+src/ErrorOr/ErrorOr.Else.cs:194:public async Task&lt;ErrorOr&lt;TValue&gt;&gt; ElseAsync(Task&lt;Error&gt; error)
+src/ErrorOr/ErrorOr.cs:14:private readonly List&lt;Error&gt;? _errors = null;
+src/ErrorOr/ErrorOr.cs:18:private ErrorOr(Error error) =&gt; _errors = [error];
+src/ErrorOr/ErrorOr.cs:20:private ErrorOr(List&lt;Error&gt; errors) =&gt; _errors = errors?.Count == 0 ? null : errors;
+src/ErrorOr/ErrorOr.cs:43:public List&lt;Error&gt; Errors =&gt; IsError ? _errors : KnownErrors.CachedNoErrorsList;
+src/ErrorOr/ErrorOr.cs:48:public List&lt;Error&gt; ErrorsOrEmptyList =&gt; IsError ? _errors : KnownErrors.CachedEmptyErrorsList;
+src/ErrorOr/ErrorOr.cs:58:public Error FirstError
+src/ErrorOr/ErrorOr.cs:72:public IEnumerator&lt;Error&gt; GetEnumerator() =&gt; _errors!.GetEnumerator();
+src/ErrorOr/ErrorOr.cs:78:public static ErrorOr&lt;TValue&gt; From(List&lt;Error&gt; errors) =&gt; errors;
+src/ErrorOr/CollectionExpression.cs:13:/// &lt;returns&gt;Error or vale.&lt;/returns&gt;
+src/ErrorOr/CollectionExpression.cs:15:public static ErrorOr&lt;TValue&gt; CreateErrorOr&lt;TValue&gt;(ReadOnlySpan&lt;Error&gt; errors)
+src/ErrorOr/CollectionExpression.cs:25:/// &lt;returns&gt;Error or vale.&lt;/returns&gt;
+src/ErrorOr/CollectionExpression.cs:27:public static IErrorOr&lt;TValue&gt; CreateIErrorOrValue&lt;TValue&gt;(ReadOnlySpan&lt;Error&gt; errors)
+src/ErrorOr/CollectionExpression.cs:36:/// &lt;returns&gt;Error or vale.&lt;/returns&gt;
+src/ErrorOr/CollectionExpression.cs:38:public static IErrorOr CreateIErrorOr(ReadOnlySpan&lt;Error&gt; errors)
+src/Errors/KnownErrors.cs:5:public static Error NoFirstError { get; } = Error.Unexpected(
+src/Errors/KnownErrors.cs:9:public static Error NoErrors { get; } = Error.Unexpected(
+src/Errors/KnownErrors.cs:11:description: &quot;Error list cannot be retrieved from a successful ErrorOr.&quot;);
+src/Errors/KnownErrors.cs:13:public static Error EmptyInitialErrors { get; } = Error.Unexpected(
+src/Errors/KnownErrors.cs:15:description: &quot;Error list cannot be null or empty when initializing ErrorOr.&quot;);
+src/Errors/KnownErrors.cs:17:public static List&lt;Error&gt; CachedNoErrorsList { get; } = new (1) { NoErrors };
+src/Errors/KnownErrors.cs:19:public static List&lt;Error&gt; CachedInvalidInitialErrorsList { get; } = new(1) { EmptyInitialErrors };
+src/Errors/KnownErrors.cs:21:public static List&lt;Error&gt; CachedEmptyErrorsList { get; } = new (0);
+src/Errors/ErrorType.cs:4:/// Error types.
+src/Errors/Error.cs:6:public readonly record struct Error
+src/Errors/Error.cs:8:private Error(string code, string description, ErrorType type, Dictionary&lt;string, object&gt;? metadata)
+src/Errors/Error.cs:43:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; of type &lt;see cref=&quot;ErrorType.Failure&quot;/&gt; from a code and description.
+src/Errors/Error.cs:48:public static Error Failure(
+src/Errors/Error.cs:55:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; of type &lt;see cref=&quot;ErrorType.Unexpected&quot;/&gt; from a code and description.
+src/Errors/Error.cs:60:public static Error Unexpected(
+src/Errors/Error.cs:67:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; of type &lt;see cref=&quot;ErrorType.Validation&quot;/&gt; from a code and description.
+src/Errors/Error.cs:72:public static Error Validation(
+src/Errors/Error.cs:79:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; of type &lt;see cref=&quot;ErrorType.Conflict&quot;/&gt; from a code and description.
+src/Errors/Error.cs:84:public static Error Conflict(
+src/Errors/Error.cs:91:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; of type &lt;see cref=&quot;ErrorType.NotFound&quot;/&gt; from a code and description.
+src/Errors/Error.cs:96:public static Error NotFound(
+src/Errors/Error.cs:103:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; of type &lt;see cref=&quot;ErrorType.Unauthorized&quot;/&gt; from a code and description.
+src/Errors/Error.cs:108:public static Error Unauthorized(
+src/Errors/Error.cs:115:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; of type &lt;see cref=&quot;ErrorType.Forbidden&quot;/&gt; from a code and description.
+src/Errors/Error.cs:120:public static Error Forbidden(
+src/Errors/Error.cs:127:/// Creates an &lt;see cref=&quot;Error&quot;/&gt; with the given numeric &lt;paramref name=&quot;type&quot;/&gt;,
+src/Errors/Error.cs:134:public static Error Custom(
+src/Errors/Error.cs:141:public bool Equals(Error other)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 59 | Lines: 1 | Time: 9ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 59 | Lines: 1 | Time: 8ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Error&#39;, SymbolFilter.Type)</p>
         <pre>ErrorOr.Error - C:\repos\error-or\src\Errors\Error.cs(6,31)</pre>
       </details>
@@ -2622,7 +2622,7 @@ Tests.ErrorTests - C:\repos\error-or\tests\Errors\ErrorTests.cs(6,14)
 Tests.ToErrorOrTests - C:\repos\error-or\tests\ErrorOr\ErrorOr.ToErrorOrTests.cs(6,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2390 | Lines: 28 | Time: 2ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2390 | Lines: 28 | Time: 1ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Error&#39;, SymbolFilter.Type)</p>
         <pre id="expand-9-short">ErrorOr.Error - C:\repos\error-or\src\Errors\Error.cs(6,31)
 ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Else.cs(3,39)
@@ -2665,7 +2665,7 @@ Tests.ErrorTests - C:\repos\error-or\tests\Errors\ErrorTests.cs(6,14)
 Tests.ToErrorOrTests - C:\repos\error-or\tests\ErrorOr\ErrorOr.ToErrorOrTests.cs(6,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2390 | Lines: 28 | Time: 12ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2390 | Lines: 28 | Time: 11ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Error&#39;) without SymbolFilter</p>
         <pre id="expand-10-short">ErrorOr.Error - C:\repos\error-or\src\Errors\Error.cs(6,31)
 ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Else.cs(3,39)
@@ -2708,7 +2708,7 @@ Tests.ErrorTests - C:\repos\error-or\tests\Errors\ErrorTests.cs(6,14)
 Tests.ToErrorOrTests - C:\repos\error-or\tests\ErrorOr\ErrorOr.ToErrorOrTests.cs(6,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2390 | Lines: 28 | Time: 6ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2390 | Lines: 28 | Time: 5ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;Error&#39;) without SymbolFilter</p>
         <pre id="expand-11-short">ErrorOr.Error - C:\repos\error-or\src\Errors\Error.cs(6,31)
 ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Else.cs(3,39)
@@ -2757,7 +2757,7 @@ Tests.ToErrorOrTests - C:\repos\error-or\tests\ErrorOr\ErrorOr.ToErrorOrTests.cs
         <dt>name</dt><dd>ErrorOrExtensions</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 644 | Lines: 6 | Time: 556ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 644 | Lines: 6 | Time: 527ms</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) ErrorOrExtensions&#39;</p>
         <pre>C:\repos\error-or\src\ErrorOr\ErrorOr.ElseExtensions.cs:3: public static partial class ErrorOrExtensions
 C:\repos\error-or\src\ErrorOr\ErrorOr.FailIfExtensions.cs:3: public static partial class ErrorOrExtensions
@@ -2767,7 +2767,7 @@ C:\repos\error-or\src\ErrorOr\ErrorOr.ThenExtensions.cs:3: public static partial
 C:\repos\error-or\src\ErrorOr\ErrorOr.ToErrorOrExtensions.cs:3: public static partial class ErrorOrExtensions</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 525 | Lines: 6 | Time: 43ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 525 | Lines: 6 | Time: 42ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) ErrorOrExtensions&#39;</p>
         <pre>src/ErrorOr/ErrorOr.ToErrorOrExtensions.cs:3:public static partial class ErrorOrExtensions
 src/ErrorOr/ErrorOr.ThenExtensions.cs:3:public static partial class ErrorOrExtensions
@@ -2777,7 +2777,7 @@ src/ErrorOr/ErrorOr.FailIfExtensions.cs:3:public static partial class ErrorOrExt
 src/ErrorOr/ErrorOr.ElseExtensions.cs:3:public static partial class ErrorOrExtensions</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 644 | Lines: 6 | Time: 552ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 644 | Lines: 6 | Time: 516ms</span></summary>
         <p class="algorithm-details">string search for &#39;ErrorOrExtensions&#39;</p>
         <pre>C:\repos\error-or\src\ErrorOr\ErrorOr.ElseExtensions.cs:3: public static partial class ErrorOrExtensions
 C:\repos\error-or\src\ErrorOr\ErrorOr.FailIfExtensions.cs:3: public static partial class ErrorOrExtensions
@@ -2787,7 +2787,7 @@ C:\repos\error-or\src\ErrorOr\ErrorOr.ThenExtensions.cs:3: public static partial
 C:\repos\error-or\src\ErrorOr\ErrorOr.ToErrorOrExtensions.cs:3: public static partial class ErrorOrExtensions</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 525 | Lines: 6 | Time: 43ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 525 | Lines: 6 | Time: 41ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;ErrorOrExtensions&#39;</p>
         <pre>src/ErrorOr/ErrorOr.ToErrorOrExtensions.cs:3:public static partial class ErrorOrExtensions
 src/ErrorOr/ErrorOr.ThenExtensions.cs:3:public static partial class ErrorOrExtensions
@@ -2797,7 +2797,7 @@ src/ErrorOr/ErrorOr.FailIfExtensions.cs:3:public static partial class ErrorOrExt
 src/ErrorOr/ErrorOr.ElseExtensions.cs:3:public static partial class ErrorOrExtensions</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 554 | Lines: 6 | Time: 1ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 554 | Lines: 6 | Time: 3ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;ErrorOrExtensions&#39;, SymbolFilter.Type)</p>
         <pre>ErrorOr.ErrorOrExtensions - C:\repos\error-or\src\ErrorOr\ErrorOr.ElseExtensions.cs(3,29)
 ErrorOr.ErrorOrExtensions - C:\repos\error-or\src\ErrorOr\ErrorOr.FailIfExtensions.cs(3,29)
@@ -2817,7 +2817,7 @@ ErrorOr.ErrorOrExtensions - C:\repos\error-or\src\ErrorOr\ErrorOr.ThenExtensions
 ErrorOr.ErrorOrExtensions - C:\repos\error-or\src\ErrorOr\ErrorOr.ToErrorOrExtensions.cs(3,29)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 554 | Lines: 6 | Time: 1ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 554 | Lines: 6 | Time: 2ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ErrorOrExtensions&#39;, SymbolFilter.Type)</p>
         <pre>ErrorOr.ErrorOrExtensions - C:\repos\error-or\src\ErrorOr\ErrorOr.ElseExtensions.cs(3,29)
 ErrorOr.ErrorOrExtensions - C:\repos\error-or\src\ErrorOr\ErrorOr.FailIfExtensions.cs(3,29)
@@ -2863,17 +2863,17 @@ ErrorOr.ErrorOrExtensions - C:\repos\error-or\src\ErrorOr\ErrorOr.ToErrorOrExten
         <dt>name</dt><dd>ErrorOrFactory</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 85 | Lines: 1 | Time: 564ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 85 | Lines: 1 | Time: 526ms</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) ErrorOrFactory&#39;</p>
         <pre>C:\repos\error-or\src\ErrorOr\ErrorOrFactory.cs:6: public static class ErrorOrFactory</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 66 | Lines: 1 | Time: 45ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 66 | Lines: 1 | Time: 41ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) ErrorOrFactory&#39;</p>
         <pre>src/ErrorOr/ErrorOrFactory.cs:6:public static class ErrorOrFactory</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3685 | Lines: 26 | Time: 674ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3685 | Lines: 26 | Time: 527ms</span></summary>
         <p class="algorithm-details">string search for &#39;ErrorOrFactory&#39;</p>
         <pre id="expand-12-short">C:\repos\error-or\src\ErrorOr\ErrorOr.cs:77: [Obsolete(&quot;ErrorOrFactory.From&lt;TValue&gt;(errors) should be used instead.&quot;)]
 C:\repos\error-or\src\ErrorOr\ErrorOrFactory.cs:6: public static class ErrorOrFactory
@@ -2951,11 +2951,11 @@ tests/ErrorOr/ErrorOr.InstantiationTests.cs:223:ErrorOr&lt;Person&gt; errorOrPer
 tests/ErrorOr/ErrorOr.InstantiationTests.cs:239:ErrorOr&lt;Person&gt; errorOrPerson = await ErrorOrFactory.FromAsync&lt;Person&gt;(errors);
 tests/ErrorOr/ErrorOr.ElseDoTests.cs:12:Task&lt;ErrorOr&lt;string&gt;&gt; errorOrTask = Task.FromResult(ErrorOrFactory.From&lt;string&gt;(Error.Validation()));
 tests/ErrorOr/ErrorOr.ElseDoTests.cs:28:Task&lt;ErrorOr&lt;string&gt;&gt; errorOrTask = Task.FromResult(ErrorOrFactory.From&lt;string&gt;(&quot;5&quot;));
-src/ErrorOr/ErrorOr.cs:77:[Obsolete(&quot;ErrorOrFactory.From&lt;TValue&gt;(errors) should be used instead.&quot;)]
-src/ErrorOr/ErrorOrFactory.cs:6:public static class ErrorOrFactory</pre>
+src/ErrorOr/ErrorOrFactory.cs:6:public static class ErrorOrFactory
+src/ErrorOr/ErrorOr.cs:77:[Obsolete(&quot;ErrorOrFactory.From&lt;TValue&gt;(errors) should be used instead.&quot;)]</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 78 | Lines: 1 | Time: 1ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 78 | Lines: 1 | Time: 2ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;ErrorOrFactory&#39;, SymbolFilter.Type)</p>
         <pre>ErrorOr.ErrorOrFactory - C:\repos\error-or\src\ErrorOr\ErrorOrFactory.cs(6,21)</pre>
       </details>
@@ -2975,7 +2975,7 @@ src/ErrorOr/ErrorOrFactory.cs:6:public static class ErrorOrFactory</pre>
         <pre>ErrorOr.ErrorOrFactory - C:\repos\error-or\src\ErrorOr\ErrorOrFactory.cs(6,21)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 78 | Lines: 1 | Time: 2ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 78 | Lines: 1 | Time: 3ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ErrorOrFactory&#39;) without SymbolFilter</p>
         <pre>ErrorOr.ErrorOrFactory - C:\repos\error-or\src\ErrorOr\ErrorOrFactory.cs(6,21)</pre>
       </details>
@@ -2991,7 +2991,7 @@ src/ErrorOr/ErrorOrFactory.cs:6:public static class ErrorOrFactory</pre>
         <dt>name</dt><dd>IErrorOr</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-derived-types-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 874 | Lines: 7 | Time: 571ms</span></summary>
+        <summary><span class="summary-title">find-derived-types-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 874 | Lines: 7 | Time: 523ms</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct) \w+ ... IErrorOr&#39;</p>
         <pre>C:\repos\error-or\src\ErrorOr\ErrorOr.cs:11: public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
 C:\repos\error-or\src\ErrorOr\ErrorOr.Else.cs:3: public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
@@ -3004,23 +3004,39 @@ C:\repos\error-or\src\ErrorOr\ErrorOr.Then.cs:3: public readonly partial record 
       <details class="algorithm">
         <summary><span class="summary-title">find-derived-types-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 735 | Lines: 7 | Time: 50ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct) \w+ ... IErrorOr&#39;</p>
-        <pre>src/ErrorOr/ErrorOr.cs:11:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
-src/ErrorOr/ErrorOr.Else.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
-src/ErrorOr/ErrorOr.Then.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
+        <pre>src/ErrorOr/ErrorOr.Then.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
 src/ErrorOr/ErrorOr.Switch.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
 src/ErrorOr/ErrorOr.Match.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
 src/ErrorOr/ErrorOr.ImplicitConverters.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
-src/ErrorOr/ErrorOr.FailIf.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;</pre>
+src/ErrorOr/ErrorOr.FailIf.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
+src/ErrorOr/ErrorOr.Else.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
+src/ErrorOr/ErrorOr.cs:11:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-derived-types (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 20ms</span></summary>
-        <p class="algorithm-details">called SymbolFinder.FindDerivedClassesAsync(ErrorOr.IErrorOr&lt;TValue&gt;)</p>
-        <pre></pre>
+        <summary><span class="summary-title">roslyn-find-derived-types (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 734 | Lines: 9 | Time: 93ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindImplementationsAsync(ErrorOr.IErrorOr&lt;TValue&gt;) for interface subtype search</p>
+        <pre>ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Else.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Equality.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.FailIf.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.ImplicitConverters.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Match.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Recordable.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Switch.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Then.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.cs(11,39)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-derived-types (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 0ms</span></summary>
-        <p class="algorithm-details">called SymbolFinder.FindDerivedClassesAsync(ErrorOr.IErrorOr&lt;TValue&gt;)</p>
-        <pre></pre>
+        <summary><span class="summary-title">roslyn-find-derived-types (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 734 | Lines: 9 | Time: 1ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindImplementationsAsync(ErrorOr.IErrorOr&lt;TValue&gt;) for interface subtype search</p>
+        <pre>ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Else.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Equality.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.FailIf.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.ImplicitConverters.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Match.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Recordable.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Switch.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Then.cs(3,39)
+ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.cs(11,39)</pre>
       </details>
     </details>
     <details class="query" open>
@@ -3029,7 +3045,7 @@ src/ErrorOr/ErrorOr.FailIf.cs:3:public readonly partial record struct ErrorOr&lt
         <dt>name</dt><dd>IErrorOr</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-interface-implementation-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 969 | Lines: 8 | Time: 668ms</span></summary>
+        <summary><span class="summary-title">find-interface-implementation-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 969 | Lines: 8 | Time: 526ms</span></summary>
         <p class="algorithm-details">string search for &#39;: ...IErrorOr&#39;</p>
         <pre>C:\repos\error-or\src\ErrorOr\ErrorOr.cs:11: public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
 C:\repos\error-or\src\ErrorOr\ErrorOr.Else.cs:3: public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
@@ -3041,19 +3057,19 @@ C:\repos\error-or\src\ErrorOr\ErrorOr.Then.cs:3: public readonly partial record 
 C:\repos\error-or\src\ErrorOr\IErrorOr.cs:6: public interface IErrorOr&lt;out TValue&gt; : IErrorOr</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-interface-implementation-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 810 | Lines: 8 | Time: 50ms</span></summary>
+        <summary><span class="summary-title">find-interface-implementation-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 810 | Lines: 8 | Time: 48ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;: ...IErrorOr&#39;</p>
-        <pre>src/ErrorOr/ErrorOr.cs:11:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
-src/ErrorOr/ErrorOr.Else.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
-src/ErrorOr/IErrorOr.cs:6:public interface IErrorOr&lt;out TValue&gt; : IErrorOr
+        <pre>src/ErrorOr/IErrorOr.cs:6:public interface IErrorOr&lt;out TValue&gt; : IErrorOr
 src/ErrorOr/ErrorOr.Then.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
 src/ErrorOr/ErrorOr.Switch.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
 src/ErrorOr/ErrorOr.Match.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
 src/ErrorOr/ErrorOr.ImplicitConverters.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
-src/ErrorOr/ErrorOr.FailIf.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;</pre>
+src/ErrorOr/ErrorOr.FailIf.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
+src/ErrorOr/ErrorOr.Else.cs:3:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;
+src/ErrorOr/ErrorOr.cs:11:public readonly partial record struct ErrorOr&lt;TValue&gt; : IErrorOr&lt;TValue&gt;</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-implementations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 734 | Lines: 9 | Time: 75ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-implementations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 734 | Lines: 9 | Time: 3ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindImplementationsAsync(ErrorOr.IErrorOr&lt;TValue&gt;)</p>
         <pre>ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Else.cs(3,39)
 ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.Equality.cs(3,39)
@@ -3085,7 +3101,7 @@ ErrorOr.ErrorOr&lt;TValue&gt; - C:\repos\error-or\src\ErrorOr\ErrorOr.cs(11,39)<
         <dt>name</dt><dd>Match</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 393 | Lines: 2 | Time: 580ms</span></summary>
+        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 393 | Lines: 2 | Time: 551ms</span></summary>
         <p class="algorithm-details">string search for member declaration &#39;Match&#39;</p>
         <pre>C:\repos\error-or\src\ErrorOr\ErrorOr.Match.cs:14: public TNextValue Match&lt;TNextValue&gt;(Func&lt;TValue, TNextValue&gt; onValue, Func&lt;List&lt;Error&gt;, TNextValue&gt; onError)
 C:\repos\error-or\src\ErrorOr\ErrorOr.MatchExtensions.cs:16: public static async Task&lt;TNextValue&gt; Match&lt;TValue, TNextValue&gt;(this Task&lt;ErrorOr&lt;TValue&gt;&gt; errorOr, Func&lt;TValue, TNextValue&gt; onValue, Func&lt;List&lt;Error&gt;, TNextValue&gt; onError)</pre>
@@ -3097,7 +3113,7 @@ C:\repos\error-or\src\ErrorOr\ErrorOr.MatchExtensions.cs:16: public static async
 src/ErrorOr/ErrorOr.Match.cs:14:public TNextValue Match&lt;TNextValue&gt;(Func&lt;TValue, TNextValue&gt; onValue, Func&lt;List&lt;Error&gt;, TNextValue&gt; onError)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 861 | Lines: 4 | Time: 18ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 861 | Lines: 4 | Time: 17ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Match&#39;, SymbolFilter.Member)</p>
         <pre>ErrorOr.ErrorOr&lt;TValue&gt;.Match&lt;TNextValue&gt;(Func&lt;TValue, TNextValue&gt;, Func&lt;List&lt;ErrorOr.Error&gt;, TNextValue&gt;) - C:\repos\error-or\src\ErrorOr\ErrorOr.Match.cs(14,23)
 ErrorOr.ErrorOr&lt;TValue&gt;.Match&lt;TNextValue&gt;(System.Func&lt;TValue, TNextValue&gt;, System.Func&lt;System.Collections.Generic.List&lt;ErrorOr.Error&gt;, TNextValue&gt;) - C:\repos\error-or\src\ErrorOr\ErrorOr.Match.cs(14,23)
@@ -3119,19 +3135,19 @@ ErrorOr.ErrorOrExtensions.Match&lt;TValue, TNextValue&gt;(Task&lt;ErrorOr.ErrorO
         <dt>name</dt><dd>ToString</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 268 | Lines: 2 | Time: 673ms</span></summary>
+        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 268 | Lines: 2 | Time: 546ms</span></summary>
         <p class="algorithm-details">string search for member declaration &#39;ToString&#39;</p>
         <pre>C:\repos\error-or\tests\ErrorOr\TestUtils.cs:7: public static ErrorOr&lt;string&gt; ToString(int num) =&gt; num.ToString();
 C:\repos\error-or\tests\ErrorOr\TestUtils.cs:13: public static Task&lt;ErrorOr&lt;string&gt;&gt; ToStringAsync(int num) =&gt; ErrorOrFactory.FromAsync(num.ToString());</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 229 | Lines: 2 | Time: 45ms</span></summary>
+        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 229 | Lines: 2 | Time: 44ms</span></summary>
         <p class="algorithm-details">tgrep search for member declaration &#39;ToString&#39;</p>
         <pre>tests/ErrorOr/TestUtils.cs:7:public static ErrorOr&lt;string&gt; ToString(int num) =&gt; num.ToString();
 tests/ErrorOr/TestUtils.cs:13:public static Task&lt;ErrorOr&lt;string&gt;&gt; ToStringAsync(int num) =&gt; ErrorOrFactory.FromAsync(num.ToString());</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 80 | Lines: 1 | Time: 38ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 80 | Lines: 1 | Time: 40ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;ToString&#39;, SymbolFilter.Member)</p>
         <pre>Tests.Convert.ToString(int) - C:\repos\error-or\tests\ErrorOr\TestUtils.cs(7,35)</pre>
       </details>

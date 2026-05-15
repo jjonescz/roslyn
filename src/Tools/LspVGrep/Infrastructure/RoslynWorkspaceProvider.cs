@@ -8,7 +8,10 @@ internal sealed record WorkspaceLoadResult(
     Workspace Workspace,
     Solution Solution,
     string TargetPath,
-    RoslynLoadTargetKind TargetKind);
+    RoslynLoadTargetKind TargetKind,
+    int? AttemptedProjectCount,
+    int LoadedProjectCount,
+    int SkippedProjectCount);
 
 internal sealed class RoslynWorkspaceProvider : IDisposable
 {
@@ -48,20 +51,25 @@ internal sealed class RoslynWorkspaceProvider : IDisposable
         var progress = new Progress<ProjectLoadProgress>(ReportProjectLoadProgress);
 
         Solution solution;
+        int? attemptedProjectCount = null;
+        var skippedProjectCount = 0;
         switch (target.Kind)
         {
             case RoslynLoadTargetKind.Solution:
                 _log($"Opening solution '{target.Paths[0]}'.");
                 solution = await workspace.OpenSolutionAsync(target.Paths[0], progress: progress, cancellationToken: cancellationToken);
+                attemptedProjectCount = solution.ProjectIds.Count;
                 break;
 
             case RoslynLoadTargetKind.Project:
                 _log($"Opening project '{target.Paths[0]}'.");
                 solution = (await workspace.OpenProjectAsync(target.Paths[0], progress: progress, cancellationToken: cancellationToken)).Solution;
+                attemptedProjectCount = 1;
                 break;
 
             case RoslynLoadTargetKind.MultipleProjects:
                 _log($"Opening {target.Paths.Count} projects.");
+                attemptedProjectCount = target.Paths.Count;
                 foreach (var projectPath in target.Paths)
                 {
                     try
@@ -71,6 +79,7 @@ internal sealed class RoslynWorkspaceProvider : IDisposable
                     catch (Exception exception)
                     {
                         // Some projects may conflict (duplicate assembly names, etc.) — skip them.
+                        skippedProjectCount++;
                         _log($"Skipping project '{projectPath}' because it could not be opened: {exception.GetType().Name}: {exception.Message}");
                     }
                 }
@@ -83,7 +92,7 @@ internal sealed class RoslynWorkspaceProvider : IDisposable
         }
 
         return await WarmCompilationsAsync(
-            new WorkspaceLoadResult(workspace, solution, target.DisplayPath, target.Kind),
+            new WorkspaceLoadResult(workspace, solution, target.DisplayPath, target.Kind, attemptedProjectCount, solution.ProjectIds.Count, skippedProjectCount),
             cancellationToken);
     }
 

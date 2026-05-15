@@ -99,7 +99,11 @@ internal sealed class JsonSummaryReport
         {
             Kind = report.RoslynTargetKind,
             Path = report.RoslynTargetPath,
-            LoadTimeMilliseconds = report.RoslynLoadTime?.TotalMilliseconds
+            LoadTimeMilliseconds = report.RoslynLoadTime?.TotalMilliseconds,
+            AttemptedProjectCount = report.RoslynAttemptedProjectCount,
+            LoadedProjectCount = report.RoslynLoadedProjectCount,
+            SkippedProjectCount = report.RoslynSkippedProjectCount,
+            IsPartial = report.RoslynSkippedProjectCount > 0
         };
     }
 
@@ -134,6 +138,18 @@ internal sealed class JsonSummaryRoslynTarget
 
     [JsonPropertyName("loadTimeMilliseconds")]
     public double? LoadTimeMilliseconds { get; init; }
+
+    [JsonPropertyName("attemptedProjectCount")]
+    public int? AttemptedProjectCount { get; init; }
+
+    [JsonPropertyName("loadedProjectCount")]
+    public int? LoadedProjectCount { get; init; }
+
+    [JsonPropertyName("skippedProjectCount")]
+    public int? SkippedProjectCount { get; init; }
+
+    [JsonPropertyName("isPartial")]
+    public bool IsPartial { get; init; }
 }
 
 internal sealed class JsonSummaryTgrepIndex

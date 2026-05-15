@@ -9,6 +9,9 @@ internal sealed record ToolReport(
     string? RoslynTargetPath,
     string? RoslynTargetKind,
     TimeSpan? RoslynLoadTime,
+    int? RoslynAttemptedProjectCount,
+    int? RoslynLoadedProjectCount,
+    int? RoslynSkippedProjectCount,
     TimeSpan? TgrepIndexTime,
     IReadOnlyList<QueryExecutionReport> Queries);
 

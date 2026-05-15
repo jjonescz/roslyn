@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 
 namespace LspVGrepTool.Infrastructure;
@@ -71,7 +71,7 @@ internal static class LsCacheWorkspaceLoader
         }
 
         log($"Hydrated {targetPath}.");
-        return new WorkspaceLoadResult(workspace, workspace.CurrentSolution, targetPath, RoslynLoadTargetKind.LsCache);
+        return new WorkspaceLoadResult(workspace, workspace.CurrentSolution, targetPath, RoslynLoadTargetKind.LsCache, loadedSlices + skippedSlices, loadedSlices, skippedSlices);
     }
 
     private static IEnumerable<string> GetCachePaths(string directoryPath, RoslynLoadTarget target)

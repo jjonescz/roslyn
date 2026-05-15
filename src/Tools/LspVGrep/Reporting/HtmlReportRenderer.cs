@@ -62,6 +62,12 @@ internal static class HtmlReportRenderer
 
             builder.AppendLine(
                 $"  <p><strong>Roslyn target:</strong> {Encode(report.RoslynTargetKind)} - {Encode(report.RoslynTargetPath)} (loaded in {loadTime})</p>");
+
+            if (report.RoslynSkippedProjectCount is > 0)
+            {
+                builder.AppendLine(
+                    $"  <p><strong>Roslyn workspace:</strong> partial load; attempted {report.RoslynAttemptedProjectCount?.ToString() ?? "?"} project openings, workspace contains {report.RoslynLoadedProjectCount?.ToString() ?? "?"} projects, skipped {report.RoslynSkippedProjectCount} project openings.</p>");
+            }
         }
 
         if (report.TgrepIndexTime is { } tgrepIndexTime)

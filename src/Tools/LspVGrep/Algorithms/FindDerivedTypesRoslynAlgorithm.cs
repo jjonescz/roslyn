@@ -36,8 +36,9 @@ internal sealed class FindDerivedTypesRoslynAlgorithm : QueryAlgorithm<FindDeriv
         }
 
         var displayName = targetSymbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat);
-        var derivedTypes = await SymbolFinder.FindDerivedClassesAsync(
-            targetSymbol, workspace.Solution, cancellationToken: cancellationToken);
+        var derivedTypes = targetSymbol.TypeKind == TypeKind.Interface
+            ? await SymbolFinder.FindImplementationsAsync(targetSymbol, workspace.Solution, cancellationToken: cancellationToken)
+            : await SymbolFinder.FindDerivedClassesAsync(targetSymbol, workspace.Solution, cancellationToken: cancellationToken);
 
         var matches = new List<string>();
         foreach (var derived in derivedTypes)
@@ -53,6 +54,8 @@ internal sealed class FindDerivedTypesRoslynAlgorithm : QueryAlgorithm<FindDeriv
         var lines = distinct;
 
         return new AlgorithmExecutionResult(Name, AlgorithmOutcome.Succeeded, string.Join(Environment.NewLine, lines),
-            $"called SymbolFinder.FindDerivedClassesAsync({displayName})");
+            targetSymbol.TypeKind == TypeKind.Interface
+                ? $"called SymbolFinder.FindImplementationsAsync({displayName}) for interface subtype search"
+                : $"called SymbolFinder.FindDerivedClassesAsync({displayName})");
     }
 }

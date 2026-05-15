@@ -267,12 +267,12 @@ function renderTable(visibleRows) {
       numericCell(formatKloc(row.sourceLineCount)),
       numericCell(formatCount(row.grepResultCount)),
       numericCell(formatCount(row.tgrepResultCount)),
-      numericCell(formatCount(row.lspResultCount)),
+      numericCell(formatLspCount(row)),
       numericCell(formatMs(row.solutionLoadMilliseconds)),
       numericCell(formatMs(row.tgrepIndexMilliseconds)),
       numericCell(formatMs(row.grepMilliseconds)),
       numericCell(formatMs(row.tgrepMilliseconds)),
-      numericCell(formatMs(row.lspMilliseconds)));
+      numericCell(formatLspMs(row, row.lspMilliseconds)));
     rowsBody.append(tr);
   }
 }
@@ -581,6 +581,14 @@ function formatMs(value) {
     : `${Math.round(value)}ms`;
 }
 
+function formatLspCount(row) {
+  return row.roslynWorkspacePartial ? 'partial' : formatCount(row.lspResultCount);
+}
+
+function formatLspMs(row, value) {
+  return row.roslynWorkspacePartial ? 'partial' : formatMs(value);
+}
+
 renderQueryFilters();
 renderAlgorithmSelectionTable();
 render();
@@ -604,8 +612,9 @@ render();
 
             var grep = SelectGrepAlgorithm(successfulAlgorithms);
             var tgrep = SelectTgrepAlgorithm(successfulAlgorithms);
-            var lspWarm = SelectLspAlgorithm(successfulAlgorithms, pass: 2);
-            var lsp = lspWarm ?? SelectLspAlgorithm(successfulAlgorithms, pass: 1);
+            var roslynWorkspacePartial = report.RoslynTarget?.IsPartial == true;
+            var lspWarm = roslynWorkspacePartial ? null : SelectLspAlgorithm(successfulAlgorithms, pass: 2);
+            var lsp = lspWarm ?? (roslynWorkspacePartial ? null : SelectLspAlgorithm(successfulAlgorithms, pass: 1));
             var tgrepWithIndex = report.TgrepIndex?.BuildTimeMilliseconds is { } indexMilliseconds && tgrep?.ElapsedMilliseconds is { } tgrepMilliseconds
               ? indexMilliseconds + tgrepMilliseconds
               : (double?)null;
@@ -631,7 +640,8 @@ render();
                 tgrep?.ElapsedMilliseconds,
                 tgrepWithIndex,
                 lsp?.ElapsedMilliseconds,
-                lspWithSolutionLoad);
+                lspWithSolutionLoad,
+                roslynWorkspacePartial);
         }
     }
 
@@ -709,5 +719,6 @@ render();
         double? TgrepMilliseconds,
         double? TgrepWithIndexMilliseconds,
         double? LspMilliseconds,
-        double? LspWithSolutionLoadMilliseconds);
+        double? LspWithSolutionLoadMilliseconds,
+        bool RoslynWorkspacePartial);
 }

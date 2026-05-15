@@ -74,6 +74,9 @@ internal sealed class QueryExecutor
             workspace?.TargetPath,
             workspace?.TargetKind.ToString(),
             workspaceLoadTime,
+            workspace?.AttemptedProjectCount,
+            workspace?.LoadedProjectCount,
+            workspace?.SkippedProjectCount,
             tgrepIndexTime,
             queryReports);
     }
