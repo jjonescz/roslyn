@@ -120,6 +120,21 @@ public class PoolTrackingTests
         var ex = Assert.ThrowsAny<Exception>(() => pool.Free(obj));
         Assert.Contains("freeing twice", ex.Message);
     }
+
+    [Fact]
+    public void DetachFromTracking_PreventsNewAllocationsBeingTracked()
+    {
+        PoolTracker.StartTracking(out var context);
+
+        // Detach simulates what happens when a fire-and-forget task outlives the test.
+        PoolTracker.DetachFromTracking();
+
+        var builder = ArrayBuilder<int>.GetInstance();
+        // Intentionally not freeing — should NOT show as a leak since we detached.
+        PoolTracker.StopTracking();
+        Assert.False(context.HasLeaks);
+        builder.Free();
+    }
 }
 
 #endif

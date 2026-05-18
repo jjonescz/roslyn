@@ -55,6 +55,17 @@ internal static class PoolTracker
         s_currentContext.Value = null;
         Interlocked.Decrement(ref s_activeTrackers);
     }
+
+    /// <summary>
+    /// Detaches the current async flow from pool tracking without stopping the tracking session.
+    /// Use this in fire-and-forget tasks (e.g., analyzer driver workers) that may outlive the test
+    /// and whose pool allocations should not be tracked.
+    /// </summary>
+    [Conditional("DEBUG")]
+    internal static void DetachFromTracking()
+    {
+        s_currentContext.Value = null;
+    }
 #endif
 
     /// <summary>
