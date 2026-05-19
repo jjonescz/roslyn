@@ -64,12 +64,15 @@ public sealed class ValidatePooledObjectsAttribute : BeforeAfterTestAttribute
         Assert.True(!TraceLeaks || string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CI")),
             "Tracing leaks is very slow, shouldn't be set in CI.");
 
+        // Allow enabling trace leaks via environment variable for investigating sporadic CI failures.
+        var traceLeaks = TraceLeaks || !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ROSLYN_TRACE_LEAKS"));
+
         if (LeakReason is not null)
         {
             s_suppressClassLevelValidation.Value = true;
         }
 
-        PoolTracker.StartTracking(out var context, TraceLeaks);
+        PoolTracker.StartTracking(out var context, traceLeaks);
         _context = context;
 #endif
     }
