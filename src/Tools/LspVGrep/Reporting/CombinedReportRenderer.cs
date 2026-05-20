@@ -74,6 +74,7 @@ internal static class CombinedReportRenderer
     .tgrep { background: #e69f00; color: #e69f00; }
     .tgrep-load { background: #d55e00; color: #d55e00; }
     .lsp { background: #009e73; color: #009e73; }
+    .current-lsp { background: #7c3aed; color: #7c3aed; }
     .lsp-load { background: #cc79a7; color: #cc79a7; }
     .chart-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 12px; }
     .legend { display: flex; flex-wrap: wrap; gap: 12px; color: #475569; font-size: 12px; }
@@ -91,6 +92,27 @@ internal static class CombinedReportRenderer
 <main>
   <h1>LspVGrep Combined Report</h1>
   <div class="meta">Generated GENERATED_AT from REPORT_COUNT reports across REPOSITORY_COUNT repositories.</div>
+
+  <section class="panel">
+    <div class="toolbar">
+      <h2>Main Results</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th class="numeric">Exact-count accuracy</th>
+            <th class="numeric">Accuracy samples</th>
+            <th class="numeric">Warm query median</th>
+            <th class="numeric">Timing samples</th>
+            <th class="numeric">Cold-start median</th>
+          </tr>
+        </thead>
+        <tbody id="mainSummaryRows"></tbody>
+      </table>
+    </div>
+  </section>
 
   <section class="panel">
     <div class="toolbar">
@@ -135,8 +157,8 @@ internal static class CombinedReportRenderer
           <span><i class="swatch grep"></i>Grep</span>
           <span><i class="swatch tgrep"></i>tgrep</span>
           <span><i class="swatch dashed tgrep-load"></i>tgrep + index</span>
-          <span><i class="swatch lsp"></i>LSP</span>
-          <span><i class="swatch dashed lsp-load"></i>LSP + solution load</span>
+          <span><i class="swatch lsp"></i>Ideal LSP</span>
+          <span><i class="swatch dashed lsp-load"></i>Ideal LSP + solution load</span>
         </div>
         <div class="scale-toggle" role="group" aria-label="X-axis scale">
           <button id="normalXScale" type="button" aria-pressed="false">X normal</button>
@@ -153,12 +175,38 @@ internal static class CombinedReportRenderer
 
   <section class="panel">
     <div class="toolbar">
+      <h2>Timing Summary</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Repository</th>
+            <th class="numeric">kLOC</th>
+            <th class="numeric">Rows</th>
+            <th class="numeric">Grep</th>
+            <th class="numeric">tgrep</th>
+            <th class="numeric">tgrep + index</th>
+            <th class="numeric">Ideal LSP</th>
+            <th class="numeric">Ideal LSP + solution load</th>
+            <th class="numeric">Current LSP</th>
+            <th class="numeric">Current LSP + solution load</th>
+          </tr>
+        </thead>
+        <tbody id="timingSummaryRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="toolbar">
       <h2 id="accuracyChartTitle">Mean Accuracy by Repository Size</h2>
       <div class="chart-controls">
         <div class="legend">
           <span><i class="swatch grep"></i>Grep</span>
           <span><i class="swatch tgrep"></i>tgrep</span>
-          <span><i class="swatch lsp"></i>LSP</span>
+          <span><i class="swatch lsp"></i>Ideal LSP</span>
+          <span><i class="swatch current-lsp"></i>Current LSP</span>
         </div>
       </div>
     </div>
@@ -166,6 +214,56 @@ internal static class CombinedReportRenderer
   </section>
 
   <section class="panel">
+    <div class="toolbar">
+      <h2>Accuracy Summary</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Repository</th>
+            <th class="numeric">kLOC</th>
+            <th class="numeric">Queries</th>
+            <th class="numeric">Grep</th>
+            <th class="numeric">tgrep</th>
+            <th class="numeric">Ideal LSP</th>
+            <th class="numeric">Current LSP</th>
+          </tr>
+        </thead>
+        <tbody id="accuracySummaryRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="toolbar">
+      <h2>By Query Type</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Query type</th>
+            <th class="numeric">Rows</th>
+            <th class="numeric">Grep accuracy</th>
+            <th class="numeric">tgrep accuracy</th>
+            <th class="numeric">Ideal LSP accuracy</th>
+            <th class="numeric">Current LSP accuracy</th>
+            <th class="numeric">Grep median</th>
+            <th class="numeric">tgrep median</th>
+            <th class="numeric">Ideal LSP median</th>
+            <th class="numeric">Current LSP median</th>
+          </tr>
+        </thead>
+        <tbody id="queryTypeSummaryRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="toolbar">
+      <h2>Detailed Results</h2>
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
@@ -176,12 +274,14 @@ internal static class CombinedReportRenderer
             <th class="numeric">Expected results</th>
             <th class="numeric">Grep results</th>
             <th class="numeric">tgrep results</th>
-            <th class="numeric">LSP results</th>
+            <th class="numeric">Ideal LSP results</th>
+            <th class="numeric">Current LSP results</th>
             <th class="numeric">Solution load</th>
             <th class="numeric">tgrep index</th>
             <th class="numeric">Grep</th>
             <th class="numeric">tgrep</th>
-            <th class="numeric">LSP</th>
+            <th class="numeric">Ideal LSP</th>
+            <th class="numeric">Current LSP</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -200,7 +300,8 @@ internal static class CombinedReportRenderer
             <th>Query type</th>
             <th>Grep</th>
             <th>tgrep</th>
-            <th>LSP</th>
+            <th>Ideal LSP</th>
+            <th>Current LSP</th>
           </tr>
         </thead>
         <tbody id="selectionRows"></tbody>
@@ -212,11 +313,15 @@ internal static class CombinedReportRenderer
 const repositories = REPOSITORIES_JSON;
 const allRows = ROWS_JSON;
 const queryFilters = document.getElementById('queryFilters');
+const mainSummaryRowsBody = document.getElementById('mainSummaryRows');
 const repositoryRowsBody = document.getElementById('repositoryRows');
 const rowsBody = document.getElementById('rows');
 const selectionRowsBody = document.getElementById('selectionRows');
 const chart = document.getElementById('chart');
 const accuracyChart = document.getElementById('accuracyChart');
+const timingSummaryRowsBody = document.getElementById('timingSummaryRows');
+const accuracySummaryRowsBody = document.getElementById('accuracySummaryRows');
+const queryTypeSummaryRowsBody = document.getElementById('queryTypeSummaryRows');
 const fineQueryFilterButton = document.getElementById('fineQueryFilter');
 const coarseQueryFilterButton = document.getElementById('coarseQueryFilter');
 const normalXScaleButton = document.getElementById('normalXScale');
@@ -227,13 +332,20 @@ const seriesDefinitions = [
   { label: 'Grep', field: 'grepMilliseconds', color: '#0072b2' },
   { label: 'tgrep', field: 'tgrepMilliseconds', color: '#e69f00' },
   { label: 'tgrep + index', field: 'tgrepWithIndexMilliseconds', color: '#d55e00', dash: '8 5' },
-  { label: 'LSP', field: 'lspMilliseconds', color: '#009e73' },
-  { label: 'LSP + solution load', field: 'lspWithSolutionLoadMilliseconds', color: '#cc79a7', dash: '8 5' }
+  { label: 'Ideal LSP', field: 'lspMilliseconds', color: '#009e73' },
+  { label: 'Ideal LSP + solution load', field: 'lspWithSolutionLoadMilliseconds', color: '#cc79a7', dash: '8 5' }
 ];
 const accuracySeriesDefinitions = [
   { label: 'Grep', countField: 'grepResultCount', color: '#0072b2' },
   { label: 'tgrep', countField: 'tgrepResultCount', color: '#e69f00' },
-  { label: 'LSP', countField: 'lspResultCount', color: '#009e73' }
+  { label: 'Ideal LSP', countField: 'lspResultCount', color: '#009e73' },
+  { label: 'Current LSP', countField: 'currentLspResultCount', color: '#7c3aed' }
+];
+const mainSummaryDefinitions = [
+  { label: 'Grep', countField: 'grepResultCount', warmTimeField: 'grepMilliseconds', coldTimeField: null },
+  { label: 'tgrep', countField: 'tgrepResultCount', warmTimeField: 'tgrepMilliseconds', coldTimeField: 'tgrepWithIndexMilliseconds' },
+  { label: 'Ideal LSP', countField: 'lspResultCount', warmTimeField: 'lspMilliseconds', coldTimeField: 'lspWithSolutionLoadMilliseconds' },
+  { label: 'Current LSP', countField: 'currentLspResultCount', warmTimeField: 'currentLspMilliseconds', coldTimeField: 'currentLspWithSolutionLoadMilliseconds' }
 ];
 const svgNamespace = 'http://www.w3.org/2000/svg';
 const fineQueries = [...new Set(allRows.map(row => row.query))].sort((left, right) => left.localeCompare(right));
@@ -303,9 +415,13 @@ function renderQueryFilters() {
 function render() {
   const selected = selectedQueries();
   const visibleRows = allRows.filter(row => selected.has(queryFilterMode === 'fine' ? row.query : (row.queryType ?? row.query)));
+  renderMainSummaryTable(visibleRows);
   renderTable(visibleRows);
   renderChart(visibleRows);
   renderAccuracyChart(visibleRows);
+  renderTimingSummaryTable(visibleRows);
+  renderAccuracySummaryTable(visibleRows);
+  renderQueryTypeSummaryTable(visibleRows);
 }
 
 function renderTable(visibleRows) {
@@ -320,12 +436,86 @@ function renderTable(visibleRows) {
       numericCell(formatCount(row.grepResultCount)),
       numericCell(formatCount(row.tgrepResultCount)),
       numericCell(formatLspCount(row)),
+      numericCell(formatLspCount(row, row.currentLspResultCount)),
       numericCell(formatMs(row.solutionLoadMilliseconds)),
       numericCell(formatMs(row.tgrepIndexMilliseconds)),
       numericCell(formatMs(row.grepMilliseconds)),
       numericCell(formatMs(row.tgrepMilliseconds)),
-      numericCell(formatLspMs(row, row.lspMilliseconds)));
+      numericCell(formatLspMs(row, row.lspMilliseconds)),
+      numericCell(formatLspMs(row, row.currentLspMilliseconds)));
     rowsBody.append(tr);
+  }
+}
+
+function renderMainSummaryTable(visibleRows) {
+  mainSummaryRowsBody.textContent = '';
+  for (const definition of mainSummaryDefinitions) {
+    const accuracy = createAccuracySummary(visibleRows, definition.countField);
+    const warmTiming = createTimingSummary(visibleRows, definition.warmTimeField);
+    const coldTiming = createTimingSummary(visibleRows, definition.coldTimeField);
+    const tr = document.createElement('tr');
+    tr.append(
+      cell(definition.label),
+      numericCell(formatPercent(accuracy.value)),
+      numericCell(formatCount(accuracy.sampleCount)),
+      numericCell(formatMs(warmTiming.value)),
+      numericCell(formatCount(warmTiming.sampleCount)),
+      numericCell(formatMs(coldTiming.value)));
+    mainSummaryRowsBody.append(tr);
+  }
+}
+
+function renderTimingSummaryTable(visibleRows) {
+  timingSummaryRowsBody.textContent = '';
+  for (const group of groupRowsByRepository(visibleRows)) {
+    const tr = document.createElement('tr');
+    tr.append(
+      repositoryCell(group),
+      numericCell(formatKloc(group.sourceLineCount)),
+      numericCell(formatCount(group.rows.length)),
+      numericCell(formatMs(createTimingSummary(group.rows, 'grepMilliseconds').value)),
+      numericCell(formatMs(createTimingSummary(group.rows, 'tgrepMilliseconds').value)),
+      numericCell(formatMs(createTimingSummary(group.rows, 'tgrepWithIndexMilliseconds').value)),
+      numericCell(formatMs(createTimingSummary(group.rows, 'lspMilliseconds').value)),
+      numericCell(formatMs(createTimingSummary(group.rows, 'lspWithSolutionLoadMilliseconds').value)),
+      numericCell(formatMs(createTimingSummary(group.rows, 'currentLspMilliseconds').value)),
+      numericCell(formatMs(createTimingSummary(group.rows, 'currentLspWithSolutionLoadMilliseconds').value)));
+    timingSummaryRowsBody.append(tr);
+  }
+}
+
+function renderAccuracySummaryTable(visibleRows) {
+  accuracySummaryRowsBody.textContent = '';
+  for (const group of groupRowsByRepository(visibleRows)) {
+    const tr = document.createElement('tr');
+    tr.append(
+      repositoryCell(group),
+      numericCell(formatKloc(group.sourceLineCount)),
+      numericCell(formatCount(group.rows.length)),
+      numericCell(formatAccuracyWithSamples(createAccuracySummary(group.rows, 'grepResultCount'))),
+      numericCell(formatAccuracyWithSamples(createAccuracySummary(group.rows, 'tgrepResultCount'))),
+      numericCell(formatAccuracyWithSamples(createAccuracySummary(group.rows, 'lspResultCount'))),
+      numericCell(formatAccuracyWithSamples(createAccuracySummary(group.rows, 'currentLspResultCount'))));
+    accuracySummaryRowsBody.append(tr);
+  }
+}
+
+function renderQueryTypeSummaryTable(visibleRows) {
+  queryTypeSummaryRowsBody.textContent = '';
+  for (const group of groupRowsByQueryType(visibleRows)) {
+    const tr = document.createElement('tr');
+    tr.append(
+      cell(group.queryType),
+      numericCell(formatCount(group.rows.length)),
+      numericCell(formatAccuracyWithSamples(createAccuracySummary(group.rows, 'grepResultCount'))),
+      numericCell(formatAccuracyWithSamples(createAccuracySummary(group.rows, 'tgrepResultCount'))),
+      numericCell(formatAccuracyWithSamples(createAccuracySummary(group.rows, 'lspResultCount'))),
+      numericCell(formatAccuracyWithSamples(createAccuracySummary(group.rows, 'currentLspResultCount'))),
+      numericCell(formatMs(createTimingSummary(group.rows, 'grepMilliseconds').value)),
+      numericCell(formatMs(createTimingSummary(group.rows, 'tgrepMilliseconds').value)),
+      numericCell(formatMs(createTimingSummary(group.rows, 'lspMilliseconds').value)),
+      numericCell(formatMs(createTimingSummary(group.rows, 'currentLspMilliseconds').value)));
+    queryTypeSummaryRowsBody.append(tr);
   }
 }
 
@@ -349,7 +539,8 @@ function renderAlgorithmSelectionTable() {
       cell(row.queryType),
       cell(row.grepAlgorithms.join(', ')),
       cell(row.tgrepAlgorithms.join(', ')),
-      cell(row.lspAlgorithms.join(', ')));
+      cell(row.lspAlgorithms.join(', ')),
+      cell(row.currentLspAlgorithms.join(', ')));
     selectionRowsBody.append(tr);
   }
 }
@@ -360,7 +551,7 @@ function getAlgorithmSelectionRows() {
     const queryType = row.queryType ?? row.query;
     let item = byQueryType.get(queryType);
     if (item === undefined) {
-      item = { queryType, grepAlgorithms: new Set(), tgrepAlgorithms: new Set(), lspAlgorithms: new Set() };
+      item = { queryType, grepAlgorithms: new Set(), tgrepAlgorithms: new Set(), lspAlgorithms: new Set(), currentLspAlgorithms: new Set() };
       byQueryType.set(queryType, item);
     }
 
@@ -375,6 +566,10 @@ function getAlgorithmSelectionRows() {
     if (row.lspAlgorithmName) {
       item.lspAlgorithms.add(row.lspAlgorithmName);
     }
+
+    if (row.currentLspAlgorithmName) {
+      item.currentLspAlgorithms.add(row.currentLspAlgorithmName);
+    }
   }
 
   return [...byQueryType.values()]
@@ -382,7 +577,8 @@ function getAlgorithmSelectionRows() {
       queryType: item.queryType,
       grepAlgorithms: [...item.grepAlgorithms].sort((left, right) => left.localeCompare(right)),
       tgrepAlgorithms: [...item.tgrepAlgorithms].sort((left, right) => left.localeCompare(right)),
-      lspAlgorithms: [...item.lspAlgorithms].sort((left, right) => left.localeCompare(right))
+      lspAlgorithms: [...item.lspAlgorithms].sort((left, right) => left.localeCompare(right)),
+      currentLspAlgorithms: [...item.currentLspAlgorithms].sort((left, right) => left.localeCompare(right))
     }))
     .sort((left, right) => left.queryType.localeCompare(right.queryType));
 }
@@ -439,7 +635,7 @@ function groupRowsByRepository(rows) {
     const key = `${row.repository}\u0000${row.sourceLineCount}`;
     let group = groups.get(key);
     if (group === undefined) {
-      group = { repository: row.repository, sourceLineCount: row.sourceLineCount, rows: [] };
+      group = { repository: row.repository, reportHref: row.reportHref, sourceLineCount: row.sourceLineCount, rows: [] };
       groups.set(key, group);
     }
 
@@ -447,6 +643,51 @@ function groupRowsByRepository(rows) {
   }
 
   return [...groups.values()].sort((left, right) => left.sourceLineCount - right.sourceLineCount || left.repository.localeCompare(right.repository));
+}
+
+function groupRowsByQueryType(rows) {
+  const groups = new Map();
+  for (const row of rows) {
+    const queryType = row.queryType ?? row.query;
+    let group = groups.get(queryType);
+    if (group === undefined) {
+      group = { queryType, rows: [] };
+      groups.set(queryType, group);
+    }
+
+    group.rows.push(row);
+  }
+
+  return [...groups.values()].sort((left, right) => left.queryType.localeCompare(right.queryType));
+}
+
+function createTimingSummary(rows, field) {
+  if (!field) {
+    return { value: null, sampleCount: 0 };
+  }
+
+  const values = rows
+    .map(row => row[field])
+    .filter(value => value !== null && value !== undefined && value > 0)
+    .sort((left, right) => left - right);
+  return {
+    value: values.length === 0 ? null : median(values),
+    sampleCount: values.length
+  };
+}
+
+function createAccuracySummary(rows, countField) {
+  if (!countField) {
+    return { value: null, sampleCount: 0 };
+  }
+
+  const values = rows
+    .map(row => computeAccuracy(row.expectedResultCount, row[countField]))
+    .filter(value => value !== null && value !== undefined);
+  return {
+    value: values.length === 0 ? null : average(values),
+    sampleCount: values.length
+  };
 }
 
 function createPoint(group, field) {
@@ -806,8 +1047,16 @@ function formatPercent(value) {
   return `${Math.round(value * 100)}%`;
 }
 
-function formatLspCount(row) {
-  return row.roslynWorkspacePartial ? 'partial' : formatCount(row.lspResultCount);
+function formatAccuracyWithSamples(summary) {
+  if (summary.value === null || summary.value === undefined || summary.sampleCount === 0) {
+    return '';
+  }
+
+  return `${formatPercent(summary.value)} (${formatCount(summary.sampleCount)})`;
+}
+
+function formatLspCount(row, value = row.lspResultCount) {
+  return row.roslynWorkspacePartial ? 'partial' : formatCount(value);
 }
 
 function formatLspMs(row, value) {
@@ -850,14 +1099,19 @@ render();
             var grep = SelectGrepAlgorithm(successfulAlgorithms);
             var tgrep = SelectTgrepAlgorithm(successfulAlgorithms);
             var roslynWorkspacePartial = report.RoslynTarget?.IsPartial == true;
-            var lspWarm = roslynWorkspacePartial ? null : SelectLspAlgorithm(successfulAlgorithms, pass: 2);
-            var lsp = lspWarm ?? (roslynWorkspacePartial ? null : SelectLspAlgorithm(successfulAlgorithms, pass: 1));
+            var lspWarm = roslynWorkspacePartial ? null : SelectIdealLspAlgorithm(successfulAlgorithms, pass: 2);
+            var lsp = lspWarm ?? (roslynWorkspacePartial ? null : SelectIdealLspAlgorithm(successfulAlgorithms, pass: 1));
+            var currentLspWarm = roslynWorkspacePartial ? null : SelectCurrentLspAlgorithm(successfulAlgorithms, query.Type, pass: 2);
+            var currentLsp = currentLspWarm ?? (roslynWorkspacePartial ? null : SelectCurrentLspAlgorithm(successfulAlgorithms, query.Type, pass: 1));
             var expectedCount = query.ExpectedCount ?? (roslynWorkspacePartial ? tgrep?.LineCount : lsp?.LineCount);
             var tgrepWithIndex = report.TgrepIndex?.BuildTimeMilliseconds is { } indexMilliseconds && tgrep?.ElapsedMilliseconds is { } tgrepMilliseconds
               ? indexMilliseconds + tgrepMilliseconds
               : (double?)null;
             var lspWithSolutionLoad = report.RoslynTarget?.LoadTimeMilliseconds is { } loadMilliseconds && lsp?.ElapsedMilliseconds is { } lspMilliseconds
                 ? loadMilliseconds + lspMilliseconds
+                : (double?)null;
+            var currentLspWithSolutionLoad = report.RoslynTarget?.LoadTimeMilliseconds is { } currentLoadMilliseconds && currentLsp?.ElapsedMilliseconds is { } currentLspMilliseconds
+                ? currentLoadMilliseconds + currentLspMilliseconds
                 : (double?)null;
 
             yield return new CombinedReportRow(
@@ -871,9 +1125,11 @@ render();
                 grep?.Name,
                 tgrep?.Name,
                 lsp?.Name,
+                currentLsp?.Name,
                 grep?.LineCount,
                 tgrep?.LineCount,
                 lsp?.LineCount,
+                currentLsp?.LineCount,
                 report.RoslynTarget?.LoadTimeMilliseconds,
                 report.TgrepIndex?.BuildTimeMilliseconds,
                 grep?.ElapsedMilliseconds,
@@ -881,6 +1137,8 @@ render();
                 tgrepWithIndex,
                 lsp?.ElapsedMilliseconds,
                 lspWithSolutionLoad,
+                currentLsp?.ElapsedMilliseconds,
+                currentLspWithSolutionLoad,
                 roslynWorkspacePartial);
         }
     }
@@ -901,14 +1159,27 @@ render();
     private static bool IsTgrepAlgorithm(string name) =>
         name.Contains("tgrep", StringComparison.OrdinalIgnoreCase);
 
-    private static JsonSummaryAlgorithm? SelectLspAlgorithm(IReadOnlyList<JsonSummaryAlgorithm> algorithms, int pass)
+    private static JsonSummaryAlgorithm? SelectIdealLspAlgorithm(IReadOnlyList<JsonSummaryAlgorithm> algorithms, int pass)
     {
         var passText = $"(pass {pass})";
         return algorithms.FirstOrDefault(algorithm => IsExactLspAlgorithm(algorithm.Name) && algorithm.Name.Contains(passText, StringComparison.OrdinalIgnoreCase))
           ?? algorithms.FirstOrDefault(algorithm => IsPatternLspAlgorithm(algorithm.Name) && algorithm.Name.Contains(passText, StringComparison.OrdinalIgnoreCase))
-          ?? algorithms.FirstOrDefault(algorithm => IsWorkspaceSymbolLspAlgorithm(algorithm.Name) && algorithm.Name.Contains(passText, StringComparison.OrdinalIgnoreCase))
           ?? (pass == 1 ? algorithms.FirstOrDefault(algorithm => IsExactLspAlgorithm(algorithm.Name)) : null)
-          ?? (pass == 1 ? algorithms.FirstOrDefault(algorithm => IsPatternLspAlgorithm(algorithm.Name)) : null)
+          ?? (pass == 1 ? algorithms.FirstOrDefault(algorithm => IsPatternLspAlgorithm(algorithm.Name)) : null);
+    }
+
+    private static JsonSummaryAlgorithm? SelectCurrentLspAlgorithm(IReadOnlyList<JsonSummaryAlgorithm> algorithms, string queryType, int pass)
+    {
+        if (string.Equals(queryType, QueryTypes.FindTypeDefinition, StringComparison.Ordinal))
+            return SelectWorkspaceSymbolLspAlgorithm(algorithms, pass);
+
+        return SelectIdealLspAlgorithm(algorithms, pass);
+    }
+
+    private static JsonSummaryAlgorithm? SelectWorkspaceSymbolLspAlgorithm(IReadOnlyList<JsonSummaryAlgorithm> algorithms, int pass)
+    {
+        var passText = $"(pass {pass})";
+        return algorithms.FirstOrDefault(algorithm => IsWorkspaceSymbolLspAlgorithm(algorithm.Name) && algorithm.Name.Contains(passText, StringComparison.OrdinalIgnoreCase))
           ?? (pass == 1 ? algorithms.FirstOrDefault(algorithm => IsWorkspaceSymbolLspAlgorithm(algorithm.Name)) : null);
     }
 
@@ -970,9 +1241,11 @@ render();
         string? GrepAlgorithmName,
         string? TgrepAlgorithmName,
         string? LspAlgorithmName,
+        string? CurrentLspAlgorithmName,
         int? GrepResultCount,
         int? TgrepResultCount,
         int? LspResultCount,
+        int? CurrentLspResultCount,
         double? SolutionLoadMilliseconds,
         double? TgrepIndexMilliseconds,
         double? GrepMilliseconds,
@@ -980,6 +1253,8 @@ render();
         double? TgrepWithIndexMilliseconds,
         double? LspMilliseconds,
         double? LspWithSolutionLoadMilliseconds,
+        double? CurrentLspMilliseconds,
+        double? CurrentLspWithSolutionLoadMilliseconds,
         bool RoslynWorkspacePartial);
 
     private sealed record CombinedRepositoryRow(
