@@ -684,8 +684,10 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                         this.DiagnosticQueue.TryComplete();
                     });
 
+                    // The primary task itself observes cancellation. Keep the continuation non-cancelable so
+                    // WhenCompletedTask remains a signal that analyzer cleanup has finished.
                     _lazyPrimaryTask = ExecutePrimaryAnalysisTaskAsync(analysisScope, usingPrePopulatedEventQueue, cancellationToken)
-                        .ContinueWith(c => DiagnosticQueue.TryComplete(), cancellationToken, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+                        .ContinueWith(c => DiagnosticQueue.TryComplete(), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
                 }
             }
             finally

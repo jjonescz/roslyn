@@ -982,6 +982,10 @@ namespace Microsoft.CodeAnalysis
                 if (analyzerCts != null)
                 {
                     analyzerCts.Cancel();
+
+                    Debug.Assert(analyzerDriver != null);
+                    compilation.EnsureCompilationEventQueueCompleted();
+                    analyzerDriver.WhenCompletedTask.Wait(cancellationToken);
                 }
 
                 var exitCode = ReportDiagnostics(diagnostics, consoleOutput, errorLogger, compilation)
@@ -1230,17 +1234,12 @@ namespace Microsoft.CodeAnalysis
             // But before we do so, we need to run diagnostic suppressors (if any) on all suppressable warnings/errors (if any).
             if (HasUnsuppressableErrors(diagnostics))
             {
-                if (analyzerDriver != null && analyzerDriver.HasDiagnosticSuppressors && HasSuppressableWarningsOrErrors(diagnostics))
+                if (analyzerDriver == null || !analyzerDriver.HasDiagnosticSuppressors || !HasSuppressableWarningsOrErrors(diagnostics))
                 {
-                    analyzerDriver.ApplyProgrammaticSuppressions(diagnostics, compilation, cancellationToken);
+                    return;
                 }
 
-                if (analyzerDriver != null)
-                {
-                    compilation.EnsureCompilationEventQueueCompleted();
-                    analyzerDriver.WhenCompletedTask.Wait(cancellationToken);
-                }
-
+                analyzerDriver.ApplyProgrammaticSuppressions(diagnostics, compilation, cancellationToken);
                 return;
             }
 
