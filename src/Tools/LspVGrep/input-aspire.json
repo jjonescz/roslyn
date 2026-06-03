@@ -1,0 +1,30 @@
+{
+  "directory": "C:\\repos\\aspire",
+  "output": "result-aspire.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "DistributedApplicationBuilder"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ProjectResource"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ContainerResource"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "Resource"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IResourceWithEnvironment"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Build"
+    }
+  ]
+}

@@ -1,0 +1,416 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-06-03T12:31:30.6853639+00:00",
+  "directory": "C:\\repos\\aspire",
+  "repositoryCommitHash": "72df6869fd1b6793ba59929c2cf7815755b443ac",
+  "repositoryUrl": "https://github.com/dotnet/aspire",
+  "sourceLineCount": 827010,
+  "lscache": {
+    "enabled": true,
+    "used": false
+  },
+  "roslynTarget": {
+    "kind": "Solution",
+    "path": "C:\\repos\\aspire\\Aspire-Core.slnf",
+    "loadTimeMilliseconds": 42130.5737,
+    "attemptedProjectCount": 87,
+    "loadedProjectCount": 87,
+    "skippedProjectCount": 0,
+    "isPartial": false
+  },
+  "tgrepIndex": {
+    "buildTimeMilliseconds": 4132.7537
+  },
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "fields": {
+        "name": "DistributedApplicationBuilder"
+      },
+      "expectedCount": null,
+      "algorithms": [
+        {
+          "name": "find-type-definition-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027(class|record|struct|interface|enum) DistributedApplicationBuilder\u0027",
+          "elapsedMilliseconds": 5206.6994,
+          "characterCount": 418,
+          "lineCount": 3
+        },
+        {
+          "name": "find-type-definition-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027(class|record|struct|interface|enum) DistributedApplicationBuilder\u0027",
+          "elapsedMilliseconds": 400.1636,
+          "characterCount": 365,
+          "lineCount": 3
+        },
+        {
+          "name": "find-type-definition-grep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027DistributedApplicationBuilder\u0027",
+          "elapsedMilliseconds": 4348.4385,
+          "characterCount": 16242,
+          "lineCount": 95
+        },
+        {
+          "name": "find-type-definition-tgrep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027DistributedApplicationBuilder\u0027",
+          "elapsedMilliseconds": 396.9136,
+          "characterCount": 12097,
+          "lineCount": 80
+        },
+        {
+          "name": "roslyn-find-declarations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027DistributedApplicationBuilder\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 3582.5496,
+          "characterCount": 121,
+          "lineCount": 1
+        },
+        {
+          "name": "roslyn-find-declarations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027DistributedApplicationBuilder\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 19.8026,
+          "characterCount": 121,
+          "lineCount": 1
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027DistributedApplicationBuilder\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 1292.1906,
+          "characterCount": 1801,
+          "lineCount": 12
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027DistributedApplicationBuilder\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 20.9895,
+          "characterCount": 1801,
+          "lineCount": 12
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027DistributedApplicationBuilder\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 495.3324,
+          "characterCount": 1801,
+          "lineCount": 12
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027DistributedApplicationBuilder\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 151.7515,
+          "characterCount": 1801,
+          "lineCount": 12
+        }
+      ]
+    },
+    {
+      "type": "find-type-definition",
+      "fields": {
+        "name": "ProjectResource"
+      },
+      "expectedCount": null,
+      "algorithms": [
+        {
+          "name": "find-type-definition-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027(class|record|struct|interface|enum) ProjectResource\u0027",
+          "elapsedMilliseconds": 5072.437,
+          "characterCount": 562,
+          "lineCount": 2
+        },
+        {
+          "name": "find-type-definition-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027(class|record|struct|interface|enum) ProjectResource\u0027",
+          "elapsedMilliseconds": 165.4155,
+          "characterCount": 527,
+          "lineCount": 2
+        },
+        {
+          "name": "find-type-definition-grep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027ProjectResource\u0027",
+          "elapsedMilliseconds": 4416.6433,
+          "characterCount": 52757,
+          "lineCount": 302
+        },
+        {
+          "name": "find-type-definition-tgrep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027ProjectResource\u0027",
+          "elapsedMilliseconds": 162.1961,
+          "characterCount": 36370,
+          "lineCount": 228
+        },
+        {
+          "name": "roslyn-find-declarations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027ProjectResource\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 50.7157,
+          "characterCount": 127,
+          "lineCount": 1
+        },
+        {
+          "name": "roslyn-find-declarations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027ProjectResource\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 19.3414,
+          "characterCount": 127,
+          "lineCount": 1
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027ProjectResource\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 26.3107,
+          "characterCount": 1086,
+          "lineCount": 8
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027ProjectResource\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 25.6775,
+          "characterCount": 1086,
+          "lineCount": 8
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027ProjectResource\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 250.5468,
+          "characterCount": 1086,
+          "lineCount": 8
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027ProjectResource\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 57.4181,
+          "characterCount": 1086,
+          "lineCount": 8
+        }
+      ]
+    },
+    {
+      "type": "find-type-definition",
+      "fields": {
+        "name": "ContainerResource"
+      },
+      "expectedCount": null,
+      "algorithms": [
+        {
+          "name": "find-type-definition-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027(class|record|struct|interface|enum) ContainerResource\u0027",
+          "elapsedMilliseconds": 5022.3857,
+          "characterCount": 406,
+          "lineCount": 2
+        },
+        {
+          "name": "find-type-definition-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027(class|record|struct|interface|enum) ContainerResource\u0027",
+          "elapsedMilliseconds": 236.2934,
+          "characterCount": 371,
+          "lineCount": 2
+        },
+        {
+          "name": "find-type-definition-grep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027ContainerResource\u0027",
+          "elapsedMilliseconds": 4380.6906,
+          "characterCount": 116355,
+          "lineCount": 660
+        },
+        {
+          "name": "find-type-definition-tgrep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027ContainerResource\u0027",
+          "elapsedMilliseconds": 235.115,
+          "characterCount": 70618,
+          "lineCount": 427
+        },
+        {
+          "name": "roslyn-find-declarations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027ContainerResource\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 18.3088,
+          "characterCount": 131,
+          "lineCount": 1
+        },
+        {
+          "name": "roslyn-find-declarations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027ContainerResource\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 47.9513,
+          "characterCount": 131,
+          "lineCount": 1
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027ContainerResource\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 8.0802,
+          "characterCount": 4257,
+          "lineCount": 28
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027ContainerResource\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 6.644,
+          "characterCount": 4257,
+          "lineCount": 28
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027ContainerResource\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 99.7397,
+          "characterCount": 4257,
+          "lineCount": 28
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027ContainerResource\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 39.3017,
+          "characterCount": 4257,
+          "lineCount": 28
+        }
+      ]
+    },
+    {
+      "type": "find-derived-types",
+      "fields": {
+        "name": "Resource"
+      },
+      "expectedCount": null,
+      "algorithms": [
+        {
+          "name": "find-derived-types-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027(class|record|struct) \\w\u002B ... Resource\u0027",
+          "elapsedMilliseconds": 5047.5925,
+          "characterCount": 70950,
+          "lineCount": 246
+        },
+        {
+          "name": "find-derived-types-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027(class|record|struct) \\w\u002B ... Resource\u0027",
+          "elapsedMilliseconds": 1431.1611,
+          "characterCount": 56467,
+          "lineCount": 195
+        },
+        {
+          "name": "roslyn-find-derived-types (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDerivedClassesAsync(Aspire.Dashboard.Model.KnownProperties.Resource)",
+          "elapsedMilliseconds": 338.5093,
+          "characterCount": 0,
+          "lineCount": 0
+        },
+        {
+          "name": "roslyn-find-derived-types (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDerivedClassesAsync(Aspire.Dashboard.Model.KnownProperties.Resource)",
+          "elapsedMilliseconds": 3.2874,
+          "characterCount": 0,
+          "lineCount": 0
+        }
+      ]
+    },
+    {
+      "type": "find-interface-implementation",
+      "fields": {
+        "name": "IResourceWithEnvironment"
+      },
+      "expectedCount": null,
+      "algorithms": [
+        {
+          "name": "find-interface-implementation-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027: ...IResourceWithEnvironment\u0027",
+          "elapsedMilliseconds": 4443.437,
+          "characterCount": 22738,
+          "lineCount": 141
+        },
+        {
+          "name": "find-interface-implementation-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027: ...IResourceWithEnvironment\u0027",
+          "elapsedMilliseconds": 114.7193,
+          "characterCount": 20201,
+          "lineCount": 141
+        },
+        {
+          "name": "roslyn-find-implementations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindImplementationsAsync(Aspire.Hosting.ApplicationModel.IResourceWithEnvironment)",
+          "elapsedMilliseconds": 243.4156,
+          "characterCount": 4262,
+          "lineCount": 33
+        },
+        {
+          "name": "roslyn-find-implementations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindImplementationsAsync(Aspire.Hosting.ApplicationModel.IResourceWithEnvironment)",
+          "elapsedMilliseconds": 5.9339,
+          "characterCount": 4262,
+          "lineCount": 33
+        }
+      ]
+    },
+    {
+      "type": "find-member-definition",
+      "fields": {
+        "name": "Build"
+      },
+      "expectedCount": null,
+      "algorithms": [
+        {
+          "name": "find-member-definition-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for member declaration \u0027Build\u0027",
+          "elapsedMilliseconds": 7204.6912,
+          "characterCount": 341686,
+          "lineCount": 2447
+        },
+        {
+          "name": "find-member-definition-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for member declaration \u0027Build\u0027",
+          "elapsedMilliseconds": 1398.2283,
+          "characterCount": 297316,
+          "lineCount": 2445
+        },
+        {
+          "name": "roslyn-find-member-declarations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027Build\u0027, SymbolFilter.Member)",
+          "elapsedMilliseconds": 54.2047,
+          "characterCount": 2248,
+          "lineCount": 14
+        },
+        {
+          "name": "roslyn-find-member-declarations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027Build\u0027, SymbolFilter.Member)",
+          "elapsedMilliseconds": 22.7928,
+          "characterCount": 2248,
+          "lineCount": 14
+        }
+      ]
+    }
+  ]
+}

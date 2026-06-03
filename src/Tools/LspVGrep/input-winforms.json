@@ -1,0 +1,30 @@
+{
+  "directory": "C:\\repos\\winforms",
+  "output": "result-winforms.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "Control"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "Form"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "Button"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "Control"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IButtonControl"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "WndProc"
+    }
+  ]
+}

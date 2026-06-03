@@ -26,6 +26,8 @@ internal sealed class ExternalSearchRunner
                 arguments.Add("--index-path");
                 arguments.Add(indexPath);
                 arguments.Add("--exclude");
+                arguments.Add(".dotnet");
+                arguments.Add("--exclude");
                 arguments.Add("bin");
                 arguments.Add("--exclude");
                 arguments.Add("obj");
@@ -51,7 +53,7 @@ internal sealed class ExternalSearchRunner
         // and formats output as  file:line: matchedLine  (grep-style).
         var script = string.Join(" ",
             $"Get-ChildItem -Path '{EscapePwshString(directoryPath)}' -Recurse -Filter '*.cs'",
-            "| Where-Object { $_.FullName -notmatch '\\\\(bin|obj)\\\\' }",
+            "| Where-Object { $_.FullName -notmatch '\\\\(\\.dotnet|bin|obj)\\\\' }",
             $"| Select-String -Pattern '{EscapePwshString(pattern)}'",
             "| ForEach-Object { \"$($_.Path):$($_.LineNumber): $($_.Line.TrimStart())\" }");
 
@@ -86,7 +88,7 @@ internal sealed class ExternalSearchRunner
 
         var script = string.Join(" ",
             $"Get-ChildItem -Path '{EscapePwshString(directoryPath)}' -Recurse -Filter '*.cs'",
-            "| Where-Object { $_.FullName -notmatch '\\\\(bin|obj)\\\\' }",
+            "| Where-Object { $_.FullName -notmatch '\\\\(\\.dotnet|bin|obj)\\\\' }",
             $"| Select-String -Pattern '{EscapePwshString(pattern)}'",
             "| ForEach-Object { \"$($_.Path):$($_.LineNumber): $($_.Line.TrimStart())\" }");
 
@@ -123,7 +125,7 @@ internal sealed class ExternalSearchRunner
 
         var script = string.Join(" ",
             $"Get-ChildItem -Path '{EscapePwshString(directoryPath)}' -Recurse -Filter '*.cs'",
-            "| Where-Object { $_.FullName -notmatch '\\\\(bin|obj)\\\\' }",
+            "| Where-Object { $_.FullName -notmatch '\\\\(\\.dotnet|bin|obj)\\\\' }",
             $"| Select-String -Pattern '{EscapePwshString(pattern)}'",
             "| ForEach-Object { \"$($_.Path):$($_.LineNumber): $($_.Line.TrimStart())\" }");
 
@@ -161,7 +163,7 @@ internal sealed class ExternalSearchRunner
 
         var script = string.Join(" ",
             $"Get-ChildItem -Path '{EscapePwshString(directoryPath)}' -Recurse -Filter '*.cs'",
-            "| Where-Object { $_.FullName -notmatch '\\\\(bin|obj)\\\\' }",
+            "| Where-Object { $_.FullName -notmatch '\\\\(\\.dotnet|bin|obj)\\\\' }",
             $"| Select-String -Pattern '{EscapePwshString(pattern)}'",
             "| ForEach-Object { \"$($_.Path):$($_.LineNumber): $($_.Line.TrimStart())\" }");
 
@@ -196,7 +198,7 @@ internal sealed class ExternalSearchRunner
 
         var script = string.Join(" ",
             $"Get-ChildItem -Path '{EscapePwshString(directoryPath)}' -Recurse -Filter '*.cs'",
-            "| Where-Object { $_.FullName -notmatch '\\\\(bin|obj)\\\\' }",
+            "| Where-Object { $_.FullName -notmatch '\\\\(\\.dotnet|bin|obj)\\\\' }",
             $"| Select-String -Pattern '{EscapePwshString(pattern)}'",
             "| ForEach-Object { \"$($_.Path):$($_.LineNumber): $($_.Line.TrimStart())\" }");
 
@@ -246,6 +248,8 @@ internal sealed class ExternalSearchRunner
 
                 arguments.Add("-t");
                 arguments.Add("cs");
+                arguments.Add("--glob");
+                arguments.Add("!**/.dotnet/**");
                 arguments.Add("--glob");
                 arguments.Add("!**/bin/**");
                 arguments.Add("--glob");

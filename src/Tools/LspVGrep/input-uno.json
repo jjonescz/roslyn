@@ -1,0 +1,30 @@
+{
+  "directory": "C:\\repos\\uno",
+  "output": "result-uno.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "UIElement"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "FrameworkElement"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "Control"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "FrameworkElement"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IFrameworkElement"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "MeasureOverride"
+    }
+  ]
+}

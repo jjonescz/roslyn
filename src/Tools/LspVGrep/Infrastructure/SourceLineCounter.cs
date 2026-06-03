@@ -23,6 +23,7 @@ internal static class SourceLineCounter
 
     private static readonly HashSet<string> s_ignoredDirectoryNames = new(StringComparer.OrdinalIgnoreCase)
     {
+        ".dotnet",
         ".git",
         ".vs",
         "artifacts",

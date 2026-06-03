@@ -1,0 +1,30 @@
+{
+  "directory": "C:\\repos\\efcore",
+  "output": "result-efcore.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "DbContext"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "EntityType"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "ModelBuilder"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "DbContext"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IModel"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "SaveChanges"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "directory": "C:\\repos\\wpf",
+  "output": "result-wpf.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "DependencyObject"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "UIElement"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "FrameworkElement"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "FrameworkElement"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IInputElement"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "MeasureOverride"
+    }
+  ]
+}

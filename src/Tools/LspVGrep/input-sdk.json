@@ -1,0 +1,30 @@
+{
+  "directory": "C:\\repos\\sdk",
+  "output": "result-sdk.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "MSBuildForwardingAppWithoutLogging"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "WorkloadInfoHelper"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "NETCoreSdkResolver"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "BaseCommand"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "ICommand"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Execute"
+    }
+  ]
+}

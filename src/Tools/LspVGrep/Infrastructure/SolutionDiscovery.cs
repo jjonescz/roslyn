@@ -54,11 +54,7 @@ internal static class SolutionDiscovery
         }
 
         // 3. Fall back to discovering all .csproj files recursively, excluding test projects.
-        var projects = Directory
-            .EnumerateFiles(directoryPath, "*.csproj", SearchOption.AllDirectories)
-            .Where(path => !IsBuildArtifact(path) && !IsTestProject(path))
-            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var projects = FindProjects(directoryPath);
 
         if (projects.Count == 0)
         {
@@ -73,6 +69,13 @@ internal static class SolutionDiscovery
 
         return new RoslynLoadTarget(RoslynLoadTargetKind.MultipleProjects, projects);
     }
+
+    public static List<string> FindProjects(string directoryPath) =>
+        Directory
+            .EnumerateFiles(directoryPath, "*.csproj", SearchOption.AllDirectories)
+            .Where(path => !IsBuildArtifact(path) && !IsTestProject(path))
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
     private static string? TryGetDefaultSolutionFromVSCodeSettings(string directoryPath)
     {

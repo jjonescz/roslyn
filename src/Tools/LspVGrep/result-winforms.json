@@ -1,0 +1,416 @@
+{
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-06-03T13:28:23.010714+00:00",
+  "directory": "C:\\repos\\winforms",
+  "repositoryCommitHash": "8d5c4346c0faefb2a0ce4b2d1ebad0f74fbb5872",
+  "repositoryUrl": "https://github.com/dotnet/winforms",
+  "sourceLineCount": 986622,
+  "lscache": {
+    "enabled": true,
+    "used": false
+  },
+  "roslynTarget": {
+    "kind": "Solution",
+    "path": "C:\\repos\\winforms\\Winforms.sln",
+    "loadTimeMilliseconds": 26662.7334,
+    "attemptedProjectCount": 61,
+    "loadedProjectCount": 61,
+    "skippedProjectCount": 0,
+    "isPartial": false
+  },
+  "tgrepIndex": {
+    "buildTimeMilliseconds": 2617.1859
+  },
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "fields": {
+        "name": "Control"
+      },
+      "expectedCount": null,
+      "algorithms": [
+        {
+          "name": "find-type-definition-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027(class|record|struct|interface|enum) Control\u0027",
+          "elapsedMilliseconds": 4825.5766,
+          "characterCount": 3497,
+          "lineCount": 27
+        },
+        {
+          "name": "find-type-definition-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027(class|record|struct|interface|enum) Control\u0027",
+          "elapsedMilliseconds": 1707.6281,
+          "characterCount": 2958,
+          "lineCount": 27
+        },
+        {
+          "name": "find-type-definition-grep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027Control\u0027",
+          "elapsedMilliseconds": 9115.2884,
+          "characterCount": 10345899,
+          "lineCount": 69510
+        },
+        {
+          "name": "find-type-definition-tgrep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027Control\u0027",
+          "elapsedMilliseconds": 1258.9929,
+          "characterCount": 993829,
+          "lineCount": 6932
+        },
+        {
+          "name": "roslyn-find-declarations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027Control\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 5304.9362,
+          "characterCount": 3607,
+          "lineCount": 27
+        },
+        {
+          "name": "roslyn-find-declarations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027Control\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 29.7688,
+          "characterCount": 3607,
+          "lineCount": 27
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Control\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 2339.9306,
+          "characterCount": 69182,
+          "lineCount": 389
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Control\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 16.9955,
+          "characterCount": 69182,
+          "lineCount": 389
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Control\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 2143.2236,
+          "characterCount": 69182,
+          "lineCount": 389
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Control\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 177.8618,
+          "characterCount": 69182,
+          "lineCount": 389
+        }
+      ]
+    },
+    {
+      "type": "find-type-definition",
+      "fields": {
+        "name": "Form"
+      },
+      "expectedCount": null,
+      "algorithms": [
+        {
+          "name": "find-type-definition-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027(class|record|struct|interface|enum) Form\u0027",
+          "elapsedMilliseconds": 4793.7712,
+          "characterCount": 488,
+          "lineCount": 4
+        },
+        {
+          "name": "find-type-definition-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027(class|record|struct|interface|enum) Form\u0027",
+          "elapsedMilliseconds": 2450.1199,
+          "characterCount": 409,
+          "lineCount": 4
+        },
+        {
+          "name": "find-type-definition-grep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027Form\u0027",
+          "elapsedMilliseconds": 4354.3096,
+          "characterCount": 388576,
+          "lineCount": 2600
+        },
+        {
+          "name": "find-type-definition-tgrep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027Form\u0027",
+          "elapsedMilliseconds": 2403.1273,
+          "characterCount": 122135,
+          "lineCount": 971
+        },
+        {
+          "name": "roslyn-find-declarations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027Form\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 31.2135,
+          "characterCount": 489,
+          "lineCount": 4
+        },
+        {
+          "name": "roslyn-find-declarations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027Form\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 26.5503,
+          "characterCount": 489,
+          "lineCount": 4
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Form\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 24.532,
+          "characterCount": 30187,
+          "lineCount": 187
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Form\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 18.7837,
+          "characterCount": 30187,
+          "lineCount": 187
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Form\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 263.0597,
+          "characterCount": 30187,
+          "lineCount": 187
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Form\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 195.2722,
+          "characterCount": 30187,
+          "lineCount": 187
+        }
+      ]
+    },
+    {
+      "type": "find-type-definition",
+      "fields": {
+        "name": "Button"
+      },
+      "expectedCount": null,
+      "algorithms": [
+        {
+          "name": "find-type-definition-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027(class|record|struct|interface|enum) Button\u0027",
+          "elapsedMilliseconds": 4833.093,
+          "characterCount": 561,
+          "lineCount": 4
+        },
+        {
+          "name": "find-type-definition-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027(class|record|struct|interface|enum) Button\u0027",
+          "elapsedMilliseconds": 553.4803,
+          "characterCount": 482,
+          "lineCount": 4
+        },
+        {
+          "name": "find-type-definition-grep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027Button\u0027",
+          "elapsedMilliseconds": 4278.9979,
+          "characterCount": 402047,
+          "lineCount": 2406
+        },
+        {
+          "name": "find-type-definition-tgrep-nameonly",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027Button\u0027",
+          "elapsedMilliseconds": 529.0315,
+          "characterCount": 151059,
+          "lineCount": 1070
+        },
+        {
+          "name": "roslyn-find-declarations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027Button\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 30.3625,
+          "characterCount": 626,
+          "lineCount": 4
+        },
+        {
+          "name": "roslyn-find-declarations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027Button\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 23.2417,
+          "characterCount": 626,
+          "lineCount": 4
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Button\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 17.2114,
+          "characterCount": 45988,
+          "lineCount": 236
+        },
+        {
+          "name": "roslyn-find-declarations-with-pattern (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Button\u0027, SymbolFilter.Type)",
+          "elapsedMilliseconds": 14.9174,
+          "characterCount": 45988,
+          "lineCount": 236
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Button\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 164.7402,
+          "characterCount": 45988,
+          "lineCount": 236
+        },
+        {
+          "name": "roslyn-find-declarations-workspaceSymbol (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, \u0027Button\u0027) without SymbolFilter",
+          "elapsedMilliseconds": 166.3796,
+          "characterCount": 45988,
+          "lineCount": 236
+        }
+      ]
+    },
+    {
+      "type": "find-derived-types",
+      "fields": {
+        "name": "Control"
+      },
+      "expectedCount": null,
+      "algorithms": [
+        {
+          "name": "find-derived-types-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027(class|record|struct) \\w\u002B ... Control\u0027",
+          "elapsedMilliseconds": 4698.3726,
+          "characterCount": 28521,
+          "lineCount": 169
+        },
+        {
+          "name": "find-derived-types-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027(class|record|struct) \\w\u002B ... Control\u0027",
+          "elapsedMilliseconds": 1156.9325,
+          "characterCount": 20950,
+          "lineCount": 144
+        },
+        {
+          "name": "roslyn-find-derived-types (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDerivedClassesAsync(System.Windows.Forms.Control)",
+          "elapsedMilliseconds": 301.0269,
+          "characterCount": 135135,
+          "lineCount": 820
+        },
+        {
+          "name": "roslyn-find-derived-types (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDerivedClassesAsync(System.Windows.Forms.Control)",
+          "elapsedMilliseconds": 28.2017,
+          "characterCount": 135135,
+          "lineCount": 820
+        }
+      ]
+    },
+    {
+      "type": "find-interface-implementation",
+      "fields": {
+        "name": "IButtonControl"
+      },
+      "expectedCount": null,
+      "algorithms": [
+        {
+          "name": "find-interface-implementation-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for \u0027: ...IButtonControl\u0027",
+          "elapsedMilliseconds": 4052.7725,
+          "characterCount": 461,
+          "lineCount": 3
+        },
+        {
+          "name": "find-interface-implementation-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for \u0027: ...IButtonControl\u0027",
+          "elapsedMilliseconds": 60.6346,
+          "characterCount": 402,
+          "lineCount": 3
+        },
+        {
+          "name": "roslyn-find-implementations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindImplementationsAsync(System.Windows.Forms.IButtonControl)",
+          "elapsedMilliseconds": 8.6861,
+          "characterCount": 4045,
+          "lineCount": 24
+        },
+        {
+          "name": "roslyn-find-implementations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindImplementationsAsync(System.Windows.Forms.IButtonControl)",
+          "elapsedMilliseconds": 3.9598,
+          "characterCount": 4045,
+          "lineCount": 24
+        }
+      ]
+    },
+    {
+      "type": "find-member-definition",
+      "fields": {
+        "name": "WndProc"
+      },
+      "expectedCount": null,
+      "algorithms": [
+        {
+          "name": "find-member-definition-grep",
+          "outcome": "Succeeded",
+          "summary": "string search for member declaration \u0027WndProc\u0027",
+          "elapsedMilliseconds": 6883.0516,
+          "characterCount": 27124,
+          "lineCount": 172
+        },
+        {
+          "name": "find-member-definition-tgrep",
+          "outcome": "Succeeded",
+          "summary": "tgrep search for member declaration \u0027WndProc\u0027",
+          "elapsedMilliseconds": 197.1699,
+          "characterCount": 22222,
+          "lineCount": 164
+        },
+        {
+          "name": "roslyn-find-member-declarations (pass 1)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027WndProc\u0027, SymbolFilter.Member)",
+          "elapsedMilliseconds": 111.9887,
+          "characterCount": 33888,
+          "lineCount": 165
+        },
+        {
+          "name": "roslyn-find-member-declarations (pass 2)",
+          "outcome": "Succeeded",
+          "summary": "called SymbolFinder.FindDeclarationsAsync(project, \u0027WndProc\u0027, SymbolFilter.Member)",
+          "elapsedMilliseconds": 100.5251,
+          "characterCount": 33888,
+          "lineCount": 165
+        }
+      ]
+    }
+  ]
+}

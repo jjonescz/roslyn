@@ -57,8 +57,30 @@ internal sealed class RoslynWorkspaceProvider : IDisposable
         {
             case RoslynLoadTargetKind.Solution:
                 _log($"Opening solution '{target.Paths[0]}'.");
-                solution = await workspace.OpenSolutionAsync(target.Paths[0], progress: progress, cancellationToken: cancellationToken);
-                attemptedProjectCount = solution.ProjectIds.Count;
+                try
+                {
+                    solution = await workspace.OpenSolutionAsync(target.Paths[0], progress: progress, cancellationToken: cancellationToken);
+                    attemptedProjectCount = solution.ProjectIds.Count;
+                }
+                catch (Exception exception)
+                {
+                    workspace.Dispose();
+                    workspace = MSBuildWorkspace.Create();
+                    _workspace = workspace;
+
+                    var projects = SolutionDiscovery.FindProjects(directoryPath);
+                    if (projects.Count == 0)
+                    {
+                        throw;
+                    }
+
+                    _log($"Opening solution '{target.Paths[0]}' failed: {exception.GetType().Name}: {exception.Message}");
+                    _log($"Falling back to opening {projects.Count} non-test projects individually.");
+                    attemptedProjectCount = projects.Count;
+                    skippedProjectCount = await OpenProjectsAsync(workspace, projects, progress, cancellationToken);
+                    solution = workspace.CurrentSolution;
+                }
+
                 break;
 
             case RoslynLoadTargetKind.Project:
@@ -70,20 +92,7 @@ internal sealed class RoslynWorkspaceProvider : IDisposable
             case RoslynLoadTargetKind.MultipleProjects:
                 _log($"Opening {target.Paths.Count} projects.");
                 attemptedProjectCount = target.Paths.Count;
-                foreach (var projectPath in target.Paths)
-                {
-                    try
-                    {
-                        await workspace.OpenProjectAsync(projectPath, progress: progress, cancellationToken: cancellationToken);
-                    }
-                    catch (Exception exception)
-                    {
-                        // Some projects may conflict (duplicate assembly names, etc.) — skip them.
-                        skippedProjectCount++;
-                        _log($"Skipping project '{projectPath}' because it could not be opened: {exception.GetType().Name}: {exception.Message}");
-                    }
-                }
-
+                skippedProjectCount = await OpenProjectsAsync(workspace, target.Paths, progress, cancellationToken);
                 solution = workspace.CurrentSolution;
                 break;
 
@@ -94,6 +103,29 @@ internal sealed class RoslynWorkspaceProvider : IDisposable
         return await WarmCompilationsAsync(
             new WorkspaceLoadResult(workspace, solution, target.DisplayPath, target.Kind, attemptedProjectCount, solution.ProjectIds.Count, skippedProjectCount),
             cancellationToken);
+    }
+
+    private async Task<int> OpenProjectsAsync(
+        MSBuildWorkspace workspace,
+        IReadOnlyList<string> projectPaths,
+        IProgress<ProjectLoadProgress> progress,
+        CancellationToken cancellationToken)
+    {
+        var skippedProjectCount = 0;
+        foreach (var projectPath in projectPaths)
+        {
+            try
+            {
+                await workspace.OpenProjectAsync(projectPath, progress: progress, cancellationToken: cancellationToken);
+            }
+            catch (Exception exception)
+            {
+                skippedProjectCount++;
+                _log($"Skipping project '{projectPath}' because it could not be opened: {exception.GetType().Name}: {exception.Message}");
+            }
+        }
+
+        return skippedProjectCount;
     }
 
     private async Task<WorkspaceLoadResult> WarmCompilationsAsync(
@@ -107,7 +139,22 @@ internal sealed class RoslynWorkspaceProvider : IDisposable
 
         // Warm up compilations so individual algorithm timings don't include lazy compilation cost.
         _log($"Warming compilations for {solution.ProjectIds.Count} projects.");
-        await Task.WhenAll(solution.Projects.Select(p => p.GetCompilationAsync(cancellationToken)));
+        foreach (var project in solution.Projects)
+        {
+            try
+            {
+                await project.GetCompilationAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                _log($"Skipping compilation warmup for '{project.Name}' because it failed: {exception.GetType().Name}: {exception.Message}");
+            }
+        }
+
         _log("Compilation warmup complete.");
 
         return result with { Solution = solution };

@@ -1,0 +1,30 @@
+{
+  "directory": "C:\\repos\\maui",
+  "output": "result-maui.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "MauiAppBuilder"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "VisualElement"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "BindableObject"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "Element"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "IView"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "CreateMauiApp"
+    }
+  ]
+}

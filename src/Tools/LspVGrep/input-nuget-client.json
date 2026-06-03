@@ -1,0 +1,30 @@
+{
+  "directory": "C:\\repos\\NuGet.Client",
+  "output": "result-nuget-client.html",
+  "queries": [
+    {
+      "type": "find-type-definition",
+      "name": "PackageSpec"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "RestoreCommand"
+    },
+    {
+      "type": "find-type-definition",
+      "name": "PackageArchiveReader"
+    },
+    {
+      "type": "find-derived-types",
+      "name": "RestoreCommand"
+    },
+    {
+      "type": "find-interface-implementation",
+      "name": "ILogger"
+    },
+    {
+      "type": "find-member-definition",
+      "name": "Execute"
+    }
+  ]
+}
