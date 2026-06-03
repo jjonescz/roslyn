@@ -1,4 +1,6 @@
-﻿using System.Text.Encodings.Web;
+﻿using System.Globalization;
+using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using LspVGrepTool.Models;
 
@@ -13,7 +15,7 @@ internal static class CombinedReportRenderer
         WriteIndented = false
     };
 
-    public static string Render(IReadOnlyList<JsonSummaryReport> reports, string outputDirectory)
+    public static string Render(IReadOnlyList<JsonSummaryReport> reports, string outputDirectory, string? rawTimingCsvHref)
     {
         var repositories = reports
           .Select(report => CreateRepositoryRow(report, outputDirectory))
@@ -30,6 +32,9 @@ internal static class CombinedReportRenderer
         var repositoriesJson = JsonSerializer.Serialize(repositories, s_jsonOptions);
         var rowsJson = JsonSerializer.Serialize(rows, s_jsonOptions);
         var generatedAt = DateTimeOffset.UtcNow.ToString("u");
+        var rawTimingCsvLink = string.IsNullOrWhiteSpace(rawTimingCsvHref)
+          ? ""
+          : $" <a href=\"{HtmlEncoder.Default.Encode(rawTimingCsvHref)}\">Raw timing CSV</a>.";
 
         return """
 <!doctype html>
@@ -91,7 +96,7 @@ internal static class CombinedReportRenderer
 <body>
 <main>
   <h1>LspVGrep Combined Report</h1>
-  <div class="meta">Generated GENERATED_AT from REPORT_COUNT reports across REPOSITORY_COUNT repositories.</div>
+  <div class="meta">Generated GENERATED_AT from REPORT_COUNT reports across REPOSITORY_COUNT repositories.CSV_EXPORT_LINK</div>
 
   <section class="panel">
     <div class="toolbar">
@@ -1074,8 +1079,83 @@ render();
             .Replace("GENERATED_AT", generatedAt, StringComparison.Ordinal)
             .Replace("REPORT_COUNT", reports.Count.ToString(), StringComparison.Ordinal)
             .Replace("REPOSITORY_COUNT", repositories.Count.ToString(), StringComparison.Ordinal)
+            .Replace("CSV_EXPORT_LINK", rawTimingCsvLink, StringComparison.Ordinal)
             .Replace("REPOSITORIES_JSON", repositoriesJson, StringComparison.Ordinal)
             .Replace("ROWS_JSON", rowsJson, StringComparison.Ordinal);
+    }
+
+    public static string RenderRawTimingCsv(IReadOnlyList<JsonSummaryReport> reports, string outputDirectory)
+    {
+        var rows = reports
+          .SelectMany(report => CreateRows(report, outputDirectory))
+          .OrderBy(static row => row.SourceLineCount ?? long.MaxValue)
+          .ThenBy(static row => row.Repository, StringComparer.OrdinalIgnoreCase)
+          .ThenBy(static row => row.Query, StringComparer.OrdinalIgnoreCase)
+          .ToList();
+
+        var builder = new StringBuilder();
+        AppendCsvRow(
+          builder,
+          "Repository",
+          "ReportHref",
+          "Directory",
+          "SourceLineCount",
+          "KLoc",
+          "Query",
+          "QueryType",
+          "ExpectedResultCount",
+          "GrepAlgorithmName",
+          "TgrepAlgorithmName",
+          "IdealLspAlgorithmName",
+          "CurrentLspAlgorithmName",
+          "GrepResultCount",
+          "TgrepResultCount",
+          "IdealLspResultCount",
+          "CurrentLspResultCount",
+          "SolutionLoadMilliseconds",
+          "TgrepIndexMilliseconds",
+          "GrepMilliseconds",
+          "TgrepMilliseconds",
+          "TgrepWithIndexMilliseconds",
+          "IdealLspMilliseconds",
+          "IdealLspWithSolutionLoadMilliseconds",
+          "CurrentLspMilliseconds",
+          "CurrentLspWithSolutionLoadMilliseconds",
+          "RoslynWorkspacePartial");
+
+        foreach (var row in rows)
+        {
+            AppendCsvRow(
+              builder,
+              row.Repository,
+              row.ReportHref,
+              row.Directory,
+              FormatCsvValue(row.SourceLineCount),
+              FormatCsvValue(row.SourceLineCount / 1000.0),
+              row.Query,
+              row.QueryType,
+              FormatCsvValue(row.ExpectedResultCount),
+              row.GrepAlgorithmName,
+              row.TgrepAlgorithmName,
+              row.LspAlgorithmName,
+              row.CurrentLspAlgorithmName,
+              FormatCsvValue(row.GrepResultCount),
+              FormatCsvValue(row.TgrepResultCount),
+              FormatCsvValue(row.LspResultCount),
+              FormatCsvValue(row.CurrentLspResultCount),
+              FormatCsvValue(row.SolutionLoadMilliseconds),
+              FormatCsvValue(row.TgrepIndexMilliseconds),
+              FormatCsvValue(row.GrepMilliseconds),
+              FormatCsvValue(row.TgrepMilliseconds),
+              FormatCsvValue(row.TgrepWithIndexMilliseconds),
+              FormatCsvValue(row.LspMilliseconds),
+              FormatCsvValue(row.LspWithSolutionLoadMilliseconds),
+              FormatCsvValue(row.CurrentLspMilliseconds),
+              FormatCsvValue(row.CurrentLspWithSolutionLoadMilliseconds),
+              FormatCsvValue(row.RoslynWorkspacePartial));
+        }
+
+        return builder.ToString();
     }
 
     private static CombinedRepositoryRow CreateRepositoryRow(JsonSummaryReport report, string outputDirectory) =>
@@ -1229,6 +1309,44 @@ render();
 
         return new Uri(fullHtmlPath).AbsoluteUri;
     }
+
+    private static void AppendCsvRow(StringBuilder builder, params string?[] values)
+    {
+        for (var i = 0; i < values.Length; i++)
+        {
+            if (i > 0)
+            {
+                builder.Append(',');
+            }
+
+            builder.Append(EscapeCsvValue(values[i]));
+        }
+
+        builder.AppendLine();
+    }
+
+    private static string EscapeCsvValue(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return "";
+
+        if (value.IndexOfAny(['\"', ',', '\r', '\n']) < 0)
+            return value;
+
+        return $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
+    }
+
+    private static string FormatCsvValue(long? value) =>
+      value?.ToString(CultureInfo.InvariantCulture) ?? "";
+
+    private static string FormatCsvValue(int? value) =>
+      value?.ToString(CultureInfo.InvariantCulture) ?? "";
+
+    private static string FormatCsvValue(double? value) =>
+      value?.ToString("G17", CultureInfo.InvariantCulture) ?? "";
+
+    private static string FormatCsvValue(bool value) =>
+      value ? "TRUE" : "FALSE";
 
     private sealed record CombinedReportRow(
         string Repository,

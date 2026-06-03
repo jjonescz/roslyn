@@ -219,12 +219,21 @@ internal static class Program
             Directory.CreateDirectory(outputDirectory);
         }
 
+        var csvOutputPath = ResolveCombinedCsvOutputPath(outputPath);
+        var rawTimingCsvHref = GetRelativeHref(outputDirectory ?? Environment.CurrentDirectory, csvOutputPath);
+
         Log($"Rendering combined report to '{outputPath}'.");
-        var html = CombinedReportRenderer.Render(reports, outputDirectory ?? Environment.CurrentDirectory);
+        var html = CombinedReportRenderer.Render(reports, outputDirectory ?? Environment.CurrentDirectory, rawTimingCsvHref);
         await File.WriteAllTextAsync(outputPath, html, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), cancellationToken);
         Log("Combined report written.");
 
+        Log($"Rendering raw timing CSV to '{csvOutputPath}'.");
+        var csv = CombinedReportRenderer.RenderRawTimingCsv(reports, outputDirectory ?? Environment.CurrentDirectory);
+        await File.WriteAllTextAsync(csvOutputPath, csv, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), cancellationToken);
+        Log("Raw timing CSV written.");
+
         Console.WriteLine(outputPath);
+        Console.WriteLine(csvOutputPath);
         return 0;
     }
 
@@ -236,6 +245,15 @@ internal static class Program
         var commonDirectory = GetCommonDirectory(reportPaths);
         var outputDirectory = commonDirectory ?? Environment.CurrentDirectory;
         return Path.Combine(outputDirectory, "combined-report.html");
+    }
+
+    private static string ResolveCombinedCsvOutputPath(string combinedHtmlOutputPath) =>
+        Path.ChangeExtension(combinedHtmlOutputPath, ".csv");
+
+    private static string GetRelativeHref(string outputDirectory, string targetPath)
+    {
+        var relativePath = Path.GetRelativePath(Path.GetFullPath(outputDirectory), Path.GetFullPath(targetPath));
+        return relativePath.Replace(Path.DirectorySeparatorChar, '/').Replace(Path.AltDirectorySeparatorChar, '/');
     }
 
     private static string? GetCommonDirectory(IReadOnlyList<string> filePaths)
