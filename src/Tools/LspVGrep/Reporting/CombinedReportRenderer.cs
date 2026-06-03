@@ -82,8 +82,10 @@ internal static class CombinedReportRenderer
     .current-lsp { background: #7c3aed; color: #7c3aed; }
     .lsp-load { background: #cc79a7; color: #cc79a7; }
     .chart-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 12px; }
-    .legend { display: flex; flex-wrap: wrap; gap: 12px; color: #475569; font-size: 12px; }
+    .legend, .series-controls { display: flex; flex-wrap: wrap; gap: 12px; color: #475569; font-size: 12px; }
     .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .series-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    .series-toggle input { margin: 0; }
     .swatch { width: 18px; height: 4px; border-radius: 999px; display: inline-block; }
     .swatch.dashed { background: repeating-linear-gradient(90deg, currentColor 0 6px, transparent 6px 10px); }
     .scale-toggle { display: inline-flex; border: 1px solid #b8c2d1; border-radius: 6px; overflow: hidden; }
@@ -158,13 +160,7 @@ internal static class CombinedReportRenderer
     <div class="toolbar">
       <h2>Median Search Time by Repository Size</h2>
       <div class="chart-controls">
-        <div class="legend">
-          <span><i class="swatch grep"></i>Grep</span>
-          <span><i class="swatch tgrep"></i>tgrep</span>
-          <span><i class="swatch dashed tgrep-load"></i>tgrep + index</span>
-          <span><i class="swatch lsp"></i>Ideal LSP</span>
-          <span><i class="swatch dashed lsp-load"></i>Ideal LSP + solution load</span>
-        </div>
+        <div id="timingSeriesControls" class="series-controls" role="group" aria-label="Timing series"></div>
         <div class="scale-toggle" role="group" aria-label="X-axis scale">
           <button id="normalXScale" type="button" aria-pressed="false">X normal</button>
           <button id="logXScale" type="button" aria-pressed="true">X log</button>
@@ -333,12 +329,13 @@ const normalXScaleButton = document.getElementById('normalXScale');
 const logXScaleButton = document.getElementById('logXScale');
 const normalScaleButton = document.getElementById('normalScale');
 const logScaleButton = document.getElementById('logScale');
+const timingSeriesControls = document.getElementById('timingSeriesControls');
 const seriesDefinitions = [
-  { label: 'Grep', field: 'grepMilliseconds', color: '#0072b2' },
-  { label: 'tgrep', field: 'tgrepMilliseconds', color: '#e69f00' },
-  { label: 'tgrep + index', field: 'tgrepWithIndexMilliseconds', color: '#d55e00', dash: '8 5' },
-  { label: 'Ideal LSP', field: 'lspMilliseconds', color: '#009e73' },
-  { label: 'Ideal LSP + solution load', field: 'lspWithSolutionLoadMilliseconds', color: '#cc79a7', dash: '8 5' }
+  { id: 'grep', label: 'Grep', field: 'grepMilliseconds', color: '#0072b2' },
+  { id: 'tgrep', label: 'tgrep', field: 'tgrepMilliseconds', color: '#e69f00' },
+  { id: 'tgrepWithIndex', label: 'tgrep + index', field: 'tgrepWithIndexMilliseconds', color: '#d55e00', dash: '8 5' },
+  { id: 'idealLsp', label: 'Ideal LSP', field: 'lspMilliseconds', color: '#009e73' },
+  { id: 'idealLspWithSolutionLoad', label: 'Ideal LSP + solution load', field: 'lspWithSolutionLoadMilliseconds', color: '#cc79a7', dash: '8 5' }
 ];
 const accuracySeriesDefinitions = [
   { label: 'Grep', countField: 'grepResultCount', color: '#0072b2' },
@@ -358,6 +355,7 @@ const coarseQueries = [...new Set(allRows.map(row => row.queryType ?? row.query)
 let queryFilterMode = 'coarse';
 let xScaleMode = 'log';
 let yScaleMode = 'log';
+let visibleTimingSeries = new Set(seriesDefinitions.map(definition => definition.id));
 
 document.getElementById('selectAll').addEventListener('click', () => setAll(true));
 document.getElementById('selectNone').addEventListener('click', () => setAll(false));
@@ -390,6 +388,16 @@ function setXScaleMode(mode) {
   render();
 }
 
+function setTimingSeriesVisibility(seriesId, isVisible) {
+  if (isVisible) {
+    visibleTimingSeries.add(seriesId);
+  } else {
+    visibleTimingSeries.delete(seriesId);
+  }
+
+  render();
+}
+
 function setAll(value) {
   for (const checkbox of queryFilters.querySelectorAll('input')) {
     checkbox.checked = value;
@@ -414,6 +422,31 @@ function renderQueryFilters() {
     checkbox.addEventListener('change', render);
     label.append(checkbox, document.createTextNode(query));
     queryFilters.append(label);
+  }
+}
+
+function renderTimingSeriesControls() {
+  timingSeriesControls.textContent = '';
+  for (const definition of seriesDefinitions) {
+    const label = document.createElement('label');
+    label.className = 'series-toggle';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = definition.id;
+    checkbox.checked = visibleTimingSeries.has(definition.id);
+    checkbox.style.accentColor = definition.color;
+    checkbox.addEventListener('change', () => setTimingSeriesVisibility(definition.id, checkbox.checked));
+
+    const swatch = document.createElement('i');
+    swatch.className = definition.dash ? 'swatch dashed' : 'swatch';
+    swatch.style.color = definition.color;
+    if (!definition.dash) {
+      swatch.style.backgroundColor = definition.color;
+    }
+
+    label.append(checkbox, swatch, document.createTextNode(definition.label));
+    timingSeriesControls.append(label);
   }
 }
 
@@ -591,17 +624,19 @@ function getAlgorithmSelectionRows() {
 function renderChart(visibleRows) {
   chart.textContent = '';
   const groups = groupRowsByRepository(visibleRows);
-  const pointsBySeries = seriesDefinitions.map(definition => ({
-    ...definition,
-    points: groups
-      .map(group => createPoint(group, definition.field))
-      .filter(point => point !== null)
-  }));
+  const pointsBySeries = seriesDefinitions
+    .filter(definition => visibleTimingSeries.has(definition.id))
+    .map(definition => ({
+      ...definition,
+      points: groups
+        .map(group => createPoint(group, definition.field))
+        .filter(point => point !== null)
+    }));
   const allPoints = pointsBySeries.flatMap(series => series.points);
   if (allPoints.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'plot-empty';
-    empty.textContent = 'No timing data for the selected queries.';
+    empty.textContent = 'No timing data for the selected queries or series.';
     chart.append(empty);
     return;
   }
@@ -1069,6 +1104,7 @@ function formatLspMs(row, value) {
 }
 
 renderQueryFilters();
+renderTimingSeriesControls();
 renderRepositoryTable();
 renderAlgorithmSelectionTable();
 render();
