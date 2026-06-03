@@ -733,7 +733,7 @@ function createAccuracySummary(rows, countField) {
 function createPoint(group, field) {
   const values = group.rows
     .map(row => row[field])
-    .filter(value => value !== null && value !== undefined && value > 0)
+    .filter(value => value !== null && value !== undefined && value >= 1)
     .sort((left, right) => left - right);
   if (values.length === 0) {
     return null;
@@ -1096,11 +1096,21 @@ function formatAccuracyWithSamples(summary) {
 }
 
 function formatLspCount(row, value = row.lspResultCount) {
-  return row.roslynWorkspacePartial ? 'partial' : formatCount(value);
+  if (!row.roslynWorkspacePartial) {
+    return formatCount(value);
+  }
+
+  const formatted = formatCount(value);
+  return formatted ? `${formatted} (partial)` : 'partial';
 }
 
 function formatLspMs(row, value) {
-  return row.roslynWorkspacePartial ? 'partial' : formatMs(value);
+  if (!row.roslynWorkspacePartial) {
+    return formatMs(value);
+  }
+
+  const formatted = formatMs(value);
+  return formatted ? `${formatted} (partial)` : 'partial';
 }
 
 renderQueryFilters();
@@ -1215,11 +1225,15 @@ render();
             var grep = SelectGrepAlgorithm(successfulAlgorithms);
             var tgrep = SelectTgrepAlgorithm(successfulAlgorithms);
             var roslynWorkspacePartial = report.RoslynTarget?.IsPartial == true;
-            var lspWarm = roslynWorkspacePartial ? null : SelectIdealLspAlgorithm(successfulAlgorithms, pass: 2);
-            var lsp = lspWarm ?? (roslynWorkspacePartial ? null : SelectIdealLspAlgorithm(successfulAlgorithms, pass: 1));
-            var currentLspWarm = roslynWorkspacePartial ? null : SelectCurrentLspAlgorithm(successfulAlgorithms, query.Type, pass: 2);
-            var currentLsp = currentLspWarm ?? (roslynWorkspacePartial ? null : SelectCurrentLspAlgorithm(successfulAlgorithms, query.Type, pass: 1));
+            var lspWarm = SelectIdealLspAlgorithm(successfulAlgorithms, pass: 2);
+            var lsp = lspWarm ?? SelectIdealLspAlgorithm(successfulAlgorithms, pass: 1);
+            var currentLspWarm = SelectCurrentLspAlgorithm(successfulAlgorithms, query.Type, pass: 2);
+            var currentLsp = currentLspWarm ?? SelectCurrentLspAlgorithm(successfulAlgorithms, query.Type, pass: 1);
             var expectedCount = query.ExpectedCount ?? (roslynWorkspacePartial ? tgrep?.LineCount : lsp?.LineCount);
+            lsp = FilterPartialSubMillisecondAlgorithm(lsp, roslynWorkspacePartial);
+            currentLsp = FilterPartialSubMillisecondAlgorithm(currentLsp, roslynWorkspacePartial);
+            var lspResultCount = roslynWorkspacePartial ? null : lsp?.LineCount;
+            var currentLspResultCount = roslynWorkspacePartial ? null : currentLsp?.LineCount;
             var tgrepWithIndex = report.TgrepIndex?.BuildTimeMilliseconds is { } indexMilliseconds && tgrep?.ElapsedMilliseconds is { } tgrepMilliseconds
               ? indexMilliseconds + tgrepMilliseconds
               : (double?)null;
@@ -1244,8 +1258,8 @@ render();
                 currentLsp?.Name,
                 grep?.LineCount,
                 tgrep?.LineCount,
-                lsp?.LineCount,
-                currentLsp?.LineCount,
+                lspResultCount,
+                currentLspResultCount,
                 report.RoslynTarget?.LoadTimeMilliseconds,
                 report.TgrepIndex?.BuildTimeMilliseconds,
                 grep?.ElapsedMilliseconds,
@@ -1271,6 +1285,16 @@ render();
     private static JsonSummaryAlgorithm? SelectTgrepAlgorithm(IReadOnlyList<JsonSummaryAlgorithm> algorithms) =>
         algorithms.FirstOrDefault(static algorithm => IsTgrepAlgorithm(algorithm.Name) && !algorithm.Name.Contains("nameonly", StringComparison.OrdinalIgnoreCase))
         ?? algorithms.FirstOrDefault(static algorithm => IsTgrepAlgorithm(algorithm.Name));
+
+    private static JsonSummaryAlgorithm? FilterPartialSubMillisecondAlgorithm(JsonSummaryAlgorithm? algorithm, bool roslynWorkspacePartial)
+    {
+        if (!roslynWorkspacePartial || algorithm?.ElapsedMilliseconds is not { } elapsedMilliseconds)
+            return algorithm;
+
+        return elapsedMilliseconds < 1
+            ? null
+            : algorithm;
+    }
 
     private static bool IsTgrepAlgorithm(string name) =>
         name.Contains("tgrep", StringComparison.OrdinalIgnoreCase);
