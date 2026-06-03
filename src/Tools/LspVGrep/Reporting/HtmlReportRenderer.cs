@@ -30,6 +30,12 @@ internal static class HtmlReportRenderer
         builder.AppendLine("    .algorithm[open] > summary { margin-bottom: 0.5rem; }");
         builder.AppendLine("    .summary-title { font-weight: 700; }");
         builder.AppendLine("    .summary-meta { color: #4b5563; margin-left: 0.75rem; font-size: 0.92rem; }");
+        builder.AppendLine("    .badges { display: inline-flex; flex-wrap: wrap; gap: 0.35rem; margin-left: 0.5rem; vertical-align: middle; }");
+        builder.AppendLine("    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.12rem 0.45rem; font-size: 0.74rem; font-weight: 700; line-height: 1.35; border: 1px solid transparent; white-space: nowrap; }");
+        builder.AppendLine("    .badge-grep { background: #dbeafe; border-color: #93c5fd; color: #075985; }");
+        builder.AppendLine("    .badge-tgrep { background: #fef3c7; border-color: #fbbf24; color: #92400e; }");
+        builder.AppendLine("    .badge-ideal-lsp { background: #d1fae5; border-color: #6ee7b7; color: #065f46; }");
+        builder.AppendLine("    .badge-current-lsp { background: #ede9fe; border-color: #c4b5fd; color: #5b21b6; }");
         builder.AppendLine("    .algorithm-details { margin: 0.5rem 0; color: #4b5563; }");
         builder.AppendLine("    .status { font-weight: bold; }");
         builder.AppendLine("    .status-failed { color: #b91c1c; }");
@@ -84,6 +90,7 @@ internal static class HtmlReportRenderer
 
         foreach (var query in report.Queries)
         {
+            var selection = CreateAlgorithmSelection(report, query);
             builder.AppendLine("    <details class=\"query\" open>");
             builder.AppendLine($"      <summary><span class=\"summary-title\">{Encode(FormatQueryTitle(query))}</span><span class=\"summary-meta\">{query.Algorithms.Count} algorithms</span></summary>");
             builder.AppendLine("      <dl>");
@@ -116,7 +123,7 @@ internal static class HtmlReportRenderer
                 var open = algorithm.Outcome == AlgorithmOutcome.Failed ? " open" : string.Empty;
                 builder.AppendLine($"      <details class=\"algorithm\"{open}>");
                 builder.AppendLine(
-                    $"        <summary><span class=\"summary-title\">{Encode(algorithm.AlgorithmName)}</span><span class=\"summary-meta\"><span class=\"status {statusClass}\">{Encode(algorithm.Outcome.ToString())}</span> | Characters: {algorithm.CharacterCount} | Lines: {algorithm.LineCount} | Time: {elapsed}</span></summary>");
+                    $"        <summary><span class=\"summary-title\">{Encode(algorithm.AlgorithmName)}</span>{FormatRoleBadges(selection.GetRoles(algorithm))}<span class=\"summary-meta\"><span class=\"status {statusClass}\">{Encode(algorithm.Outcome.ToString())}</span> | Characters: {algorithm.CharacterCount} | Lines: {algorithm.LineCount} | Time: {elapsed}</span></summary>");
                 if (!string.IsNullOrEmpty(summaryDetail))
                 {
                     builder.AppendLine($"        <p class=\"algorithm-details\">{summaryDetail}</p>");
@@ -142,6 +149,109 @@ internal static class HtmlReportRenderer
     }
 
     private static string Encode(string value) => WebUtility.HtmlEncode(value);
+
+    private static AlgorithmSelection CreateAlgorithmSelection(ToolReport report, QueryExecutionReport query)
+    {
+        var successfulAlgorithms = query.Algorithms
+            .Where(static algorithm => algorithm.Outcome == AlgorithmOutcome.Succeeded)
+            .ToList();
+        var roslynWorkspacePartial = report.RoslynSkippedProjectCount > 0;
+        var idealLspWarm = roslynWorkspacePartial ? null : SelectIdealLspAlgorithm(successfulAlgorithms, pass: 2);
+        var currentLspWarm = roslynWorkspacePartial ? null : SelectCurrentLspAlgorithm(successfulAlgorithms, query.Type, pass: 2);
+
+        return new AlgorithmSelection(
+            SelectGrepAlgorithm(successfulAlgorithms),
+            SelectTgrepAlgorithm(successfulAlgorithms),
+            idealLspWarm ?? (roslynWorkspacePartial ? null : SelectIdealLspAlgorithm(successfulAlgorithms, pass: 1)),
+            currentLspWarm ?? (roslynWorkspacePartial ? null : SelectCurrentLspAlgorithm(successfulAlgorithms, query.Type, pass: 1)));
+    }
+
+    private static AlgorithmExecutionResult? SelectGrepAlgorithm(IReadOnlyList<AlgorithmExecutionResult> algorithms) =>
+        algorithms.FirstOrDefault(static algorithm =>
+            algorithm.AlgorithmName.Contains("grep", StringComparison.OrdinalIgnoreCase) &&
+            !algorithm.AlgorithmName.Contains("tgrep", StringComparison.OrdinalIgnoreCase) &&
+            !algorithm.AlgorithmName.Contains("nameonly", StringComparison.OrdinalIgnoreCase))
+        ?? algorithms.FirstOrDefault(static algorithm =>
+            algorithm.AlgorithmName.Contains("grep", StringComparison.OrdinalIgnoreCase) &&
+            !algorithm.AlgorithmName.Contains("tgrep", StringComparison.OrdinalIgnoreCase));
+
+    private static AlgorithmExecutionResult? SelectTgrepAlgorithm(IReadOnlyList<AlgorithmExecutionResult> algorithms) =>
+        algorithms.FirstOrDefault(static algorithm => IsTgrepAlgorithm(algorithm.AlgorithmName) && !algorithm.AlgorithmName.Contains("nameonly", StringComparison.OrdinalIgnoreCase))
+        ?? algorithms.FirstOrDefault(static algorithm => IsTgrepAlgorithm(algorithm.AlgorithmName));
+
+    private static bool IsTgrepAlgorithm(string name) =>
+        name.Contains("tgrep", StringComparison.OrdinalIgnoreCase);
+
+    private static AlgorithmExecutionResult? SelectIdealLspAlgorithm(IReadOnlyList<AlgorithmExecutionResult> algorithms, int pass)
+    {
+        var passText = $"(pass {pass})";
+        return algorithms.FirstOrDefault(algorithm => IsExactLspAlgorithm(algorithm.AlgorithmName) && algorithm.AlgorithmName.Contains(passText, StringComparison.OrdinalIgnoreCase))
+            ?? algorithms.FirstOrDefault(algorithm => IsPatternLspAlgorithm(algorithm.AlgorithmName) && algorithm.AlgorithmName.Contains(passText, StringComparison.OrdinalIgnoreCase))
+            ?? (pass == 1 ? algorithms.FirstOrDefault(algorithm => IsExactLspAlgorithm(algorithm.AlgorithmName)) : null)
+            ?? (pass == 1 ? algorithms.FirstOrDefault(algorithm => IsPatternLspAlgorithm(algorithm.AlgorithmName)) : null);
+    }
+
+    private static AlgorithmExecutionResult? SelectCurrentLspAlgorithm(IReadOnlyList<AlgorithmExecutionResult> algorithms, string queryType, int pass)
+    {
+        if (string.Equals(queryType, QueryTypes.FindTypeDefinition, StringComparison.Ordinal))
+            return SelectWorkspaceSymbolLspAlgorithm(algorithms, pass);
+
+        return SelectIdealLspAlgorithm(algorithms, pass);
+    }
+
+    private static AlgorithmExecutionResult? SelectWorkspaceSymbolLspAlgorithm(IReadOnlyList<AlgorithmExecutionResult> algorithms, int pass)
+    {
+        var passText = $"(pass {pass})";
+        return algorithms.FirstOrDefault(algorithm => IsWorkspaceSymbolLspAlgorithm(algorithm.AlgorithmName) && algorithm.AlgorithmName.Contains(passText, StringComparison.OrdinalIgnoreCase))
+            ?? (pass == 1 ? algorithms.FirstOrDefault(algorithm => IsWorkspaceSymbolLspAlgorithm(algorithm.AlgorithmName)) : null);
+    }
+
+    private static bool IsExactLspAlgorithm(string name) =>
+        name.Contains("roslyn", StringComparison.OrdinalIgnoreCase) &&
+        !name.Contains("with-pattern", StringComparison.OrdinalIgnoreCase) &&
+        !name.Contains("workspaceSymbol", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsPatternLspAlgorithm(string name) =>
+        name.Contains("with-pattern", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsWorkspaceSymbolLspAlgorithm(string name) =>
+        name.Contains("workspaceSymbol", StringComparison.OrdinalIgnoreCase);
+
+    private static string FormatRoleBadges(IReadOnlyList<AlgorithmRole> roles)
+    {
+        if (roles.Count == 0)
+            return string.Empty;
+
+        var builder = new StringBuilder();
+        builder.Append("<span class=\"badges\">");
+        foreach (var role in roles)
+        {
+            builder.Append($"<span class=\"badge {GetBadgeClass(role)}\">{GetBadgeLabel(role)}</span>");
+        }
+
+        builder.Append("</span>");
+        return builder.ToString();
+    }
+
+    private static string GetBadgeClass(AlgorithmRole role) =>
+        role switch
+        {
+            AlgorithmRole.Grep => "badge-grep",
+            AlgorithmRole.Tgrep => "badge-tgrep",
+            AlgorithmRole.IdealLsp => "badge-ideal-lsp",
+            AlgorithmRole.CurrentLsp => "badge-current-lsp",
+            _ => throw new InvalidOperationException($"Unexpected algorithm role '{role}'.")
+        };
+
+    private static string GetBadgeLabel(AlgorithmRole role) =>
+        role switch
+        {
+            AlgorithmRole.Grep => "grep",
+            AlgorithmRole.Tgrep => "tgrep",
+            AlgorithmRole.IdealLsp => "ideal LSP",
+            AlgorithmRole.CurrentLsp => "current LSP",
+            _ => throw new InvalidOperationException($"Unexpected algorithm role '{role}'.")
+        };
 
     private static string FormatQueryTitle(QueryExecutionReport query)
     {
@@ -186,5 +296,59 @@ internal static class HtmlReportRenderer
         builder.AppendLine($"        <pre id=\"{id}-short\">{Encode(truncated)}");
         builder.AppendLine($"<span class=\"truncated-link\" onclick=\"document.getElementById('{id}-short').style.display='none'; document.getElementById('{id}-full').style.display='block';\">... truncated ({remaining} more lines) — click to expand</span></pre>");
         builder.AppendLine($"        <pre id=\"{id}-full\" class=\"full-result\">{Encode(text)}</pre>");
+    }
+
+    private enum AlgorithmRole
+    {
+        Grep,
+        Tgrep,
+        IdealLsp,
+        CurrentLsp
+    }
+
+    private sealed class AlgorithmSelection
+    {
+        private readonly Dictionary<string, List<AlgorithmRole>> _rolesByAlgorithmName = new(StringComparer.Ordinal);
+
+        public AlgorithmSelection(
+            AlgorithmExecutionResult? grep,
+            AlgorithmExecutionResult? tgrep,
+            AlgorithmExecutionResult? idealLsp,
+            AlgorithmExecutionResult? currentLsp)
+        {
+            Grep = grep;
+            Tgrep = tgrep;
+            IdealLsp = idealLsp;
+            CurrentLsp = currentLsp;
+
+            AddRole(grep, AlgorithmRole.Grep);
+            AddRole(tgrep, AlgorithmRole.Tgrep);
+            AddRole(idealLsp, AlgorithmRole.IdealLsp);
+            AddRole(currentLsp, AlgorithmRole.CurrentLsp);
+        }
+
+        public AlgorithmExecutionResult? Grep { get; }
+        public AlgorithmExecutionResult? Tgrep { get; }
+        public AlgorithmExecutionResult? IdealLsp { get; }
+        public AlgorithmExecutionResult? CurrentLsp { get; }
+
+        public IReadOnlyList<AlgorithmRole> GetRoles(AlgorithmExecutionResult algorithm) =>
+            _rolesByAlgorithmName.TryGetValue(algorithm.AlgorithmName, out var roles)
+                ? roles
+                : [];
+
+        private void AddRole(AlgorithmExecutionResult? algorithm, AlgorithmRole role)
+        {
+            if (algorithm is null)
+                return;
+
+            if (!_rolesByAlgorithmName.TryGetValue(algorithm.AlgorithmName, out var roles))
+            {
+                roles = [];
+                _rolesByAlgorithmName.Add(algorithm.AlgorithmName, roles);
+            }
+
+            roles.Add(role);
+        }
     }
 }
