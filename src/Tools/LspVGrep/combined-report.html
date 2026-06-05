@@ -749,7 +749,8 @@ function createPlot(pointsBySeries, allPoints, xScaleMode, yScaleMode) {
 
   const isLogYScale = yScaleMode === 'log';
   const yMin = isLogYScale ? Math.max(1, Math.min(...yValues) * 0.75) : 0;
-  const yMax = Math.max(yMin * 1.1, Math.max(...yValues) * 1.25);
+  const maxYValue = Math.max(...yValues);
+  const yMax = isLogYScale ? Math.max(yMin * 1.1, maxYValue * 1.25) : maxYValue;
   const xScale = isLogXScale
     ? value => {
         const logXMin = Math.log10(xMin);
