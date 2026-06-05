@@ -25,12 +25,12 @@
     {
       "type": "find-interface-implementation",
       "name": "ISymbol",
-      "expectedCount": 0
+      "expectedCount": 21
     },
     {
       "type": "find-member-definition",
       "name": "GetHashCode",
-      "expectedCount": 629
+      "expectedCount": 643
     },
     {
       "type": "find-type-definition",

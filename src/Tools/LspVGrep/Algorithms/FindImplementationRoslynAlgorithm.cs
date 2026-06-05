@@ -1,7 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using LspVGrepTool.Execution;
-using LspVGrepTool.Infrastructure;
 using LspVGrepTool.Models;
 
 namespace LspVGrepTool.Algorithms;
@@ -19,16 +18,22 @@ internal sealed class FindInterfaceImplementationRoslynAlgorithm : QueryAlgorith
     {
         var workspace = await context.GetWorkspaceAsync(cancellationToken);
 
-        INamedTypeSymbol? targetSymbol = null;
+        var targetSymbols = new List<INamedTypeSymbol>();
+        var targetSymbolKeys = new HashSet<string>(StringComparer.Ordinal);
         foreach (var project in workspace.Solution.Projects)
         {
             var declarations = await SymbolFinder.FindDeclarationsAsync(
                 project, query.Name, ignoreCase: false, SymbolFilter.Type, cancellationToken);
-            targetSymbol = declarations.OfType<INamedTypeSymbol>().FirstOrDefault();
-            if (targetSymbol is not null) break;
+            foreach (var symbol in declarations.OfType<INamedTypeSymbol>())
+            {
+                if (targetSymbolKeys.Add(GetSymbolKey(symbol)))
+                {
+                    targetSymbols.Add(symbol);
+                }
+            }
         }
 
-        if (targetSymbol is null)
+        if (targetSymbols.Count == 0)
         {
             var notFoundSummary = $"called SymbolFinder.FindDeclarationsAsync for '{query.Name}' — not found";
             return new AlgorithmExecutionResult(Name, AlgorithmOutcome.Succeeded,
@@ -36,16 +41,33 @@ internal sealed class FindInterfaceImplementationRoslynAlgorithm : QueryAlgorith
                 notFoundSummary);
         }
 
-        var results = await SymbolFinder.FindImplementationsAsync(
-            targetSymbol, workspace.Solution, cancellationToken: cancellationToken);
+        var results = new List<INamedTypeSymbol>();
+        foreach (var targetSymbol in targetSymbols)
+        {
+            var implementations = await SymbolFinder.FindImplementationsAsync(
+                targetSymbol, workspace.Solution, cancellationToken: cancellationToken);
+            results.AddRange(implementations.OfType<INamedTypeSymbol>());
+        }
 
-        var displayName = targetSymbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat);
-        return FormatResults(workspace, targetSymbol, results.OfType<INamedTypeSymbol>(),
-            $"called SymbolFinder.FindImplementationsAsync({displayName})");
+        return FormatResults(
+            results,
+            $"called SymbolFinder.FindImplementationsAsync for {targetSymbols.Count} '{query.Name}' declaration(s): {FormatTargetSymbols(targetSymbols)}");
     }
 
-    private AlgorithmExecutionResult FormatResults(
-        WorkspaceLoadResult workspace, INamedTypeSymbol target, IEnumerable<INamedTypeSymbol> symbols, string summary)
+    private static string GetSymbolKey(INamedTypeSymbol symbol)
+    {
+        var sourceLocation = symbol.Locations.FirstOrDefault(static location => location.IsInSource);
+        if (sourceLocation is null)
+            return symbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat);
+
+        var span = sourceLocation.GetLineSpan();
+        return $"{symbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat)} - {span.Path}({span.StartLinePosition.Line + 1},{span.StartLinePosition.Character + 1})";
+    }
+
+    private static string FormatTargetSymbols(IReadOnlyList<INamedTypeSymbol> targetSymbols) =>
+        string.Join(", ", targetSymbols.Select(static symbol => symbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat)).Distinct(StringComparer.Ordinal).OrderBy(static name => name, StringComparer.Ordinal));
+
+    private AlgorithmExecutionResult FormatResults(IEnumerable<INamedTypeSymbol> symbols, string summary)
     {
         var matches = new List<string>();
         foreach (var symbol in symbols)

@@ -17,6 +17,12 @@
     .algorithm[open] > summary { margin-bottom: 0.5rem; }
     .summary-title { font-weight: 700; }
     .summary-meta { color: #4b5563; margin-left: 0.75rem; font-size: 0.92rem; }
+    .badges { display: inline-flex; flex-wrap: wrap; gap: 0.35rem; margin-left: 0.5rem; vertical-align: middle; }
+    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.12rem 0.45rem; font-size: 0.74rem; font-weight: 700; line-height: 1.35; border: 1px solid transparent; white-space: nowrap; }
+    .badge-grep { background: #dbeafe; border-color: #93c5fd; color: #075985; }
+    .badge-tgrep { background: #fef3c7; border-color: #fbbf24; color: #92400e; }
+    .badge-ideal-lsp { background: #d1fae5; border-color: #6ee7b7; color: #065f46; }
+    .badge-current-lsp { background: #ede9fe; border-color: #c4b5fd; color: #5b21b6; }
     .algorithm-details { margin: 0.5rem 0; color: #4b5563; }
     .status { font-weight: bold; }
     .status-failed { color: #b91c1c; }
@@ -34,7 +40,7 @@
   <p><strong>Directory:</strong> C:\repos\BenchmarkDotNet</p>
   <p><strong>Commit:</strong> 8ab56fefeb859931d1c92b2d5df89a3ca4002743</p>
   <p><strong>LS cache:</strong> not used (enabled)</p>
-  <p><strong>Roslyn target:</strong> Solution - C:\repos\BenchmarkDotNet\BenchmarkDotNet.slnx (loaded in 16.9s)</p>
+  <p><strong>Roslyn target:</strong> Solution - C:\repos\BenchmarkDotNet\BenchmarkDotNet.slnx (loaded in 20.7s)</p>
   <p><strong>tgrep index:</strong> built in 1.1s</p>
   <div class="actions">
     <button type="button" data-action="expand-all">Expand all</button>
@@ -46,19 +52,20 @@
       <summary><span class="summary-title">find-type-definition (name: BuildRunner)</span><span class="summary-meta">10 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>BuildRunner</dd>
+        <dt>expected count</dt><dd>0</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 104 | Lines: 1 | Time: 1.6s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 104 | Lines: 1 | Time: 1.5s</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) BuildRunner&#39;</p>
         <pre>C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\BuildRunner.cs:16: public class BuildRunner</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 78 | Lines: 1 | Time: 45ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 78 | Lines: 1 | Time: 45ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) BuildRunner&#39;</p>
         <pre>build/BenchmarkDotNet.Build/Runners/BuildRunner.cs:16:public class BuildRunner</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1755 | Lines: 13 | Time: 1.5s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1755 | Lines: 13 | Time: 1.4s</span></summary>
         <p class="algorithm-details">string search for &#39;BuildRunner&#39;</p>
         <pre id="expand-0-short">C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\BuildContext.cs:54: public BuildRunner BuildRunner { get; }
 C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\BuildContext.cs:153: BuildRunner = new BuildRunner(this);
@@ -86,7 +93,7 @@ C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\ReleaseRunner.cs:67
 C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\ReleaseRunner.cs:101: context.BuildRunner.BuildProjectSilent(context.TemplatesTestsProjectFile);</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1405 | Lines: 13 | Time: 44ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1405 | Lines: 13 | Time: 43ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;BuildRunner&#39;</p>
         <pre id="expand-1-short">build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:67:context.BuildRunner.BuildProjectSilent(context.TemplatesTestsProjectFile);
 build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:101:context.BuildRunner.BuildProjectSilent(context.TemplatesTestsProjectFile);
@@ -114,32 +121,32 @@ build/BenchmarkDotNet.Build/BuildContext.cs:54:public BuildRunner BuildRunner { 
 build/BenchmarkDotNet.Build/BuildContext.cs:153:BuildRunner = new BuildRunner(this);</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 3.6s</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 3.2s</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;BuildRunner&#39;, SymbolFilter.Type)</p>
         <pre></pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 21ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 43ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;BuildRunner&#39;, SymbolFilter.Type)</p>
         <pre></pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 1.1s</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 1.2s</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildRunner&#39;, SymbolFilter.Type)</p>
         <pre></pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 17ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 31ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildRunner&#39;, SymbolFilter.Type)</p>
         <pre></pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 69ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 160ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildRunner&#39;) without SymbolFilter</p>
         <pre></pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 63ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="badges"><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 111ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;BuildRunner&#39;) without SymbolFilter</p>
         <pre></pre>
       </details>
@@ -148,19 +155,20 @@ build/BenchmarkDotNet.Build/BuildContext.cs:153:BuildRunner = new BuildRunner(th
       <summary><span class="summary-title">find-type-definition (name: CommandLineParser)</span><span class="summary-meta">10 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>CommandLineParser</dd>
+        <dt>expected count</dt><dd>0</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 108 | Lines: 1 | Time: 1.6s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 108 | Lines: 1 | Time: 1.5s</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) CommandLineParser&#39;</p>
         <pre>C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\CommandLineParser.cs:11: public class CommandLineParser</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 82 | Lines: 1 | Time: 44ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 82 | Lines: 1 | Time: 43ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) CommandLineParser&#39;</p>
         <pre>build/BenchmarkDotNet.Build/CommandLineParser.cs:11:public class CommandLineParser</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1220 | Lines: 7 | Time: 1.5s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1220 | Lines: 7 | Time: 1.3s</span></summary>
         <p class="algorithm-details">string search for &#39;CommandLineParser&#39;</p>
         <pre>C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\CommandLineParser.cs:11: public class CommandLineParser
 C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\CommandLineParser.cs:18: public static readonly CommandLineParser Instance = new();
@@ -171,22 +179,22 @@ C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:718: [
 C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\ConfigParserTests.cs:764: // if https://github.com/commandlineparser/commandline/pull/892 lands</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 909 | Lines: 6 | Time: 41ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 909 | Lines: 6 | Time: 42ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;CommandLineParser&#39;</p>
-        <pre>tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:127:&quot;When CommandLineParser wants to display help, it tries to get the Title of the Entry Assembly which is an xunit runner, which has no Title and fails..&quot;,
-tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:718:[Fact(Skip = &quot;This should be handled somehow at CommandLineParser level. See https://github.com/commandlineparser/commandline/pull/892&quot;)]
-tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:24:&quot;When CommandLineParser wants to display help, it tries to get the Title of the Entry Assembly which is an xunit runner, which has no Title and fails..&quot;,
-build/BenchmarkDotNet.Build/Program.cs:12:var cakeArgs = CommandLineParser.Instance.Parse(args);
+        <pre>build/BenchmarkDotNet.Build/Program.cs:12:var cakeArgs = CommandLineParser.Instance.Parse(args);
 build/BenchmarkDotNet.Build/CommandLineParser.cs:11:public class CommandLineParser
-build/BenchmarkDotNet.Build/CommandLineParser.cs:18:public static readonly CommandLineParser Instance = new();</pre>
+build/BenchmarkDotNet.Build/CommandLineParser.cs:18:public static readonly CommandLineParser Instance = new();
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:127:&quot;When CommandLineParser wants to display help, it tries to get the Title of the Entry Assembly which is an xunit runner, which has no Title and fails..&quot;,
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:718:[Fact(Skip = &quot;This should be handled somehow at CommandLineParser level. See https://github.com/commandlineparser/commandline/pull/892&quot;)]
+tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:24:&quot;When CommandLineParser wants to display help, it tries to get the Title of the Entry Assembly which is an xunit runner, which has no Title and fails..&quot;,</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 17ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 18ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;CommandLineParser&#39;, SymbolFilter.Type)</p>
         <pre></pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 14ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 14ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;CommandLineParser&#39;, SymbolFilter.Type)</p>
         <pre></pre>
       </details>
@@ -206,7 +214,7 @@ build/BenchmarkDotNet.Build/CommandLineParser.cs:18:public static readonly Comma
         <pre></pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 28ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="badges"><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 27ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;CommandLineParser&#39;) without SymbolFilter</p>
         <pre></pre>
       </details>
@@ -215,19 +223,20 @@ build/BenchmarkDotNet.Build/CommandLineParser.cs:18:public static readonly Comma
       <summary><span class="summary-title">find-type-definition (name: KnownOptions)</span><span class="summary-meta">10 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>KnownOptions</dd>
+        <dt>expected count</dt><dd>0</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 112 | Lines: 1 | Time: 1.6s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 112 | Lines: 1 | Time: 1.4s</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) KnownOptions&#39;</p>
         <pre>C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Options\KnownOptions.cs:3: public static class KnownOptions</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 86 | Lines: 1 | Time: 44ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 86 | Lines: 1 | Time: 43ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) KnownOptions&#39;</p>
         <pre>build/BenchmarkDotNet.Build/Options/KnownOptions.cs:3:public static class KnownOptions</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 4367 | Lines: 35 | Time: 1.4s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 4367 | Lines: 35 | Time: 1.3s</span></summary>
         <p class="algorithm-details">string search for &#39;KnownOptions&#39;</p>
         <pre id="expand-2-short">C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\BuildContext.cs:121: if (KnownOptions.Stable.Resolve(this))
 C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\BuildContext.cs:188: if (KnownOptions.Push.Resolve(this))
@@ -277,7 +286,7 @@ C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\Changelog\Changelog
 C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Runners\Changelog\ChangelogBuilder.cs:124: var date = KnownOptions.Stable.Resolve(context)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3423 | Lines: 35 | Time: 46ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3423 | Lines: 35 | Time: 44ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;KnownOptions&#39;</p>
         <pre id="expand-3-short">build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:29:var nextVersion = KnownOptions.NextVersion.Resolve(context);
 build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:43:KnownOptions.Stable.AssertTrue(context);
@@ -327,12 +336,12 @@ build/BenchmarkDotNet.Build/BuildContext.cs:121:if (KnownOptions.Stable.Resolve(
 build/BenchmarkDotNet.Build/BuildContext.cs:188:if (KnownOptions.Push.Resolve(this))</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 29ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 15ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;KnownOptions&#39;, SymbolFilter.Type)</p>
         <pre></pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 14ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 14ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;KnownOptions&#39;, SymbolFilter.Type)</p>
         <pre></pre>
       </details>
@@ -342,7 +351,7 @@ build/BenchmarkDotNet.Build/BuildContext.cs:188:if (KnownOptions.Push.Resolve(th
         <pre></pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 8ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 7ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;KnownOptions&#39;, SymbolFilter.Type)</p>
         <pre></pre>
       </details>
@@ -352,7 +361,7 @@ build/BenchmarkDotNet.Build/BuildContext.cs:188:if (KnownOptions.Push.Resolve(th
         <pre></pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 30ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="badges"><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 30ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;KnownOptions&#39;) without SymbolFilter</p>
         <pre></pre>
       </details>
@@ -361,19 +370,20 @@ build/BenchmarkDotNet.Build/BuildContext.cs:188:if (KnownOptions.Push.Resolve(th
       <summary><span class="summary-title">find-type-definition (name: AnalyserBase)</span><span class="summary-meta">10 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>AnalyserBase</dd>
+        <dt>expected count</dt><dd>1</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 120 | Lines: 1 | Time: 1.6s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 120 | Lines: 1 | Time: 1.6s</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) AnalyserBase&#39;</p>
         <pre>C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs:6: public abstract class AnalyserBase : IAnalyser</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 94 | Lines: 1 | Time: 47ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 94 | Lines: 1 | Time: 54ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) AnalyserBase&#39;</p>
         <pre>src/BenchmarkDotNet/Analysers/AnalyserBase.cs:6:public abstract class AnalyserBase : IAnalyser</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1204 | Lines: 9 | Time: 1.5s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1204 | Lines: 9 | Time: 1.4s</span></summary>
         <p class="algorithm-details">string search for &#39;AnalyserBase&#39;</p>
         <pre>C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs:6: public abstract class AnalyserBase : IAnalyser
 C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\BaselineCustomAnalyzer.cs:7: public class BaselineCustomAnalyzer : AnalyserBase
@@ -388,23 +398,23 @@ C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\ZeroMeasurementAnalyser.c
       <details class="algorithm">
         <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 962 | Lines: 9 | Time: 45ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;AnalyserBase&#39;</p>
-        <pre>src/BenchmarkDotNet/Analysers/EnvironmentAnalyser.cs:11:public class EnvironmentAnalyser : AnalyserBase
-src/BenchmarkDotNet/Analysers/BaselineCustomAnalyzer.cs:7:public class BaselineCustomAnalyzer : AnalyserBase
-src/BenchmarkDotNet/Analysers/AnalyserBase.cs:6:public abstract class AnalyserBase : IAnalyser
+        <pre>src/BenchmarkDotNet/Analysers/ZeroMeasurementAnalyser.cs:8:public class ZeroMeasurementAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/RuntimeErrorAnalyser.cs:5:public class RuntimeErrorAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/OutliersAnalyser.cs:12:public class OutliersAnalyser : AnalyserBase
 src/BenchmarkDotNet/Analysers/MultimodalDistributionAnalyzer.cs:8:public class MultimodalDistributionAnalyzer : AnalyserBase
 src/BenchmarkDotNet/Analysers/MinIterationTimeAnalyser.cs:8:public class MinIterationTimeAnalyser : AnalyserBase
 src/BenchmarkDotNet/Analysers/HideColumnsAnalyser.cs:6:public class HideColumnsAnalyser : AnalyserBase
-src/BenchmarkDotNet/Analysers/OutliersAnalyser.cs:12:public class OutliersAnalyser : AnalyserBase
-src/BenchmarkDotNet/Analysers/RuntimeErrorAnalyser.cs:5:public class RuntimeErrorAnalyser : AnalyserBase
-src/BenchmarkDotNet/Analysers/ZeroMeasurementAnalyser.cs:8:public class ZeroMeasurementAnalyser : AnalyserBase</pre>
+src/BenchmarkDotNet/Analysers/EnvironmentAnalyser.cs:11:public class EnvironmentAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/BaselineCustomAnalyzer.cs:7:public class BaselineCustomAnalyzer : AnalyserBase
+src/BenchmarkDotNet/Analysers/AnalyserBase.cs:6:public abstract class AnalyserBase : IAnalyser</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 42ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 43ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;AnalyserBase&#39;, SymbolFilter.Type)</p>
         <pre>BenchmarkDotNet.Analysers.AnalyserBase - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs(6,27)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 22ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 23ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;AnalyserBase&#39;, SymbolFilter.Type)</p>
         <pre>BenchmarkDotNet.Analysers.AnalyserBase - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs(6,27)</pre>
       </details>
@@ -414,17 +424,17 @@ src/BenchmarkDotNet/Analysers/ZeroMeasurementAnalyser.cs:8:public class ZeroMeas
         <pre>BenchmarkDotNet.Analysers.AnalyserBase - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs(6,27)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 10ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 11ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;AnalyserBase&#39;, SymbolFilter.Type)</p>
         <pre>BenchmarkDotNet.Analysers.AnalyserBase - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs(6,27)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 957ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 966ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;AnalyserBase&#39;) without SymbolFilter</p>
         <pre>BenchmarkDotNet.Analysers.AnalyserBase - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs(6,27)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 91ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="badges"><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 117 | Lines: 1 | Time: 62ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;AnalyserBase&#39;) without SymbolFilter</p>
         <pre>BenchmarkDotNet.Analysers.AnalyserBase - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\AnalyserBase.cs(6,27)</pre>
       </details>
@@ -433,9 +443,10 @@ src/BenchmarkDotNet/Analysers/ZeroMeasurementAnalyser.cs:8:public class ZeroMeas
       <summary><span class="summary-title">find-derived-types (name: AnalyserBase)</span><span class="summary-meta">4 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>AnalyserBase</dd>
+        <dt>expected count</dt><dd>8</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-derived-types-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1082 | Lines: 8 | Time: 1.6s</span></summary>
+        <summary><span class="summary-title">find-derived-types-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1082 | Lines: 8 | Time: 1.5s</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct) \w+ ... AnalyserBase&#39;</p>
         <pre>C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\BaselineCustomAnalyzer.cs:7: public class BaselineCustomAnalyzer : AnalyserBase
 C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\EnvironmentAnalyser.cs:11: public class EnvironmentAnalyser : AnalyserBase
@@ -447,19 +458,19 @@ C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\RuntimeErrorAnalyser.cs:5
 C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\ZeroMeasurementAnalyser.cs:8: public class ZeroMeasurementAnalyser : AnalyserBase</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-derived-types-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 867 | Lines: 8 | Time: 49ms</span></summary>
+        <summary><span class="summary-title">find-derived-types-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 867 | Lines: 8 | Time: 49ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct) \w+ ... AnalyserBase&#39;</p>
-        <pre>src/BenchmarkDotNet/Analysers/EnvironmentAnalyser.cs:11:public class EnvironmentAnalyser : AnalyserBase
-src/BenchmarkDotNet/Analysers/BaselineCustomAnalyzer.cs:7:public class BaselineCustomAnalyzer : AnalyserBase
+        <pre>src/BenchmarkDotNet/Analysers/ZeroMeasurementAnalyser.cs:8:public class ZeroMeasurementAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/RuntimeErrorAnalyser.cs:5:public class RuntimeErrorAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/OutliersAnalyser.cs:12:public class OutliersAnalyser : AnalyserBase
 src/BenchmarkDotNet/Analysers/MultimodalDistributionAnalyzer.cs:8:public class MultimodalDistributionAnalyzer : AnalyserBase
 src/BenchmarkDotNet/Analysers/MinIterationTimeAnalyser.cs:8:public class MinIterationTimeAnalyser : AnalyserBase
 src/BenchmarkDotNet/Analysers/HideColumnsAnalyser.cs:6:public class HideColumnsAnalyser : AnalyserBase
-src/BenchmarkDotNet/Analysers/OutliersAnalyser.cs:12:public class OutliersAnalyser : AnalyserBase
-src/BenchmarkDotNet/Analysers/RuntimeErrorAnalyser.cs:5:public class RuntimeErrorAnalyser : AnalyserBase
-src/BenchmarkDotNet/Analysers/ZeroMeasurementAnalyser.cs:8:public class ZeroMeasurementAnalyser : AnalyserBase</pre>
+src/BenchmarkDotNet/Analysers/EnvironmentAnalyser.cs:11:public class EnvironmentAnalyser : AnalyserBase
+src/BenchmarkDotNet/Analysers/BaselineCustomAnalyzer.cs:7:public class BaselineCustomAnalyzer : AnalyserBase</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-derived-types (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1106 | Lines: 8 | Time: 205ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-derived-types (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1106 | Lines: 8 | Time: 173ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDerivedClassesAsync(BenchmarkDotNet.Analysers.AnalyserBase)</p>
         <pre>BenchmarkDotNet.Analysers.BaselineCustomAnalyzer - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\BaselineCustomAnalyzer.cs(7,18)
 BenchmarkDotNet.Analysers.EnvironmentAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\EnvironmentAnalyser.cs(11,18)
@@ -471,7 +482,7 @@ BenchmarkDotNet.Analysers.RuntimeErrorAnalyser - C:\repos\BenchmarkDotNet\src\Be
 BenchmarkDotNet.Analysers.ZeroMeasurementAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\ZeroMeasurementAnalyser.cs(8,18)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-derived-types (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1106 | Lines: 8 | Time: 2ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-derived-types (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1106 | Lines: 8 | Time: 2ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDerivedClassesAsync(BenchmarkDotNet.Analysers.AnalyserBase)</p>
         <pre>BenchmarkDotNet.Analysers.BaselineCustomAnalyzer - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\BaselineCustomAnalyzer.cs(7,18)
 BenchmarkDotNet.Analysers.EnvironmentAnalyser - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Analysers\EnvironmentAnalyser.cs(11,18)
@@ -487,24 +498,25 @@ BenchmarkDotNet.Analysers.ZeroMeasurementAnalyser - C:\repos\BenchmarkDotNet\src
       <summary><span class="summary-title">find-interface-implementation (name: IOption)</span><span class="summary-meta">4 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>IOption</dd>
+        <dt>expected count</dt><dd>0</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-interface-implementation-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 115 | Lines: 1 | Time: 1.5s</span></summary>
+        <summary><span class="summary-title">find-interface-implementation-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 115 | Lines: 1 | Time: 1.3s</span></summary>
         <p class="algorithm-details">string search for &#39;: ...IOption&#39;</p>
         <pre>C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Options\Option.cs:9: public abstract class Option&lt;T&gt; : IOption</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-interface-implementation-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 89 | Lines: 1 | Time: 43ms</span></summary>
+        <summary><span class="summary-title">find-interface-implementation-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 89 | Lines: 1 | Time: 45ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;: ...IOption&#39;</p>
         <pre>build/BenchmarkDotNet.Build/Options/Option.cs:9:public abstract class Option&lt;T&gt; : IOption</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-implementations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 18ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-implementations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 59ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync for &#39;IOption&#39; — not found</p>
         <pre></pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-implementations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 15ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-implementations (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 14ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync for &#39;IOption&#39; — not found</p>
         <pre></pre>
       </details>
@@ -513,9 +525,10 @@ BenchmarkDotNet.Analysers.ZeroMeasurementAnalyser - C:\repos\BenchmarkDotNet\src
       <summary><span class="summary-title">find-member-definition (name: Run)</span><span class="summary-meta">4 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>Run</dd>
+        <dt>expected count</dt><dd>30</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 15148 | Lines: 95 | Time: 2.2s</span></summary>
+        <summary><span class="summary-title">find-member-definition-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 15148 | Lines: 95 | Time: 2.1s</span></summary>
         <p class="algorithm-details">string search for member declaration &#39;Run&#39;</p>
         <pre id="expand-4-short">C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:15: : new CakeHost().UseContext&lt;BuildContext&gt;().Run(cakeArgs);
 C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:25: public override void Run(BuildContext context) =&gt; context.BuildRunner.PackWeaver();
@@ -625,31 +638,66 @@ C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Shared\Mocks\MockRunner.cs:
 C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Shared\Mocks\MockRunner.cs:36: var summary = BenchmarkRunner.Run&lt;T&gt;(config);</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 12584 | Lines: 95 | Time: 514ms</span></summary>
+        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 12584 | Lines: 95 | Time: 394ms</span></summary>
         <p class="algorithm-details">tgrep search for member declaration &#39;Run&#39;</p>
-        <pre id="expand-5-short">tests/BenchmarkDotNet.Tests/Configs/JobTests.cs:372:var old = j.Run;
-tests/BenchmarkDotNet.Tests/Columns/RatioColumnTest.cs:19:var summary = MockRunner.Run&lt;BenchmarkClass&gt;(output, name =&gt; name switch
-templates/templates/BenchmarkDotNet.BenchmarkProjectTemplate.CSharp/Program.cs:11:var summary = BenchmarkRunner.Run&lt;$(BenchmarkName)&gt;(config, args);
-templates/templates/BenchmarkDotNet.BenchmarkProjectTemplate.CSharp/Program.cs:14:// var summaries = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
-build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:41:public void Run()
-tests/BenchmarkDotNet.IntegrationTests/ThreadingDiagnoserTests.cs:48:var summary = BenchmarkRunner.Run&lt;CompletedWorkItemCount&gt;(config);
-tests/BenchmarkDotNet.IntegrationTests/ThreadingDiagnoserTests.cs:90:var summary = BenchmarkRunner.Run&lt;LockContentionCount&gt;(config);
-tests/BenchmarkDotNet.Tests/Shared/Mocks/MockRunner.cs:15:public static Summary Run&lt;T&gt;(ITestOutputHelper output, Func&lt;string, double[]&gt; measurer)
-tests/BenchmarkDotNet.Tests/Shared/Mocks/MockRunner.cs:20:public static Summary Run&lt;T&gt;(ITestOutputHelper output, Func&lt;BenchmarkCase, List&lt;Measurement&gt;&gt; measurer)
-tests/BenchmarkDotNet.Tests/Shared/Mocks/MockRunner.cs:36:var summary = BenchmarkRunner.Run&lt;T&gt;(config);
+        <pre id="expand-5-short">build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:41:public void Run()
+build/BenchmarkDotNet.Build/Runners/Changelog/ChangelogDetailsBuilder.cs:170:public static void Run(BuildContext context, DirectoryPath path,
+build/BenchmarkDotNet.Build/Program.cs:15:: new CakeHost().UseContext&lt;BuildContext&gt;().Run(cakeArgs);
+build/BenchmarkDotNet.Build/Program.cs:25:public override void Run(BuildContext context) =&gt; context.BuildRunner.PackWeaver();
+build/BenchmarkDotNet.Build/Program.cs:46:public override void Run(BuildContext context) =&gt; context.BuildRunner.Restore();
+build/BenchmarkDotNet.Build/Program.cs:66:public override void Run(BuildContext context) =&gt; context.BuildRunner.Build();
+build/BenchmarkDotNet.Build/Program.cs:86:public override void Run(BuildContext context)
+build/BenchmarkDotNet.Build/Program.cs:109:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunUnitTests();
+build/BenchmarkDotNet.Build/Program.cs:131:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunAnalyzerTests();
+build/BenchmarkDotNet.Build/Program.cs:156:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunInTests(&quot;net472&quot;);
 <span class="truncated-link" onclick="document.getElementById('expand-5-short').style.display='none'; document.getElementById('expand-5-full').style.display='block';">... truncated (85 more lines) — click to expand</span></pre>
-        <pre id="expand-5-full" class="full-result">tests/BenchmarkDotNet.Tests/Configs/JobTests.cs:372:var old = j.Run;
-tests/BenchmarkDotNet.Tests/Columns/RatioColumnTest.cs:19:var summary = MockRunner.Run&lt;BenchmarkClass&gt;(output, name =&gt; name switch
+        <pre id="expand-5-full" class="full-result">build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:41:public void Run()
+build/BenchmarkDotNet.Build/Runners/Changelog/ChangelogDetailsBuilder.cs:170:public static void Run(BuildContext context, DirectoryPath path,
+build/BenchmarkDotNet.Build/Program.cs:15:: new CakeHost().UseContext&lt;BuildContext&gt;().Run(cakeArgs);
+build/BenchmarkDotNet.Build/Program.cs:25:public override void Run(BuildContext context) =&gt; context.BuildRunner.PackWeaver();
+build/BenchmarkDotNet.Build/Program.cs:46:public override void Run(BuildContext context) =&gt; context.BuildRunner.Restore();
+build/BenchmarkDotNet.Build/Program.cs:66:public override void Run(BuildContext context) =&gt; context.BuildRunner.Build();
+build/BenchmarkDotNet.Build/Program.cs:86:public override void Run(BuildContext context)
+build/BenchmarkDotNet.Build/Program.cs:109:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunUnitTests();
+build/BenchmarkDotNet.Build/Program.cs:131:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunAnalyzerTests();
+build/BenchmarkDotNet.Build/Program.cs:156:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunInTests(&quot;net472&quot;);
+build/BenchmarkDotNet.Build/Program.cs:167:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunInTests(&quot;net8.0&quot;);
+build/BenchmarkDotNet.Build/Program.cs:188:public override void Run(BuildContext context) =&gt; context.BuildRunner.BuildAnalyzers();
+build/BenchmarkDotNet.Build/Program.cs:207:public override void Run(BuildContext context) =&gt; context.DocumentationRunner.MoveAnalyzerRules();
+build/BenchmarkDotNet.Build/Program.cs:228:public override void Run(BuildContext context) =&gt; context.BuildRunner.Pack();
+build/BenchmarkDotNet.Build/Program.cs:250:public override void Run(BuildContext context) =&gt; context.DocumentationRunner.Fetch();
+build/BenchmarkDotNet.Build/Program.cs:279:public override void Run(BuildContext context) =&gt; context.DocumentationRunner.Generate();
+build/BenchmarkDotNet.Build/Program.cs:301:public override void Run(BuildContext context) =&gt; context.DocumentationRunner.Build();
+build/BenchmarkDotNet.Build/Program.cs:319:public override void Run(BuildContext context)
+build/BenchmarkDotNet.Build/Program.cs:347:public override void Run(BuildContext context) =&gt; context.ReleaseRunner.Run();
 templates/templates/BenchmarkDotNet.BenchmarkProjectTemplate.CSharp/Program.cs:11:var summary = BenchmarkRunner.Run&lt;$(BenchmarkName)&gt;(config, args);
 templates/templates/BenchmarkDotNet.BenchmarkProjectTemplate.CSharp/Program.cs:14:// var summaries = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
-build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:41:public void Run()
-tests/BenchmarkDotNet.IntegrationTests/ThreadingDiagnoserTests.cs:48:var summary = BenchmarkRunner.Run&lt;CompletedWorkItemCount&gt;(config);
-tests/BenchmarkDotNet.IntegrationTests/ThreadingDiagnoserTests.cs:90:var summary = BenchmarkRunner.Run&lt;LockContentionCount&gt;(config);
 tests/BenchmarkDotNet.Tests/Shared/Mocks/MockRunner.cs:15:public static Summary Run&lt;T&gt;(ITestOutputHelper output, Func&lt;string, double[]&gt; measurer)
 tests/BenchmarkDotNet.Tests/Shared/Mocks/MockRunner.cs:20:public static Summary Run&lt;T&gt;(ITestOutputHelper output, Func&lt;BenchmarkCase, List&lt;Measurement&gt;&gt; measurer)
 tests/BenchmarkDotNet.Tests/Shared/Mocks/MockRunner.cs:36:var summary = BenchmarkRunner.Run&lt;T&gt;(config);
 tests/BenchmarkDotNet.Tests/Shared/Mocks/MockEngine.cs:51:internal List&lt;Measurement&gt; Run(EngineStage stage)
+samples/BenchmarkDotNet.Samples.Maui/MainPage.xaml.cs:28:var summary = BenchmarkRunner.Run&lt;IntroBasic&gt;(config);
+src/BenchmarkDotNet/Validators/RunModeValidator.cs:22:var run = benchmark.Job.Run;
+samples/BenchmarkDotNet.Samples/IntroCustomMono.cs:79:public static void Run()
+samples/BenchmarkDotNet.Samples/IntroFluentConfigBuilder.cs:34:public static void Run()
+samples/BenchmarkDotNet.Samples/IntroUnicode.cs:43:public static void Run()
+samples/BenchmarkDotNet.Samples/IntroWasm.cs:20:public static void Run(string[] args) =&gt; BenchmarkSwitcher.FromAssembly(typeof(IntroWasmCmdConfig).Assembly).Run(args);
+samples/BenchmarkDotNet.Samples/IntroWasm.cs:32:public static void Run()
+tests/BenchmarkDotNet.Tests/Configs/JobTests.cs:372:var old = j.Run;
+tests/BenchmarkDotNet.Tests/Columns/RatioColumnTest.cs:19:var summary = MockRunner.Run&lt;BenchmarkClass&gt;(output, name =&gt; name switch
+tests/BenchmarkDotNet.Tests/ParamsSourceTests.cs:58:public void Run() { }
+tests/BenchmarkDotNet.Tests/Engine/EngineActualStageTests.cs:40:var measurements = engine.Run(stage);
+tests/BenchmarkDotNet.Tests/Engine/EngineWarmupStageTests.cs:89:var measurements = engine.Run(stage);
+src/BenchmarkDotNet.TestAdapter/entrypoints/EntryPoint.cs:10:public static void Main(string[] args) =&gt; BenchmarkSwitcher.FromAssembly(typeof(__AutoGeneratedEntryPointClass).Assembly).Run(args);
+src/BenchmarkDotNet/Jobs/Job.cs:62:public RunMode Run =&gt; RunCharacteristic[this]!;
+tests/BenchmarkDotNet.IntegrationTests/ThreadingDiagnoserTests.cs:48:var summary = BenchmarkRunner.Run&lt;CompletedWorkItemCount&gt;(config);
+tests/BenchmarkDotNet.IntegrationTests/ThreadingDiagnoserTests.cs:90:var summary = BenchmarkRunner.Run&lt;LockContentionCount&gt;(config);
 tests/BenchmarkDotNet.IntegrationTests/ExceptionDiagnoserTests.cs:18:var summary = BenchmarkRunner.Run&lt;ExceptionCount&gt;(config);
+tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:242:var results = switcher.Run([&quot;-j&quot;, &quot;Dry&quot;, &quot;--filter&quot;, &quot;*ClassB.Method4&quot;], config);
+tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:258:var results = switcher.Run([&quot;--filter&quot;, &quot;*Method3&quot;], configWithJobDefined);
+tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:276:var results = switcher.Run([&quot;--filter&quot;, &quot;*WithDryAttribute*&quot;], configWithoutJobDefined);
+tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:294:var results = switcher.Run([&quot;--filter&quot;, &quot;*&quot;], configWithoutJobDefined);
+src/BenchmarkDotNet/Toolchains/InProcess/Emit/InProcessEmitRunner.cs:16:public static async ValueTask&lt;int&gt; Run(IHost host, ExecuteParameters parameters)
 tests/BenchmarkDotNet.IntegrationTests/Shared/TestConfigs.cs:27:AddJob(new Job(Job.Dry) { Run = { IterationCount = 5 } });
 tests/BenchmarkDotNet.IntegrationTests/Shared/TestConfigs.cs:35:AddJob(new Job(Job.Dry) { Run = { RunStrategy = RunStrategy.Throughput, IterationCount = 1 } });
 tests/BenchmarkDotNet.IntegrationTests/Shared/TestConfigs.cs:44:AddJob(new Job { Run = { LaunchCount = 1, WarmupCount = 1, IterationCount = 50 } });
@@ -674,49 +722,10 @@ tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:315:var sum
 tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:320:var summaries = BenchmarkRunner.Run(assemblyBuilder);
 tests/BenchmarkDotNet.IntegrationTests/RunningEmptyBenchmarkTests.cs:355:var summaries = BenchmarkRunner.Run(assemblyBuilder, config);
 tests/BenchmarkDotNet.IntegrationTests/CallerThreadTests.cs:177:public void Run() =&gt; Thread.Sleep(1);
-tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:242:var results = switcher.Run([&quot;-j&quot;, &quot;Dry&quot;, &quot;--filter&quot;, &quot;*ClassB.Method4&quot;], config);
-tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:258:var results = switcher.Run([&quot;--filter&quot;, &quot;*Method3&quot;], configWithJobDefined);
-tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:276:var results = switcher.Run([&quot;--filter&quot;, &quot;*WithDryAttribute*&quot;], configWithoutJobDefined);
-tests/BenchmarkDotNet.IntegrationTests/BenchmarkSwitcherTest.cs:294:var results = switcher.Run([&quot;--filter&quot;, &quot;*&quot;], configWithoutJobDefined);
-tests/BenchmarkDotNet.IntegrationTests/MemoryDiagnoserTests.cs:355:var summary = BenchmarkRunner.Run(benchmarks);
+src/BenchmarkDotNet/Toolchains/InProcess/NoEmit/InProcessNoEmitRunner.cs:21:public static async ValueTask&lt;int&gt; Run(IHost host, ExecuteParameters parameters, IBenchmarkActionFactory? benchmarkActionFactory)
 tests/BenchmarkDotNet.IntegrationTests/LargeAddressAwareTest.cs:30:var summary = BenchmarkRunner.Run&lt;NeedsMoreThan2GB&gt;(config);
 tests/BenchmarkDotNet.IntegrationTests/LargeAddressAwareTest.cs:59:var summary = BenchmarkRunner.Run&lt;NeedsMoreThan2GB&gt;(config);
 tests/BenchmarkDotNet.IntegrationTests/InProcessTest.cs:86:var summary = BenchmarkRunner.Run(runInfo);
-build/BenchmarkDotNet.Build/Runners/Changelog/ChangelogDetailsBuilder.cs:170:public static void Run(BuildContext context, DirectoryPath path,
-build/BenchmarkDotNet.Build/Program.cs:15:: new CakeHost().UseContext&lt;BuildContext&gt;().Run(cakeArgs);
-build/BenchmarkDotNet.Build/Program.cs:25:public override void Run(BuildContext context) =&gt; context.BuildRunner.PackWeaver();
-build/BenchmarkDotNet.Build/Program.cs:46:public override void Run(BuildContext context) =&gt; context.BuildRunner.Restore();
-build/BenchmarkDotNet.Build/Program.cs:66:public override void Run(BuildContext context) =&gt; context.BuildRunner.Build();
-build/BenchmarkDotNet.Build/Program.cs:86:public override void Run(BuildContext context)
-build/BenchmarkDotNet.Build/Program.cs:109:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunUnitTests();
-build/BenchmarkDotNet.Build/Program.cs:131:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunAnalyzerTests();
-build/BenchmarkDotNet.Build/Program.cs:156:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunInTests(&quot;net472&quot;);
-build/BenchmarkDotNet.Build/Program.cs:167:public override void Run(BuildContext context) =&gt; context.UnitTestRunner.RunInTests(&quot;net8.0&quot;);
-build/BenchmarkDotNet.Build/Program.cs:188:public override void Run(BuildContext context) =&gt; context.BuildRunner.BuildAnalyzers();
-build/BenchmarkDotNet.Build/Program.cs:207:public override void Run(BuildContext context) =&gt; context.DocumentationRunner.MoveAnalyzerRules();
-build/BenchmarkDotNet.Build/Program.cs:228:public override void Run(BuildContext context) =&gt; context.BuildRunner.Pack();
-build/BenchmarkDotNet.Build/Program.cs:250:public override void Run(BuildContext context) =&gt; context.DocumentationRunner.Fetch();
-build/BenchmarkDotNet.Build/Program.cs:279:public override void Run(BuildContext context) =&gt; context.DocumentationRunner.Generate();
-build/BenchmarkDotNet.Build/Program.cs:301:public override void Run(BuildContext context) =&gt; context.DocumentationRunner.Build();
-build/BenchmarkDotNet.Build/Program.cs:319:public override void Run(BuildContext context)
-build/BenchmarkDotNet.Build/Program.cs:347:public override void Run(BuildContext context) =&gt; context.ReleaseRunner.Run();
-src/BenchmarkDotNet/Validators/RunModeValidator.cs:22:var run = benchmark.Job.Run;
-tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1326:public void Run() { }
-tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1356:public void Run() { }
-tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1389:public void Run() { }
-tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1414:public void Run() { }
-tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1437:public void Run() { }
-tests/BenchmarkDotNet.Tests/Engine/EngineActualStageTests.cs:40:var measurements = engine.Run(stage);
-tests/BenchmarkDotNet.Tests/Engine/EngineWarmupStageTests.cs:89:var measurements = engine.Run(stage);
-samples/BenchmarkDotNet.Samples.Maui/MainPage.xaml.cs:28:var summary = BenchmarkRunner.Run&lt;IntroBasic&gt;(config);
-tests/BenchmarkDotNet.Tests/ParamsSourceTests.cs:58:public void Run() { }
-src/BenchmarkDotNet.TestAdapter/entrypoints/EntryPoint.cs:10:public static void Main(string[] args) =&gt; BenchmarkSwitcher.FromAssembly(typeof(__AutoGeneratedEntryPointClass).Assembly).Run(args);
-samples/BenchmarkDotNet.Samples/IntroWasm.cs:20:public static void Run(string[] args) =&gt; BenchmarkSwitcher.FromAssembly(typeof(IntroWasmCmdConfig).Assembly).Run(args);
-samples/BenchmarkDotNet.Samples/IntroWasm.cs:32:public static void Run()
-samples/BenchmarkDotNet.Samples/IntroUnicode.cs:43:public static void Run()
-samples/BenchmarkDotNet.Samples/IntroFluentConfigBuilder.cs:34:public static void Run()
-samples/BenchmarkDotNet.Samples/IntroCustomMono.cs:79:public static void Run()
-src/BenchmarkDotNet/Jobs/Job.cs:62:public RunMode Run =&gt; RunCharacteristic[this]!;
 src/BenchmarkDotNet/Running/BenchmarkSwitcher.cs:72:public IEnumerable&lt;Summary&gt; Run(string[]? args = null, IConfig? config = null)
 src/BenchmarkDotNet/Running/BenchmarkRunnerDirty.cs:18:public static Summary Run&lt;T&gt;(IConfig? config = null, string[]? args = null)
 src/BenchmarkDotNet/Running/BenchmarkRunnerDirty.cs:25:public static Summary Run(Type type, IConfig? config = null, string[]? args = null)
@@ -730,12 +739,16 @@ src/BenchmarkDotNet/Running/BenchmarkRunnerClean.cs:36:internal static async Val
 src/BenchmarkDotNet/Running/BenchmarkRunnerClean.cs:138:(var summary, benchmarksToRunCount) = await Run(benchmarkRunInfo, benchmarkToBuildResult, resolver, compositeLogger, eventProcessor, artifactsToCleanup,
 src/BenchmarkDotNet/Running/BenchmarkRunnerClean.cs:190:private static async ValueTask&lt;(Summary summary, int benchmarksToRunCount)&gt; Run(BenchmarkRunInfo benchmarkRunInfo,
 src/BenchmarkDotNet/Running/BenchmarkRunnerClean.cs:403:var result = await Task.Run(
-src/BenchmarkDotNet/Toolchains/InProcess/NoEmit/InProcessNoEmitRunner.cs:21:public static async ValueTask&lt;int&gt; Run(IHost host, ExecuteParameters parameters, IBenchmarkActionFactory? benchmarkActionFactory)
-src/BenchmarkDotNet/Toolchains/InProcess/Emit/InProcessEmitRunner.cs:16:public static async ValueTask&lt;int&gt; Run(IHost host, ExecuteParameters parameters)
-src/BenchmarkDotNet/Columns/Column.cs:97:public const string Run = &quot;Run&quot;;</pre>
+tests/BenchmarkDotNet.IntegrationTests/MemoryDiagnoserTests.cs:355:var summary = BenchmarkRunner.Run(benchmarks);
+src/BenchmarkDotNet/Columns/Column.cs:97:public const string Run = &quot;Run&quot;;
+tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1326:public void Run() { }
+tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1356:public void Run() { }
+tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1389:public void Run() { }
+tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1414:public void Run() { }
+tests/BenchmarkDotNet.Analyzers.Tests/AnalyzerTests/Attributes/GeneralParameterAttributesAnalyzerTests.cs:1437:public void Run() { }</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 6345 | Lines: 30 | Time: 212ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 6345 | Lines: 30 | Time: 124ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Run&#39;, SymbolFilter.Member)</p>
         <pre id="expand-6-short">BenchmarkDotNet.Columns.Column.Run - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Columns\Column.cs(97,29)
 BenchmarkDotNet.IntegrationTests.CallerThreadTests.CallerThreadSimpleBenchmark.Run() - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\CallerThreadTests.cs(177,21)
@@ -780,7 +793,7 @@ BenchmarkDotNet.Toolchains.InProcess.Emit.InProcessEmitRunner.Run(BenchmarkDotNe
 BenchmarkDotNet.Toolchains.InProcess.NoEmit.InProcessNoEmitRunner.Run(BenchmarkDotNet.Engines.IHost, BenchmarkDotNet.Toolchains.Parameters.ExecuteParameters, BenchmarkDotNet.Toolchains.InProcess.NoEmit.IBenchmarkActionFactory?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Toolchains\InProcess\NoEmit\InProcessNoEmitRunner.cs(21,44)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 6345 | Lines: 30 | Time: 45ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 6345 | Lines: 30 | Time: 34ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Run&#39;, SymbolFilter.Member)</p>
         <pre id="expand-7-short">BenchmarkDotNet.Columns.Column.Run - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Columns\Column.cs(97,29)
 BenchmarkDotNet.IntegrationTests.CallerThreadTests.CallerThreadSimpleBenchmark.Run() - C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.IntegrationTests\CallerThreadTests.cs(177,21)
@@ -829,9 +842,10 @@ BenchmarkDotNet.Toolchains.InProcess.NoEmit.InProcessNoEmitRunner.Run(BenchmarkD
       <summary><span class="summary-title">find-member-definition (name: Parse)</span><span class="summary-meta">4 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>Parse</dd>
+        <dt>expected count</dt><dd>16</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 16033 | Lines: 95 | Time: 2.2s</span></summary>
+        <summary><span class="summary-title">find-member-definition-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 16033 | Lines: 95 | Time: 2.0s</span></summary>
         <p class="algorithm-details">string search for member declaration &#39;Parse&#39;</p>
         <pre id="expand-8-short">C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\CommandLineParser.cs:20: public string[]? Parse(string[]? args)
 C:\repos\BenchmarkDotNet\build\BenchmarkDotNet.Build\Program.cs:12: var cakeArgs = CommandLineParser.Instance.Parse(args);
@@ -941,20 +955,41 @@ C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Detectors\Cpu\WmiCpuInfoPar
 C:\repos\BenchmarkDotNet\tests\BenchmarkDotNet.Tests\Perfonar\Infra\PerfonarTestExtensions.cs:12: var measurement = PerfolizerMeasurementFormatter.Instance.Parse(metrics[i]);</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 13469 | Lines: 95 | Time: 121ms</span></summary>
+        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 13469 | Lines: 95 | Time: 107ms</span></summary>
         <p class="algorithm-details">tgrep search for member declaration &#39;Parse&#39;</p>
-        <pre id="expand-9-short">tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:39:var config = ConfigParser.Parse(args, new OutputLogger(Output)).config;
-tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:59:var config = ConfigParser.Parse([&quot;--job=Dry&quot;], new OutputLogger(Output)).config;
-tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:74:var config = ConfigParser.Parse(
-tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:94:var configEasy = ConfigParser.Parse([&quot;--runOncePerIteration&quot;], new OutputLogger(Output)).config;
-tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:106:var configEasy = ConfigParser.Parse([&quot;--strategy&quot;, &quot;ColdStart&quot;], new OutputLogger(Output)).config;
-tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:117:var configEasy = ConfigParser.Parse([&quot;--inProcess&quot;, &quot;--strategy&quot;, &quot;Monitoring&quot;], new OutputLogger(Output)).config;
-tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:137:var config = ConfigParser.Parse([], new OutputLogger(Output)).config;
-tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:158:var config = ConfigParser.Parse([&quot;--job=Dry&quot;, &quot;--coreRun&quot;, fakeCoreRunPath, &quot;--cli&quot;, fakeDotnetCliPath, &quot;--packages&quot;, fakeRestorePackages],
-tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:176:var config = ConfigParser.Parse([&quot;--corerun&quot;, fakePath], new OutputLogger(Output)).config;
-tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:223:var config = ConfigParser.Parse([&quot;--runtimes&quot;, runtime1, runtime2, &quot;--coreRun&quot;, fakePath], new OutputLogger(Output)).config;
+        <pre id="expand-9-short">build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:32:var version = Version.Parse(currentVersion);
+build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:56:var version = Version.Parse(currentVersion);
+build/BenchmarkDotNet.Build/Program.cs:12:var cakeArgs = CommandLineParser.Instance.Parse(args);
+tests/BenchmarkDotNet.Tests/TypeFilterTests.cs:214:var config = ConfigParser.Parse(args, nonNullLogger);
+build/BenchmarkDotNet.Build/Meta/Repo.cs:29:var number = int.Parse(match.Groups[1].Value.Replace(&quot;,&quot;, &quot;&quot;));
+build/BenchmarkDotNet.Build/CommandLineParser.cs:20:public string[]? Parse(string[]? args)
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:14:var actual = WmiCpuInfoParser.Parse(string.Empty);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:22:var actual = WmiCpuInfoParser.Parse(&quot;malformedkey=malformedvalue\n\nmalformedkey2=malformedvalue2&quot;);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:44:var actual = WmiCpuInfoParser.Parse(cpuInfo);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:76:var actual = WmiCpuInfoParser.Parse(cpuInfo);
 <span class="truncated-link" onclick="document.getElementById('expand-9-short').style.display='none'; document.getElementById('expand-9-full').style.display='block';">... truncated (85 more lines) — click to expand</span></pre>
-        <pre id="expand-9-full" class="full-result">tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:39:var config = ConfigParser.Parse(args, new OutputLogger(Output)).config;
+        <pre id="expand-9-full" class="full-result">build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:32:var version = Version.Parse(currentVersion);
+build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:56:var version = Version.Parse(currentVersion);
+build/BenchmarkDotNet.Build/Program.cs:12:var cakeArgs = CommandLineParser.Instance.Parse(args);
+tests/BenchmarkDotNet.Tests/TypeFilterTests.cs:214:var config = ConfigParser.Parse(args, nonNullLogger);
+build/BenchmarkDotNet.Build/Meta/Repo.cs:29:var number = int.Parse(match.Groups[1].Value.Replace(&quot;,&quot;, &quot;&quot;));
+build/BenchmarkDotNet.Build/CommandLineParser.cs:20:public string[]? Parse(string[]? args)
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:14:var actual = WmiCpuInfoParser.Parse(string.Empty);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:22:var actual = WmiCpuInfoParser.Parse(&quot;malformedkey=malformedvalue\n\nmalformedkey2=malformedvalue2&quot;);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:44:var actual = WmiCpuInfoParser.Parse(cpuInfo);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:76:var actual = WmiCpuInfoParser.Parse(cpuInfo);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:101:var actual = WmiCpuInfoParser.Parse(cpuInfo);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/SysctlCpuInfoParserTests.cs:14:var actual = SysctlCpuInfoParser.Parse(string.Empty);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/SysctlCpuInfoParserTests.cs:22:var actual = SysctlCpuInfoParser.Parse(&quot;malformedkey=malformedvalue\n\nmalformedkey2=malformedvalue2&quot;);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/SysctlCpuInfoParserTests.cs:31:var actual = SysctlCpuInfoParser.Parse(cpuInfo);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:15:var actual = LinuxCpuInfoParser.Parse(&quot;&quot;, &quot;&quot;);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:23:var actual = LinuxCpuInfoParser.Parse(&quot;malformedkey: malformedvalue\n\nmalformedkey2: malformedvalue2&quot;, string.Empty);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:32:var actual = LinuxCpuInfoParser.Parse(cpuInfo, string.Empty);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:50:var actual = LinuxCpuInfoParser.Parse(cpuInfo, string.Empty);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:67:var actual = LinuxCpuInfoParser.Parse(cpuInfo, string.Empty);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:112:var actual = LinuxCpuInfoParser.Parse(cpuInfo, lscpu);
+tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:148:var actual = LinuxCpuInfoParser.Parse(cpuInfo, lscpu);
+tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:39:var config = ConfigParser.Parse(args, new OutputLogger(Output)).config;
 tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:59:var config = ConfigParser.Parse([&quot;--job=Dry&quot;], new OutputLogger(Output)).config;
 tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:74:var config = ConfigParser.Parse(
 tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:94:var configEasy = ConfigParser.Parse([&quot;--runOncePerIteration&quot;], new OutputLogger(Output)).config;
@@ -997,61 +1032,40 @@ tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:721:var parsedConfiguration = C
 tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:735:var parsedConfiguration = ConfigParser.Parse([&quot;--runtimes&quot;, &quot;wasmnet80&quot;, &quot;--wasmArgs=--expose_wasm --module&quot;, GetDummyWasmEngine()], new OutputLogger(Output));
 tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:756:var parsedConfiguration = ConfigParser.Parse([$&quot;@{tempResponseFile}&quot;], new OutputLogger(Output));
 tests/BenchmarkDotNet.Tests/ConfigParserTests.cs:772:var parsedConfiguration = ConfigParser.Parse([&quot;--runtimes&quot;, &quot;wasmnet80&quot;, &quot;--wasmMainJsTemplate&quot;, &quot;./dummyFile.js&quot;, GetDummyWasmEngine()], new OutputLogger(Output));
-tests/BenchmarkDotNet.Tests/TypeFilterTests.cs:214:var config = ConfigParser.Parse(args, nonNullLogger);
-tests/BenchmarkDotNet.Tests/Columns/StatisticalTestColumnTests.cs:54:var sut = new StatisticalTestColumn(Threshold.Parse(threshold));
-tests/BenchmarkDotNet.Tests/BenchmarkDotNetInfoTests.cs:15:var info = new BenchmarkDotNetInfo(Version.Parse(assemblyVersion), fullVersion);
-build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:32:var version = Version.Parse(currentVersion);
-build/BenchmarkDotNet.Build/Runners/ReleaseRunner.cs:56:var version = Version.Parse(currentVersion);
-tests/BenchmarkDotNet.IntegrationTests/Diagnosers/MockInProcessDiagnoser.cs:53:int order = int.Parse(split[0]);
-tests/BenchmarkDotNet.IntegrationTests/PowerRequestsParser.cs:52:public static IEnumerable&lt;PowerRequest&gt; Parse(string input)
-build/BenchmarkDotNet.Build/Program.cs:12:var cakeArgs = CommandLineParser.Instance.Parse(args);
+src/BenchmarkDotNet/Toolchains/Results/ExecuteResult.cs:116:private static void Parse(IReadOnlyList&lt;string&gt; results, IReadOnlyList&lt;string&gt; prefixedLines, int launchIndex, out List&lt;Measurement&gt; measurements,
 src/BenchmarkDotNet.Diagnostics.Windows/Tracing/TraceLogParser.cs:16:public static IEnumerable&lt;Metric&gt; Parse(string etlFilePath, PreciseMachineCounter[] counters)
 src/BenchmarkDotNet.Diagnostics.Windows/Tracing/TraceLogParser.cs:26:return new TraceLogParser().Parse(traceLogEventSource, counters);
 src/BenchmarkDotNet.Diagnostics.Windows/Tracing/TraceLogParser.cs:35:private IEnumerable&lt;Metric&gt; Parse(TraceLogEventSource traceLogEventSource, PreciseMachineCounter[] counters)
 src/BenchmarkDotNet.Diagnostics.Windows/Tracing/NativeMemoryLogParser.cs:46:public IEnumerable&lt;Metric&gt; Parse()
 src/BenchmarkDotNet.Diagnostics.Windows/Tracing/NativeMemoryLogParser.cs:64:private IEnumerable&lt;Metric&gt; Parse(TraceLog traceLog)
+tests/BenchmarkDotNet.Tests/Columns/StatisticalTestColumnTests.cs:54:var sut = new StatisticalTestColumn(Threshold.Parse(threshold));
+tests/BenchmarkDotNet.Tests/BenchmarkDotNetInfoTests.cs:15:var info = new BenchmarkDotNetInfo(Version.Parse(assemblyVersion), fullVersion);
 src/BenchmarkDotNet.Diagnostics.Windows/NativeMemoryProfiler.cs:54:return new NativeMemoryLogParser(traceFilePath, results.BenchmarkCase, logger, results.BuildResult.ArtifactsPaths.ProgramName).Parse();
-build/BenchmarkDotNet.Build/Meta/Repo.cs:29:var number = int.Parse(match.Groups[1].Value.Replace(&quot;,&quot;, &quot;&quot;));
-build/BenchmarkDotNet.Build/CommandLineParser.cs:20:public string[]? Parse(string[]? args)
-tests/BenchmarkDotNet.Tests/MonoDisassemblyOutputParserTests.cs:279:var disassemblyResult = MonoDisassembler.OutputParser.Parse(
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:14:var actual = WmiCpuInfoParser.Parse(string.Empty);
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:22:var actual = WmiCpuInfoParser.Parse(&quot;malformedkey=malformedvalue\n\nmalformedkey2=malformedvalue2&quot;);
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:44:var actual = WmiCpuInfoParser.Parse(cpuInfo);
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:76:var actual = WmiCpuInfoParser.Parse(cpuInfo);
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/WmiCpuInfoParserTests.cs:101:var actual = WmiCpuInfoParser.Parse(cpuInfo);
-src/BenchmarkDotNet/Toolchains/Results/ExecuteResult.cs:116:private static void Parse(IReadOnlyList&lt;string&gt; results, IReadOnlyList&lt;string&gt; prefixedLines, int launchIndex, out List&lt;Measurement&gt; measurements,
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:15:var actual = LinuxCpuInfoParser.Parse(&quot;&quot;, &quot;&quot;);
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:23:var actual = LinuxCpuInfoParser.Parse(&quot;malformedkey: malformedvalue\n\nmalformedkey2: malformedvalue2&quot;, string.Empty);
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:32:var actual = LinuxCpuInfoParser.Parse(cpuInfo, string.Empty);
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:50:var actual = LinuxCpuInfoParser.Parse(cpuInfo, string.Empty);
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:67:var actual = LinuxCpuInfoParser.Parse(cpuInfo, string.Empty);
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:112:var actual = LinuxCpuInfoParser.Parse(cpuInfo, lscpu);
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/LinuxCpuInfoParserTests.cs:148:var actual = LinuxCpuInfoParser.Parse(cpuInfo, lscpu);
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/SysctlCpuInfoParserTests.cs:14:var actual = SysctlCpuInfoParser.Parse(string.Empty);
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/SysctlCpuInfoParserTests.cs:22:var actual = SysctlCpuInfoParser.Parse(&quot;malformedkey=malformedvalue\n\nmalformedkey2=malformedvalue2&quot;);
-tests/BenchmarkDotNet.Tests/Detectors/Cpu/SysctlCpuInfoParserTests.cs:31:var actual = SysctlCpuInfoParser.Parse(cpuInfo);
 tests/BenchmarkDotNet.Tests/Perfonar/Infra/PerfonarTestExtensions.cs:12:var measurement = PerfolizerMeasurementFormatter.Instance.Parse(metrics[i]);
-src/BenchmarkDotNet/Detectors/Cpu/Windows/WmiCpuInfoParser.cs:18:internal static CpuInfo Parse(string wmiOutput)
-src/BenchmarkDotNet/Helpers/IpcHelper.cs:31:int port = int.Parse(args[i + 1]);
+tests/BenchmarkDotNet.Tests/MonoDisassemblyOutputParserTests.cs:279:var disassemblyResult = MonoDisassembler.OutputParser.Parse(
+src/BenchmarkDotNet/Toolchains/CsProj/CsProjGenerator.cs:124:var doc = XDocument.Parse(await GenerateBuildProject(buildPartition, artifactsPaths, logger, cancellationToken).ConfigureAwait(false));
+src/BenchmarkDotNet/Diagnosers/ThreadingDiagnoser.cs:65:var completedWorkItemCount = long.Parse(splitResults[0]);
+src/BenchmarkDotNet/Diagnosers/ThreadingDiagnoser.cs:66:var lockContentionCount = long.Parse(splitResults[1]);
+src/BenchmarkDotNet/Disassemblers/MonoDisassembler.cs:49:internal static DisassemblyResult Parse(IReadOnlyList&lt;string&gt; input, string methodName, string commandLine)
 src/BenchmarkDotNet/Loggers/Broker.cs:123:int diagnoserIndex = int.Parse(lineItems[2]);
 src/BenchmarkDotNet/Loggers/Broker.cs:124:int resultsLinesCount = int.Parse(lineItems[3]);
-src/BenchmarkDotNet/Detectors/Cpu/macOS/SysctlCpuInfoParser.cs:22:internal static CpuInfo Parse(string sysctlOutput)
-src/BenchmarkDotNet/Toolchains/CsProj/CsProjGenerator.cs:124:var doc = XDocument.Parse(await GenerateBuildProject(buildPartition, artifactsPaths, logger, cancellationToken).ConfigureAwait(false));
-src/BenchmarkDotNet/Detectors/Cpu/Linux/LinuxCpuInfoParser.cs:31:internal static CpuInfo Parse(string cpuInfo, string lscpu)
-src/BenchmarkDotNet/Running/BenchmarkSwitcher.cs:124:var (isParsingSuccess, parsedConfig, options) = ConfigParser.Parse(notNullArgs, logger, notNullConfig);
 src/BenchmarkDotNet/Extensions/ReflectionExtensions.cs:94:var parameterCount = int.Parse(parts[1]);
-src/BenchmarkDotNet/Reports/Measurement.cs:119:public static Measurement Parse(string line, int processIndex)
+src/BenchmarkDotNet/Engines/GcStats.cs:165:public static GcStats Parse(string line)
+src/BenchmarkDotNet/Extensions/Polyfills/EnumExtensions.cs:17:public static TEnum Parse&lt;TEnum&gt;(string value)
+src/BenchmarkDotNet/Helpers/IpcHelper.cs:31:int port = int.Parse(args[i + 1]);
 src/BenchmarkDotNet/Toolchains/InProcess/InProcessHost.cs:80:int diagnoserIndex = int.Parse(lineItems[2]);
 src/BenchmarkDotNet/Toolchains/InProcess/InProcessHost.cs:81:int resultsLinesCount = int.Parse(lineItems[3]);
-src/BenchmarkDotNet/ConsoleArguments/ConfigParser.cs:77:public static (bool isSuccess, IConfig? config, CommandLineOptions? options) Parse(string[] args, ILogger logger, IConfig? globalConfig = null)
-src/BenchmarkDotNet/Extensions/Polyfills/EnumExtensions.cs:17:public static TEnum Parse&lt;TEnum&gt;(string value)
-src/BenchmarkDotNet/Disassemblers/MonoDisassembler.cs:49:internal static DisassemblyResult Parse(IReadOnlyList&lt;string&gt; input, string methodName, string commandLine)
-src/BenchmarkDotNet/Engines/GcStats.cs:165:public static GcStats Parse(string line)
-src/BenchmarkDotNet/Diagnosers/ThreadingDiagnoser.cs:65:var completedWorkItemCount = long.Parse(splitResults[0]);
-src/BenchmarkDotNet/Diagnosers/ThreadingDiagnoser.cs:66:var lockContentionCount = long.Parse(splitResults[1]);</pre>
+src/BenchmarkDotNet/Detectors/Cpu/Windows/WmiCpuInfoParser.cs:18:internal static CpuInfo Parse(string wmiOutput)
+tests/BenchmarkDotNet.IntegrationTests/Diagnosers/MockInProcessDiagnoser.cs:53:int order = int.Parse(split[0]);
+src/BenchmarkDotNet/Detectors/Cpu/macOS/SysctlCpuInfoParser.cs:22:internal static CpuInfo Parse(string sysctlOutput)
+tests/BenchmarkDotNet.IntegrationTests/PowerRequestsParser.cs:52:public static IEnumerable&lt;PowerRequest&gt; Parse(string input)
+src/BenchmarkDotNet/Running/BenchmarkSwitcher.cs:124:var (isParsingSuccess, parsedConfig, options) = ConfigParser.Parse(notNullArgs, logger, notNullConfig);
+src/BenchmarkDotNet/Detectors/Cpu/Linux/LinuxCpuInfoParser.cs:31:internal static CpuInfo Parse(string cpuInfo, string lscpu)
+src/BenchmarkDotNet/Reports/Measurement.cs:119:public static Measurement Parse(string line, int processIndex)
+src/BenchmarkDotNet/ConsoleArguments/ConfigParser.cs:77:public static (bool isSuccess, IConfig? config, CommandLineOptions? options) Parse(string[] args, ILogger logger, IConfig? globalConfig = null)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3255 | Lines: 16 | Time: 46ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3255 | Lines: 16 | Time: 52ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Parse&#39;, SymbolFilter.Member)</p>
         <pre id="expand-10-short">BenchmarkDotNet.ConsoleArguments.ConfigParser.Parse(string[], BenchmarkDotNet.Loggers.ILogger, BenchmarkDotNet.Configs.IConfig?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\ConsoleArguments\ConfigParser.cs(77,86)
 BenchmarkDotNet.Detectors.Cpu.Linux.LinuxCpuInfoParser.Parse(string, string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\Linux\LinuxCpuInfoParser.cs(31,29)
@@ -1082,7 +1096,7 @@ BenchmarkDotNet.Toolchains.Results.ExecuteResult.Parse(System.Collections.Generi
 System.EnumExtensions.extension(Enum).Parse&lt;TEnum&gt;(string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Extensions\Polyfills\EnumExtensions.cs(17,29)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3255 | Lines: 16 | Time: 24ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3255 | Lines: 16 | Time: 27ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Parse&#39;, SymbolFilter.Member)</p>
         <pre id="expand-11-short">BenchmarkDotNet.ConsoleArguments.ConfigParser.Parse(string[], BenchmarkDotNet.Loggers.ILogger, BenchmarkDotNet.Configs.IConfig?) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\ConsoleArguments\ConfigParser.cs(77,86)
 BenchmarkDotNet.Detectors.Cpu.Linux.LinuxCpuInfoParser.Parse(string, string) - C:\repos\BenchmarkDotNet\src\BenchmarkDotNet\Detectors\Cpu\Linux\LinuxCpuInfoParser.cs(31,29)

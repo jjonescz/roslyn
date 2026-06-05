@@ -17,6 +17,12 @@
     .algorithm[open] > summary { margin-bottom: 0.5rem; }
     .summary-title { font-weight: 700; }
     .summary-meta { color: #4b5563; margin-left: 0.75rem; font-size: 0.92rem; }
+    .badges { display: inline-flex; flex-wrap: wrap; gap: 0.35rem; margin-left: 0.5rem; vertical-align: middle; }
+    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.12rem 0.45rem; font-size: 0.74rem; font-weight: 700; line-height: 1.35; border: 1px solid transparent; white-space: nowrap; }
+    .badge-grep { background: #dbeafe; border-color: #93c5fd; color: #075985; }
+    .badge-tgrep { background: #fef3c7; border-color: #fbbf24; color: #92400e; }
+    .badge-ideal-lsp { background: #d1fae5; border-color: #6ee7b7; color: #065f46; }
+    .badge-current-lsp { background: #ede9fe; border-color: #c4b5fd; color: #5b21b6; }
     .algorithm-details { margin: 0.5rem 0; color: #4b5563; }
     .status { font-weight: bold; }
     .status-failed { color: #b91c1c; }
@@ -34,8 +40,8 @@
   <p><strong>Directory:</strong> C:\repos\yarp</p>
   <p><strong>Commit:</strong> 51c57c2facd2c9c79301cb312d4467d16da2cefc</p>
   <p><strong>LS cache:</strong> not used (enabled)</p>
-  <p><strong>Roslyn target:</strong> Solution - C:\repos\yarp\YARP.slnx (loaded in 23.9s)</p>
-  <p><strong>tgrep index:</strong> built in 839ms</p>
+  <p><strong>Roslyn target:</strong> Solution - C:\repos\yarp\YARP.slnx (loaded in 23.7s)</p>
+  <p><strong>tgrep index:</strong> built in 946ms</p>
   <div class="actions">
     <button type="button" data-action="expand-all">Expand all</button>
     <button type="button" data-action="collapse-algorithms">Collapse algorithms</button>
@@ -46,19 +52,20 @@
       <summary><span class="summary-title">find-type-definition (name: YarpOptions)</span><span class="summary-meta">10 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>YarpOptions</dd>
+        <dt>expected count</dt><dd>1</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 82 | Lines: 1 | Time: 1.4s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 82 | Lines: 1 | Time: 1.1s</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) YarpOptions&#39;</p>
         <pre>C:\repos\yarp\src\Kubernetes.Controller\YarpOptions.cs:6: public class YarpOptions</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 67 | Lines: 1 | Time: 49ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 67 | Lines: 1 | Time: 49ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) YarpOptions&#39;</p>
         <pre>src/Kubernetes.Controller/YarpOptions.cs:6:public class YarpOptions</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1951 | Lines: 14 | Time: 1.1s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1951 | Lines: 14 | Time: 1.0s</span></summary>
         <p class="algorithm-details">string search for &#39;YarpOptions&#39;</p>
         <pre id="expand-0-short">C:\repos\yarp\src\Kubernetes.Controller\YarpOptions.cs:6: public class YarpOptions
 C:\repos\yarp\src\Kubernetes.Controller\Caching\IngressCache.cs:26: private readonly YarpOptions _options;
@@ -87,64 +94,64 @@ C:\repos\yarp\test\Kubernetes.Tests\IngressConversionTests.cs:133: var mockOptio
 C:\repos\yarp\test\Kubernetes.Tests\IngressConversionTests.cs:138: mockOptions.SetupGet(o =&gt; o.Value).Returns(new YarpOptions { ControllerClass = &quot;microsoft.com/ingress-yarp&quot; });</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1728 | Lines: 14 | Time: 46ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1728 | Lines: 14 | Time: 47ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;YarpOptions&#39;</p>
-        <pre id="expand-1-short">test/Kubernetes.Tests/IngressConversionTests.cs:133:var mockOptions = new Mock&lt;IOptions&lt;YarpOptions&gt;&gt;();
-test/Kubernetes.Tests/IngressConversionTests.cs:138:mockOptions.SetupGet(o =&gt; o.Value).Returns(new YarpOptions { ControllerClass = &quot;microsoft.com/ingress-yarp&quot; });
-test/Kubernetes.Tests/IngressControllerTests.cs:32:private readonly Mock&lt;IOptions&lt;YarpOptions&gt;&gt; _mockOptions = new();
-test/Kubernetes.Tests/IngressControllerTests.cs:37:var optionsNoWatchSecrets = new YarpOptions()
+        <pre id="expand-1-short">src/Kubernetes.Controller/YarpOptions.cs:6:public class YarpOptions
+src/Kubernetes.Controller/Services/IngressController.cs:45:IOptions&lt;YarpOptions&gt; options,
 test/Kubernetes.Tests/IngressCacheTests.cs:22:private readonly Mock&lt;IOptions&lt;YarpOptions&gt;&gt; _mockOptions;
 test/Kubernetes.Tests/IngressCacheTests.cs:31:_mockOptions = new Mock&lt;IOptions&lt;YarpOptions&gt;&gt;();
 test/Kubernetes.Tests/IngressCacheTests.cs:35:_mockOptions.SetupGet(o =&gt; o.Value).Returns(new YarpOptions { ControllerClass = &quot;microsoft.com/ingress-yarp&quot;, DefaultSslCertificate = &quot;default/yarp-ingress-tls&quot; });
-src/Kubernetes.Controller/YarpOptions.cs:6:public class YarpOptions
-src/Kubernetes.Controller/Services/IngressController.cs:45:IOptions&lt;YarpOptions&gt; options,
-src/Kubernetes.Controller/Caching/IngressCache.cs:26:private readonly YarpOptions _options;
-<span class="truncated-link" onclick="document.getElementById('expand-1-short').style.display='none'; document.getElementById('expand-1-full').style.display='block';">... truncated (4 more lines) — click to expand</span></pre>
-        <pre id="expand-1-full" class="full-result">test/Kubernetes.Tests/IngressConversionTests.cs:133:var mockOptions = new Mock&lt;IOptions&lt;YarpOptions&gt;&gt;();
-test/Kubernetes.Tests/IngressConversionTests.cs:138:mockOptions.SetupGet(o =&gt; o.Value).Returns(new YarpOptions { ControllerClass = &quot;microsoft.com/ingress-yarp&quot; });
-test/Kubernetes.Tests/IngressControllerTests.cs:32:private readonly Mock&lt;IOptions&lt;YarpOptions&gt;&gt; _mockOptions = new();
-test/Kubernetes.Tests/IngressControllerTests.cs:37:var optionsNoWatchSecrets = new YarpOptions()
-test/Kubernetes.Tests/IngressCacheTests.cs:22:private readonly Mock&lt;IOptions&lt;YarpOptions&gt;&gt; _mockOptions;
-test/Kubernetes.Tests/IngressCacheTests.cs:31:_mockOptions = new Mock&lt;IOptions&lt;YarpOptions&gt;&gt;();
-test/Kubernetes.Tests/IngressCacheTests.cs:35:_mockOptions.SetupGet(o =&gt; o.Value).Returns(new YarpOptions { ControllerClass = &quot;microsoft.com/ingress-yarp&quot;, DefaultSslCertificate = &quot;default/yarp-ingress-tls&quot; });
-src/Kubernetes.Controller/YarpOptions.cs:6:public class YarpOptions
-src/Kubernetes.Controller/Services/IngressController.cs:45:IOptions&lt;YarpOptions&gt; options,
-src/Kubernetes.Controller/Caching/IngressCache.cs:26:private readonly YarpOptions _options;
-src/Kubernetes.Controller/Caching/IngressCache.cs:33:public IngressCache(IOptions&lt;YarpOptions&gt; options, IServerCertificateSelector certificateSelector, ICertificateHelper certificateHelper, ILogger&lt;IngressCache&gt; logger)
 src/Kubernetes.Controller/Management/KubernetesReverseProxyServiceCollectionExtensions.cs:83:services.Configure&lt;YarpOptions&gt;(config.GetSection(&quot;Yarp&quot;));
 src/Kubernetes.Controller/Client/V1IngressResourceStatusUpdater.cs:18:private readonly YarpOptions _options;
-src/Kubernetes.Controller/Client/V1IngressResourceStatusUpdater.cs:24:IOptions&lt;YarpOptions&gt; options,</pre>
+src/Kubernetes.Controller/Client/V1IngressResourceStatusUpdater.cs:24:IOptions&lt;YarpOptions&gt; options,
+test/Kubernetes.Tests/IngressConversionTests.cs:133:var mockOptions = new Mock&lt;IOptions&lt;YarpOptions&gt;&gt;();
+test/Kubernetes.Tests/IngressConversionTests.cs:138:mockOptions.SetupGet(o =&gt; o.Value).Returns(new YarpOptions { ControllerClass = &quot;microsoft.com/ingress-yarp&quot; });
+<span class="truncated-link" onclick="document.getElementById('expand-1-short').style.display='none'; document.getElementById('expand-1-full').style.display='block';">... truncated (4 more lines) — click to expand</span></pre>
+        <pre id="expand-1-full" class="full-result">src/Kubernetes.Controller/YarpOptions.cs:6:public class YarpOptions
+src/Kubernetes.Controller/Services/IngressController.cs:45:IOptions&lt;YarpOptions&gt; options,
+test/Kubernetes.Tests/IngressCacheTests.cs:22:private readonly Mock&lt;IOptions&lt;YarpOptions&gt;&gt; _mockOptions;
+test/Kubernetes.Tests/IngressCacheTests.cs:31:_mockOptions = new Mock&lt;IOptions&lt;YarpOptions&gt;&gt;();
+test/Kubernetes.Tests/IngressCacheTests.cs:35:_mockOptions.SetupGet(o =&gt; o.Value).Returns(new YarpOptions { ControllerClass = &quot;microsoft.com/ingress-yarp&quot;, DefaultSslCertificate = &quot;default/yarp-ingress-tls&quot; });
+src/Kubernetes.Controller/Management/KubernetesReverseProxyServiceCollectionExtensions.cs:83:services.Configure&lt;YarpOptions&gt;(config.GetSection(&quot;Yarp&quot;));
+src/Kubernetes.Controller/Client/V1IngressResourceStatusUpdater.cs:18:private readonly YarpOptions _options;
+src/Kubernetes.Controller/Client/V1IngressResourceStatusUpdater.cs:24:IOptions&lt;YarpOptions&gt; options,
+test/Kubernetes.Tests/IngressConversionTests.cs:133:var mockOptions = new Mock&lt;IOptions&lt;YarpOptions&gt;&gt;();
+test/Kubernetes.Tests/IngressConversionTests.cs:138:mockOptions.SetupGet(o =&gt; o.Value).Returns(new YarpOptions { ControllerClass = &quot;microsoft.com/ingress-yarp&quot; });
+test/Kubernetes.Tests/IngressControllerTests.cs:32:private readonly Mock&lt;IOptions&lt;YarpOptions&gt;&gt; _mockOptions = new();
+test/Kubernetes.Tests/IngressControllerTests.cs:37:var optionsNoWatchSecrets = new YarpOptions()
+src/Kubernetes.Controller/Caching/IngressCache.cs:26:private readonly YarpOptions _options;
+src/Kubernetes.Controller/Caching/IngressCache.cs:33:public IngressCache(IOptions&lt;YarpOptions&gt; options, IServerCertificateSelector certificateSelector, ICertificateHelper certificateHelper, ILogger&lt;IngressCache&gt; logger)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 101 | Lines: 1 | Time: 2.0s</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 101 | Lines: 1 | Time: 1.8s</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;YarpOptions&#39;, SymbolFilter.Type)</p>
         <pre>Yarp.Kubernetes.Controller.YarpOptions - C:\repos\yarp\src\Kubernetes.Controller\YarpOptions.cs(6,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 101 | Lines: 1 | Time: 27ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 101 | Lines: 1 | Time: 22ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;YarpOptions&#39;, SymbolFilter.Type)</p>
         <pre>Yarp.Kubernetes.Controller.YarpOptions - C:\repos\yarp\src\Kubernetes.Controller\YarpOptions.cs(6,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 241 | Lines: 2 | Time: 372ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 241 | Lines: 2 | Time: 346ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;YarpOptions&#39;, SymbolFilter.Type)</p>
         <pre>Yarp.Kubernetes.Controller.Converters.YarpIngressOptions - C:\repos\yarp\src\Kubernetes.Controller\Converters\YarpIngressOptions.cs(11,23)
 Yarp.Kubernetes.Controller.YarpOptions - C:\repos\yarp\src\Kubernetes.Controller\YarpOptions.cs(6,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 241 | Lines: 2 | Time: 6ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 241 | Lines: 2 | Time: 5ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;YarpOptions&#39;, SymbolFilter.Type)</p>
         <pre>Yarp.Kubernetes.Controller.Converters.YarpIngressOptions - C:\repos\yarp\src\Kubernetes.Controller\Converters\YarpIngressOptions.cs(11,23)
 Yarp.Kubernetes.Controller.YarpOptions - C:\repos\yarp\src\Kubernetes.Controller\YarpOptions.cs(6,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 241 | Lines: 2 | Time: 81ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 241 | Lines: 2 | Time: 77ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;YarpOptions&#39;) without SymbolFilter</p>
         <pre>Yarp.Kubernetes.Controller.Converters.YarpIngressOptions - C:\repos\yarp\src\Kubernetes.Controller\Converters\YarpIngressOptions.cs(11,23)
 Yarp.Kubernetes.Controller.YarpOptions - C:\repos\yarp\src\Kubernetes.Controller\YarpOptions.cs(6,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 241 | Lines: 2 | Time: 24ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="badges"><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 241 | Lines: 2 | Time: 23ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;YarpOptions&#39;) without SymbolFilter</p>
         <pre>Yarp.Kubernetes.Controller.Converters.YarpIngressOptions - C:\repos\yarp\src\Kubernetes.Controller\Converters\YarpIngressOptions.cs(11,23)
 Yarp.Kubernetes.Controller.YarpOptions - C:\repos\yarp\src\Kubernetes.Controller\YarpOptions.cs(6,14)</pre>
@@ -154,21 +161,22 @@ Yarp.Kubernetes.Controller.YarpOptions - C:\repos\yarp\src\Kubernetes.Controller
       <summary><span class="summary-title">find-type-definition (name: ReverseProxyFeature)</span><span class="summary-meta">10 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>ReverseProxyFeature</dd>
+        <dt>expected count</dt><dd>2</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 226 | Lines: 2 | Time: 1.2s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 226 | Lines: 2 | Time: 1.1s</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) ReverseProxyFeature&#39;</p>
         <pre>C:\repos\yarp\src\Application\Features\ReverseProxyFeature.cs:11: public static class ReverseProxyFeature
 C:\repos\yarp\src\ReverseProxy\Model\ReverseProxyFeature.cs:12: public class ReverseProxyFeature : IReverseProxyFeature</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 195 | Lines: 2 | Time: 67ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 195 | Lines: 2 | Time: 59ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) ReverseProxyFeature&#39;</p>
-        <pre>src/ReverseProxy/Model/ReverseProxyFeature.cs:12:public class ReverseProxyFeature : IReverseProxyFeature
-src/Application/Features/ReverseProxyFeature.cs:11:public static class ReverseProxyFeature</pre>
+        <pre>src/Application/Features/ReverseProxyFeature.cs:11:public static class ReverseProxyFeature
+src/ReverseProxy/Model/ReverseProxyFeature.cs:12:public class ReverseProxyFeature : IReverseProxyFeature</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 4130 | Lines: 31 | Time: 1.1s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 4130 | Lines: 31 | Time: 1.0s</span></summary>
         <p class="algorithm-details">string search for &#39;ReverseProxyFeature&#39;</p>
         <pre id="expand-2-short">C:\repos\yarp\samples\ReverseProxy.Code.Sample\Program.cs:93: // The context also stores a ReverseProxyFeature which holds proxy specific data such as the cluster, route and destinations
 C:\repos\yarp\src\Application\Features\ReverseProxyFeature.cs:11: public static class ReverseProxyFeature
@@ -214,49 +222,49 @@ C:\repos\yarp\test\ReverseProxy.Tests\Transforms\Builder\TransformBuilderTests.c
 C:\repos\yarp\test\ReverseProxy.Tests\Transforms\Builder\TransformBuilderTests.cs:404: httpContext.Features.Set&lt;IReverseProxyFeature&gt;(new ReverseProxyFeature</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2469 | Lines: 21 | Time: 60ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2469 | Lines: 21 | Time: 64ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;ReverseProxyFeature&#39;</p>
-        <pre id="expand-3-short">samples/ReverseProxy.Code.Sample/Program.cs:93:// The context also stores a ReverseProxyFeature which holds proxy specific data such as the cluster, route and destinations
+        <pre id="expand-3-short">src/Application/Features/ReverseProxyFeature.cs:11:public static class ReverseProxyFeature
+samples/ReverseProxy.Code.Sample/Program.cs:93:// The context also stores a ReverseProxyFeature which holds proxy specific data such as the cluster, route and destinations
 test/ReverseProxy.Tests/Transforms/Builder/TransformBuilderTests.cs:316:httpContext.Features.Set&lt;IReverseProxyFeature&gt;(new ReverseProxyFeature
 test/ReverseProxy.Tests/Transforms/Builder/TransformBuilderTests.cs:404:httpContext.Features.Set&lt;IReverseProxyFeature&gt;(new ReverseProxyFeature
 test/ReverseProxy.Tests/SessionAffinity/SessionAffinityMiddlewareTests.cs:199:return new ReverseProxyFeature()
 test/ReverseProxy.Tests/SessionAffinity/AffinitizeTransformTests.cs:38:context.Features.Set&lt;IReverseProxyFeature&gt;(new ReverseProxyFeature()
 test/ReverseProxy.Tests/Model/HttpContextFeaturesExtensions.cs:25:var feature = new ReverseProxyFeature()
+src/ReverseProxy/Model/ClusterState.cs:31:/// such as updating the &lt;see cref=&quot;ReverseProxyFeature&quot;/&gt; via &lt;see cref=&quot;HttpContextFeaturesExtensions&quot;/&gt;
 src/ReverseProxy/Model/ReverseProxyFeature.cs:12:public class ReverseProxyFeature : IReverseProxyFeature
 src/ReverseProxy/Model/ProxyPipelineInitializerMiddleware.cs:56:context.Features.Set&lt;IReverseProxyFeature&gt;(new ReverseProxyFeature
-src/ReverseProxy/Model/HttpContextFeaturesExtensions.cs:53:var newFeature = new ReverseProxyFeature()
-src/ReverseProxy/Model/HttpContextFeaturesExtensions.cs:73:var newFeature = new ReverseProxyFeature()
 <span class="truncated-link" onclick="document.getElementById('expand-3-short').style.display='none'; document.getElementById('expand-3-full').style.display='block';">... truncated (11 more lines) — click to expand</span></pre>
-        <pre id="expand-3-full" class="full-result">samples/ReverseProxy.Code.Sample/Program.cs:93:// The context also stores a ReverseProxyFeature which holds proxy specific data such as the cluster, route and destinations
+        <pre id="expand-3-full" class="full-result">src/Application/Features/ReverseProxyFeature.cs:11:public static class ReverseProxyFeature
+samples/ReverseProxy.Code.Sample/Program.cs:93:// The context also stores a ReverseProxyFeature which holds proxy specific data such as the cluster, route and destinations
 test/ReverseProxy.Tests/Transforms/Builder/TransformBuilderTests.cs:316:httpContext.Features.Set&lt;IReverseProxyFeature&gt;(new ReverseProxyFeature
 test/ReverseProxy.Tests/Transforms/Builder/TransformBuilderTests.cs:404:httpContext.Features.Set&lt;IReverseProxyFeature&gt;(new ReverseProxyFeature
 test/ReverseProxy.Tests/SessionAffinity/SessionAffinityMiddlewareTests.cs:199:return new ReverseProxyFeature()
 test/ReverseProxy.Tests/SessionAffinity/AffinitizeTransformTests.cs:38:context.Features.Set&lt;IReverseProxyFeature&gt;(new ReverseProxyFeature()
 test/ReverseProxy.Tests/Model/HttpContextFeaturesExtensions.cs:25:var feature = new ReverseProxyFeature()
+src/ReverseProxy/Model/ClusterState.cs:31:/// such as updating the &lt;see cref=&quot;ReverseProxyFeature&quot;/&gt; via &lt;see cref=&quot;HttpContextFeaturesExtensions&quot;/&gt;
 src/ReverseProxy/Model/ReverseProxyFeature.cs:12:public class ReverseProxyFeature : IReverseProxyFeature
 src/ReverseProxy/Model/ProxyPipelineInitializerMiddleware.cs:56:context.Features.Set&lt;IReverseProxyFeature&gt;(new ReverseProxyFeature
 src/ReverseProxy/Model/HttpContextFeaturesExtensions.cs:53:var newFeature = new ReverseProxyFeature()
 src/ReverseProxy/Model/HttpContextFeaturesExtensions.cs:73:var newFeature = new ReverseProxyFeature()
 src/ReverseProxy/Model/DestinationState.cs:31:/// such as updating the &lt;see cref=&quot;ReverseProxyFeature&quot;/&gt; via &lt;see cref=&quot;HttpContextFeaturesExtensions&quot;/&gt;
-src/ReverseProxy/Model/ClusterState.cs:31:/// such as updating the &lt;see cref=&quot;ReverseProxyFeature&quot;/&gt; via &lt;see cref=&quot;HttpContextFeaturesExtensions&quot;/&gt;
-test/ReverseProxy.Tests/Forwarder/ForwarderMiddlewareTests.cs:60:new ReverseProxyFeature()
-test/ReverseProxy.Tests/Forwarder/ForwarderMiddlewareTests.cs:137:new ReverseProxyFeature()
 test/ReverseProxy.Tests/LoadBalancing/LoadBalancingPoliciesTests.cs:167:var feature = new ReverseProxyFeature()
 test/ReverseProxy.Tests/LoadBalancing/LoadBalancerMiddlewareTests.cs:193:new ReverseProxyFeature()
+test/ReverseProxy.Tests/Limits/LimitsMiddlewareTests.cs:76:new ReverseProxyFeature()
 test/ReverseProxy.Tests/Delegation/HttpSysDelegatorMiddlewareTests.cs:23:private readonly ReverseProxyFeature _proxyFeature;
 test/ReverseProxy.Tests/Delegation/HttpSysDelegatorMiddlewareTests.cs:33:_proxyFeature = new ReverseProxyFeature
-test/ReverseProxy.Tests/Limits/LimitsMiddlewareTests.cs:76:new ReverseProxyFeature()
 test/ReverseProxy.Tests/Health/PassiveHealthCheckMiddlewareTests.cs:115:return new ReverseProxyFeature()
-src/Application/Features/ReverseProxyFeature.cs:11:public static class ReverseProxyFeature</pre>
+test/ReverseProxy.Tests/Forwarder/ForwarderMiddlewareTests.cs:60:new ReverseProxyFeature()
+test/ReverseProxy.Tests/Forwarder/ForwarderMiddlewareTests.cs:137:new ReverseProxyFeature()</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 230 | Lines: 2 | Time: 16ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 230 | Lines: 2 | Time: 46ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;ReverseProxyFeature&#39;, SymbolFilter.Type)</p>
         <pre>Yarp.Application.Features.ReverseProxyFeature - C:\repos\yarp\src\Application\Features\ReverseProxyFeature.cs(11,21)
 Yarp.ReverseProxy.Model.ReverseProxyFeature - C:\repos\yarp\src\ReverseProxy\Model\ReverseProxyFeature.cs(12,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 230 | Lines: 2 | Time: 12ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 230 | Lines: 2 | Time: 39ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;ReverseProxyFeature&#39;, SymbolFilter.Type)</p>
         <pre>Yarp.Application.Features.ReverseProxyFeature - C:\repos\yarp\src\Application\Features\ReverseProxyFeature.cs(11,21)
 Yarp.ReverseProxy.Model.ReverseProxyFeature - C:\repos\yarp\src\ReverseProxy\Model\ReverseProxyFeature.cs(12,14)</pre>
@@ -269,21 +277,21 @@ Yarp.ReverseProxy.Model.IReverseProxyFeature - C:\repos\yarp\src\ReverseProxy\Mo
 Yarp.ReverseProxy.Model.ReverseProxyFeature - C:\repos\yarp\src\ReverseProxy\Model\ReverseProxyFeature.cs(12,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 346 | Lines: 3 | Time: 4ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 346 | Lines: 3 | Time: 7ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ReverseProxyFeature&#39;, SymbolFilter.Type)</p>
         <pre>Yarp.Application.Features.ReverseProxyFeature - C:\repos\yarp\src\Application\Features\ReverseProxyFeature.cs(11,21)
 Yarp.ReverseProxy.Model.IReverseProxyFeature - C:\repos\yarp\src\ReverseProxy\Model\IReverseProxyFeature.cs(11,18)
 Yarp.ReverseProxy.Model.ReverseProxyFeature - C:\repos\yarp\src\ReverseProxy\Model\ReverseProxyFeature.cs(12,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 346 | Lines: 3 | Time: 226ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 346 | Lines: 3 | Time: 186ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ReverseProxyFeature&#39;) without SymbolFilter</p>
         <pre>Yarp.Application.Features.ReverseProxyFeature - C:\repos\yarp\src\Application\Features\ReverseProxyFeature.cs(11,21)
 Yarp.ReverseProxy.Model.IReverseProxyFeature - C:\repos\yarp\src\ReverseProxy\Model\IReverseProxyFeature.cs(11,18)
 Yarp.ReverseProxy.Model.ReverseProxyFeature - C:\repos\yarp\src\ReverseProxy\Model\ReverseProxyFeature.cs(12,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 346 | Lines: 3 | Time: 38ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="badges"><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 346 | Lines: 3 | Time: 38ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ReverseProxyFeature&#39;) without SymbolFilter</p>
         <pre>Yarp.Application.Features.ReverseProxyFeature - C:\repos\yarp\src\Application\Features\ReverseProxyFeature.cs(11,21)
 Yarp.ReverseProxy.Model.IReverseProxyFeature - C:\repos\yarp\src\ReverseProxy\Model\IReverseProxyFeature.cs(11,18)
@@ -294,19 +302,20 @@ Yarp.ReverseProxy.Model.ReverseProxyFeature - C:\repos\yarp\src\ReverseProxy\Mod
       <summary><span class="summary-title">find-type-definition (name: IngressCache)</span><span class="summary-meta">10 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>IngressCache</dd>
+        <dt>expected count</dt><dd>1</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 102 | Lines: 1 | Time: 1.2s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 102 | Lines: 1 | Time: 1.1s</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) IngressCache&#39;</p>
         <pre>C:\repos\yarp\src\Kubernetes.Controller\Caching\IngressCache.cs:21: public class IngressCache : ICache</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 87 | Lines: 1 | Time: 42ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 87 | Lines: 1 | Time: 43ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) IngressCache&#39;</p>
         <pre>src/Kubernetes.Controller/Caching/IngressCache.cs:21:public class IngressCache : ICache</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1320 | Lines: 9 | Time: 1.1s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1320 | Lines: 9 | Time: 1.0s</span></summary>
         <p class="algorithm-details">string search for &#39;IngressCache&#39;</p>
         <pre>C:\repos\yarp\src\Kubernetes.Controller\Caching\IngressCache.cs:21: public class IngressCache : ICache
 C:\repos\yarp\src\Kubernetes.Controller\Caching\IngressCache.cs:29: private readonly ILogger&lt;IngressCache&gt; _logger;
@@ -321,28 +330,28 @@ C:\repos\yarp\test\Kubernetes.Tests\IngressConversionTests.cs:140: var cache = n
       <details class="algorithm">
         <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 1177 | Lines: 9 | Time: 41ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;IngressCache&#39;</p>
-        <pre>test/Kubernetes.Tests/IngressConversionTests.cs:132:var mockLogger = new Mock&lt;ILogger&lt;IngressCache&gt;&gt;();
-test/Kubernetes.Tests/IngressConversionTests.cs:140:var cache = new IngressCache(mockOptions.Object, certificateSelector.Object, certificateHelper, mockLogger.Object);
-test/Kubernetes.Tests/IngressCacheTests.cs:25:private readonly IngressCache _cacheUnderTest;
+        <pre>test/Kubernetes.Tests/IngressCacheTests.cs:25:private readonly IngressCache _cacheUnderTest;
 test/Kubernetes.Tests/IngressCacheTests.cs:30:var logger = new TestLogger&lt;IngressCache&gt;(output);
 test/Kubernetes.Tests/IngressCacheTests.cs:37:_cacheUnderTest = new IngressCache(_mockOptions.Object, _certificateSelector.Object, _certificateHelper.Object, logger);
+src/Kubernetes.Controller/Management/KubernetesReverseProxyServiceCollectionExtensions.cs:81:services.AddSingleton&lt;ICache, IngressCache&gt;();
+test/Kubernetes.Tests/IngressConversionTests.cs:132:var mockLogger = new Mock&lt;ILogger&lt;IngressCache&gt;&gt;();
+test/Kubernetes.Tests/IngressConversionTests.cs:140:var cache = new IngressCache(mockOptions.Object, certificateSelector.Object, certificateHelper, mockLogger.Object);
 src/Kubernetes.Controller/Caching/IngressCache.cs:21:public class IngressCache : ICache
 src/Kubernetes.Controller/Caching/IngressCache.cs:29:private readonly ILogger&lt;IngressCache&gt; _logger;
-src/Kubernetes.Controller/Caching/IngressCache.cs:33:public IngressCache(IOptions&lt;YarpOptions&gt; options, IServerCertificateSelector certificateSelector, ICertificateHelper certificateHelper, ILogger&lt;IngressCache&gt; logger)
-src/Kubernetes.Controller/Management/KubernetesReverseProxyServiceCollectionExtensions.cs:81:services.AddSingleton&lt;ICache, IngressCache&gt;();</pre>
+src/Kubernetes.Controller/Caching/IngressCache.cs:33:public IngressCache(IOptions&lt;YarpOptions&gt; options, IServerCertificateSelector certificateSelector, ICertificateHelper certificateHelper, ILogger&lt;IngressCache&gt; logger)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 120 | Lines: 1 | Time: 37ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 120 | Lines: 1 | Time: 10ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;IngressCache&#39;, SymbolFilter.Type)</p>
         <pre>Yarp.Kubernetes.Controller.Caching.IngressCache - C:\repos\yarp\src\Kubernetes.Controller\Caching\IngressCache.cs(21,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 120 | Lines: 1 | Time: 8ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 120 | Lines: 1 | Time: 8ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;IngressCache&#39;, SymbolFilter.Type)</p>
         <pre>Yarp.Kubernetes.Controller.Caching.IngressCache - C:\repos\yarp\src\Kubernetes.Controller\Caching\IngressCache.cs(21,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 227 | Lines: 2 | Time: 6ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-with-pattern (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 227 | Lines: 2 | Time: 7ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;IngressCache&#39;, SymbolFilter.Type)</p>
         <pre>Yarp.Kubernetes.Controller.Caching.IngressCache - C:\repos\yarp\src\Kubernetes.Controller\Caching\IngressCache.cs(21,14)
 Yarp.Kubernetes.Tests.IngressCacheTests - C:\repos\yarp\test\Kubernetes.Tests\IngressCacheTests.cs(20,14)</pre>
@@ -354,13 +363,13 @@ Yarp.Kubernetes.Tests.IngressCacheTests - C:\repos\yarp\test\Kubernetes.Tests\In
 Yarp.Kubernetes.Tests.IngressCacheTests - C:\repos\yarp\test\Kubernetes.Tests\IngressCacheTests.cs(20,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 227 | Lines: 2 | Time: 37ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 227 | Lines: 2 | Time: 38ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;IngressCache&#39;) without SymbolFilter</p>
         <pre>Yarp.Kubernetes.Controller.Caching.IngressCache - C:\repos\yarp\src\Kubernetes.Controller\Caching\IngressCache.cs(21,14)
 Yarp.Kubernetes.Tests.IngressCacheTests - C:\repos\yarp\test\Kubernetes.Tests\IngressCacheTests.cs(20,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 227 | Lines: 2 | Time: 29ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="badges"><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 227 | Lines: 2 | Time: 29ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;IngressCache&#39;) without SymbolFilter</p>
         <pre>Yarp.Kubernetes.Controller.Caching.IngressCache - C:\repos\yarp\src\Kubernetes.Controller\Caching\IngressCache.cs(21,14)
 Yarp.Kubernetes.Tests.IngressCacheTests - C:\repos\yarp\test\Kubernetes.Tests\IngressCacheTests.cs(20,14)</pre>
@@ -370,38 +379,39 @@ Yarp.Kubernetes.Tests.IngressCacheTests - C:\repos\yarp\test\Kubernetes.Tests\In
       <summary><span class="summary-title">find-type-definition (name: ServerCertificateSelector)</span><span class="summary-meta">10 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>ServerCertificateSelector</dd>
+        <dt>expected count</dt><dd>1</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 154 | Lines: 1 | Time: 1.2s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 154 | Lines: 1 | Time: 1.1s</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct|interface|enum) ServerCertificateSelector&#39;</p>
         <pre>C:\repos\yarp\src\Kubernetes.Controller\Certificates\ServerCertificateSelector.cs:9: internal class ServerCertificateSelector : IServerCertificateSelector</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 139 | Lines: 1 | Time: 47ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 139 | Lines: 1 | Time: 44ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct|interface|enum) ServerCertificateSelector&#39;</p>
         <pre>src/Kubernetes.Controller/Certificates/ServerCertificateSelector.cs:9:internal class ServerCertificateSelector : IServerCertificateSelector</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 525 | Lines: 3 | Time: 1.1s</span></summary>
+        <summary><span class="summary-title">find-type-definition-grep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 525 | Lines: 3 | Time: 1.0s</span></summary>
         <p class="algorithm-details">string search for &#39;ServerCertificateSelector&#39;</p>
         <pre>C:\repos\yarp\src\Kubernetes.Controller\Certificates\ServerCertificateSelector.cs:9: internal class ServerCertificateSelector : IServerCertificateSelector
 C:\repos\yarp\src\Kubernetes.Controller\Management\KubernetesReverseProxyServiceCollectionExtensions.cs:95: services.AddSingleton&lt;IServerCertificateSelector, ServerCertificateSelector&gt;();
 C:\repos\yarp\src\Kubernetes.Controller\Management\KubernetesReverseProxyWebHostBuilderExtensions.cs:35: httpsOptions.ServerCertificateSelector = (connectionContext, domainName) =&gt;</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 478 | Lines: 3 | Time: 43ms</span></summary>
+        <summary><span class="summary-title">find-type-definition-tgrep-nameonly</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 478 | Lines: 3 | Time: 46ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;ServerCertificateSelector&#39;</p>
         <pre>src/Kubernetes.Controller/Management/KubernetesReverseProxyWebHostBuilderExtensions.cs:35:httpsOptions.ServerCertificateSelector = (connectionContext, domainName) =&gt;
 src/Kubernetes.Controller/Management/KubernetesReverseProxyServiceCollectionExtensions.cs:95:services.AddSingleton&lt;IServerCertificateSelector, ServerCertificateSelector&gt;();
 src/Kubernetes.Controller/Certificates/ServerCertificateSelector.cs:9:internal class ServerCertificateSelector : IServerCertificateSelector</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 155 | Lines: 1 | Time: 10ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 155 | Lines: 1 | Time: 21ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;ServerCertificateSelector&#39;, SymbolFilter.Type)</p>
         <pre>Yarp.Kubernetes.Controller.Certificates.ServerCertificateSelector - C:\repos\yarp\src\Kubernetes.Controller\Certificates\ServerCertificateSelector.cs(9,16)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 155 | Lines: 1 | Time: 8ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 155 | Lines: 1 | Time: 8ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;ServerCertificateSelector&#39;, SymbolFilter.Type)</p>
         <pre>Yarp.Kubernetes.Controller.Certificates.ServerCertificateSelector - C:\repos\yarp\src\Kubernetes.Controller\Certificates\ServerCertificateSelector.cs(9,16)</pre>
       </details>
@@ -418,13 +428,13 @@ Yarp.Kubernetes.Controller.Certificates.ServerCertificateSelector - C:\repos\yar
 Yarp.Kubernetes.Controller.Certificates.ServerCertificateSelector - C:\repos\yarp\src\Kubernetes.Controller\Certificates\ServerCertificateSelector.cs(9,16)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 315 | Lines: 2 | Time: 6ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 315 | Lines: 2 | Time: 5ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ServerCertificateSelector&#39;) without SymbolFilter</p>
         <pre>Yarp.Kubernetes.Controller.Certificates.IServerCertificateSelector - C:\repos\yarp\src\Kubernetes.Controller\Certificates\IServerCertificateSelector.cs(12,18)
 Yarp.Kubernetes.Controller.Certificates.ServerCertificateSelector - C:\repos\yarp\src\Kubernetes.Controller\Certificates\ServerCertificateSelector.cs(9,16)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 315 | Lines: 2 | Time: 6ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-declarations-workspaceSymbol (pass 2)</span><span class="badges"><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 315 | Lines: 2 | Time: 5ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindSourceDeclarationsWithPatternAsync(solution, &#39;ServerCertificateSelector&#39;) without SymbolFilter</p>
         <pre>Yarp.Kubernetes.Controller.Certificates.IServerCertificateSelector - C:\repos\yarp\src\Kubernetes.Controller\Certificates\IServerCertificateSelector.cs(12,18)
 Yarp.Kubernetes.Controller.Certificates.ServerCertificateSelector - C:\repos\yarp\src\Kubernetes.Controller\Certificates\ServerCertificateSelector.cs(9,16)</pre>
@@ -434,14 +444,15 @@ Yarp.Kubernetes.Controller.Certificates.ServerCertificateSelector - C:\repos\yar
       <summary><span class="summary-title">find-derived-types (name: IngressData)</span><span class="summary-meta">4 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>IngressData</dd>
+        <dt>expected count</dt><dd>0</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-derived-types-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 1.1s</span></summary>
+        <summary><span class="summary-title">find-derived-types-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 1.0s</span></summary>
         <p class="algorithm-details">string search for &#39;(class|record|struct) \w+ ... IngressData&#39;</p>
         <pre></pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-derived-types-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 45ms</span></summary>
+        <summary><span class="summary-title">find-derived-types-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 46ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;(class|record|struct) \w+ ... IngressData&#39;</p>
         <pre></pre>
       </details>
@@ -451,7 +462,7 @@ Yarp.Kubernetes.Controller.Certificates.ServerCertificateSelector - C:\repos\yar
         <pre></pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-derived-types (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 12ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-derived-types (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 0 | Lines: 0 | Time: 3ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDerivedClassesAsync(Yarp.Kubernetes.Controller.Caching.IngressData)</p>
         <pre></pre>
       </details>
@@ -460,25 +471,26 @@ Yarp.Kubernetes.Controller.Certificates.ServerCertificateSelector - C:\repos\yar
       <summary><span class="summary-title">find-interface-implementation (name: ICache)</span><span class="summary-meta">4 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>ICache</dd>
+        <dt>expected count</dt><dd>1</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-interface-implementation-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 102 | Lines: 1 | Time: 1.1s</span></summary>
+        <summary><span class="summary-title">find-interface-implementation-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 102 | Lines: 1 | Time: 1.0s</span></summary>
         <p class="algorithm-details">string search for &#39;: ...ICache&#39;</p>
         <pre>C:\repos\yarp\src\Kubernetes.Controller\Caching\IngressCache.cs:21: public class IngressCache : ICache</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-interface-implementation-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 87 | Lines: 1 | Time: 47ms</span></summary>
+        <summary><span class="summary-title">find-interface-implementation-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 87 | Lines: 1 | Time: 49ms</span></summary>
         <p class="algorithm-details">tgrep search for &#39;: ...ICache&#39;</p>
         <pre>src/Kubernetes.Controller/Caching/IngressCache.cs:21:public class IngressCache : ICache</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-implementations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 120 | Lines: 1 | Time: 117ms</span></summary>
-        <p class="algorithm-details">called SymbolFinder.FindImplementationsAsync(Yarp.Kubernetes.Controller.Caching.ICache)</p>
+        <summary><span class="summary-title">roslyn-find-implementations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 120 | Lines: 1 | Time: 98ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindImplementationsAsync for 1 &#39;ICache&#39; declaration(s): Yarp.Kubernetes.Controller.Caching.ICache</p>
         <pre>Yarp.Kubernetes.Controller.Caching.IngressCache - C:\repos\yarp\src\Kubernetes.Controller\Caching\IngressCache.cs(21,14)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-implementations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 120 | Lines: 1 | Time: 4ms</span></summary>
-        <p class="algorithm-details">called SymbolFinder.FindImplementationsAsync(Yarp.Kubernetes.Controller.Caching.ICache)</p>
+        <summary><span class="summary-title">roslyn-find-implementations (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 120 | Lines: 1 | Time: 22ms</span></summary>
+        <p class="algorithm-details">called SymbolFinder.FindImplementationsAsync for 1 &#39;ICache&#39; declaration(s): Yarp.Kubernetes.Controller.Caching.ICache</p>
         <pre>Yarp.Kubernetes.Controller.Caching.IngressCache - C:\repos\yarp\src\Kubernetes.Controller\Caching\IngressCache.cs(21,14)</pre>
       </details>
     </details>
@@ -486,9 +498,10 @@ Yarp.Kubernetes.Controller.Certificates.ServerCertificateSelector - C:\repos\yar
       <summary><span class="summary-title">find-member-definition (name: Configure)</span><span class="summary-meta">4 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>Configure</dd>
+        <dt>expected count</dt><dd>4</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 912 | Lines: 6 | Time: 1.4s</span></summary>
+        <summary><span class="summary-title">find-member-definition-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 912 | Lines: 6 | Time: 1.3s</span></summary>
         <p class="algorithm-details">string search for member declaration &#39;Configure&#39;</p>
         <pre>C:\repos\yarp\test\Application.Tests\SpaFallbackTests.cs:23: public void Configure(YarpAppConfig config)
 C:\repos\yarp\test\Application.Tests\SpaFallbackTests.cs:33: public void Configure(Dictionary&lt;string, string?&gt; config)
@@ -498,7 +511,7 @@ C:\repos\yarp\test\ReverseProxy.Tests\Configuration\ConfigValidatorTests.cs:21: 
 C:\repos\yarp\test\ReverseProxy.Tests\Model\ProxyPipelineInitializerMiddlewareTests.cs:163: private static Endpoint CreateAspNetCoreEndpoint(RouteModel routeConfig, Action&lt;RouteEndpointBuilder&gt; configure = null)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 470 | Lines: 4 | Time: 96ms</span></summary>
+        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 470 | Lines: 4 | Time: 92ms</span></summary>
         <p class="algorithm-details">tgrep search for member declaration &#39;Configure&#39;</p>
         <pre>test/Application.Tests/SpaFallbackTests.cs:23:public void Configure(YarpAppConfig config)
 test/Application.Tests/SpaFallbackTests.cs:33:public void Configure(Dictionary&lt;string, string?&gt; config)
@@ -506,7 +519,7 @@ test/Kubernetes.Tests/TestCluster/TestClusterStartup.cs:23:public void Configure
 test/Kubernetes.Tests/TestCluster/TestClusterHostBuilder.cs:111:public TestClusterHostBuilder Configure(Action&lt;TestClusterOptions&gt; configureOptions)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 757 | Lines: 4 | Time: 30ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 757 | Lines: 4 | Time: 26ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Configure&#39;, SymbolFilter.Member)</p>
         <pre>Yarp.Application.Tests.YarpTestApp.Configure(System.Collections.Generic.Dictionary&lt;string, string?&gt;) - C:\repos\yarp\test\Application.Tests\SpaFallbackTests.cs(33,17)
 Yarp.Application.Tests.YarpTestApp.Configure(Yarp.Application.Configuration.YarpAppConfig) - C:\repos\yarp\test\Application.Tests\SpaFallbackTests.cs(23,17)
@@ -514,7 +527,7 @@ Yarp.Kubernetes.Tests.TestCluster.TestClusterHostBuilder.Configure(System.Action
 Yarp.Kubernetes.Tests.TestCluster.TestClusterStartup.Configure(IApplicationBuilder, Yarp.Kubernetes.Tests.TestCluster.ITestCluster) - C:\repos\yarp\test\Kubernetes.Tests\TestCluster\TestClusterStartup.cs(23,17)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 757 | Lines: 4 | Time: 12ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 757 | Lines: 4 | Time: 11ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Configure&#39;, SymbolFilter.Member)</p>
         <pre>Yarp.Application.Tests.YarpTestApp.Configure(System.Collections.Generic.Dictionary&lt;string, string?&gt;) - C:\repos\yarp\test\Application.Tests\SpaFallbackTests.cs(33,17)
 Yarp.Application.Tests.YarpTestApp.Configure(Yarp.Application.Configuration.YarpAppConfig) - C:\repos\yarp\test\Application.Tests\SpaFallbackTests.cs(23,17)
@@ -526,9 +539,10 @@ Yarp.Kubernetes.Tests.TestCluster.TestClusterStartup.Configure(IApplicationBuild
       <summary><span class="summary-title">find-member-definition (name: Dispose)</span><span class="summary-meta">4 algorithms</span></summary>
       <dl>
         <dt>name</dt><dd>Dispose</dd>
+        <dt>expected count</dt><dd>27</dd>
       </dl>
       <details class="algorithm">
-        <summary><span class="summary-title">find-member-definition-grep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2720 | Lines: 27 | Time: 1.4s</span></summary>
+        <summary><span class="summary-title">find-member-definition-grep</span><span class="badges"><span class="badge badge-grep">grep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2720 | Lines: 27 | Time: 1.3s</span></summary>
         <p class="algorithm-details">string search for member declaration &#39;Dispose&#39;</p>
         <pre id="expand-4-short">C:\repos\yarp\src\Kubernetes.Controller\Client\ResourceInformer.cs:80: protected override void Dispose(bool disposing)
 C:\repos\yarp\src\Kubernetes.Controller\Client\ResourceInformer.cs:455: protected virtual void Dispose(bool disposing)
@@ -570,49 +584,49 @@ C:\repos\yarp\test\Tests.Common\XunitLoggerProvider.cs:44: public void Dispose()
 C:\repos\yarp\test\Tests.Common\XunitLoggerProvider.cs:130: public void Dispose()</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2289 | Lines: 27 | Time: 67ms</span></summary>
+        <summary><span class="summary-title">find-member-definition-tgrep</span><span class="badges"><span class="badge badge-tgrep">tgrep</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 2289 | Lines: 27 | Time: 65ms</span></summary>
         <p class="algorithm-details">tgrep search for member declaration &#39;Dispose&#39;</p>
         <pre id="expand-5-short">test/Tests.Common/XunitLoggerProvider.cs:44:public void Dispose()
 test/Tests.Common/XunitLoggerProvider.cs:130:public void Dispose()
 test/Tests.Common/TestTimeProvider.cs:141:public void Dispose()
 test/Tests.Common/TestLoggerProvider.cs:16:public void Dispose() =&gt; _xunitLoggerProvider.Dispose();
 test/Tests.Common/TestAutoMockBase.cs:91:public virtual void Dispose()
-test/Kubernetes.Tests/Hosting/Fakes/FakeServer.cs:15:public void Dispose()
-test/Kubernetes.Tests/Client/SyncResourceInformer.cs:86:protected virtual void Dispose(bool disposing)
-test/Kubernetes.Tests/Client/SyncResourceInformer.cs:98:public void Dispose()
-test/Kubernetes.Tests/TestCluster/TestClusterHost.cs:38:protected virtual void Dispose(bool disposing)
-test/Kubernetes.Tests/TestCluster/TestClusterHost.cs:51:public void Dispose()
+src/ReverseProxy/Utilities/ValueStringBuilder.cs:150:public void Dispose()
+src/ReverseProxy/Utilities/DelegatingStream.cs:71:protected override void Dispose(bool disposing)
+src/ReverseProxy/Management/ProxyConfigManager.cs:899:public void Dispose()
+src/ReverseProxy/Model/DestinationState.cs:115:public void Dispose()
+src/ReverseProxy/Health/ActiveHealthCheckMonitor.cs:105:public void Dispose()
 <span class="truncated-link" onclick="document.getElementById('expand-5-short').style.display='none'; document.getElementById('expand-5-full').style.display='block';">... truncated (17 more lines) — click to expand</span></pre>
         <pre id="expand-5-full" class="full-result">test/Tests.Common/XunitLoggerProvider.cs:44:public void Dispose()
 test/Tests.Common/XunitLoggerProvider.cs:130:public void Dispose()
 test/Tests.Common/TestTimeProvider.cs:141:public void Dispose()
 test/Tests.Common/TestLoggerProvider.cs:16:public void Dispose() =&gt; _xunitLoggerProvider.Dispose();
 test/Tests.Common/TestAutoMockBase.cs:91:public virtual void Dispose()
-test/Kubernetes.Tests/Hosting/Fakes/FakeServer.cs:15:public void Dispose()
-test/Kubernetes.Tests/Client/SyncResourceInformer.cs:86:protected virtual void Dispose(bool disposing)
-test/Kubernetes.Tests/Client/SyncResourceInformer.cs:98:public void Dispose()
-test/Kubernetes.Tests/TestCluster/TestClusterHost.cs:38:protected virtual void Dispose(bool disposing)
-test/Kubernetes.Tests/TestCluster/TestClusterHost.cs:51:public void Dispose()
-src/ReverseProxy/Health/ActiveHealthCheckMonitor.cs:105:public void Dispose()
 src/ReverseProxy/Utilities/ValueStringBuilder.cs:150:public void Dispose()
 src/ReverseProxy/Utilities/DelegatingStream.cs:71:protected override void Dispose(bool disposing)
+src/ReverseProxy/Management/ProxyConfigManager.cs:899:public void Dispose()
+src/ReverseProxy/Model/DestinationState.cs:115:public void Dispose()
+src/ReverseProxy/Health/ActiveHealthCheckMonitor.cs:105:public void Dispose()
 src/ReverseProxy/Health/EntityActionScheduler.cs:50:public void Dispose()
 src/ReverseProxy/Health/EntityActionScheduler.cs:198:public void Dispose()
 src/ReverseProxy/Health/DestinationHealthUpdater.cs:93:public void Dispose()
-src/ReverseProxy/Model/DestinationState.cs:115:public void Dispose()
 src/ReverseProxy/Configuration/ConfigProvider/ConfigurationConfigProvider.cs:44:public void Dispose()
 src/Kubernetes.Controller/Services/IngressController.cs:99:protected override void Dispose(bool disposing)
-src/ReverseProxy/Management/ProxyConfigManager.cs:899:public void Dispose()
 src/Kubernetes.Controller/Queues/WorkQueue.cs:30:public void Dispose()
 src/Kubernetes.Controller/Queues/WorkQueue.cs:162:protected virtual void Dispose(bool disposing)
-src/Kubernetes.Controller/Hosting/BackgroundHostedService.cs:160:protected virtual void Dispose(bool disposing)
-src/Kubernetes.Controller/Hosting/BackgroundHostedService.cs:189:public void Dispose()
 src/Kubernetes.Controller/Client/ResourceInformer.cs:80:protected override void Dispose(bool disposing)
 src/Kubernetes.Controller/Client/ResourceInformer.cs:455:protected virtual void Dispose(bool disposing)
-src/Kubernetes.Controller/Client/ResourceInformer.cs:467:public void Dispose()</pre>
+src/Kubernetes.Controller/Client/ResourceInformer.cs:467:public void Dispose()
+test/Kubernetes.Tests/Client/SyncResourceInformer.cs:86:protected virtual void Dispose(bool disposing)
+test/Kubernetes.Tests/Client/SyncResourceInformer.cs:98:public void Dispose()
+src/Kubernetes.Controller/Hosting/BackgroundHostedService.cs:160:protected virtual void Dispose(bool disposing)
+src/Kubernetes.Controller/Hosting/BackgroundHostedService.cs:189:public void Dispose()
+test/Kubernetes.Tests/Hosting/Fakes/FakeServer.cs:15:public void Dispose()
+test/Kubernetes.Tests/TestCluster/TestClusterHost.cs:38:protected virtual void Dispose(bool disposing)
+test/Kubernetes.Tests/TestCluster/TestClusterHost.cs:51:public void Dispose()</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3887 | Lines: 27 | Time: 38ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 1)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3887 | Lines: 27 | Time: 24ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Dispose&#39;, SymbolFilter.Member)</p>
         <pre id="expand-6-short">Microsoft.Extensions.Logging.Testing.XunitLogger.NullScope.Dispose() - C:\repos\yarp\test\Tests.Common\XunitLoggerProvider.cs(130,21)
 Microsoft.Extensions.Logging.Testing.XunitLoggerProvider.Dispose() - C:\repos\yarp\test\Tests.Common\XunitLoggerProvider.cs(44,17)
@@ -654,7 +668,7 @@ Yarp.Tests.Common.TestAutoMockBase.Dispose() - C:\repos\yarp\test\Tests.Common\T
 Yarp.Tests.Common.TestTimeProvider.TestTimer.Dispose() - C:\repos\yarp\test\Tests.Common\TestTimeProvider.cs(141,21)</pre>
       </details>
       <details class="algorithm">
-        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3887 | Lines: 27 | Time: 12ms</span></summary>
+        <summary><span class="summary-title">roslyn-find-member-declarations (pass 2)</span><span class="badges"><span class="badge badge-ideal-lsp">ideal LSP</span><span class="badge badge-current-lsp">current LSP</span></span><span class="summary-meta"><span class="status status-succeeded">Succeeded</span> | Characters: 3887 | Lines: 27 | Time: 16ms</span></summary>
         <p class="algorithm-details">called SymbolFinder.FindDeclarationsAsync(project, &#39;Dispose&#39;, SymbolFilter.Member)</p>
         <pre id="expand-7-short">Microsoft.Extensions.Logging.Testing.XunitLogger.NullScope.Dispose() - C:\repos\yarp\test\Tests.Common\XunitLoggerProvider.cs(130,21)
 Microsoft.Extensions.Logging.Testing.XunitLoggerProvider.Dispose() - C:\repos\yarp\test\Tests.Common\XunitLoggerProvider.cs(44,17)

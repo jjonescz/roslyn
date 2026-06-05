@@ -30,7 +30,7 @@
     {
       "type": "find-interface-implementation",
       "name": "IContainer",
-      "expectedCount": 0
+      "expectedCount": 63
     },
     {
       "type": "find-member-definition",
