@@ -918,6 +918,28 @@ class OtherType
                 Diagnostic(ErrorCode.ERR_BadEventUsage, "f").WithArguments("DeclaringType.f", "DeclaringType"));
         }
 
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/84014")]
+        public void NullCoalescingAssignment_MetadataEvent()
+        {
+            var libSource = """
+                namespace Lib;
+
+                public class T
+                {
+                    public event System.Action OnEventAction;
+                }
+                """;
+            var libRef = CreateCompilation(libSource, options: TestOptions.DebugDll).EmitToImageReference();
+
+            var source = """
+                new Lib.T().OnEventAction ??= null;
+                """;
+            CreateCompilation(source, references: [libRef], options: TestOptions.DebugExe).VerifyEmitDiagnostics(
+                // (1,13): error CS0079: The event 'Lib.T.OnEventAction' can only appear on the left hand side of += or -=
+                // new Lib.T().OnEventAction ??= null;
+                Diagnostic(ErrorCode.ERR_BadEventUsageNoField, "OnEventAction").WithArguments("Lib.T.OnEventAction").WithLocation(1, 13));
+        }
+
         [Fact]
         public void Overriding()
         {

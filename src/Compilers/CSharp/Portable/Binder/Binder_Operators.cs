@@ -5858,6 +5858,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                 diagnostics = BindingDiagnosticBag.Discarded;
             }
 
+            if (leftOperand is BoundEventAccess leftEventAccess && !CheckEventValueKind(leftEventAccess, BindValueKind.Assignable, diagnostics))
+            {
+                leftOperand = BindToTypeForErrorRecovery(leftOperand);
+                rightOperand = BindToTypeForErrorRecovery(rightOperand);
+                return new BoundNullCoalescingAssignmentOperator(node, leftOperand, rightOperand, CreateErrorType(), hasErrors: true);
+            }
+
             // Given a ??= b, the type of a is A, the type of B is b, and if A is a nullable value type, the underlying
             // non-nullable value type of A is A0.
             TypeSymbol leftType = leftOperand.Type;
