@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.VisualBasic.Testing;
@@ -3148,6 +3149,24 @@ namespace Microsoft.CodeAnalysis.PublicApiAnalyzers.UnitTests
             """;
 
         [Fact]
+        public Task UnsafeEvolution_Method_CallerUnsafe()
+            => VerifyRequiresUnsafeAdditionalFileFixAsync(
+                source: $$"""
+                    {{EnabledModifierCSharp}} class {|{{AddNewApiId}}:{|{{AddNewApiId}}:C|}|}
+                    {
+                        {{EnabledModifierCSharp}} unsafe void {|{{AddNewApiId}}:M|}() { }
+                    }
+                    """,
+                shippedApiText: "",
+                oldUnshippedApiText: "",
+                newUnshippedApiText: """
+                    C
+                    C.C() -> void
+                    unsafe C.M() -> void
+                    """,
+                updatedMemorySafetyRules: true);
+
+        [Fact]
         public Task TestRequiresUnsafeApiOnMethodAsync()
             => VerifyRequiresUnsafeAdditionalFileFixAsync($$"""
                 using System.Runtime.CompilerServices;
@@ -3231,7 +3250,13 @@ namespace Microsoft.CodeAnalysis.PublicApiAnalyzers.UnitTests
                 [RequiresUnsafe]C.MyEvent -> System.EventHandler
                 """);
 
-        private async Task VerifyRequiresUnsafeAdditionalFileFixAsync(string source, string? shippedApiText, string? oldUnshippedApiText, string newUnshippedApiText)
+        private async Task VerifyRequiresUnsafeAdditionalFileFixAsync(
+            string source,
+            string? shippedApiText,
+            string? oldUnshippedApiText,
+            string newUnshippedApiText,
+            // TODO: remove the default value
+            bool updatedMemorySafetyRules = true)
         {
             // The RequiresUnsafeAttribute is defined as internal in test source, so we need to provide
             // internal API files and include the attribute type entries to satisfy the internal API analyzer.
@@ -3244,7 +3269,23 @@ namespace Microsoft.CodeAnalysis.PublicApiAnalyzers.UnitTests
             var test = new CSharpCodeFixTest<DeclarePublicApiAnalyzer, DeclarePublicApiFix, DefaultVerifier>()
             {
                 ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
-                CompilerDiagnostics = CompilerDiagnostics.None,
+                SolutionTransforms =
+                {
+                    (solution, projectId) =>
+                    {
+                        var parseOptions = (CSharpParseOptions)solution.GetProject(projectId)!.ParseOptions!;
+
+                        if (updatedMemorySafetyRules)
+                        {
+                            parseOptions = parseOptions.WithFeatures([new KeyValuePair<string, string>("updated-memory-safety-rules", "")]);
+                        }
+
+                        parseOptions = parseOptions.WithLanguageVersion(LanguageVersion.Preview);
+
+                        solution = solution.WithProjectParseOptions(projectId, parseOptions);
+                        return solution;
+                    },
+                },
             };
 
             test.TestState.Sources.Add(source);
