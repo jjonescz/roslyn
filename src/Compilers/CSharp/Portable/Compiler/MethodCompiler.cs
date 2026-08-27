@@ -134,7 +134,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             MethodSymbol? entryPoint = null;
-            if (filterOpt is null)
+            if (filterOpt is null || moduleBeingBuiltOpt?.MethodBodyReuse is object)
             {
                 entryPoint = GetEntryPoint(compilation, moduleBeingBuiltOpt, hasDeclarationErrors, emitMethodBodies, diagnostics, cancellationToken);
             }
@@ -210,7 +210,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             diagnostics.AddRange(compilation.AdditionalCodegenWarnings);
 
             // we can get unused field warnings only if compiling whole compilation.
-            if (filterOpt == null)
+            if (filterOpt == null || moduleBeingBuiltOpt?.MethodBodyReuse is object)
             {
                 WarnUnusedFields(compilation, diagnostics, cancellationToken);
 
@@ -513,7 +513,17 @@ namespace Microsoft.CodeAnalysis.CSharp
                 //When a filter is supplied, limit the compilation of members passing the filter.
                 if (!PassesFilter(_filterOpt, member))
                 {
-                    continue;
+                    if (_moduleBeingBuiltOpt?.MethodBodyReuse is not { } methodBodyReuse ||
+                        member is not MethodSymbol method)
+                    {
+                        continue;
+                    }
+
+                    if (method.PartialImplementationPart is null &&
+                        methodBodyReuse.TryReuseMethodBody(method, _moduleBeingBuiltOpt, _diagnostics.DiagnosticBag))
+                    {
+                        continue;
+                    }
                 }
 
                 switch (member.Kind)

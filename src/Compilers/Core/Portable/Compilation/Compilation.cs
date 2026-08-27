@@ -2959,7 +2959,8 @@ namespace Microsoft.CodeAnalysis
             IEnumerable<EmbeddedText>? embeddedTexts,
             RebuildData? rebuildData,
             CompilationTestData? testData,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            IMethodBodyReuse? methodBodyReuse = null)
         {
             options = options ?? EmitOptions.Default.WithIncludePrivateMembers(metadataPEStream == null);
 
@@ -2985,14 +2986,24 @@ namespace Microsoft.CodeAnalysis
 
                 if (moduleBeingBuilt != null)
                 {
+                    moduleBeingBuilt.EmittingPdb = pdbStream != null || embedPdb;
+                    moduleBeingBuilt.MethodBodyReuse = methodBodyReuse;
+
                     try
                     {
-                        success = CompileMethods(
-                            moduleBeingBuilt,
-                            emittingPdb: pdbStream != null || embedPdb,
-                            diagnostics: diagnostics,
-                            filterOpt: null,
-                            cancellationToken: cancellationToken);
+                        try
+                        {
+                            success = CompileMethods(
+                                moduleBeingBuilt,
+                                emittingPdb: moduleBeingBuilt.EmittingPdb,
+                                diagnostics: diagnostics,
+                                filterOpt: methodBodyReuse is null ? null : methodBodyReuse.ShouldCompile,
+                                cancellationToken: cancellationToken);
+                        }
+                        finally
+                        {
+                            moduleBeingBuilt.MethodBodyReuse = null;
+                        }
 
                         if (!options.EmitMetadataOnly)
                         {

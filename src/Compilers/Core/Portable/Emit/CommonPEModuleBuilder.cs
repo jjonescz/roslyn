@@ -41,6 +41,9 @@ namespace Microsoft.CodeAnalysis.Emit
         private readonly Lazy<StringTokenMap> _stringsInILMap;
         private readonly ItemTokenMap<Cci.DebugSourceDocument> _sourceDocumentsInILMap = new();
 
+        internal IMethodBodyReuse? MethodBodyReuse { get; set; }
+        internal bool EmittingPdb { get; set; }
+
         private ImmutableArray<Cci.AssemblyReferenceAlias> _lazyAssemblyReferenceAliases;
         private ImmutableArray<Cci.ManagedResource> _lazyManagedResources;
         private IEnumerable<EmbeddedText> _embeddedTexts = SpecializedCollections.EmptyEnumerable<EmbeddedText>();

@@ -3654,7 +3654,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 excludeDiagnostics = PooledHashSet<int>.GetInstance();
                 excludeDiagnostics.Add((int)ErrorCode.ERR_ConcreteMissingBody);
             }
-            bool hasDeclarationErrors = !FilterAndAppendDiagnostics(diagnostics, GetDiagnostics(CompilationStage.Declare, true, symbolFilter: filterOpt, cancellationToken), excludeDiagnostics, cancellationToken);
+            var declarationFilter = moduleBuilder.MethodBodyReuse is null ? filterOpt : null;
+            bool hasDeclarationErrors = !FilterAndAppendDiagnostics(diagnostics, GetDiagnostics(CompilationStage.Declare, true, symbolFilter: declarationFilter, cancellationToken), excludeDiagnostics, cancellationToken);
             excludeDiagnostics?.Free();
 
             // TODO (tomat): NoPIA:
@@ -3730,8 +3731,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                     cancellationToken: cancellationToken);
 
                 // We don't generate the module initializer for ENC scenarios, as the assembly is already loaded so edits to the module initializer would have no impact.
-                Debug.Assert(filterOpt == null || moduleBeingBuilt.IsEncDelta);
-                if (!hasDeclarationErrors && !CommonCompiler.HasUnsuppressableErrors(methodBodyDiagnosticBag.DiagnosticBag) && filterOpt == null)
+                Debug.Assert(filterOpt == null || moduleBeingBuilt.IsEncDelta || moduleBeingBuilt.MethodBodyReuse is object);
+                if (!hasDeclarationErrors &&
+                    !CommonCompiler.HasUnsuppressableErrors(methodBodyDiagnosticBag.DiagnosticBag) &&
+                    (filterOpt == null || moduleBeingBuilt.MethodBodyReuse is object))
                 {
                     GenerateModuleInitializer(moduleBeingBuilt, methodBodyDiagnosticBag.DiagnosticBag);
                 }
