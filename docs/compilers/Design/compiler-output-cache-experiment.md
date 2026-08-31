@@ -193,6 +193,27 @@ The event carries these properties:
 | `storems` | milliseconds spent storing the result; omitted when no store was attempted (a hit, or a miss whose compilation failed) |
 | `compilems` | milliseconds spent compiling and emitting on a miss; omitted on a hit |
 
+Method-body reuse uses a separate `roslyn/incrementalcompilation` event when a server
+request actually runs a reuse-enabled emit. Requests with no completed reuse statistics do
+not produce this event. The current prototype does not yet retain compilation baselines in the
+warm server, so production requests do not construct the reuse object yet; the emit result
+receiver and server adapter are the explicit integration seam for that future owner. Its fixed
+properties identify `strategy=methodbodyreuse`,
+`cachekind=memory`, and emit `status`, followed by these counts:
+
+- `totalbodycount`: all source and synthesized bodies installed in the emitted module.
+- `compiledbodycount`: installed bodies produced by normal compilation.
+- `reuseattemptcount`: ordinary source methods selected for a reuse attempt.
+- `reusedbodycount`: attempted bodies copied from the in-memory baseline.
+- `fallbackbodycount`: unsuccessful attempts subsequently compiled normally.
+
+For a completed emit, total bodies equal compiled plus reused bodies, and attempts equal reused
+plus fallback bodies. Nonzero fallback counts are also grouped by a fixed compiler-defined
+global or per-body reason taxonomy. The event and its corresponding single aggregate server log
+line contain only bounded category names and numeric counts; they never contain symbol names,
+paths, source hashes, diagnostics, or diagnostic text. Percentages are intentionally left to
+telemetry queries.
+
 ## Cache management
 
 The compiler server binary (`VBCSCompiler`) exposes commands for inspecting and cleaning up the on-disk cache. These are intended for local use and CI integration while the experiment is being evaluated.

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -595,6 +596,53 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
         }
 
         [Fact]
+        public void IncrementalCompilationTelemetry_SerializesBoundedStatisticsAndLogsSummary()
+        {
+            var logMessages = new List<string>();
+            var telemetry = new IncrementalCompilationTelemetry(new CollectingLogger(logMessages));
+            Assert.False(telemetry.HasData);
+
+            telemetry.RecordMethodBodyReuse(CreateMethodBodyReuseStatistics());
+
+            Assert.True(telemetry.HasData);
+            var telemetryEvent = telemetry.ToTelemetryEvent();
+            Assert.Equal(IncrementalCompilationTelemetry.EventName, telemetryEvent.EventName);
+            Assert.Equal("methodbodyreuse", telemetryEvent.Properties["strategy"]);
+            Assert.Equal("memory", telemetryEvent.Properties["cachekind"]);
+            Assert.Equal("succeeded", telemetryEvent.Properties["status"]);
+            Assert.Equal("3", telemetryEvent.Properties["totalbodycount"]);
+            Assert.Equal("2", telemetryEvent.Properties["compiledbodycount"]);
+            Assert.Equal("2", telemetryEvent.Properties["reuseattemptcount"]);
+            Assert.Equal("1", telemetryEvent.Properties["reusedbodycount"]);
+            Assert.Equal("1", telemetryEvent.Properties["fallbackbodycount"]);
+            Assert.Equal("1", telemetryEvent.Properties["bodyreasoncount.exceptionhandling"]);
+            Assert.DoesNotContain("globalreasoncount.fields", telemetryEvent.Properties.Keys);
+
+            telemetry.ToTelemetryEvent();
+            var message = Assert.Single(logMessages);
+            Assert.Contains("strategy=methodbodyreuse", message);
+            Assert.Contains("totalbodycount=3", message);
+            Assert.Contains("bodyreasoncount.exceptionhandling=1", message);
+            Assert.DoesNotContain(".cs", message);
+        }
+
+        [Fact]
+        public void CSharpCompilerServer_IncrementalCompilationTelemetry_RequiresRealStatistics()
+        {
+            var logMessages = new List<string>();
+            var logger = new CollectingLogger(logMessages);
+            var compiler = CreateCSharpCompilerServer(logger);
+
+            Assert.Empty(compiler.GetTelemetryEvents());
+
+            compiler.RecordMethodBodyReuseStatistics(CreateMethodBodyReuseStatistics());
+
+            var telemetryEvent = Assert.Single(compiler.GetTelemetryEvents());
+            Assert.Equal(IncrementalCompilationTelemetry.EventName, telemetryEvent.EventName);
+            Assert.Single(logMessages);
+        }
+
+        [Fact]
         public void LogCacheMiss_LogsNothing_WhenNoPriorEntries()
         {
             var cacheDir = Temp.CreateDirectory().Path;
@@ -946,6 +994,33 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
                 ParseArguments([$"/features:{CompilerOptionParseUtilities.UseGlobalCacheFeatureFlag}={cachePath}", "test.cs"]),
                 EmptyCompilerServerLogger.Instance)
                 ?? throw new InvalidOperationException("Failed to create cache");
+        }
+
+        private CSharpCompilerServer CreateCSharpCompilerServer(ICompilerServerLogger logger)
+            => new(
+                CompilerServerHost.SharedAssemblyReferenceProvider,
+                responseFile: null,
+                args: ["/nologo"],
+                new BuildPaths(
+                    clientDir: AppContext.BaseDirectory,
+                    workingDir: Directory.GetCurrentDirectory(),
+                    sdkDir: RuntimeEnvironment.GetRuntimeDirectory(),
+                    tempDir: Path.GetTempPath()),
+                libDirectory: null,
+                AnalyzerAssemblyLoader.CreateNonLockingLoader(Temp.CreateDirectory().Path),
+                new GeneratorDriverCache(),
+                logger);
+
+        private static MethodBodyReuseStatistics CreateMethodBodyReuseStatistics()
+        {
+            var collector = new MethodBodyReuseStatisticsCollector();
+            collector.RecordCompiledBody();
+            collector.RecordCompiledBody();
+            collector.RecordReuseAttempt();
+            collector.RecordReusedBody();
+            collector.RecordReuseAttempt();
+            collector.RecordFallback(MethodBodyReuseBodyFallbackReason.ExceptionHandling);
+            return collector.Complete(succeeded: true);
         }
 
         private static CommandLineArguments ParseArguments(string[] args)

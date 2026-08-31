@@ -2960,7 +2960,8 @@ namespace Microsoft.CodeAnalysis
             RebuildData? rebuildData,
             CompilationTestData? testData,
             CancellationToken cancellationToken,
-            IMethodBodyReuse? methodBodyReuse = null)
+            IMethodBodyReuse? methodBodyReuse = null,
+            Action<MethodBodyReuseStatistics>? methodBodyReuseStatisticsReceiver = null)
         {
             options = options ?? EmitOptions.Default.WithIncludePrivateMembers(metadataPEStream == null);
 
@@ -2987,7 +2988,8 @@ namespace Microsoft.CodeAnalysis
                 if (moduleBeingBuilt != null)
                 {
                     moduleBeingBuilt.EmittingPdb = pdbStream != null || embedPdb;
-                    moduleBeingBuilt.MethodBodyReuse = methodBodyReuse;
+                    var methodBodyReuseSession = methodBodyReuse?.CreateSession(moduleBeingBuilt);
+                    moduleBeingBuilt.MethodBodyReuse = methodBodyReuseSession;
 
                     try
                     {
@@ -2997,7 +2999,7 @@ namespace Microsoft.CodeAnalysis
                                 moduleBeingBuilt,
                                 emittingPdb: moduleBeingBuilt.EmittingPdb,
                                 diagnostics: diagnostics,
-                                filterOpt: methodBodyReuse is null ? null : methodBodyReuse.ShouldCompile,
+                                filterOpt: methodBodyReuseSession is null ? null : methodBodyReuseSession.ShouldCompile,
                                 cancellationToken: cancellationToken);
                         }
                         finally
@@ -3056,6 +3058,12 @@ namespace Microsoft.CodeAnalysis
                             emitOptions: options,
                             privateKeyOpt: privateKeyOpt,
                             cancellationToken: cancellationToken);
+                    }
+
+                    moduleBeingBuilt.MethodBodyReuseStatistics = methodBodyReuseSession?.Complete(success);
+                    if (moduleBeingBuilt.MethodBodyReuseStatistics is { } methodBodyReuseStatistics)
+                    {
+                        methodBodyReuseStatisticsReceiver?.Invoke(methodBodyReuseStatistics);
                     }
                 }
 

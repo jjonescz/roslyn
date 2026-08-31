@@ -8,10 +8,19 @@ namespace Microsoft.CodeAnalysis.Emit;
 
 internal interface IMethodBodyReuse
 {
+    IMethodBodyReuseSession CreateSession(CommonPEModuleBuilder moduleBuilder);
+}
+
+internal interface IMethodBodyReuseSession
+{
     bool ShouldCompile(ISymbolInternal symbol);
 
     bool TryReuseMethodBody(
         IMethodSymbolInternal method,
         CommonPEModuleBuilder moduleBuilder,
         DiagnosticBag diagnostics);
+
+    void RecordEmittedBody(bool reused);
+
+    MethodBodyReuseStatistics Complete(bool succeeded);
 }

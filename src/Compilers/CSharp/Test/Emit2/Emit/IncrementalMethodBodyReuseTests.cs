@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -68,12 +69,14 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
             (PEModuleBuilder)baseline.TestData.Module!,
             baseline.Diagnostics,
             method => method.DeclaringSyntaxReferences.Any(reference => reference.SyntaxTree.FilePath == cleanPath));
-        var incremental = Emit(compilation1, reuse);
+        MethodBodyReuseStatistics? reportedStatistics = null;
+        var incremental = Emit(compilation1, reuse, statisticsReceiver: statistics => reportedStatistics = statistics);
 
         var cleanCompilation = CreateCompilation([dirtyTree1, cleanTree], assemblyName: "Test", options: options);
         var clean = Emit(cleanCompilation);
 
-        Assert.Equal(1, reuse.ReusedMethodCount);
+        AssertStatistics(incremental.Statistics, total: 4, compiled: 3, attempts: 1, reused: 1, fallbacks: 0);
+        Assert.Same(incremental.Statistics, reportedStatistics);
         Assert.Empty(baseline.Diagnostics);
         Assert.Empty(incremental.Diagnostics);
         Assert.Empty(clean.Diagnostics);
@@ -124,7 +127,9 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
         var clean1 = Emit(cleanCompilation1);
         var clean2 = Emit(cleanCompilation2);
 
-        Assert.Equal(2, reuse.ReusedMethodCount);
+        AssertStatistics(emitTask1.Result.Statistics, total: 4, compiled: 3, attempts: 1, reused: 1, fallbacks: 0);
+        AssertStatistics(emitTask2.Result.Statistics, total: 4, compiled: 3, attempts: 1, reused: 1, fallbacks: 0);
+        Assert.NotSame(emitTask1.Result.Statistics, emitTask2.Result.Statistics);
         AssertBytesEqual(clean1.Pdb, emitTask1.Result.Pdb);
         AssertBytesEqual(clean1.Pe, emitTask1.Result.Pe);
         AssertBytesEqual(clean2.Pdb, emitTask2.Result.Pdb);
@@ -174,7 +179,8 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
         var cleanCompilation = CreateCompilation([dirtyTree1, cleanTree], assemblyName: "Test", options: options);
         var clean = Emit(cleanCompilation);
 
-        Assert.Equal(0, reuse.ReusedMethodCount);
+        AssertStatistics(incremental.Statistics, total: 4, compiled: 4, attempts: 1, reused: 0, fallbacks: 1);
+        Assert.Equal(1, incremental.Statistics.GetBodyFallbackReasonCount(MethodBodyReuseBodyFallbackReason.ExceptionHandling));
         Assert.Empty(baseline.Diagnostics);
         Assert.Empty(incremental.Diagnostics);
         Assert.Empty(clean.Diagnostics);
@@ -218,7 +224,8 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
         var cleanCompilation = CreateCompilation([dirtyTree1, cleanTree], assemblyName: "Test", options: options);
         var clean = Emit(cleanCompilation);
 
-        Assert.Equal(0, reuse.ReusedMethodCount);
+        Assert.Equal(2, incremental.Statistics.FallbackBodyCount);
+        Assert.Equal(2, incremental.Statistics.GetGlobalFallbackReasonCount(MethodBodyReuseGlobalFallbackReason.PreviousDiagnostics));
         Assert.Contains(clean.Diagnostics, diagnostic => diagnostic.Code == (int)ErrorCode.WRN_UnassignedInternalField);
         AssertEx.Equal(
             clean.Diagnostics.Select(diagnostic => diagnostic.ToString()),
@@ -264,7 +271,7 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
         var cleanCompilation = CreateCompilation([dirtyTree1, cleanTree], assemblyName: "Test", options: options);
         var clean = Emit(cleanCompilation);
 
-        Assert.Equal(0, reuse.ReusedMethodCount);
+        Assert.Equal(1, incremental.Statistics.GetGlobalFallbackReasonCount(MethodBodyReuseGlobalFallbackReason.Fields));
         Assert.Empty(baseline.Diagnostics);
         Assert.Empty(incremental.Diagnostics);
         Assert.Empty(clean.Diagnostics);
@@ -320,7 +327,7 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
         var cleanCompilation = CreateCompilation([overloadsTree1, callsTree], assemblyName: "Test", options: options);
         var clean = Emit(cleanCompilation);
 
-        Assert.Equal(0, reuse.ReusedMethodCount);
+        Assert.Equal(1, incremental.Statistics.GetGlobalFallbackReasonCount(MethodBodyReuseGlobalFallbackReason.Declarations));
         Assert.Empty(incremental.Diagnostics);
         Assert.Empty(clean.Diagnostics);
         AssertBytesEqual(clean.Pdb, incremental.Pdb);
@@ -378,7 +385,7 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
         var cleanCompilation = CreateCompilation([dirtyTree1, cleanTree, instrumentationTree], assemblyName: "Test", options: options);
         var clean = Emit(cleanCompilation, emitOptions: instrumentedEmitOptions);
 
-        Assert.Equal(0, reuse.ReusedMethodCount);
+        Assert.Equal(1, incremental.Statistics.GetGlobalFallbackReasonCount(MethodBodyReuseGlobalFallbackReason.Instrumentation));
         Assert.Empty(incremental.Diagnostics);
         Assert.Empty(clean.Diagnostics);
         AssertBytesEqual(clean.Pdb, incremental.Pdb);
@@ -422,7 +429,7 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
         var cleanCompilation = CreateCompilation([tree1], assemblyName: "Test", options: options);
         var clean = Emit(cleanCompilation);
 
-        Assert.Equal(0, reuse.ReusedMethodCount);
+        Assert.Equal(1, incremental.Statistics.GetGlobalFallbackReasonCount(MethodBodyReuseGlobalFallbackReason.ParseOptions));
         Assert.Empty(incremental.Diagnostics);
         Assert.Empty(clean.Diagnostics);
         AssertBytesEqual(clean.Pdb, incremental.Pdb);
@@ -454,11 +461,40 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
 
         Assert.False(baseline.TestData.Module!.EmittingPdb);
         Assert.True(incremental.TestData.Module!.EmittingPdb);
-        Assert.Equal(0, reuse.ReusedMethodCount);
+        Assert.Equal(1, incremental.Statistics.GetGlobalFallbackReasonCount(MethodBodyReuseGlobalFallbackReason.DebugInformation));
         Assert.Empty(incremental.Diagnostics);
         Assert.Empty(clean.Diagnostics);
         AssertBytesEqual(clean.Pdb, incremental.Pdb);
         AssertBytesEqual(clean.Pe, incremental.Pe);
+    }
+
+    [Fact]
+    public void FailedEmit_ReportsFailedStatus()
+    {
+        const string dirtyPath = "Dirty.cs";
+        const string cleanPath = "Clean.cs";
+
+        var dirtyTree0 = Parse("public static class Dirty { public static int Value() => 1; }", dirtyPath);
+        var dirtyTree1 = Parse("public static class Dirty { public static int Value() => Missing(); }", dirtyPath);
+        var cleanTree = Parse("public static class Clean { public static int Value() => Dirty.Value(); }", cleanPath);
+        var options = TestOptions.ReleaseDll
+            .WithConcurrentBuild(true)
+            .WithDeterministic(true);
+        var compilation0 = CreateCompilation([dirtyTree0, cleanTree], assemblyName: "Test", options: options);
+        var baseline = Emit(compilation0);
+        var compilation1 = compilation0.ReplaceSyntaxTree(dirtyTree0, dirtyTree1);
+        var reuse = new CSharpMethodBodyReuse(
+            compilation0,
+            (PEModuleBuilder)baseline.TestData.Module!,
+            baseline.Diagnostics,
+            method => method.DeclaringSyntaxReferences.Any(reference => reference.SyntaxTree.FilePath == cleanPath));
+
+        var incremental = Emit(compilation1, reuse, expectedSuccess: false);
+
+        Assert.Equal(MethodBodyReuseStatus.Failed, incremental.Statistics.Status);
+        Assert.Equal(1, incremental.Statistics.ReuseAttemptCount);
+        Assert.Equal(1, incremental.Statistics.ReusedBodyCount);
+        Assert.Equal(0, incremental.Statistics.FallbackBodyCount);
     }
 
     private static SyntaxTree Parse(string source, string path, CSharpParseOptions? options = null)
@@ -495,11 +531,31 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
         Assert.True(mismatchCount == 0, $"{mismatchCount} mismatches: {mismatches}");
     }
 
+    private static void AssertStatistics(
+        MethodBodyReuseStatistics statistics,
+        int total,
+        int compiled,
+        int attempts,
+        int reused,
+        int fallbacks)
+    {
+        Assert.Equal(MethodBodyReuseStatus.Succeeded, statistics.Status);
+        Assert.Equal(total, statistics.TotalBodyCount);
+        Assert.Equal(compiled, statistics.CompiledBodyCount);
+        Assert.Equal(attempts, statistics.ReuseAttemptCount);
+        Assert.Equal(reused, statistics.ReusedBodyCount);
+        Assert.Equal(fallbacks, statistics.FallbackBodyCount);
+        Assert.Equal(total, compiled + reused);
+        Assert.Equal(attempts, reused + fallbacks);
+    }
+
     private static EmitOutput Emit(
         CSharpCompilation compilation,
         IMethodBodyReuse? methodBodyReuse = null,
         EmitOptions? emitOptions = null,
-        bool emitPdb = true)
+        bool emitPdb = true,
+        bool expectedSuccess = true,
+        Action<MethodBodyReuseStatistics>? statisticsReceiver = null)
     {
         using var peStream = new MemoryStream();
         using var pdbStream = emitPdb ? new MemoryStream() : null;
@@ -518,9 +574,10 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
             rebuildData: null,
             testData,
             cancellationToken: CancellationToken.None,
-            methodBodyReuse);
+            methodBodyReuse,
+            statisticsReceiver);
 
-        Assert.True(result.Success, string.Join("\r\n", result.Diagnostics));
+        Assert.Equal(expectedSuccess, result.Success);
         return new(
             ImmutableArray.CreateRange(peStream.ToArray()),
             pdbStream is null ? ImmutableArray<byte>.Empty : ImmutableArray.CreateRange(pdbStream.ToArray()),
@@ -532,5 +589,9 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
         ImmutableArray<byte> Pe,
         ImmutableArray<byte> Pdb,
         CompilationTestData TestData,
-        ImmutableArray<Diagnostic> Diagnostics);
+        ImmutableArray<Diagnostic> Diagnostics)
+    {
+        internal MethodBodyReuseStatistics Statistics
+            => TestData.Module!.MethodBodyReuseStatistics!;
+    }
 }

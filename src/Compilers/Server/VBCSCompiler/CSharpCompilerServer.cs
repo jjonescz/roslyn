@@ -10,6 +10,7 @@ using System.Threading;
 using Microsoft.CodeAnalysis.CommandLine;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Emit;
 
 namespace Microsoft.CodeAnalysis.CompilerServer
 {
@@ -18,6 +19,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         private readonly Func<string, MetadataReferenceProperties, PortableExecutableReference> _metadataProvider;
         private readonly CompilationCache? _cache;
         private readonly CompilationCacheTelemetry _cacheTelemetry = new CompilationCacheTelemetry();
+        private readonly IncrementalCompilationTelemetry _incrementalCompilationTelemetry;
         private readonly ICompilerServerLogger _logger;
 
         internal CSharpCompilerServer(Func<string, MetadataReferenceProperties, PortableExecutableReference> metadataProvider, string[] args, BuildPaths buildPaths, string? libDirectory, IAnalyzerAssemblyLoader analyzerLoader, GeneratorDriverCache driverCache, ICompilerServerLogger? logger = null)
@@ -31,6 +33,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             _metadataProvider = metadataProvider;
             _logger = logger ?? EmptyCompilerServerLogger.Instance;
             _cache = CompilationCache.TryCreate(Arguments, _logger);
+            _incrementalCompilationTelemetry = new IncrementalCompilationTelemetry(_logger);
         }
 
         internal override Func<string, MetadataReferenceProperties, PortableExecutableReference> GetMetadataProvider()
@@ -75,9 +78,25 @@ namespace Microsoft.CodeAnalysis.CompilerServer
 
         public IReadOnlyList<BuildTelemetryEvent> GetTelemetryEvents()
         {
-            return _cacheTelemetry.HasData
-                ? [_cacheTelemetry.ToTelemetryEvent(LanguageNames.CSharp)]
-                : [];
+            var events = new List<BuildTelemetryEvent>(2);
+            if (_cacheTelemetry.HasData)
+            {
+                events.Add(_cacheTelemetry.ToTelemetryEvent(LanguageNames.CSharp));
+            }
+
+            if (_incrementalCompilationTelemetry.HasData)
+            {
+                events.Add(_incrementalCompilationTelemetry.ToTelemetryEvent());
+            }
+
+            return events;
         }
+
+        /// <summary>
+        /// Records the result produced by the request's method-body reuse emit. The warm compilation
+        /// owner calls this seam when it supplies method-body reuse state to emit.
+        /// </summary>
+        internal void RecordMethodBodyReuseStatistics(MethodBodyReuseStatistics statistics)
+            => _incrementalCompilationTelemetry.RecordMethodBodyReuse(statistics);
     }
 }
