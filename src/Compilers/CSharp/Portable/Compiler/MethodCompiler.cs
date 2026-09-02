@@ -522,6 +522,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (method.PartialImplementationPart is null &&
                         methodBodyReuse.TryReuseMethodBody(method, _moduleBeingBuiltOpt, _diagnostics.DiagnosticBag))
                     {
+                        EnqueueReusedMethodForAnalyzer(method);
                         continue;
                     }
                 }
@@ -2544,6 +2545,36 @@ namespace Microsoft.CodeAnalysis.CSharp
         private static bool PassesFilter(Predicate<Symbol> filterOpt, Symbol symbol)
         {
             return (filterOpt == null) || filterOpt(symbol);
+        }
+
+        private void EnqueueReusedMethodForAnalyzer(MethodSymbol method)
+        {
+            if (method is SourceExtensionImplementationMethodSymbol extensionImplementation)
+            {
+                method = extensionImplementation.UnderlyingMethod;
+            }
+
+            if (method is not SourceMemberMethodSymbol sourceMethod ||
+                method.IsImplicitlyDeclared ||
+                _compilation.EventQueue is null)
+            {
+                return;
+            }
+
+            _compilation.RegisterPossibleUpcomingEventEnqueue();
+            try
+            {
+                sourceMethod.SetDiagnostics(ImmutableArray<Diagnostic>.Empty, out var diagnosticsWritten);
+                if (diagnosticsWritten)
+                {
+                    _compilation.EventQueue.TryEnqueue(
+                        new SymbolDeclaredCompilationEvent(_compilation, method, semanticModelWithCachedBoundNodes: null));
+                }
+            }
+            finally
+            {
+                _compilation.UnregisterPossibleUpcomingEventEnqueue();
+            }
         }
     }
 }

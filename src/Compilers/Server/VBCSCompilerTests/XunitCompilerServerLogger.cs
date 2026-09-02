@@ -30,5 +30,13 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
 
             TestOutputHelper.WriteLine(message);
         }
+
+        public List<string> GetMessagesSnapshot()
+        {
+            lock (_messagesGate)
+            {
+                return new List<string>(Messages);
+            }
+        }
     }
 }

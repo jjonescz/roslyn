@@ -643,6 +643,25 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
         }
 
         [Fact]
+        public void CSharpMethodBodyReuseCache_IsBoundedAndLeastRecentlyUsed()
+        {
+            var cache = new CSharpMethodBodyReuseCache(maxCacheSize: 2);
+            var reuse1 = new TestMethodBodyReuse();
+            var reuse2 = new TestMethodBodyReuse();
+            var reuse3 = new TestMethodBodyReuse();
+
+            cache.CacheReuse("1", reuse1);
+            cache.CacheReuse("2", reuse2);
+            Assert.Same(reuse1, cache.TryGetReuse("1"));
+
+            cache.CacheReuse("3", reuse3);
+
+            Assert.Null(cache.TryGetReuse("2"));
+            Assert.Same(reuse1, cache.TryGetReuse("1"));
+            Assert.Same(reuse3, cache.TryGetReuse("3"));
+        }
+
+        [Fact]
         public void LogCacheMiss_LogsNothing_WhenNoPriorEntries()
         {
             var cacheDir = Temp.CreateDirectory().Path;
@@ -1009,7 +1028,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
                 libDirectory: null,
                 AnalyzerAssemblyLoader.CreateNonLockingLoader(Temp.CreateDirectory().Path),
                 new GeneratorDriverCache(),
-                logger);
+                logger: logger);
 
         private static MethodBodyReuseStatistics CreateMethodBodyReuseStatistics()
         {
@@ -1090,6 +1109,12 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
             public bool IsLogging => true;
 
             public void Log(string message) => _messages.Add(message);
+        }
+
+        private sealed class TestMethodBodyReuse : IMethodBodyReuse
+        {
+            public IMethodBodyReuseSession CreateSession(CommonPEModuleBuilder moduleBuilder)
+                => throw ExceptionUtilities.Unreachable();
         }
     }
 }

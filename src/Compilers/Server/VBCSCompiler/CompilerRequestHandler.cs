@@ -67,6 +67,11 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         /// </summary>
         private readonly GeneratorDriverCache _driverCache = new GeneratorDriverCache();
 
+        /// <summary>
+        /// Successful C# emit baselines available for method-body reuse during the server lifetime.
+        /// </summary>
+        private readonly CSharpMethodBodyReuseCache _methodBodyReuseCache = new();
+
         internal CompilerServerHost(string clientDirectory, string? sdkDirectory, ICompilerServerLogger logger)
         {
             ClientDirectory = clientDirectory;
@@ -88,6 +93,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
                         libDirectory: request.LibDirectory,
                         analyzerLoader: AnalyzerAssemblyLoader,
                         _driverCache,
+                        _methodBodyReuseCache,
                         logger: Logger);
                     return true;
                 case LanguageNames.VisualBasic:

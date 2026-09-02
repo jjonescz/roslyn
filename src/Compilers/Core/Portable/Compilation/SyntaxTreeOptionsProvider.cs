@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Immutable;
 using System.Threading;
 using Roslyn.Utilities;
@@ -28,7 +29,7 @@ namespace Microsoft.CodeAnalysis
 
     internal sealed class CompilerSyntaxTreeOptionsProvider : SyntaxTreeOptionsProvider
     {
-        private readonly struct Options
+        private readonly struct Options : IEquatable<Options>
         {
             public readonly GeneratedKind IsGenerated;
             public readonly ImmutableDictionary<string, ReportDiagnostic> DiagnosticOptions;
@@ -46,9 +47,30 @@ namespace Microsoft.CodeAnalysis
                     IsGenerated = GeneratedKind.Unknown;
                 }
             }
+
+            public bool Equals(Options other)
+            {
+                if (IsGenerated != other.IsGenerated ||
+                    DiagnosticOptions.Count != other.DiagnosticOptions.Count)
+                {
+                    return false;
+                }
+
+                foreach (var pair in DiagnosticOptions)
+                {
+                    if (!other.DiagnosticOptions.TryGetValue(pair.Key, out var otherSeverity) ||
+                        pair.Value != otherSeverity)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
         }
 
         private readonly ImmutableDictionary<SyntaxTree, Options> _options;
+        private readonly ImmutableArray<(string path, Options options)> _orderedOptions;
 
         private readonly AnalyzerConfigOptionsResult _globalOptions;
 
@@ -58,16 +80,20 @@ namespace Microsoft.CodeAnalysis
             AnalyzerConfigOptionsResult globalResults)
         {
             var builder = ImmutableDictionary.CreateBuilder<SyntaxTree, Options>();
+            var orderedOptionsBuilder = ImmutableArray.CreateBuilder<(string path, Options options)>(trees.Length);
             for (int i = 0; i < trees.Length; i++)
             {
                 if (trees[i] != null)
                 {
+                    var options = new Options(results.IsDefault ? null : (AnalyzerConfigOptionsResult?)results[i]);
                     builder.Add(
                         trees[i]!,
-                        new Options(results.IsDefault ? null : (AnalyzerConfigOptionsResult?)results[i]));
+                        options);
+                    orderedOptionsBuilder.Add((trees[i]!.FilePath, options));
                 }
             }
             _options = builder.ToImmutableDictionary();
+            _orderedOptions = orderedOptionsBuilder.ToImmutable();
             _globalOptions = globalResults;
         }
 
@@ -92,6 +118,59 @@ namespace Microsoft.CodeAnalysis
             }
             severity = ReportDiagnostic.Default;
             return false;
+        }
+
+        internal bool IsEquivalentTo(CompilerSyntaxTreeOptionsProvider other)
+        {
+            if (_orderedOptions.Length != other._orderedOptions.Length ||
+                !HaveEquivalentDiagnosticOptions(_globalOptions.TreeOptions, other._globalOptions.TreeOptions))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < _orderedOptions.Length; i++)
+            {
+                var left = _orderedOptions[i];
+                var right = other._orderedOptions[i];
+                if (!string.Equals(left.path, right.path, StringComparison.Ordinal) ||
+                    !left.options.Equals(right.options))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool HaveEquivalentDiagnosticOptions(
+            ImmutableDictionary<string, ReportDiagnostic>? left,
+            ImmutableDictionary<string, ReportDiagnostic>? right)
+        {
+            if (ReferenceEquals(left, right))
+            {
+                return true;
+            }
+
+            if (left is null || right is null)
+            {
+                return false;
+            }
+
+            if (left.Count != right.Count)
+            {
+                return false;
+            }
+
+            foreach (var pair in left)
+            {
+                if (!right.TryGetValue(pair.Key, out var rightSeverity) ||
+                    pair.Value != rightSeverity)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection.Emit;
 using Microsoft.CodeAnalysis.CodeGen;
 using Microsoft.CodeAnalysis.Collections;
@@ -12,6 +13,7 @@ using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.Debugging;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Symbols;
+using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp.Emit;
 
@@ -30,6 +32,7 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
     private readonly CSharpCompilation _previousCompilation;
     private readonly PEModuleBuilder _previousModuleBuilder;
     private readonly ImmutableArray<Diagnostic> _previousDiagnostics;
+    private readonly ImmutableArray<Metadata?> _previousReferenceMetadata;
     private readonly Predicate<MethodSymbol> _canReuse;
 
     internal CSharpMethodBodyReuse(
@@ -41,7 +44,16 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
         _previousCompilation = previousCompilation;
         _previousModuleBuilder = previousModuleBuilder;
         _previousDiagnostics = previousDiagnostics;
+        _previousReferenceMetadata = CaptureReferenceMetadata(previousCompilation);
         _canReuse = canReuse;
+    }
+
+    internal CSharpMethodBodyReuse(
+        CSharpCompilation previousCompilation,
+        PEModuleBuilder previousModuleBuilder,
+        ImmutableArray<Diagnostic> previousDiagnostics)
+        : this(previousCompilation, previousModuleBuilder, previousDiagnostics, static _ => true)
+    {
     }
 
     IMethodBodyReuseSession IMethodBodyReuse.CreateSession(CommonPEModuleBuilder moduleBuilder)
@@ -129,10 +141,10 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
     {
         var currentCompilation = currentModuleBuilder.Compilation;
         MethodBodyReuseGlobalFallbackReason? fallbackReason =
-            !_previousDiagnostics.IsEmpty ? MethodBodyReuseGlobalFallbackReason.PreviousDiagnostics :
-            !_previousCompilation.Options.Equals(currentCompilation.Options) ? MethodBodyReuseGlobalFallbackReason.CompilationOptions :
+            ContainsWarningsOrErrors(_previousDiagnostics) ? MethodBodyReuseGlobalFallbackReason.PreviousDiagnostics :
+            !HaveEquivalentCompilationOptions(currentCompilation) ? MethodBodyReuseGlobalFallbackReason.CompilationOptions :
             !string.Equals(_previousCompilation.AssemblyName, currentCompilation.AssemblyName, StringComparison.Ordinal) ? MethodBodyReuseGlobalFallbackReason.AssemblyIdentity :
-            !ReferenceEquals(_previousCompilation.GetBoundReferenceManager(), currentCompilation.GetBoundReferenceManager()) ? MethodBodyReuseGlobalFallbackReason.References :
+            !HaveEquivalentReferences(currentCompilation) ? MethodBodyReuseGlobalFallbackReason.References :
             _previousModuleBuilder.DebugInformationFormat != currentModuleBuilder.DebugInformationFormat ||
                 _previousModuleBuilder.EmittingPdb != currentModuleBuilder.EmittingPdb ||
                 _previousModuleBuilder.DebugDocumentCount != currentModuleBuilder.DebugDocumentCount ? MethodBodyReuseGlobalFallbackReason.DebugInformation :
@@ -150,6 +162,123 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
         return new MatcherState(
             CreateMatcher(currentCompilation, _previousCompilation),
             CreateMatcher(_previousCompilation, currentCompilation));
+    }
+
+    private static bool ContainsWarningsOrErrors(ImmutableArray<Diagnostic> diagnostics)
+    {
+        foreach (var diagnostic in diagnostics)
+        {
+            if (diagnostic.Severity is DiagnosticSeverity.Warning or DiagnosticSeverity.Error)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool HaveEquivalentCompilationOptions(CSharpCompilation currentCompilation)
+    {
+        var previousOptions = _previousCompilation.Options;
+        var currentOptions = currentCompilation.Options;
+        if (!HaveEquivalentSyntaxTreeOptionsProviders(
+                previousOptions.SyntaxTreeOptionsProvider,
+                currentOptions.SyntaxTreeOptionsProvider))
+        {
+            return false;
+        }
+
+        var normalizedCurrentOptions = currentCompilation.Options
+            .WithCurrentLocalTime(previousOptions.CurrentLocalTime)
+            .WithMetadataReferenceResolver(previousOptions.MetadataReferenceResolver)
+            .WithSyntaxTreeOptionsProvider(previousOptions.SyntaxTreeOptionsProvider);
+
+        return previousOptions.Equals(normalizedCurrentOptions);
+    }
+
+    private static bool HaveEquivalentSyntaxTreeOptionsProviders(
+        SyntaxTreeOptionsProvider? previous,
+        SyntaxTreeOptionsProvider? current)
+    {
+        if (ReferenceEquals(previous, current))
+        {
+            return true;
+        }
+
+        return previous is CompilerSyntaxTreeOptionsProvider previousCompilerProvider &&
+            current is CompilerSyntaxTreeOptionsProvider currentCompilerProvider &&
+            previousCompilerProvider.IsEquivalentTo(currentCompilerProvider);
+    }
+
+    private bool HaveEquivalentReferences(CSharpCompilation currentCompilation)
+    {
+        var previousReferences = _previousCompilation.ExternalReferences;
+        var currentReferences = currentCompilation.ExternalReferences;
+        if (previousReferences.Length != currentReferences.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < previousReferences.Length; i++)
+        {
+            if (previousReferences[i] is not PortableExecutableReference previousReference ||
+                currentReferences[i] is not PortableExecutableReference currentReference)
+            {
+                if (!ReferenceEquals(previousReferences[i], currentReferences[i]))
+                {
+                    return false;
+                }
+
+                continue;
+            }
+
+            if (
+                !previousReference.Properties.Equals(currentReference.Properties) ||
+                !PathUtilities.Comparer.Equals(previousReference.FilePath, currentReference.FilePath) ||
+                previousReference.Properties.Kind != MetadataImageKind.Assembly)
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!ReferenceEquals(_previousReferenceMetadata[i], currentReference.GetMetadataNoCopy()))
+                {
+                    return false;
+                }
+            }
+            catch (Exception e) when (e is IOException or BadImageFormatException)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static ImmutableArray<Metadata?> CaptureReferenceMetadata(CSharpCompilation compilation)
+    {
+        var references = compilation.ExternalReferences;
+        var builder = ImmutableArray.CreateBuilder<Metadata?>(references.Length);
+        foreach (var reference in references)
+        {
+            if (reference is not PortableExecutableReference { Properties.Kind: MetadataImageKind.Assembly } peReference)
+            {
+                builder.Add(null);
+                continue;
+            }
+
+            try
+            {
+                builder.Add(peReference.GetMetadataNoCopy());
+            }
+            catch (Exception e) when (e is IOException or BadImageFormatException)
+            {
+                builder.Add(null);
+            }
+        }
+
+        return builder.MoveToImmutable();
     }
 
     private MethodBodyReuseGlobalFallbackReason? GetDeclarationFallbackReason(CSharpCompilation currentCompilation)

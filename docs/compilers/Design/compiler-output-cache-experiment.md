@@ -195,10 +195,11 @@ The event carries these properties:
 
 Method-body reuse uses a separate `roslyn/incrementalcompilation` event when a server
 request actually runs a reuse-enabled emit. Requests with no completed reuse statistics do
-not produce this event. The current prototype does not yet retain compilation baselines in the
-warm server, so production requests do not construct the reuse object yet; the emit result
-receiver and server adapter are the explicit integration seam for that future owner. Its fixed
-properties identify `strategy=methodbodyreuse`,
+not produce this event. The C# compiler server retains up to 10 successful emit baselines that
+have no warning or error diagnostics,
+keyed by output assembly path and evicted in least-recently-used order. The first request for an
+output compiles normally and seeds its baseline; subsequent requests handled by the same server
+attempt method-body reuse. Its fixed properties identify `strategy=methodbodyreuse`,
 `cachekind=memory`, and emit `status`, followed by these counts:
 
 - `totalbodycount`: all source and synthesized bodies installed in the emitted module.
@@ -213,6 +214,14 @@ global or per-body reason taxonomy. The event and its corresponding single aggre
 line contain only bounded category names and numeric counts; they never contain symbol names,
 paths, source hashes, diagnostics, or diagnostic text. Percentages are intentionally left to
 telemetry queries.
+
+For local inspection, set `RoslynCommandLineLogFile` to an existing directory before starting
+the build. The client and compiler server create separate `server.<process-id>.log` files there,
+and the compiler-server file contains the same aggregate `Incremental compilation ...` summary.
+Shut down an existing server before changing the variable or switching compiler toolset
+packages so the next build starts the intended server process. A toolset-package server may use
+a package-specific pipe, so terminate that known server process if `dotnet build-server
+shutdown` does not stop it.
 
 ## Cache management
 

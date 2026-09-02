@@ -41,6 +41,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)CompilerServerTelemetry.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CompletionData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CSharpCompilerServer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CSharpMethodBodyReuseCache.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticListener.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IClientConnection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ICompilerServerHost.cs" />

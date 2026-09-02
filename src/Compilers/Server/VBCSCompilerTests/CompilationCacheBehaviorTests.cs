@@ -25,7 +25,171 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests;
 
 public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHelper) : TestBase
 {
-    private readonly ICompilerServerLogger _logger = new XunitCompilerServerLogger(testOutputHelper);
+    private readonly XunitCompilerServerLogger _logger = new(testOutputHelper);
+
+    [Fact]
+    public async Task MethodBodyReuse_ReusesUnchangedBodyAndLogsStatistics()
+    {
+        const string dirtyFileName = "Dirty.cs";
+        const string cleanFileName = "Clean.cs";
+        const string outputFileName = "test.dll";
+        const string pdbFileName = "test.pdb";
+        const string dirtySource0 = "public static class Dirty { public static int Value() => 1; }";
+        const string dirtySource1 = "public static class Dirty { public static int Value() => 2; }";
+        const string cleanSource = "public static class Clean { public static int Value() => Dirty.Value(); }";
+
+        var workingDirectory = Temp.CreateDirectory();
+        byte[] incrementalPe;
+        byte[] incrementalPdb;
+
+        {
+            using var serverData = await ServerUtil.CreateServer(_logger);
+            var arguments = BuildCompilationArguments(
+                visualBasic: false,
+                serverData.PipeName,
+                dirtyFileName,
+                outputFileName,
+                additionalArguments: $"{cleanFileName} /debug:portable /pdb:{pdbFileName}");
+
+            var (exitCode, _) = RunCommandLineCompiler(
+                RequestLanguage.CSharpCompile,
+                arguments,
+                workingDirectory,
+                [new(dirtyFileName, dirtySource0), new(cleanFileName, cleanSource)]);
+            Assert.Equal(0, exitCode);
+            Assert.DoesNotContain(_logger.GetMessagesSnapshot(), static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal));
+
+            File.WriteAllText(Path.Combine(workingDirectory.Path, dirtyFileName), dirtySource1);
+            (exitCode, _) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, arguments, workingDirectory);
+            Assert.Equal(0, exitCode);
+
+            incrementalPe = File.ReadAllBytes(Path.Combine(workingDirectory.Path, outputFileName));
+            incrementalPdb = File.ReadAllBytes(Path.Combine(workingDirectory.Path, pdbFileName));
+        }
+
+        var summary = Assert.Single(_logger.GetMessagesSnapshot().Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal)));
+        Assert.Contains("status=succeeded", summary, StringComparison.Ordinal);
+        Assert.Contains("totalbodycount=4", summary, StringComparison.Ordinal);
+        Assert.Contains("compiledbodycount=3", summary, StringComparison.Ordinal);
+        Assert.Contains("reuseattemptcount=2", summary, StringComparison.Ordinal);
+        Assert.Contains("reusedbodycount=1", summary, StringComparison.Ordinal);
+        Assert.Contains("fallbackbodycount=1", summary, StringComparison.Ordinal);
+        Assert.Contains("bodyreasoncount.sourcechanged=1", summary, StringComparison.Ordinal);
+
+        {
+            using var cleanServerData = await ServerUtil.CreateServer(_logger);
+            var cleanArguments = BuildCompilationArguments(
+                visualBasic: false,
+                cleanServerData.PipeName,
+                dirtyFileName,
+                outputFileName,
+                additionalArguments: $"{cleanFileName} /debug:portable /pdb:{pdbFileName}");
+            var (exitCode, _) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, cleanArguments, workingDirectory);
+            Assert.Equal(0, exitCode);
+        }
+
+        Assert.Equal(incrementalPe, File.ReadAllBytes(Path.Combine(workingDirectory.Path, outputFileName)));
+        Assert.Equal(incrementalPdb, File.ReadAllBytes(Path.Combine(workingDirectory.Path, pdbFileName)));
+    }
+
+    [Fact]
+    public async Task MethodBodyReuse_ChangedReferenceFallsBack()
+    {
+        const string sourceFileName = "Test.cs";
+        const string outputFileName = "test.dll";
+        const string source = "public static class Test { public static int Value() => ReferenceConstants.Value; }";
+
+        var workingDirectory = Temp.CreateDirectory();
+        var referencePath = EmitSupportAssembly(
+            workingDirectory,
+            "Reference",
+            "public static class ReferenceConstants { public const int Value = 1; }");
+        byte[] incrementalPe;
+
+        {
+            using var serverData = await ServerUtil.CreateServer(_logger);
+            var arguments = BuildCompilationArguments(
+                visualBasic: false,
+                serverData.PipeName,
+                sourceFileName,
+                outputFileName,
+                additionalArguments: $"/r:{referencePath}");
+
+            var (exitCode, _) = RunCommandLineCompiler(
+                RequestLanguage.CSharpCompile,
+                arguments,
+                workingDirectory,
+                [new(sourceFileName, source)]);
+            Assert.Equal(0, exitCode);
+
+            File.Delete(referencePath);
+            EmitSupportAssembly(
+                workingDirectory,
+                "Reference",
+                "public static class ReferenceConstants { public const int Value = 2; }");
+            File.SetLastWriteTimeUtc(referencePath, DateTime.UtcNow.AddSeconds(1));
+
+            (exitCode, _) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, arguments, workingDirectory);
+            Assert.Equal(0, exitCode);
+            incrementalPe = File.ReadAllBytes(Path.Combine(workingDirectory.Path, outputFileName));
+        }
+
+        var summary = Assert.Single(_logger.GetMessagesSnapshot().Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal)));
+        Assert.Contains("reusedbodycount=0", summary, StringComparison.Ordinal);
+        Assert.Contains("fallbackbodycount=1", summary, StringComparison.Ordinal);
+        Assert.Contains("globalreasoncount.references=1", summary, StringComparison.Ordinal);
+
+        {
+            using var cleanServerData = await ServerUtil.CreateServer(_logger);
+            var cleanArguments = BuildCompilationArguments(
+                visualBasic: false,
+                cleanServerData.PipeName,
+                sourceFileName,
+                outputFileName,
+                additionalArguments: $"/r:{referencePath}");
+            var (exitCode, _) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, cleanArguments, workingDirectory);
+            Assert.Equal(0, exitCode);
+        }
+
+        Assert.Equal(incrementalPe, File.ReadAllBytes(Path.Combine(workingDirectory.Path, outputFileName)));
+    }
+
+    [Fact]
+    public async Task MethodBodyReuse_ReusedMethodStillRunsAnalyzers()
+    {
+        const string dirtyFileName = "Dirty.cs";
+        const string cleanFileName = "Clean.cs";
+        const string outputFileName = "test.dll";
+        const string dirtySource0 = "public static class Dirty { public static int Value() => 1; }";
+        const string dirtySource1 = "public static class Dirty { public static int Value() => 2; }";
+        const string cleanSource = "public static class Clean { public static int Value() => Dirty.Value(); }";
+
+        var workingDirectory = Temp.CreateDirectory();
+        var analyzerPath = CreateMethodBodyReuseAnalyzerAssembly(workingDirectory);
+        using var serverData = await ServerUtil.CreateServer(_logger);
+        var arguments = BuildCompilationArguments(
+            visualBasic: false,
+            serverData.PipeName,
+            dirtyFileName,
+            outputFileName,
+            additionalArguments: $"{cleanFileName} /a:{analyzerPath}");
+
+        var (exitCode, output) = RunCommandLineCompiler(
+            RequestLanguage.CSharpCompile,
+            arguments,
+            workingDirectory,
+            [new(dirtyFileName, dirtySource0), new(cleanFileName, cleanSource)]);
+        Assert.Equal(0, exitCode);
+        Assert.DoesNotContain("warning MBRA001", output, StringComparison.Ordinal);
+
+        File.WriteAllText(Path.Combine(workingDirectory.Path, dirtyFileName), dirtySource1);
+        (exitCode, output) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, arguments, workingDirectory);
+        Assert.Equal(0, exitCode);
+        Assert.Contains("warning MBRA001", output, StringComparison.Ordinal);
+
+        var summary = Assert.Single(_logger.GetMessagesSnapshot().Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal)));
+        Assert.Contains("reusedbodycount=1", summary, StringComparison.Ordinal);
+    }
 
     [Theory]
     [InlineData(false)]
@@ -399,6 +563,45 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
             }
             """);
 
+    private static string CreateMethodBodyReuseAnalyzerAssembly(TempDirectory directory)
+        => EmitSupportAssembly(
+            directory,
+            "MethodBodyReuseAnalyzer",
+            """
+            using System.Collections.Immutable;
+            using System.Linq;
+            using Microsoft.CodeAnalysis;
+            using Microsoft.CodeAnalysis.Diagnostics;
+
+            [DiagnosticAnalyzer(LanguageNames.CSharp)]
+            public sealed class MethodBodyReuseAnalyzer : DiagnosticAnalyzer
+            {
+                private static readonly DiagnosticDescriptor s_rule = new(
+                    "MBRA001",
+                    "Method body reuse analyzer",
+                    "Method body reuse analyzer",
+                    "Testing",
+                    DiagnosticSeverity.Warning,
+                    isEnabledByDefault: true);
+
+                public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
+
+                public override void Initialize(AnalysisContext context)
+                {
+                    context.RegisterSymbolAction(static context =>
+                    {
+                        var method = (IMethodSymbol)context.Symbol;
+                        if (method.ContainingType.Name == "Clean" &&
+                            method.Name == "Value" &&
+                            context.Compilation.SyntaxTrees.Any(static tree => tree.ToString().Contains("=> 2;")))
+                        {
+                            context.ReportDiagnostic(Diagnostic.Create(s_rule, method.Locations[0]));
+                        }
+                    }, SymbolKind.Method);
+                }
+            }
+            """);
+
     private static string CreateReportAnalyzerAssembly(TempDirectory directory)
         => EmitSupportAssembly(
             directory,
@@ -492,7 +695,11 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
     private static void ReferenceNetstandardDllIfCoreClr(TempDirectory currentDirectory, List<string> arguments)
     {
         var filePath = Path.Combine(currentDirectory.Path, "netstandard.dll");
-        File.WriteAllBytes(filePath, NetStandard20.Resources.netstandard);
+        if (!File.Exists(filePath))
+        {
+            File.WriteAllBytes(filePath, NetStandard20.Resources.netstandard);
+        }
+
         arguments.Add("/nostdlib");
         arguments.Add("/r:netstandard.dll");
     }

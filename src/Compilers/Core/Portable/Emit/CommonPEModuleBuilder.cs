@@ -439,7 +439,10 @@ namespace Microsoft.CodeAnalysis.Emit
             Debug.Assert(body == null || (object)methodSymbol == body.MethodDefinition.GetInternalSymbol());
 
             _methodBodyMap.Add(methodSymbol, body);
-            MethodBodyReuse?.RecordEmittedBody(reused);
+            if (body is object)
+            {
+                MethodBodyReuse?.RecordEmittedBody(reused);
+            }
         }
 
         internal void SetPEEntryPoint(IMethodSymbolInternal method, DiagnosticBag diagnostics)
