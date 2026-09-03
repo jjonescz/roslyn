@@ -110,7 +110,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         private readonly ConcurrentSet<FieldSymbol> _unreadFields = new ConcurrentSet<FieldSymbol>();
 
         private ConcurrentDictionary<MethodSymbol, Dictionary<FieldSymbol, MethodBodyFieldAccess>> _methodBodyFieldAccesses;
-        private bool _trackMethodBodyFieldAccesses;
+        private bool _trackMethodBodyReuseData;
         private int _hasMethodBodyReuseCandidate;
 
         /// <summary>
@@ -2651,7 +2651,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             container.EnsureFieldDefinitionsNoted();
 
-            if (_trackMethodBodyFieldAccesses &&
+            if (_trackMethodBodyReuseData &&
                 topLevelMethod?.MethodKind == MethodKind.Ordinary)
             {
                 RecordMethodBodyFieldAccess(topLevelMethod, field, read, write);
@@ -2686,11 +2686,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        internal void EnableMethodBodyFieldAccessTracking()
-            => _trackMethodBodyFieldAccesses = true;
+        internal void EnableMethodBodyReuseTracking()
+            => _trackMethodBodyReuseData = true;
 
-        internal bool IsMethodBodyFieldAccessTrackingEnabled
-            => _trackMethodBodyFieldAccesses;
+        internal bool IsMethodBodyReuseTrackingEnabled
+            => _trackMethodBodyReuseData;
 
         internal bool HasMethodBodyReuseCandidate
             => Volatile.Read(ref _hasMethodBodyReuseCandidate) != 0;

@@ -33,6 +33,21 @@ using static Microsoft.CodeAnalysis.CSharp.Binder;
 
 namespace Microsoft.CodeAnalysis.CSharp
 {
+    internal readonly struct MethodBodyImportUsage(SyntaxTree tree, int position) : IEquatable<MethodBodyImportUsage>
+    {
+        internal SyntaxTree Tree { get; } = tree;
+        internal int Position { get; } = position;
+
+        public bool Equals(MethodBodyImportUsage other)
+            => ReferenceEquals(Tree, other.Tree) && Position == other.Position;
+
+        public override bool Equals(object? obj)
+            => obj is MethodBodyImportUsage other && Equals(other);
+
+        public override int GetHashCode()
+            => Hash.Combine(Position, Tree.GetHashCode());
+    }
+
     /// <summary>
     /// The compilation object is an immutable representation of a single invocation of the
     /// compiler. Although immutable, a compilation is also on-demand, and will realize and cache
@@ -69,6 +84,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// Values are the sets of dependencies for corresponding directives.
         /// </summary>
         private ConcurrentDictionary<ImportInfo, ImmutableArray<AssemblySymbol>>? _lazyImportInfos;
+        private ConcurrentDictionary<MethodSymbol, ConcurrentSet<MethodBodyImportUsage>>? _methodBodyImportUsages;
 
         // Cache the CLS diagnostics for the whole compilation so they aren't computed repeatedly.
         // NOTE: Presently, we do not cache the per-tree diagnostics.
@@ -2884,6 +2900,85 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             RoslynDebug.Assert(_lazyImportInfos is object);
             _lazyImportInfos.TryUpdate(new ImportInfo(syntax.SyntaxTree, syntax.Kind(), syntax.Span), dependencies, default);
+        }
+
+        internal void MarkImportDirectiveAsUsed(SyntaxReference directive, Symbol? containingMemberOrLambda)
+        {
+            MarkImportDirectiveAsUsed(directive);
+
+            var method = GetImportUsageOwner(containingMemberOrLambda);
+            if (!SourceAssembly.IsMethodBodyReuseTrackingEnabled ||
+                method?.MethodKind != MethodKind.Ordinary)
+            {
+                return;
+            }
+
+            if (_methodBodyImportUsages is null)
+            {
+                Interlocked.CompareExchange(
+                    ref _methodBodyImportUsages,
+                    new ConcurrentDictionary<MethodSymbol, ConcurrentSet<MethodBodyImportUsage>>(),
+                    null);
+            }
+
+            var usages = _methodBodyImportUsages.GetOrAdd(
+                method,
+                static _ => new ConcurrentSet<MethodBodyImportUsage>());
+            usages.Add(new MethodBodyImportUsage(directive.SyntaxTree, directive.Span.Start));
+        }
+
+        internal ImmutableArray<MethodBodyImportUsage> GetMethodBodyImportUsages(MethodSymbol method)
+        {
+            method = GetImportUsageOwner(method)!;
+            if (_methodBodyImportUsages is null ||
+                !_methodBodyImportUsages.TryGetValue(method, out var usages))
+            {
+                return [];
+            }
+
+            var builder = ImmutableArray.CreateBuilder<MethodBodyImportUsage>();
+            foreach (var usage in usages)
+            {
+                builder.Add(usage);
+            }
+
+            return builder.ToImmutable();
+        }
+
+        internal void ReplayMethodBodyImportUsage(MethodSymbol method, MethodBodyImportUsage usage)
+        {
+            MarkImportDirectiveAsUsed(usage.Tree, usage.Position);
+
+            if (SourceAssembly.IsMethodBodyReuseTrackingEnabled)
+            {
+                if (_methodBodyImportUsages is null)
+                {
+                    Interlocked.CompareExchange(
+                        ref _methodBodyImportUsages,
+                        new ConcurrentDictionary<MethodSymbol, ConcurrentSet<MethodBodyImportUsage>>(),
+                        null);
+                }
+
+                var usages = _methodBodyImportUsages.GetOrAdd(
+                    GetImportUsageOwner(method)!,
+                    static _ => new ConcurrentSet<MethodBodyImportUsage>());
+                usages.Add(usage);
+            }
+        }
+
+        private static MethodSymbol? GetImportUsageOwner(Symbol? symbol)
+        {
+            while (symbol is MethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction } nestedMethod)
+            {
+                symbol = nestedMethod.ContainingSymbol;
+            }
+
+            if (symbol is SourceExtensionImplementationMethodSymbol extensionImplementation)
+            {
+                symbol = extensionImplementation.UnderlyingMethod;
+            }
+
+            return symbol is MethodSymbol method ? method.OriginalDefinition : null;
         }
 
         private readonly struct ImportInfo : IEquatable<ImportInfo>

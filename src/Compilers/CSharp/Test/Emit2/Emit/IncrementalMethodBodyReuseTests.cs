@@ -13,6 +13,7 @@ using Microsoft.CodeAnalysis.CodeGen;
 using Microsoft.CodeAnalysis.CSharp.Emit;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Emit;
+using Microsoft.CodeAnalysis.Test.Utilities;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.DiaSymReader.Tools;
 using Roslyn.Test.Utilities;
@@ -82,6 +83,188 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
         Assert.Empty(clean.Diagnostics);
         Assert.Null(incremental.TestData.Module!.MethodBodyReuse);
         AssertEx.Equal(GetPdbXml(clean), GetPdbXml(incremental));
+        AssertBytesEqual(clean.Pdb, incremental.Pdb);
+        AssertBytesEqual(clean.Pe, incremental.Pe);
+    }
+
+    [Fact]
+    public void ReuseMethodBodyWithCurrentImportChain_ProducesIdenticalPeAndPdb()
+    {
+        const string dirtyPath = "Dirty.cs";
+        const string cleanPath = "Clean.cs";
+
+        var dirtyTree0 = Parse("global using System; public static class Dirty { public static int Value() => 1; }", dirtyPath);
+        var dirtyTree1 = Parse("global using System; public static class Dirty { public static int Value() => 2; }", dirtyPath);
+        var dirtyTree2 = Parse("global using System; public static class Dirty { public static int Value() => 3; }", dirtyPath);
+        var cleanTree = Parse(
+            """
+            using static System.Math;
+
+            namespace Outer
+            {
+                using Collections = System.Collections.Generic;
+
+                namespace Inner
+                {
+                    public static class Clean
+                    {
+                        public static Type Type() => typeof(Collections.List<int>);
+                        public static int Value() => Abs(Dirty.Value());
+                    }
+                }
+            }
+            """,
+            cleanPath);
+        var options = TestOptions.ReleaseDll
+            .WithConcurrentBuild(true)
+            .WithDeterministic(true);
+        var compilation0 = CreateCompilation([dirtyTree0, cleanTree], assemblyName: "Test", options: options);
+        var baseline = Emit(compilation0);
+
+        var compilation1 = compilation0.ReplaceSyntaxTree(dirtyTree0, dirtyTree1);
+        var reuse = new CSharpMethodBodyReuse(
+            compilation0,
+            (PEModuleBuilder)baseline.TestData.Module!,
+            baseline.Diagnostics,
+            method => method.DeclaringSyntaxReferences.Any(reference => reference.SyntaxTree.FilePath == cleanPath));
+        var incremental = Emit(compilation1, reuse);
+        var clean = Emit(CreateCompilation([dirtyTree1, cleanTree], assemblyName: "Test", options: options));
+
+        Assert.Equal(2, incremental.Statistics.ReusedBodyCount);
+        Assert.Equal(0, incremental.Statistics.FallbackBodyCount);
+        Assert.Empty(incremental.Diagnostics);
+        AssertEx.Equal(GetPdbXml(clean), GetPdbXml(incremental));
+        AssertBytesEqual(clean.Pdb, incremental.Pdb);
+        AssertBytesEqual(clean.Pe, incremental.Pe);
+
+        var compilation2 = compilation1.ReplaceSyntaxTree(dirtyTree1, dirtyTree2);
+        var reuse1 = new CSharpMethodBodyReuse(
+            compilation1,
+            (PEModuleBuilder)incremental.TestData.Module!,
+            incremental.Diagnostics,
+            method => method.DeclaringSyntaxReferences.Any(reference => reference.SyntaxTree.FilePath == cleanPath));
+        var incremental2 = Emit(compilation2, reuse1);
+        var clean2 = Emit(CreateCompilation([dirtyTree2, cleanTree], assemblyName: "Test", options: options));
+
+        Assert.Equal(2, incremental2.Statistics.ReusedBodyCount);
+        Assert.Equal(0, incremental2.Statistics.FallbackBodyCount);
+        Assert.Empty(incremental2.Diagnostics);
+        AssertEx.Equal(GetPdbXml(clean2), GetPdbXml(incremental2));
+        AssertBytesEqual(clean2.Pdb, incremental2.Pdb);
+        AssertBytesEqual(clean2.Pe, incremental2.Pe);
+    }
+
+    [Fact]
+    public void ReuseMethodBodyWithExternAlias_ProducesIdenticalPeAndPdb()
+    {
+        const string dirtyPath = "Dirty.cs";
+        const string cleanPath = "Clean.cs";
+
+        var aliasedReference = CreateCompilation("namespace N { public class C { } }", assemblyName: "Aliased")
+            .EmitToImageReference(aliases: ImmutableArray.Create("A"));
+        var dirtyTree0 = Parse("public static class Dirty { public static int Value() => 1; }", dirtyPath);
+        var dirtyTree1 = Parse("public static class Dirty { public static int Value() => 2; }", dirtyPath);
+        var cleanTree = Parse(
+            """
+            extern alias A;
+
+            public static class Clean
+            {
+                public static System.Type Type() => typeof(A::N.C);
+            }
+            """,
+            cleanPath);
+        var options = TestOptions.ReleaseDll
+            .WithConcurrentBuild(true)
+            .WithDeterministic(true);
+        var compilation0 = CreateCompilation([dirtyTree0, cleanTree], references: [aliasedReference], assemblyName: "Test", options: options);
+        var baseline = Emit(compilation0);
+
+        var compilation1 = compilation0.ReplaceSyntaxTree(dirtyTree0, dirtyTree1);
+        var reuse = new CSharpMethodBodyReuse(
+            compilation0,
+            (PEModuleBuilder)baseline.TestData.Module!,
+            baseline.Diagnostics,
+            method => method.DeclaringSyntaxReferences.Any(reference => reference.SyntaxTree.FilePath == cleanPath));
+        var incremental = Emit(compilation1, reuse);
+        var clean = Emit(CreateCompilation([dirtyTree1, cleanTree], references: [aliasedReference], assemblyName: "Test", options: options));
+
+        Assert.Equal(1, incremental.Statistics.ReusedBodyCount);
+        Assert.Equal(0, incremental.Statistics.FallbackBodyCount);
+        Assert.Empty(incremental.Diagnostics);
+        AssertEx.Equal(GetPdbXml(clean), GetPdbXml(incremental));
+        AssertBytesEqual(clean.Pdb, incremental.Pdb);
+        AssertBytesEqual(clean.Pe, incremental.Pe);
+    }
+
+    [Fact]
+    public void ChangedGlobalUsing_FallsBackToNormalCompilation()
+    {
+        const string dirtyPath = "Dirty.cs";
+        const string cleanPath = "Clean.cs";
+
+        var dirtyTree0 = Parse(
+            """
+            global using X = System.Math;
+            public static class Dirty { public static int Value() => 1; }
+            """,
+            dirtyPath);
+        var dirtyTree1 = Parse(
+            """
+            global using X = Helper;
+            public static class Dirty { public static int Value() => 2; }
+            """,
+            dirtyPath);
+        var helperTree = Parse("public static class Helper { public static int Abs(int value) => 42; }", "Helper.cs");
+        var cleanTree = Parse("public static class Clean { public static int Value() => X.Abs(-1); }", cleanPath);
+        var options = TestOptions.ReleaseDll
+            .WithConcurrentBuild(true)
+            .WithDeterministic(true);
+        var compilation0 = CreateCompilation([dirtyTree0, helperTree, cleanTree], assemblyName: "Test", options: options);
+        var baseline = Emit(compilation0);
+
+        var compilation1 = compilation0.ReplaceSyntaxTree(dirtyTree0, dirtyTree1);
+        var reuse = new CSharpMethodBodyReuse(
+            compilation0,
+            (PEModuleBuilder)baseline.TestData.Module!,
+            baseline.Diagnostics,
+            method => method.DeclaringSyntaxReferences.Any(reference => reference.SyntaxTree.FilePath == cleanPath));
+        var incremental = Emit(compilation1, reuse);
+        var clean = Emit(CreateCompilation([dirtyTree1, helperTree, cleanTree], assemblyName: "Test", options: options));
+
+        Assert.Equal(0, incremental.Statistics.ReusedBodyCount);
+        Assert.Equal(1, incremental.Statistics.FallbackBodyCount);
+        Assert.Equal(1, incremental.Statistics.GetGlobalFallbackReasonCount(MethodBodyReuseGlobalFallbackReason.Declarations));
+        AssertBytesEqual(clean.Pdb, incremental.Pdb);
+        AssertBytesEqual(clean.Pe, incremental.Pe);
+    }
+
+    [Fact]
+    public void CompilerSynthesizedRecordMethods_DoNotRequireBodyBinder()
+    {
+        const string dirtyPath = "Dirty.cs";
+
+        var dirtyTree0 = Parse("public static class Dirty { public static int Value() => 1; }", dirtyPath);
+        var dirtyTree1 = Parse("public static class Dirty { public static int Value() => 2; }", dirtyPath);
+        var recordTree = Parse("public record R;", "Record.cs");
+        var options = TestOptions.ReleaseDll
+            .WithConcurrentBuild(true)
+            .WithDeterministic(true);
+        var compilation0 = CreateCompilation([dirtyTree0, recordTree], assemblyName: "Test", options: options);
+        var baseline = Emit(compilation0);
+
+        var compilation1 = compilation0.ReplaceSyntaxTree(dirtyTree0, dirtyTree1);
+        var reuse = new CSharpMethodBodyReuse(
+            compilation0,
+            (PEModuleBuilder)baseline.TestData.Module!,
+            baseline.Diagnostics,
+            method => method.ContainingType.Name == "R");
+        var incremental = Emit(compilation1, reuse);
+        var clean = Emit(CreateCompilation([dirtyTree1, recordTree], assemblyName: "Test", options: options));
+
+        Assert.True(incremental.Statistics.ReusedBodyCount > 0);
+        Assert.Empty(incremental.Diagnostics);
+        Assert.Empty(clean.Diagnostics);
         AssertBytesEqual(clean.Pdb, incremental.Pdb);
         AssertBytesEqual(clean.Pe, incremental.Pe);
     }
@@ -834,7 +1017,7 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
         bool expectedSuccess = true,
         Action<MethodBodyReuseStatistics>? statisticsReceiver = null)
     {
-        compilation.SourceAssembly.EnableMethodBodyFieldAccessTracking();
+        compilation.SourceAssembly.EnableMethodBodyReuseTracking();
         using var peStream = new MemoryStream();
         using var pdbStream = emitPdb ? new MemoryStream() : null;
         var testData = new CompilationTestData();

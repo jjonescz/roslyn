@@ -92,7 +92,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
                 return null;
             }
 
-            ((CSharpCompilation)compilation).SourceAssembly.EnableMethodBodyFieldAccessTracking();
+            ((CSharpCompilation)compilation).SourceAssembly.EnableMethodBodyReuseTracking();
             return _methodBodyReuseCache.TryGetReuse(outputFilePath);
         }
 

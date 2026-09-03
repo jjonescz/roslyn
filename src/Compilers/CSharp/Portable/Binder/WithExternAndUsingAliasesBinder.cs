@@ -81,9 +81,13 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected abstract ImportChain BuildImportChain();
 
-        internal bool IsUsingAlias(string name, bool callerIsSemanticModel, ConsList<TypeSymbol>? basesBeingResolved)
+        internal bool IsUsingAlias(
+            string name,
+            bool callerIsSemanticModel,
+            ConsList<TypeSymbol>? basesBeingResolved,
+            Symbol containingMemberOrLambda)
         {
-            return IsUsingAlias(this.GetUsingAliasesMap(basesBeingResolved), name, callerIsSemanticModel);
+            return IsUsingAlias(this.GetUsingAliasesMap(basesBeingResolved), name, callerIsSemanticModel, containingMemberOrLambda);
         }
 
         /// <summary>

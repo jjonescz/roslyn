@@ -2669,7 +2669,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private void RecordFieldsUsedForMethodBodyReuse(NamedTypeSymbol type, SourceAssemblySymbol assembly)
         {
             if (topLevelMethod?.MethodKind != MethodKind.Ordinary ||
-                !assembly.IsMethodBodyFieldAccessTrackingEnabled ||
+                !assembly.IsMethodBodyReuseTrackingEnabled ||
                 !(_typesWhoseFieldsWereRecordedForMethodBodyReuse ??= PooledHashSet<TypeSymbol>.GetInstance()).Add(type))
             {
                 return;

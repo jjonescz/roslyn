@@ -222,6 +222,14 @@ contribute freshly analyzed accesses. The existing unused-field diagnostic pass 
 the combined state, preserving clean-build warnings without rebinding reused bodies. If a
 referenced field cannot be mapped, that body falls back with `fieldusagemapping`.
 
+Methods with using directives also remain eligible. Reused bodies receive an import scope
+translated from the current method binder, so emitted debugger metadata refers only to symbols
+from the current compilation. The compiler records which bounded source directives each baseline
+method used and replays those facts for unused-using diagnostics, including across successive
+reuse generations. Using and extern-alias directives must remain structurally equivalent across
+the compilation; changing one causes a conservative declaration fallback because global usings
+can affect binding in otherwise unchanged source files.
+
 For local inspection, set `RoslynCommandLineLogFile` to an existing directory before starting
 the build. The client and compiler server create separate `server.<process-id>.log` files there,
 and the compiler-server file contains the same aggregate `Incremental compilation ...` summary.

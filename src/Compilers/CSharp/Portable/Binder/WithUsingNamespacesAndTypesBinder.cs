@@ -91,7 +91,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // If we found any extension declarations, then consider this using as used.
                     if (members.Count != count)
                     {
-                        MarkImportDirective(nsOrType.UsingDirectiveReference, callerIsSemanticModel);
+                        MarkImportDirective(nsOrType.UsingDirectiveReference, callerIsSemanticModel, originalBinder.ContainingMemberOrLambda);
                         seenNamespaceWithExtensions = true;
                     }
                 }
@@ -102,7 +102,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // If we found any extension declarations, then consider this using as used.
                     if (members.Count != count)
                     {
-                        MarkImportDirective(nsOrType.UsingDirectiveReference, callerIsSemanticModel);
+                        MarkImportDirective(nsOrType.UsingDirectiveReference, callerIsSemanticModel, originalBinder.ContainingMemberOrLambda);
                         seenStaticClassWithExtensions = true;
                     }
                 }
@@ -137,7 +137,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     var res = originalBinder.CheckViability(symbol, arity, options, null, diagnose, ref useSiteInfo, basesBeingResolved);
                     if (res.Kind == LookupResultKind.Viable)
                     {
-                        MarkImportDirective(typeOrNamespace.UsingDirectiveReference, callerIsSemanticModel);
+                        MarkImportDirective(typeOrNamespace.UsingDirectiveReference, callerIsSemanticModel, originalBinder.ContainingMemberOrLambda);
                     }
 
                     result.MergeEqual(res);

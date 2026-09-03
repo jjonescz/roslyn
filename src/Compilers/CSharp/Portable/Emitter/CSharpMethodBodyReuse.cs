@@ -25,9 +25,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit;
 /// </summary>
 /// <remarks>
 /// This initial implementation deliberately falls back to compiling bodies with locals,
-/// exception handlers, imports, synthesized-method debug information, instrumentation,
-/// fields in the compilation, diagnostics from the previous emit, or declaration changes
-/// anywhere in the compilation.
+/// exception handlers, synthesized-method debug information, instrumentation, diagnostics
+/// from the previous emit, or declaration changes anywhere in the compilation.
 /// </remarks>
 internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
 {
@@ -103,18 +102,17 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
             return false;
         }
 
-        Cci.IImportScope? importScope = null;
-        if (previousBody.ImportScope is ImportChain importChain)
+        if (!TryGetCurrentImportScope(
+                currentMethod,
+                currentModuleBuilder,
+                diagnostics,
+                out var importScope))
         {
-            if (!TryCloneEmptyImportChain(importChain, out var clonedImportChain))
-            {
-                bodyFallbackReason = MethodBodyReuseBodyFallbackReason.Imports;
-                return false;
-            }
-
-            importScope = clonedImportChain.Translate(currentModuleBuilder, diagnostics);
+            bodyFallbackReason = MethodBodyReuseBodyFallbackReason.Imports;
+            return false;
         }
-        else if (previousBody.ImportScope is object)
+
+        if ((previousBody.ImportScope is null) != (importScope is null))
         {
             bodyFallbackReason = MethodBodyReuseBodyFallbackReason.Imports;
             return false;
@@ -138,6 +136,16 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
         }
 
         var currentAssembly = currentModuleBuilder.Compilation.SourceAssembly;
+        if (!TryReplayImportUsages(
+                previousMethod,
+                currentMethod,
+                currentModuleBuilder.Compilation,
+                matcherState))
+        {
+            bodyFallbackReason = MethodBodyReuseBodyFallbackReason.Imports;
+            return false;
+        }
+
         foreach (var fieldAccess in fieldAccesses)
         {
             var access = fieldAccess.Value;
@@ -198,16 +206,93 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
             return new MatcherState(declarationReason);
         }
 
-        if (!_previousCompilation.SourceAssembly.IsMethodBodyFieldAccessTrackingEnabled &&
+        if (!_previousCompilation.SourceAssembly.IsMethodBodyReuseTrackingEnabled &&
             ContainsField(currentCompilation.SourceModule.GlobalNamespace))
         {
             return new MatcherState(MethodBodyReuseGlobalFallbackReason.Fields);
         }
 
+        if (!TryCreateImportUsageMap(
+                currentCompilation,
+                sourceFileEquivalence,
+                out var equivalentImportUsageTrees,
+                out var importUsageMap))
+        {
+            return new MatcherState(MethodBodyReuseGlobalFallbackReason.Declarations);
+        }
+
         return new MatcherState(
             CreateMatcher(currentCompilation, _previousCompilation),
             CreateMatcher(_previousCompilation, currentCompilation),
-            sourceFileEquivalence);
+            sourceFileEquivalence,
+            equivalentImportUsageTrees,
+            importUsageMap);
+    }
+
+    private bool TryReplayImportUsages(
+        MethodSymbol previousMethod,
+        MethodSymbol currentMethod,
+        CSharpCompilation currentCompilation,
+        MatcherState matcherState)
+    {
+        foreach (var previousUsage in _previousCompilation.GetMethodBodyImportUsages(previousMethod))
+        {
+            if (!matcherState.TryMapImportUsage(previousUsage, out var currentUsage))
+            {
+                return false;
+            }
+
+            currentCompilation.ReplayMethodBodyImportUsage(currentMethod, currentUsage);
+        }
+
+        return true;
+    }
+
+    private bool TryCreateImportUsageMap(
+        CSharpCompilation currentCompilation,
+        Dictionary<SyntaxTree, bool> sourceFileEquivalence,
+        out Dictionary<SyntaxTree, SyntaxTree> equivalentTrees,
+        out Dictionary<MethodBodyImportUsage, MethodBodyImportUsage> result)
+    {
+        var previousTrees = _previousCompilation.SyntaxTrees;
+        var currentTrees = currentCompilation.SyntaxTrees;
+        Debug.Assert(previousTrees.Length == currentTrees.Length);
+
+        equivalentTrees = new Dictionary<SyntaxTree, SyntaxTree>(currentTrees.Length);
+        result = new Dictionary<MethodBodyImportUsage, MethodBodyImportUsage>();
+        for (var i = 0; i < currentTrees.Length; i++)
+        {
+            if (sourceFileEquivalence[currentTrees[i]])
+            {
+                equivalentTrees.Add(previousTrees[i], currentTrees[i]);
+                continue;
+            }
+
+            var previousDirectives = new List<CSharpSyntaxNode>();
+            var currentDirectives = new List<CSharpSyntaxNode>();
+            new ImportDirectiveWalker(previousDirectives).Visit(previousTrees[i].GetRoot());
+            new ImportDirectiveWalker(currentDirectives).Visit(currentTrees[i].GetRoot());
+            if (previousDirectives.Count != currentDirectives.Count)
+            {
+                return false;
+            }
+
+            for (var j = 0; j < previousDirectives.Count; j++)
+            {
+                var previousDirective = previousDirectives[j];
+                var currentDirective = currentDirectives[j];
+                if (!previousDirective.IsEquivalentTo(currentDirective))
+                {
+                    return false;
+                }
+
+                result.Add(
+                    new MethodBodyImportUsage(previousTrees[i], previousDirective.SpanStart),
+                    new MethodBodyImportUsage(currentTrees[i], currentDirective.SpanStart));
+            }
+        }
+
+        return true;
     }
 
     private bool TryMapFieldAccesses(
@@ -550,29 +635,37 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
         return null;
     }
 
-    private static bool TryCloneEmptyImportChain(ImportChain importChain, out ImportChain clonedImportChain)
+    private static bool TryGetCurrentImportScope(
+        MethodSymbol currentMethod,
+        PEModuleBuilder currentModuleBuilder,
+        DiagnosticBag diagnostics,
+        out Cci.IImportScope? importScope)
     {
-        ImportChain? result = null;
-        var depth = 0;
-        for (var current = importChain; current is object; current = current.ParentOpt)
+        if (currentMethod.SynthesizesLoweredBoundBody)
         {
-            if (!current.Imports.UsingAliases.IsEmpty ||
-                !current.Imports.Usings.IsEmpty ||
-                !current.Imports.ExternAliases.IsEmpty)
+            if (currentMethod.GenerateDebugInfo)
             {
-                clonedImportChain = null!;
+                importScope = null;
                 return false;
             }
 
-            depth++;
+            importScope = null;
+            return true;
         }
 
-        while (depth-- > 0)
+        if (currentMethod is SourceExtensionImplementationMethodSymbol extensionImplementation)
         {
-            result = new ImportChain(Imports.Empty, result);
+            currentMethod = extensionImplementation.UnderlyingMethod;
         }
 
-        clonedImportChain = result!;
+        if (currentMethod is not SourceMemberMethodSymbol sourceMethod ||
+            sourceMethod.TryGetBodyBinder() is not { } bodyBinder)
+        {
+            importScope = null;
+            return false;
+        }
+
+        importScope = bodyBinder.ImportChain?.Translate(currentModuleBuilder, diagnostics);
         return true;
     }
 
@@ -861,6 +954,56 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
         }
     }
 
+    private sealed class ImportDirectiveWalker(List<CSharpSyntaxNode> directives) : CSharpSyntaxWalker
+    {
+        public override void VisitCompilationUnit(CompilationUnitSyntax node)
+        {
+            foreach (var directive in node.Externs)
+            {
+                directives.Add(directive);
+            }
+
+            foreach (var directive in node.Usings)
+            {
+                directives.Add(directive);
+            }
+
+            VisitNestedNamespaces(node.Members);
+        }
+
+        public override void VisitNamespaceDeclaration(NamespaceDeclarationSyntax node)
+            => VisitNamespace(node);
+
+        public override void VisitFileScopedNamespaceDeclaration(FileScopedNamespaceDeclarationSyntax node)
+            => VisitNamespace(node);
+
+        private void VisitNamespace(BaseNamespaceDeclarationSyntax node)
+        {
+            foreach (var directive in node.Externs)
+            {
+                directives.Add(directive);
+            }
+
+            foreach (var directive in node.Usings)
+            {
+                directives.Add(directive);
+            }
+
+            VisitNestedNamespaces(node.Members);
+        }
+
+        private void VisitNestedNamespaces(SyntaxList<MemberDeclarationSyntax> members)
+        {
+            foreach (var member in members)
+            {
+                if (member is BaseNamespaceDeclarationSyntax namespaceDeclaration)
+                {
+                    Visit(namespaceDeclaration);
+                }
+            }
+        }
+    }
+
     private sealed class Session : IMethodBodyReuseSession
     {
         private readonly CSharpMethodBodyReuse _reuse;
@@ -934,6 +1077,8 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
     private sealed class MatcherState
     {
         private readonly Dictionary<SyntaxTree, bool>? _sourceFileEquivalence;
+        private readonly Dictionary<SyntaxTree, SyntaxTree>? _equivalentImportUsageTrees;
+        private readonly Dictionary<MethodBodyImportUsage, MethodBodyImportUsage>? _importUsageMap;
 
         internal MethodBodyReuseGlobalFallbackReason? GlobalFallbackReason { get; }
         internal CSharpSymbolMatcher? CurrentToPrevious { get; }
@@ -942,11 +1087,15 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
         internal MatcherState(
             CSharpSymbolMatcher currentToPrevious,
             CSharpSymbolMatcher previousToCurrent,
-            Dictionary<SyntaxTree, bool> sourceFileEquivalence)
+            Dictionary<SyntaxTree, bool> sourceFileEquivalence,
+            Dictionary<SyntaxTree, SyntaxTree> equivalentImportUsageTrees,
+            Dictionary<MethodBodyImportUsage, MethodBodyImportUsage> importUsageMap)
         {
             CurrentToPrevious = currentToPrevious;
             PreviousToCurrent = previousToCurrent;
             _sourceFileEquivalence = sourceFileEquivalence;
+            _equivalentImportUsageTrees = equivalentImportUsageTrees;
+            _importUsageMap = importUsageMap;
         }
 
         internal MatcherState(MethodBodyReuseGlobalFallbackReason globalFallbackReason)
@@ -958,6 +1107,25 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
         {
             Debug.Assert(_sourceFileEquivalence is object);
             return _sourceFileEquivalence[tree];
+        }
+
+        internal bool TryMapImportUsage(MethodBodyImportUsage previous, out MethodBodyImportUsage current)
+        {
+            Debug.Assert(_importUsageMap is object);
+            if (_importUsageMap.TryGetValue(previous, out current))
+            {
+                return true;
+            }
+
+            Debug.Assert(_equivalentImportUsageTrees is object);
+            if (_equivalentImportUsageTrees.TryGetValue(previous.Tree, out var currentTree))
+            {
+                current = new MethodBodyImportUsage(currentTree, previous.Position);
+                return true;
+            }
+
+            current = default;
+            return false;
         }
     }
 
