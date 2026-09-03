@@ -380,8 +380,7 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
             }
 
             if (!sourceFileEquivalence[currentTrees[i]] &&
-                (ContainsReuseSensitiveDeclaration(previousTrees[i]) ||
-                 ContainsReuseSensitiveDeclaration(currentTrees[i])))
+                !HaveEquivalentReuseSensitiveDeclarations(previousTrees[i], currentTrees[i]))
             {
                 return MethodBodyReuseGlobalFallbackReason.Declarations;
             }
@@ -390,11 +389,26 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
         return null;
     }
 
-    private static bool ContainsReuseSensitiveDeclaration(SyntaxTree tree)
+    private static bool HaveEquivalentReuseSensitiveDeclarations(SyntaxTree previousTree, SyntaxTree currentTree)
     {
-        var walker = new ReuseSensitiveDeclarationWalker();
-        walker.Visit(tree.GetRoot());
-        return walker.Found;
+        var previousValues = new List<EqualsValueClauseSyntax>();
+        var currentValues = new List<EqualsValueClauseSyntax>();
+        new ReuseSensitiveDeclarationWalker(previousValues).Visit(previousTree.GetRoot());
+        new ReuseSensitiveDeclarationWalker(currentValues).Visit(currentTree.GetRoot());
+        if (previousValues.Count != currentValues.Count)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < previousValues.Count; i++)
+        {
+            if (!SyntaxFactory.AreEquivalent(previousValues[i], currentValues[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private Dictionary<SyntaxTree, bool> CreateSourceFileEquivalenceMap(CSharpCompilation currentCompilation)
@@ -783,9 +797,27 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
     private static bool IsUnsupportedReference(OperandType _, Cci.IReference reference)
         => reference.GetInternalSymbol() is FieldSymbol { IsDefinition: false };
 
-    private sealed class ReuseSensitiveDeclarationWalker : CSharpSyntaxWalker
+    private sealed class ReuseSensitiveDeclarationWalker(List<EqualsValueClauseSyntax> values) : CSharpSyntaxWalker
     {
-        internal bool Found { get; private set; }
+        public override void VisitBlock(BlockSyntax node)
+        {
+        }
+
+        public override void VisitArrowExpressionClause(ArrowExpressionClauseSyntax node)
+        {
+        }
+
+        public override void VisitConstructorInitializer(ConstructorInitializerSyntax node)
+        {
+        }
+
+        public override void VisitGlobalStatement(GlobalStatementSyntax node)
+        {
+        }
+
+        public override void VisitEqualsValueClause(EqualsValueClauseSyntax node)
+        {
+        }
 
         public override void VisitFieldDeclaration(FieldDeclarationSyntax node)
         {
@@ -793,7 +825,14 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
             {
                 if (modifier.IsKind(SyntaxKind.ConstKeyword))
                 {
-                    Found = true;
+                    foreach (var variable in node.Declaration.Variables)
+                    {
+                        if (variable.Initializer is { } initializer)
+                        {
+                            values.Add(initializer);
+                        }
+                    }
+
                     return;
                 }
             }
@@ -805,8 +844,7 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
         {
             if (node.EqualsValue is object)
             {
-                Found = true;
-                return;
+                values.Add(node.EqualsValue);
             }
 
             base.VisitEnumMemberDeclaration(node);
@@ -816,19 +854,10 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
         {
             if (node.Default is object)
             {
-                Found = true;
-                return;
+                values.Add(node.Default);
             }
 
             base.VisitParameter(node);
-        }
-
-        public override void DefaultVisit(SyntaxNode node)
-        {
-            if (!Found)
-            {
-                base.DefaultVisit(node);
-            }
         }
     }
 

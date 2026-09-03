@@ -527,6 +527,36 @@ public sealed class IncrementalMethodBodyReuseTests : CSharpTestBase
     }
 
     [Fact]
+    public void MethodBodyChangeInFileWithConst_AllowsOtherFileReuse()
+    {
+        const string dirtyPath = "Dirty.cs";
+        const string cleanPath = "Clean.cs";
+
+        var dirtyTree0 = Parse("public class Dirty { public int Field = 1; public const int Constant = 1; public static int Value() => 1; }", dirtyPath);
+        var dirtyTree1 = Parse("public class Dirty { public int Field = 1; public const int Constant = 1; public static int Value() => 2; }", dirtyPath);
+        var cleanTree = Parse("public static class Clean { public static int Value() => Dirty.Constant; }", cleanPath);
+        var options = TestOptions.ReleaseDll
+            .WithConcurrentBuild(true)
+            .WithDeterministic(true);
+        var compilation0 = CreateCompilation([dirtyTree0, cleanTree], assemblyName: "Test", options: options);
+        var baseline = Emit(compilation0);
+
+        var compilation1 = compilation0.ReplaceSyntaxTree(dirtyTree0, dirtyTree1);
+        var reuse = new CSharpMethodBodyReuse(
+            compilation0,
+            (PEModuleBuilder)baseline.TestData.Module!,
+            baseline.Diagnostics,
+            method => method.DeclaringSyntaxReferences.Any(reference => reference.SyntaxTree.FilePath == cleanPath));
+        var incremental = Emit(compilation1, reuse);
+        var clean = Emit(CreateCompilation([dirtyTree1, cleanTree], assemblyName: "Test", options: options));
+
+        Assert.Equal(1, incremental.Statistics.ReusedBodyCount);
+        Assert.Equal(0, incremental.Statistics.FallbackBodyCount);
+        AssertBytesEqual(clean.Pdb, incremental.Pdb);
+        AssertBytesEqual(clean.Pe, incremental.Pe);
+    }
+
+    [Fact]
     public void DeclarationChangeThatAffectsOverloadResolution_FallsBackToNormalCompilation()
     {
         const string overloadsPath = "Overloads.cs";
