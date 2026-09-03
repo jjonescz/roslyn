@@ -196,7 +196,7 @@ The event carries these properties:
 Method-body reuse uses a separate `roslyn/incrementalcompilation` event when a server
 request actually runs a reuse-enabled emit. Requests with no completed reuse statistics do
 not produce this event. The C# compiler server retains up to 10 successful emit baselines that
-have no warning or error diagnostics,
+have no warning or error diagnostics and contain at least one reusable ordinary method,
 keyed by output assembly path and evicted in least-recently-used order. The first request for an
 output compiles normally and seeds its baseline; subsequent requests handled by the same server
 attempt method-body reuse. Its fixed properties identify `strategy=methodbodyreuse`,
@@ -214,6 +214,13 @@ global or per-body reason taxonomy. The event and its corresponding single aggre
 line contain only bounded category names and numeric counts; they never contain symbol names,
 paths, source hashes, diagnostics, or diagnostic text. Percentages are intentionally left to
 telemetry queries.
+
+Field-containing compilations remain eligible for reuse. While compiling a baseline, the C#
+compiler records the read/write contribution of each method to unused-field analysis. A reused
+method maps and replays only its own field accesses into the current compilation; changed methods
+contribute freshly analyzed accesses. The existing unused-field diagnostic pass then runs over
+the combined state, preserving clean-build warnings without rebinding reused bodies. If a
+referenced field cannot be mapped, that body falls back with `fieldusagemapping`.
 
 For local inspection, set `RoslynCommandLineLogFile` to an existing directory before starting
 the build. The client and compiler server create separate `server.<process-id>.log` files there,

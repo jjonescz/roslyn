@@ -332,6 +332,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
                 MethodBodyReuseBodyFallbackReason.SequencePointDocument => "sequencepointdocument",
                 MethodBodyReuseBodyFallbackReason.StringToken => "stringtoken",
                 MethodBodyReuseBodyFallbackReason.UnsupportedInstruction => "unsupportedinstruction",
+                MethodBodyReuseBodyFallbackReason.FieldUsageMapping => "fieldusagemapping",
                 _ => throw ExceptionUtilities.UnexpectedValue(reason),
             };
 

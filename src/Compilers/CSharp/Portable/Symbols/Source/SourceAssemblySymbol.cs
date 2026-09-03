@@ -23,6 +23,14 @@ using CommonAssemblyWellKnownAttributeData = Microsoft.CodeAnalysis.CommonAssemb
 
 namespace Microsoft.CodeAnalysis.CSharp.Symbols
 {
+    [Flags]
+    internal enum MethodBodyFieldAccess
+    {
+        None = 0,
+        Read = 1,
+        Write = 2,
+    }
+
     /// <summary>
     /// Represents an assembly built by compiler.
     /// </summary>
@@ -100,6 +108,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// private fields declared in this assembly but never read
         /// </summary>
         private readonly ConcurrentSet<FieldSymbol> _unreadFields = new ConcurrentSet<FieldSymbol>();
+
+        private ConcurrentDictionary<MethodSymbol, Dictionary<FieldSymbol, MethodBodyFieldAccess>> _methodBodyFieldAccesses;
+        private bool _trackMethodBodyFieldAccesses;
+        private int _hasMethodBodyReuseCandidate;
 
         /// <summary>
         /// We imitate the native compiler's policy of not warning about unused fields
@@ -2628,7 +2640,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        internal void NoteFieldAccess(FieldSymbol field, bool read, bool write)
+        internal void NoteFieldAccess(FieldSymbol field, bool read, bool write, MethodSymbol topLevelMethod = null)
         {
             var container = field.ContainingType as SourceMemberContainerTypeSymbol;
             if ((object)container == null)
@@ -2638,6 +2650,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
 
             container.EnsureFieldDefinitionsNoted();
+
+            if (_trackMethodBodyFieldAccesses &&
+                topLevelMethod?.MethodKind == MethodKind.Ordinary)
+            {
+                RecordMethodBodyFieldAccess(topLevelMethod, field, read, write);
+            }
 
             if (_unusedFieldWarnings.IsDefault)
             {
@@ -2652,6 +2670,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     _unassignedFieldsMap.TryRemove(field, out _);
                 }
             }
+
             else
             {
                 // It's acceptable to run flow analysis again after the diagnostics have been computed - just
@@ -2665,6 +2684,79 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     !(write && _unassignedFieldsMap.ContainsKey(field)),
                     "we are already reporting unused field warnings, there could be no more changes");
             }
+        }
+
+        internal void EnableMethodBodyFieldAccessTracking()
+            => _trackMethodBodyFieldAccesses = true;
+
+        internal bool IsMethodBodyFieldAccessTrackingEnabled
+            => _trackMethodBodyFieldAccesses;
+
+        internal bool HasMethodBodyReuseCandidate
+            => Volatile.Read(ref _hasMethodBodyReuseCandidate) != 0;
+
+        internal void NoteMethodBodyReuseCandidate()
+            => Volatile.Write(ref _hasMethodBodyReuseCandidate, 1);
+
+        internal ImmutableArray<KeyValuePair<FieldSymbol, MethodBodyFieldAccess>> GetMethodBodyFieldAccesses(MethodSymbol method)
+        {
+            method = GetFieldAccessOwner(method);
+            if (_methodBodyFieldAccesses is null ||
+                !_methodBodyFieldAccesses.TryGetValue(method, out var fieldAccesses))
+            {
+                return [];
+            }
+
+            lock (fieldAccesses)
+            {
+                var builder = ImmutableArray.CreateBuilder<KeyValuePair<FieldSymbol, MethodBodyFieldAccess>>(fieldAccesses.Count);
+                foreach (var fieldAccess in fieldAccesses)
+                {
+                    builder.Add(fieldAccess);
+                }
+
+                return builder.MoveToImmutable();
+            }
+        }
+
+        private void RecordMethodBodyFieldAccess(MethodSymbol method, FieldSymbol field, bool read, bool write)
+        {
+            var access = (read ? MethodBodyFieldAccess.Read : MethodBodyFieldAccess.None) |
+                (write ? MethodBodyFieldAccess.Write : MethodBodyFieldAccess.None);
+            if (access == MethodBodyFieldAccess.None)
+            {
+                return;
+            }
+
+            method = GetFieldAccessOwner(method);
+            field = field.OriginalDefinition;
+
+            if (_methodBodyFieldAccesses is null)
+            {
+                Interlocked.CompareExchange(
+                    ref _methodBodyFieldAccesses,
+                    new ConcurrentDictionary<MethodSymbol, Dictionary<FieldSymbol, MethodBodyFieldAccess>>(),
+                    null);
+            }
+
+            var fieldAccesses = _methodBodyFieldAccesses.GetOrAdd(
+                method,
+                static _ => new Dictionary<FieldSymbol, MethodBodyFieldAccess>());
+            lock (fieldAccesses)
+            {
+                fieldAccesses.TryGetValue(field, out var existing);
+                fieldAccesses[field] = existing | access;
+            }
+        }
+
+        private static MethodSymbol GetFieldAccessOwner(MethodSymbol method)
+        {
+            if (method is SourceExtensionImplementationMethodSymbol extensionImplementation)
+            {
+                method = extensionImplementation.UnderlyingMethod;
+            }
+
+            return method.OriginalDefinition;
         }
 
         internal void NoteFieldDefinition(FieldSymbol field, bool isInternal, bool isUnread)

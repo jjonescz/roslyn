@@ -510,6 +510,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 var member = members[memberOrdinal];
 
+                if (_moduleBeingBuiltOpt is object &&
+                    member is MethodSymbol { MethodKind: MethodKind.Ordinary, IsImplicitlyDeclared: false, PartialImplementationPart: null })
+                {
+                    _compilation.SourceAssembly.NoteMethodBodyReuseCandidate();
+                }
+
                 //When a filter is supplied, limit the compilation of members passing the filter.
                 if (!PassesFilter(_filterOpt, member))
                 {

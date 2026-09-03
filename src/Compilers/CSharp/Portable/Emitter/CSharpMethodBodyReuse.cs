@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
@@ -10,6 +11,7 @@ using System.Reflection.Emit;
 using Microsoft.CodeAnalysis.CodeGen;
 using Microsoft.CodeAnalysis.Collections;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Debugging;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Symbols;
@@ -89,7 +91,7 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
             return false;
         }
 
-        if (!HaveEquivalentSourceFiles(currentMethod, previousMethod))
+        if (!HaveEquivalentSourceFiles(currentMethod, previousMethod, matcherState))
         {
             bodyFallbackReason = MethodBodyReuseBodyFallbackReason.SourceChanged;
             return false;
@@ -129,6 +131,23 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
             return false;
         }
 
+        if (!TryMapFieldAccesses(previousMethod, matcherState.PreviousToCurrent, out var fieldAccesses))
+        {
+            bodyFallbackReason = MethodBodyReuseBodyFallbackReason.FieldUsageMapping;
+            return false;
+        }
+
+        var currentAssembly = currentModuleBuilder.Compilation.SourceAssembly;
+        foreach (var fieldAccess in fieldAccesses)
+        {
+            var access = fieldAccess.Value;
+            currentAssembly.NoteFieldAccess(
+                fieldAccess.Key,
+                read: (access & MethodBodyFieldAccess.Read) != 0,
+                write: (access & MethodBodyFieldAccess.Write) != 0,
+                topLevelMethod: currentMethod);
+        }
+
         currentModuleBuilder.SetMethodBody(
             currentMethod,
             new ReusedMethodBody(previousBody, (Cci.IMethodDefinition)currentMethod.GetCciAdapter(), il, sequencePoints, importScope),
@@ -140,28 +159,83 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
     private MatcherState CreateMatcherState(PEModuleBuilder currentModuleBuilder)
     {
         var currentCompilation = currentModuleBuilder.Compilation;
-        MethodBodyReuseGlobalFallbackReason? fallbackReason =
-            ContainsWarningsOrErrors(_previousDiagnostics) ? MethodBodyReuseGlobalFallbackReason.PreviousDiagnostics :
-            !HaveEquivalentCompilationOptions(currentCompilation) ? MethodBodyReuseGlobalFallbackReason.CompilationOptions :
-            !string.Equals(_previousCompilation.AssemblyName, currentCompilation.AssemblyName, StringComparison.Ordinal) ? MethodBodyReuseGlobalFallbackReason.AssemblyIdentity :
-            !HaveEquivalentReferences(currentCompilation) ? MethodBodyReuseGlobalFallbackReason.References :
-            _previousModuleBuilder.DebugInformationFormat != currentModuleBuilder.DebugInformationFormat ||
-                _previousModuleBuilder.EmittingPdb != currentModuleBuilder.EmittingPdb ||
-                _previousModuleBuilder.DebugDocumentCount != currentModuleBuilder.DebugDocumentCount ? MethodBodyReuseGlobalFallbackReason.DebugInformation :
-            !_previousModuleBuilder.EmitOptions.InstrumentationKinds.IsDefaultOrEmpty ||
-                !currentModuleBuilder.EmitOptions.InstrumentationKinds.IsDefaultOrEmpty ? MethodBodyReuseGlobalFallbackReason.Instrumentation :
-            GetDeclarationFallbackReason(currentCompilation) is { } declarationReason ? declarationReason :
-            ContainsField(currentCompilation.SourceModule.GlobalNamespace) ? MethodBodyReuseGlobalFallbackReason.Fields :
-            null;
-
-        if (fallbackReason is { } reason)
+        if (ContainsWarningsOrErrors(_previousDiagnostics))
         {
-            return new MatcherState(reason);
+            return new MatcherState(MethodBodyReuseGlobalFallbackReason.PreviousDiagnostics);
+        }
+
+        if (!HaveEquivalentCompilationOptions(currentCompilation))
+        {
+            return new MatcherState(MethodBodyReuseGlobalFallbackReason.CompilationOptions);
+        }
+
+        if (!string.Equals(_previousCompilation.AssemblyName, currentCompilation.AssemblyName, StringComparison.Ordinal))
+        {
+            return new MatcherState(MethodBodyReuseGlobalFallbackReason.AssemblyIdentity);
+        }
+
+        if (!HaveEquivalentReferences(currentCompilation))
+        {
+            return new MatcherState(MethodBodyReuseGlobalFallbackReason.References);
+        }
+
+        if (_previousModuleBuilder.DebugInformationFormat != currentModuleBuilder.DebugInformationFormat ||
+            _previousModuleBuilder.EmittingPdb != currentModuleBuilder.EmittingPdb ||
+            _previousModuleBuilder.DebugDocumentCount != currentModuleBuilder.DebugDocumentCount)
+        {
+            return new MatcherState(MethodBodyReuseGlobalFallbackReason.DebugInformation);
+        }
+
+        if (!_previousModuleBuilder.EmitOptions.InstrumentationKinds.IsDefaultOrEmpty ||
+            !currentModuleBuilder.EmitOptions.InstrumentationKinds.IsDefaultOrEmpty)
+        {
+            return new MatcherState(MethodBodyReuseGlobalFallbackReason.Instrumentation);
+        }
+
+        var sourceFileEquivalence = CreateSourceFileEquivalenceMap(currentCompilation);
+        if (GetDeclarationFallbackReason(currentCompilation, sourceFileEquivalence) is { } declarationReason)
+        {
+            return new MatcherState(declarationReason);
+        }
+
+        if (!_previousCompilation.SourceAssembly.IsMethodBodyFieldAccessTrackingEnabled &&
+            ContainsField(currentCompilation.SourceModule.GlobalNamespace))
+        {
+            return new MatcherState(MethodBodyReuseGlobalFallbackReason.Fields);
         }
 
         return new MatcherState(
             CreateMatcher(currentCompilation, _previousCompilation),
-            CreateMatcher(_previousCompilation, currentCompilation));
+            CreateMatcher(_previousCompilation, currentCompilation),
+            sourceFileEquivalence);
+    }
+
+    private bool TryMapFieldAccesses(
+        MethodSymbol previousMethod,
+        CSharpSymbolMatcher previousToCurrent,
+        out ImmutableArray<KeyValuePair<FieldSymbol, MethodBodyFieldAccess>> fieldAccesses)
+    {
+        var previousFieldAccesses = _previousCompilation.SourceAssembly.GetMethodBodyFieldAccesses(previousMethod);
+        if (previousFieldAccesses.IsEmpty)
+        {
+            fieldAccesses = [];
+            return true;
+        }
+
+        var builder = ImmutableArray.CreateBuilder<KeyValuePair<FieldSymbol, MethodBodyFieldAccess>>(previousFieldAccesses.Length);
+        foreach (var previousFieldAccess in previousFieldAccesses)
+        {
+            if (previousToCurrent.MapDefinition((Cci.IDefinition)previousFieldAccess.Key.GetCciAdapter())?.GetInternalSymbol() is not FieldSymbol currentField)
+            {
+                fieldAccesses = default;
+                return false;
+            }
+
+            builder.Add(new KeyValuePair<FieldSymbol, MethodBodyFieldAccess>(currentField, previousFieldAccess.Value));
+        }
+
+        fieldAccesses = builder.MoveToImmutable();
+        return true;
     }
 
     private static bool ContainsWarningsOrErrors(ImmutableArray<Diagnostic> diagnostics)
@@ -281,7 +355,9 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
         return builder.MoveToImmutable();
     }
 
-    private MethodBodyReuseGlobalFallbackReason? GetDeclarationFallbackReason(CSharpCompilation currentCompilation)
+    private MethodBodyReuseGlobalFallbackReason? GetDeclarationFallbackReason(
+        CSharpCompilation currentCompilation,
+        Dictionary<SyntaxTree, bool> sourceFileEquivalence)
     {
         var previousTrees = _previousCompilation.SyntaxTrees;
         var currentTrees = currentCompilation.SyntaxTrees;
@@ -302,12 +378,44 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
             {
                 return MethodBodyReuseGlobalFallbackReason.Declarations;
             }
+
+            if (!sourceFileEquivalence[currentTrees[i]] &&
+                (ContainsReuseSensitiveDeclaration(previousTrees[i]) ||
+                 ContainsReuseSensitiveDeclaration(currentTrees[i])))
+            {
+                return MethodBodyReuseGlobalFallbackReason.Declarations;
+            }
         }
 
         return null;
     }
 
-    private static bool HaveEquivalentSourceFiles(MethodSymbol currentMethod, MethodSymbol previousMethod)
+    private static bool ContainsReuseSensitiveDeclaration(SyntaxTree tree)
+    {
+        var walker = new ReuseSensitiveDeclarationWalker();
+        walker.Visit(tree.GetRoot());
+        return walker.Found;
+    }
+
+    private Dictionary<SyntaxTree, bool> CreateSourceFileEquivalenceMap(CSharpCompilation currentCompilation)
+    {
+        var previousTrees = _previousCompilation.SyntaxTrees;
+        var currentTrees = currentCompilation.SyntaxTrees;
+        Debug.Assert(previousTrees.Length == currentTrees.Length);
+
+        var result = new Dictionary<SyntaxTree, bool>(currentTrees.Length);
+        for (var i = 0; i < currentTrees.Length; i++)
+        {
+            result.Add(currentTrees[i], currentTrees[i].GetText().ContentEquals(previousTrees[i].GetText()));
+        }
+
+        return result;
+    }
+
+    private static bool HaveEquivalentSourceFiles(
+        MethodSymbol currentMethod,
+        MethodSymbol previousMethod,
+        MatcherState matcherState)
     {
         var currentReferences = currentMethod.DeclaringSyntaxReferences;
         var previousReferences = previousMethod.DeclaringSyntaxReferences;
@@ -319,6 +427,11 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
         foreach (var currentReference in currentReferences)
         {
             var currentTree = currentReference.SyntaxTree;
+            if (!matcherState.HaveEquivalentSourceText(currentTree))
+            {
+                return false;
+            }
+
             SyntaxTree? previousTree = null;
             foreach (var previousReference in previousReferences)
             {
@@ -329,8 +442,7 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
                 }
             }
 
-            if (previousTree is null ||
-                !currentTree.GetText().ContentEquals(previousTree.GetText()))
+            if (previousTree is null)
             {
                 return false;
             }
@@ -513,6 +625,7 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
                     {
                         var previousToken = ReadInt32(previousIL, offset);
                         if (_previousModuleBuilder.GetReferenceFromToken((uint)previousToken) is not Cci.IReference previousReference ||
+                            IsUnsupportedReference(operandType, previousReference) ||
                             previousToCurrent.MapReference(previousReference) is not { } currentReference)
                         {
                             il = default;
@@ -613,6 +726,7 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
                         var previousToken = ReadInt32(previousIL, offset);
                         if ((previousToken & unchecked((int)0xff000000)) != 0 ||
                             _previousModuleBuilder.GetReferenceFromToken((uint)previousToken) is not Cci.IReference previousReference ||
+                            IsUnsupportedReference(operandType, previousReference) ||
                             previousToCurrent.MapReference(previousReference) is null)
                         {
                             fallbackReason = MethodBodyReuseBodyFallbackReason.ReferenceMapping;
@@ -666,12 +780,65 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
         return true;
     }
 
+    private static bool IsUnsupportedReference(OperandType _, Cci.IReference reference)
+        => reference.GetInternalSymbol() is FieldSymbol { IsDefinition: false };
+
+    private sealed class ReuseSensitiveDeclarationWalker : CSharpSyntaxWalker
+    {
+        internal bool Found { get; private set; }
+
+        public override void VisitFieldDeclaration(FieldDeclarationSyntax node)
+        {
+            foreach (var modifier in node.Modifiers)
+            {
+                if (modifier.IsKind(SyntaxKind.ConstKeyword))
+                {
+                    Found = true;
+                    return;
+                }
+            }
+
+            base.VisitFieldDeclaration(node);
+        }
+
+        public override void VisitEnumMemberDeclaration(EnumMemberDeclarationSyntax node)
+        {
+            if (node.EqualsValue is object)
+            {
+                Found = true;
+                return;
+            }
+
+            base.VisitEnumMemberDeclaration(node);
+        }
+
+        public override void VisitParameter(ParameterSyntax node)
+        {
+            if (node.Default is object)
+            {
+                Found = true;
+                return;
+            }
+
+            base.VisitParameter(node);
+        }
+
+        public override void DefaultVisit(SyntaxNode node)
+        {
+            if (!Found)
+            {
+                base.DefaultVisit(node);
+            }
+        }
+    }
+
     private sealed class Session : IMethodBodyReuseSession
     {
         private readonly CSharpMethodBodyReuse _reuse;
         private readonly PEModuleBuilder _moduleBuilder;
         private readonly Lazy<MatcherState> _lazyMatcherState;
         private readonly MethodBodyReuseStatisticsCollector _statistics = new();
+        private readonly object _reuseGate = new();
 
         internal Session(CSharpMethodBodyReuse reuse, PEModuleBuilder moduleBuilder)
         {
@@ -691,29 +858,32 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
             DiagnosticBag diagnostics)
         {
             Debug.Assert(ReferenceEquals(moduleBuilder, _moduleBuilder));
-            _statistics.RecordReuseAttempt();
-
-            if (_reuse.TryReuseMethodBody(
-                    (MethodSymbol)method,
-                    _moduleBuilder,
-                    _lazyMatcherState.Value,
-                    diagnostics,
-                    out var globalFallbackReason,
-                    out var bodyFallbackReason))
+            lock (_reuseGate)
             {
-                return true;
-            }
+                _statistics.RecordReuseAttempt();
 
-            if (globalFallbackReason is { } globalReason)
-            {
-                _statistics.RecordFallback(globalReason);
-            }
-            else
-            {
-                _statistics.RecordFallback(bodyFallbackReason);
-            }
+                if (_reuse.TryReuseMethodBody(
+                        (MethodSymbol)method,
+                        _moduleBuilder,
+                        _lazyMatcherState.Value,
+                        diagnostics,
+                        out var globalFallbackReason,
+                        out var bodyFallbackReason))
+                {
+                    return true;
+                }
 
-            return false;
+                if (globalFallbackReason is { } globalReason)
+                {
+                    _statistics.RecordFallback(globalReason);
+                }
+                else
+                {
+                    _statistics.RecordFallback(bodyFallbackReason);
+                }
+
+                return false;
+            }
         }
 
         void IMethodBodyReuseSession.RecordEmittedBody(bool reused)
@@ -734,21 +904,31 @@ internal sealed class CSharpMethodBodyReuse : IMethodBodyReuse
 
     private sealed class MatcherState
     {
+        private readonly Dictionary<SyntaxTree, bool>? _sourceFileEquivalence;
+
         internal MethodBodyReuseGlobalFallbackReason? GlobalFallbackReason { get; }
         internal CSharpSymbolMatcher? CurrentToPrevious { get; }
         internal CSharpSymbolMatcher? PreviousToCurrent { get; }
 
         internal MatcherState(
             CSharpSymbolMatcher currentToPrevious,
-            CSharpSymbolMatcher previousToCurrent)
+            CSharpSymbolMatcher previousToCurrent,
+            Dictionary<SyntaxTree, bool> sourceFileEquivalence)
         {
             CurrentToPrevious = currentToPrevious;
             PreviousToCurrent = previousToCurrent;
+            _sourceFileEquivalence = sourceFileEquivalence;
         }
 
         internal MatcherState(MethodBodyReuseGlobalFallbackReason globalFallbackReason)
         {
             GlobalFallbackReason = globalFallbackReason;
+        }
+
+        internal bool HaveEquivalentSourceText(SyntaxTree tree)
+        {
+            Debug.Assert(_sourceFileEquivalence is object);
+            return _sourceFileEquivalence[tree];
         }
     }
 

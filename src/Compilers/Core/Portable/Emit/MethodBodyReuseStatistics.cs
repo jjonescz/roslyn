@@ -45,6 +45,7 @@ internal enum MethodBodyReuseBodyFallbackReason
     SequencePointDocument = 13,
     StringToken = 14,
     UnsupportedInstruction = 15,
+    FieldUsageMapping = 16,
 }
 
 /// <summary>
@@ -115,7 +116,7 @@ internal sealed class MethodBodyReuseStatistics
 internal sealed class MethodBodyReuseStatisticsCollector
 {
     private readonly int[] _globalFallbackReasonCounts = new int[(int)MethodBodyReuseGlobalFallbackReason.Fields + 1];
-    private readonly int[] _bodyFallbackReasonCounts = new int[(int)MethodBodyReuseBodyFallbackReason.UnsupportedInstruction + 1];
+    private readonly int[] _bodyFallbackReasonCounts = new int[(int)MethodBodyReuseBodyFallbackReason.FieldUsageMapping + 1];
     private int _compiledBodyCount;
     private int _reuseAttemptCount;
     private int _reusedBodyCount;

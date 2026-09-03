@@ -36,7 +36,7 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
         const string pdbFileName = "test.pdb";
         const string dirtySource0 = "public static class Dirty { public static int Value() => 1; }";
         const string dirtySource1 = "public static class Dirty { public static int Value() => 2; }";
-        const string cleanSource = "public static class Clean { public static int Value() => Dirty.Value(); }";
+        const string cleanSource = "public static class Clean { private static int _value = 1; public static int Value() => _value + Dirty.Value(); }";
 
         var workingDirectory = Temp.CreateDirectory();
         byte[] incrementalPe;
@@ -69,8 +69,8 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
 
         var summary = Assert.Single(_logger.GetMessagesSnapshot().Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal)));
         Assert.Contains("status=succeeded", summary, StringComparison.Ordinal);
-        Assert.Contains("totalbodycount=4", summary, StringComparison.Ordinal);
-        Assert.Contains("compiledbodycount=3", summary, StringComparison.Ordinal);
+        Assert.Contains("totalbodycount=5", summary, StringComparison.Ordinal);
+        Assert.Contains("compiledbodycount=4", summary, StringComparison.Ordinal);
         Assert.Contains("reuseattemptcount=2", summary, StringComparison.Ordinal);
         Assert.Contains("reusedbodycount=1", summary, StringComparison.Ordinal);
         Assert.Contains("fallbackbodycount=1", summary, StringComparison.Ordinal);

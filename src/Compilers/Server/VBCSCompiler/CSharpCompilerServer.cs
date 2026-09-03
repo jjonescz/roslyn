@@ -85,8 +85,16 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             }
         }
 
-        protected override IMethodBodyReuse? GetMethodBodyReuse(string outputFilePath)
-            => _methodBodyReuseCache?.TryGetReuse(outputFilePath);
+        protected override IMethodBodyReuse? PrepareMethodBodyReuse(string outputFilePath, Compilation compilation)
+        {
+            if (_methodBodyReuseCache is null)
+            {
+                return null;
+            }
+
+            ((CSharpCompilation)compilation).SourceAssembly.EnableMethodBodyFieldAccessTracking();
+            return _methodBodyReuseCache.TryGetReuse(outputFilePath);
+        }
 
         protected override void OnEmitCompleted(
             string outputFilePath,
@@ -102,7 +110,8 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             }
 
             if (succeeded &&
-                !ContainsWarningsOrErrors(diagnostics))
+                !ContainsWarningsOrErrors(diagnostics) &&
+                ((CSharpCompilation)compilation).SourceAssembly.HasMethodBodyReuseCandidate)
             {
                 _pendingMethodBodyReuse = (
                     outputFilePath,

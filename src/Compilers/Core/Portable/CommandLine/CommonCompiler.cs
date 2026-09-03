@@ -1334,7 +1334,7 @@ namespace Microsoft.CodeAnalysis
                 {
                     bool success = false;
                     bool completedNormally = false;
-                    var methodBodyReuse = GetMethodBodyReuse(finalPeFilePath);
+                    var methodBodyReuse = PrepareMethodBodyReuse(finalPeFilePath, compilation);
                     var methodBodyReuseSession = methodBodyReuse?.CreateSession(moduleBeingBuilt);
                     moduleBeingBuilt.MethodBodyReuse = methodBodyReuseSession;
                     moduleBeingBuilt.EmittingPdb = Arguments.EmitPdb;
@@ -1835,7 +1835,7 @@ namespace Microsoft.CodeAnalysis
         /// Returns method-body reuse state for the output being compiled, or <see langword="null"/>
         /// when no baseline is available.
         /// </summary>
-        protected virtual IMethodBodyReuse? GetMethodBodyReuse(string outputFilePath)
+        protected virtual IMethodBodyReuse? PrepareMethodBodyReuse(string outputFilePath, Compilation compilation)
             => null;
 
         /// <summary>
