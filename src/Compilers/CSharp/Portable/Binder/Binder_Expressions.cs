@@ -7815,7 +7815,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var isSemanticModel = this.IsSemanticModelBinder;
             for (var chain = this.ImportChain; chain != null; chain = chain.ParentOpt)
             {
-                if (IsUsingAlias(chain.Imports.UsingAliases, name, isSemanticModel, ContainingMemberOrLambda))
+                if (IsUsingAlias(chain.Imports.UsingAliases, name, isSemanticModel))
                 {
                     return true;
                 }

@@ -85,7 +85,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// Struct fields that are implicitly initialized, due to being used before being written, or not being written at an exit point.
         /// </summary>
         private PooledHashSet<FieldSymbol>? _implicitlyInitializedFieldsOpt;
-        private PooledHashSet<TypeSymbol>? _typesWhoseFieldsWereRecordedForMethodBodyReuse;
 
         private void AddImplicitlyInitializedField(FieldSymbol field)
         {
@@ -258,7 +257,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             _usedVariables.Free();
             _readParameters?.Free();
             _implicitlyInitializedFieldsOpt?.Free();
-            _typesWhoseFieldsWereRecordedForMethodBodyReuse?.Free();
             _usedLocalFunctions.Free();
             _writtenVariables.Free();
             _capturedVariables.Free();
@@ -727,8 +725,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     _sourceAssembly.NoteFieldAccess((FieldSymbol)variable.OriginalDefinition,
                                                     read: true,
-                                                    write: false,
-                                                    topLevelMethod: topLevelMethod);
+                                                    write: false);
                 }
 
                 CheckCaptured(variable, rangeVariableUnderlyingParameter);
@@ -811,8 +808,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     var field = (FieldSymbol)variable.OriginalDefinition;
                     _sourceAssembly.NoteFieldAccess(field,
                         read: read && WriteConsideredUse(field.Type, value),
-                        write: field.RefKind == RefKind.None || isRef,
-                        topLevelMethod: topLevelMethod);
+                        write: field.RefKind == RefKind.None || isRef);
                 }
 
                 var local = variable as LocalSymbol;
@@ -925,8 +921,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 var field = fieldAccess.FieldSymbol.OriginalDefinition;
                                 _sourceAssembly.NoteFieldAccess(field,
                                     read: value == null || WriteConsideredUse(fieldAccess.FieldSymbol.Type, value),
-                                    write: field.RefKind == RefKind.None || isRef,
-                                    topLevelMethod: topLevelMethod);
+                                    write: field.RefKind == RefKind.None || isRef);
                             }
 
                             if (MayRequireTracking(fieldAccess.ReceiverOpt, fieldAccess.FieldSymbol))
@@ -954,7 +949,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 if ((object)_sourceAssembly != null)
                                 {
                                     var field = associatedField.OriginalDefinition;
-                                    _sourceAssembly.NoteFieldAccess(field, read: value == null || WriteConsideredUse(associatedField.Type, value), write: true, topLevelMethod: topLevelMethod);
+                                    _sourceAssembly.NoteFieldAccess(field, read: value == null || WriteConsideredUse(associatedField.Type, value), write: true);
                                 }
 
                                 if (MayRequireTracking(eventAccess.ReceiverOpt, associatedField))
@@ -1446,7 +1441,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         {
                             var fieldAccess = (BoundFieldAccess)expression;
                             var fieldSymbol = fieldAccess.FieldSymbol;
-                            if ((object)_sourceAssembly != null) _sourceAssembly.NoteFieldAccess(fieldSymbol, true, true, topLevelMethod: topLevelMethod);
+                            if ((object)_sourceAssembly != null) _sourceAssembly.NoteFieldAccess(fieldSymbol, true, true);
                             if (fieldSymbol.ContainingType.IsReferenceType || fieldSymbol.IsStatic) return null;
                             expression = fieldAccess.ReceiverOpt;
                             continue;
@@ -1595,8 +1590,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         {
                             _sourceAssembly.NoteFieldAccess(field.OriginalDefinition,
                                 read: false,
-                                write: field.RefKind == RefKind.None || isRef,
-                                topLevelMethod: topLevelMethod);
+                                write: field.RefKind == RefKind.None || isRef);
                         }
                         break;
                     }
@@ -2007,7 +2001,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                         {
                                             if (member.Symbol is FieldSymbol field)
                                             {
-                                                _sourceAssembly.NoteFieldAccess(field, read: true, write: false, topLevelMethod: topLevelMethod);
+                                                _sourceAssembly.NoteFieldAccess(field, read: true, write: false);
                                             }
 
                                             member = member.Receiver;
@@ -2644,8 +2638,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                         return; // could be retargeting assembly
                     }
 
-                    RecordFieldsUsedForMethodBodyReuse((NamedTypeSymbol)type, assembly);
-
                     var seen = assembly.TypesReferencedInExternalMethods;
                     if (seen.Add(type))
                     {
@@ -2658,30 +2650,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                             }
 
                             FieldSymbol field = (FieldSymbol)symbol;
-                            assembly.NoteFieldAccess(field, read: true, write: true, topLevelMethod: topLevelMethod);
+                            assembly.NoteFieldAccess(field, read: true, write: true);
                             MarkFieldsUsed(field.Type);
                         }
                     }
                     return;
-            }
-        }
-
-        private void RecordFieldsUsedForMethodBodyReuse(NamedTypeSymbol type, SourceAssemblySymbol assembly)
-        {
-            if (topLevelMethod?.MethodKind != MethodKind.Ordinary ||
-                !assembly.IsMethodBodyReuseTrackingEnabled ||
-                !(_typesWhoseFieldsWereRecordedForMethodBodyReuse ??= PooledHashSet<TypeSymbol>.GetInstance()).Add(type))
-            {
-                return;
-            }
-
-            foreach (var symbol in type.GetMembersUnordered())
-            {
-                if (symbol is FieldSymbol field)
-                {
-                    assembly.NoteFieldAccess(field, read: true, write: true, topLevelMethod: topLevelMethod);
-                    MarkFieldsUsed(field.Type);
-                }
             }
         }
 #nullable disable

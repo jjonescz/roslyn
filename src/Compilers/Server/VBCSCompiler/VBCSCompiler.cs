@@ -19,9 +19,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
                 return CommonCompiler.Failed;
             }
 
-            using var logger = options.LogFilePath is null
-                ? new CompilerServerLogger($"VBCSCompiler {Process.GetCurrentProcess().Id}", StandardBuildEnvironment.Instance)
-                : new CompilerServerLogger($"VBCSCompiler {Process.GetCurrentProcess().Id}", options.LogFilePath);
+            using var logger = new CompilerServerLogger($"VBCSCompiler {Process.GetCurrentProcess().Id}", options.LogFilePath);
 
 #if BOOTSTRAP
             ExitingTraceListener.Install(logger);

@@ -151,12 +151,7 @@ namespace Microsoft.CodeAnalysis
                 return true;
             }
 
-            if (left is null || right is null)
-            {
-                return false;
-            }
-
-            if (left.Count != right.Count)
+            if (left is null || right is null || left.Count != right.Count)
             {
                 return false;
             }

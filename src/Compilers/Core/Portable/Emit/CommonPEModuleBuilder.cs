@@ -41,10 +41,6 @@ namespace Microsoft.CodeAnalysis.Emit
         private readonly Lazy<StringTokenMap> _stringsInILMap;
         private readonly ItemTokenMap<Cci.DebugSourceDocument> _sourceDocumentsInILMap = new();
 
-        internal IMethodBodyReuseSession? MethodBodyReuse { get; set; }
-        internal MethodBodyReuseStatistics? MethodBodyReuseStatistics { get; set; }
-        internal bool EmittingPdb { get; set; }
-
         private ImmutableArray<Cci.AssemblyReferenceAlias> _lazyAssemblyReferenceAliases;
         private ImmutableArray<Cci.ManagedResource> _lazyManagedResources;
         private IEnumerable<EmbeddedText> _embeddedTexts = SpecializedCollections.EmptyEnumerable<EmbeddedText>();
@@ -431,7 +427,7 @@ namespace Microsoft.CodeAnalysis.Emit
         }
 #nullable disable
 
-        public void SetMethodBody(IMethodSymbolInternal methodSymbol, Cci.IMethodBody body, bool reused = false)
+        public void SetMethodBody(IMethodSymbolInternal methodSymbol, Cci.IMethodBody body)
         {
             Debug.Assert(methodSymbol.ContainingModule == CommonSourceModule);
             Debug.Assert(methodSymbol.IsDefinition);
@@ -439,10 +435,6 @@ namespace Microsoft.CodeAnalysis.Emit
             Debug.Assert(body == null || (object)methodSymbol == body.MethodDefinition.GetInternalSymbol());
 
             _methodBodyMap.Add(methodSymbol, body);
-            if (body is object)
-            {
-                MethodBodyReuse?.RecordEmittedBody(reused);
-            }
         }
 
         internal void SetPEEntryPoint(IMethodSymbolInternal method, DiagnosticBag diagnostics)

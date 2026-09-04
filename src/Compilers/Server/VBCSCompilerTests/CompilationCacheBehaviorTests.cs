@@ -28,7 +28,7 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
     private readonly XunitCompilerServerLogger _logger = new(testOutputHelper);
 
     [Fact]
-    public async Task MethodBodyReuse_ReusesUnchangedBodyAndLogsStatistics()
+    public async Task CompilationReuse_ReusesUnchangedSyntaxTreeAndMatchesCleanBuild()
     {
         const string dirtyFileName = "Dirty.cs";
         const string cleanFileName = "Clean.cs";
@@ -36,7 +36,7 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
         const string pdbFileName = "test.pdb";
         const string dirtySource0 = "public static class Dirty { public static int Value() => 1; }";
         const string dirtySource1 = "public static class Dirty { public static int Value() => 2; }";
-        const string cleanSource = "public static class Clean { private static int _value = 1; public static int Value() => _value + Dirty.Value(); }";
+        const string cleanSource = "public static class Clean { public static int Value() => Dirty.Value(); }";
 
         var workingDirectory = Temp.CreateDirectory();
         byte[] incrementalPe;
@@ -57,7 +57,6 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
                 workingDirectory,
                 [new(dirtyFileName, dirtySource0), new(cleanFileName, cleanSource)]);
             Assert.Equal(0, exitCode);
-            Assert.DoesNotContain(_logger.GetMessagesSnapshot(), static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal));
 
             File.WriteAllText(Path.Combine(workingDirectory.Path, dirtyFileName), dirtySource1);
             (exitCode, _) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, arguments, workingDirectory);
@@ -67,14 +66,21 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
             incrementalPdb = File.ReadAllBytes(Path.Combine(workingDirectory.Path, pdbFileName));
         }
 
-        var summary = Assert.Single(_logger.GetMessagesSnapshot().Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal)));
-        Assert.Contains("status=succeeded", summary, StringComparison.Ordinal);
-        Assert.Contains("totalbodycount=5", summary, StringComparison.Ordinal);
-        Assert.Contains("compiledbodycount=4", summary, StringComparison.Ordinal);
-        Assert.Contains("reuseattemptcount=2", summary, StringComparison.Ordinal);
-        Assert.Contains("reusedbodycount=1", summary, StringComparison.Ordinal);
-        Assert.Contains("fallbackbodycount=1", summary, StringComparison.Ordinal);
-        Assert.Contains("bodyreasoncount.sourcechanged=1", summary, StringComparison.Ordinal);
+        var summaries = _logger.GetMessagesSnapshot()
+            .Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal))
+            .ToArray();
+        Assert.Equal(2, summaries.Length);
+        Assert.Contains("strategy=compilationreuse", summaries[0], StringComparison.Ordinal);
+        Assert.Contains("cachestatus=miss", summaries[0], StringComparison.Ordinal);
+        Assert.Contains("reusedsyntaxtreecount=0", summaries[0], StringComparison.Ordinal);
+        Assert.Contains("cachestatus=hit", summaries[1], StringComparison.Ordinal);
+        Assert.Contains("totalsyntaxtreecount=2", summaries[1], StringComparison.Ordinal);
+        Assert.Contains("reusedsyntaxtreecount=1", summaries[1], StringComparison.Ordinal);
+        Assert.Contains("compilationcreatems=", summaries[1], StringComparison.Ordinal);
+        Assert.Contains("compilationupdatems=", summaries[1], StringComparison.Ordinal);
+        Assert.Contains("compilemethodsms=", summaries[1], StringComparison.Ordinal);
+        Assert.Contains("serializems=", summaries[1], StringComparison.Ordinal);
+        Assert.Contains("compileandemitms=", summaries[1], StringComparison.Ordinal);
 
         {
             using var cleanServerData = await ServerUtil.CreateServer(_logger);
@@ -93,7 +99,7 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
     }
 
     [Fact]
-    public async Task MethodBodyReuse_ChangedReferenceFallsBack()
+    public async Task CompilationReuse_ChangedReferenceMatchesCleanBuild()
     {
         const string sourceFileName = "Test.cs";
         const string outputFileName = "test.dll";
@@ -134,10 +140,11 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
             incrementalPe = File.ReadAllBytes(Path.Combine(workingDirectory.Path, outputFileName));
         }
 
-        var summary = Assert.Single(_logger.GetMessagesSnapshot().Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal)));
-        Assert.Contains("reusedbodycount=0", summary, StringComparison.Ordinal);
-        Assert.Contains("fallbackbodycount=1", summary, StringComparison.Ordinal);
-        Assert.Contains("globalreasoncount.references=1", summary, StringComparison.Ordinal);
+        var summary = _logger.GetMessagesSnapshot()
+            .Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal))
+            .ElementAt(1);
+        Assert.Contains("cachestatus=hit", summary, StringComparison.Ordinal);
+        Assert.Contains("reusedsyntaxtreecount=1", summary, StringComparison.Ordinal);
 
         {
             using var cleanServerData = await ServerUtil.CreateServer(_logger);
@@ -155,40 +162,141 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
     }
 
     [Fact]
-    public async Task MethodBodyReuse_ReusedMethodStillRunsAnalyzers()
+    public async Task CompilationReuse_RunsAnalyzers()
     {
-        const string dirtyFileName = "Dirty.cs";
-        const string cleanFileName = "Clean.cs";
+        const string sourceFileName = "Test.cs";
         const string outputFileName = "test.dll";
-        const string dirtySource0 = "public static class Dirty { public static int Value() => 1; }";
-        const string dirtySource1 = "public static class Dirty { public static int Value() => 2; }";
-        const string cleanSource = "public static class Clean { public static int Value() => Dirty.Value(); }";
+        const string source0 = "public static class Test { public static int Value() => 1; }";
+        const string source1 = "public static class Test { public static int Value() => 2; }";
 
         var workingDirectory = Temp.CreateDirectory();
-        var analyzerPath = CreateMethodBodyReuseAnalyzerAssembly(workingDirectory);
+        var analyzerPath = CreateWarningAnalyzerAssembly(workingDirectory);
         using var serverData = await ServerUtil.CreateServer(_logger);
         var arguments = BuildCompilationArguments(
             visualBasic: false,
             serverData.PipeName,
-            dirtyFileName,
+            sourceFileName,
             outputFileName,
-            additionalArguments: $"{cleanFileName} /a:{analyzerPath}");
+            additionalArguments: $"/a:{analyzerPath}");
 
         var (exitCode, output) = RunCommandLineCompiler(
             RequestLanguage.CSharpCompile,
             arguments,
             workingDirectory,
-            [new(dirtyFileName, dirtySource0), new(cleanFileName, cleanSource)]);
+            [new(sourceFileName, source0)]);
         Assert.Equal(0, exitCode);
-        Assert.DoesNotContain("warning MBRA001", output, StringComparison.Ordinal);
+        Assert.Contains("warning CACHWARN001", output, StringComparison.Ordinal);
 
-        File.WriteAllText(Path.Combine(workingDirectory.Path, dirtyFileName), dirtySource1);
+        File.WriteAllText(Path.Combine(workingDirectory.Path, sourceFileName), source1);
         (exitCode, output) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, arguments, workingDirectory);
         Assert.Equal(0, exitCode);
-        Assert.Contains("warning MBRA001", output, StringComparison.Ordinal);
+        Assert.Contains("warning CACHWARN001", output, StringComparison.Ordinal);
 
-        var summary = Assert.Single(_logger.GetMessagesSnapshot().Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal)));
-        Assert.Contains("reusedbodycount=1", summary, StringComparison.Ordinal);
+        var summary = _logger.GetMessagesSnapshot()
+            .Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal))
+            .ElementAt(1);
+        Assert.Contains("cachestatus=hit", summary, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task CompilationReuse_ChecksumAlgorithmChangeReparsesAndMatchesCleanBuild()
+    {
+        const string sourceFileName = "Test.cs";
+        const string outputFileName = "test.dll";
+        const string pdbFileName = "test.pdb";
+        const string source = "public static class Test { public static int Value() => 1; }";
+
+        var workingDirectory = Temp.CreateDirectory();
+        byte[] incrementalPe;
+        byte[] incrementalPdb;
+
+        {
+            using var serverData = await ServerUtil.CreateServer(_logger);
+            var arguments0 = BuildCompilationArguments(
+                visualBasic: false,
+                serverData.PipeName,
+                sourceFileName,
+                outputFileName,
+                additionalArguments: $"/debug:portable /pdb:{pdbFileName} /checksumalgorithm:SHA1");
+            var arguments1 = BuildCompilationArguments(
+                visualBasic: false,
+                serverData.PipeName,
+                sourceFileName,
+                outputFileName,
+                additionalArguments: $"/debug:portable /pdb:{pdbFileName} /checksumalgorithm:SHA256");
+
+            var (exitCode, _) = RunCommandLineCompiler(
+                RequestLanguage.CSharpCompile,
+                arguments0,
+                workingDirectory,
+                [new(sourceFileName, source)]);
+            Assert.Equal(0, exitCode);
+
+            (exitCode, _) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, arguments1, workingDirectory);
+            Assert.Equal(0, exitCode);
+            incrementalPe = File.ReadAllBytes(Path.Combine(workingDirectory.Path, outputFileName));
+            incrementalPdb = File.ReadAllBytes(Path.Combine(workingDirectory.Path, pdbFileName));
+
+            var summary = _logger.GetMessagesSnapshot()
+                .Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal))
+                .ElementAt(1);
+            Assert.Contains("cachestatus=hit", summary, StringComparison.Ordinal);
+            Assert.Contains("reusedsyntaxtreecount=0", summary, StringComparison.Ordinal);
+        }
+
+        {
+            using var cleanServerData = await ServerUtil.CreateServer(_logger);
+            var cleanArguments = BuildCompilationArguments(
+                visualBasic: false,
+                cleanServerData.PipeName,
+                sourceFileName,
+                outputFileName,
+                additionalArguments: $"/debug:portable /pdb:{pdbFileName} /checksumalgorithm:SHA256");
+            var (exitCode, _) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, cleanArguments, workingDirectory);
+            Assert.Equal(0, exitCode);
+        }
+
+        Assert.Equal(incrementalPe, File.ReadAllBytes(Path.Combine(workingDirectory.Path, outputFileName)));
+        Assert.Equal(incrementalPdb, File.ReadAllBytes(Path.Combine(workingDirectory.Path, pdbFileName)));
+    }
+
+    [Fact]
+    public async Task CompilationReuse_EmbedAddedReparsesSource()
+    {
+        const string sourceFileName = "Test.cs";
+        const string outputFileName = "test.dll";
+        const string source = "public static class Test { public static int Value() => 1; }";
+
+        var workingDirectory = Temp.CreateDirectory();
+        using var serverData = await ServerUtil.CreateServer(_logger);
+        var arguments0 = BuildCompilationArguments(
+            visualBasic: false,
+            serverData.PipeName,
+            sourceFileName,
+            outputFileName,
+            additionalArguments: "/debug:portable");
+        var arguments1 = BuildCompilationArguments(
+            visualBasic: false,
+            serverData.PipeName,
+            sourceFileName,
+            outputFileName,
+            additionalArguments: $"/debug:portable /embed:{sourceFileName}");
+
+        var (exitCode, _) = RunCommandLineCompiler(
+            RequestLanguage.CSharpCompile,
+            arguments0,
+            workingDirectory,
+            [new(sourceFileName, source)]);
+        Assert.Equal(0, exitCode);
+
+        (exitCode, _) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, arguments1, workingDirectory);
+        Assert.Equal(0, exitCode);
+
+        var summary = _logger.GetMessagesSnapshot()
+            .Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal))
+            .ElementAt(1);
+        Assert.Contains("cachestatus=hit", summary, StringComparison.Ordinal);
+        Assert.Contains("reusedsyntaxtreecount=0", summary, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -563,45 +671,6 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
             }
             """);
 
-    private static string CreateMethodBodyReuseAnalyzerAssembly(TempDirectory directory)
-        => EmitSupportAssembly(
-            directory,
-            "MethodBodyReuseAnalyzer",
-            """
-            using System.Collections.Immutable;
-            using System.Linq;
-            using Microsoft.CodeAnalysis;
-            using Microsoft.CodeAnalysis.Diagnostics;
-
-            [DiagnosticAnalyzer(LanguageNames.CSharp)]
-            public sealed class MethodBodyReuseAnalyzer : DiagnosticAnalyzer
-            {
-                private static readonly DiagnosticDescriptor s_rule = new(
-                    "MBRA001",
-                    "Method body reuse analyzer",
-                    "Method body reuse analyzer",
-                    "Testing",
-                    DiagnosticSeverity.Warning,
-                    isEnabledByDefault: true);
-
-                public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_rule);
-
-                public override void Initialize(AnalysisContext context)
-                {
-                    context.RegisterSymbolAction(static context =>
-                    {
-                        var method = (IMethodSymbol)context.Symbol;
-                        if (method.ContainingType.Name == "Clean" &&
-                            method.Name == "Value" &&
-                            context.Compilation.SyntaxTrees.Any(static tree => tree.ToString().Contains("=> 2;")))
-                        {
-                            context.ReportDiagnostic(Diagnostic.Create(s_rule, method.Locations[0]));
-                        }
-                    }, SymbolKind.Method);
-                }
-            }
-            """);
-
     private static string CreateReportAnalyzerAssembly(TempDirectory directory)
         => EmitSupportAssembly(
             directory,
@@ -695,11 +764,7 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
     private static void ReferenceNetstandardDllIfCoreClr(TempDirectory currentDirectory, List<string> arguments)
     {
         var filePath = Path.Combine(currentDirectory.Path, "netstandard.dll");
-        if (!File.Exists(filePath))
-        {
-            File.WriteAllBytes(filePath, NetStandard20.Resources.netstandard);
-        }
-
+        File.WriteAllBytes(filePath, NetStandard20.Resources.netstandard);
         arguments.Add("/nostdlib");
         arguments.Add("/r:netstandard.dll");
     }

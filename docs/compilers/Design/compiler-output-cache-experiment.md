@@ -193,50 +193,38 @@ The event carries these properties:
 | `storems` | milliseconds spent storing the result; omitted when no store was attempted (a hit, or a miss whose compilation failed) |
 | `compilems` | milliseconds spent compiling and emitting on a miss; omitted on a hit |
 
-Method-body reuse uses a separate `roslyn/incrementalcompilation` event when a server
-request actually runs a reuse-enabled emit. Requests with no completed reuse statistics do
-not produce this event. The C# compiler server retains up to 10 successful emit baselines that
-have no warning or error diagnostics and contain at least one reusable ordinary method,
-keyed by output assembly path and evicted in least-recently-used order. The first request for an
-output compiles normally and seeds its baseline; subsequent requests handled by the same server
-attempt method-body reuse. Its fixed properties identify `strategy=methodbodyreuse`,
-`cachekind=memory`, and emit `status`, followed by these counts:
+### In-memory C# compilation reuse
 
-- `totalbodycount`: all source and synthesized bodies installed in the emitted module.
-- `compiledbodycount`: installed bodies produced by normal compilation.
-- `reuseattemptcount`: ordinary source methods selected for a reuse attempt.
-- `reusedbodycount`: attempted bodies copied from the in-memory baseline.
-- `fallbackbodycount`: unsuccessful attempts subsequently compiled normally.
+The compiler server also retains up to 10 successful input `CSharpCompilation` instances, keyed
+by output path and evicted in least-recently-used order. On a later request for the same output,
+unchanged source text reuses its existing syntax tree and the compiler derives the next compilation
+through the normal immutable compilation update APIs. References are resolved again for every
+request so replacing a referenced file at the same path cannot leave the compilation bound to stale
+metadata. Source generators, analyzers, binding, lowering, code generation, and PE/PDB serialization
+still run normally.
 
-For a completed emit, total bodies equal compiled plus reused bodies, and attempts equal reused
-plus fallback bodies. Nonzero fallback counts are also grouped by a fixed compiler-defined
-global or per-body reason taxonomy. The event and its corresponding single aggregate server log
-line contain only bounded category names and numeric counts; they never contain symbol names,
-paths, source hashes, diagnostics, or diagnostic text. Percentages are intentionally left to
-telemetry queries.
+Compilation reuse is skipped when the output name is implicit, touched-file logging is enabled, or
+an application configuration file supplies assembly binding policy. Touched-file logging cannot
+reuse command-line resolvers that retain a logger from an older request, and the app-config assembly
+identity comparer does not provide value equality for safely recognizing unchanged policy.
 
-Field-containing compilations remain eligible for reuse. While compiling a baseline, the C#
-compiler records the read/write contribution of each method to unused-field analysis. A reused
-method maps and replays only its own field accesses into the current compilation; changed methods
-contribute freshly analyzed accesses. The existing unused-field diagnostic pass then runs over
-the combined state, preserving clean-build warnings without rebinding reused bodies. If a
-referenced field cannot be mapped, that body falls back with `fieldusagemapping`.
+A completed compilation produces a `roslyn/incrementalcompilation` telemetry event and one
+`Incremental compilation ...` server-log summary with the same bounded properties:
 
-Methods with using directives also remain eligible. Reused bodies receive an import scope
-translated from the current method binder, so emitted debugger metadata refers only to symbols
-from the current compilation. The compiler records which bounded source directives each baseline
-method used and replays those facts for unused-using diagnostics, including across successive
-reuse generations. Using and extern-alias directives must remain structurally equivalent across
-the compilation; changing one causes a conservative declaration fallback because global usings
-can affect binding in otherwise unchanged source files.
-
-For local inspection, set `RoslynCommandLineLogFile` to an existing directory before starting
-the build. The client and compiler server create separate `server.<process-id>.log` files there,
-and the compiler-server file contains the same aggregate `Incremental compilation ...` summary.
-Shut down an existing server before changing the variable or switching compiler toolset
-packages so the next build starts the intended server process. A toolset-package server may use
-a package-specific pipe, so terminate that known server process if `dotnet build-server
-shutdown` does not stop it.
+| Property | Meaning |
+|----------|---------|
+| `strategy` | `compilationreuse` |
+| `cachekind` | `memory` |
+| `status` | `succeeded` or `failed` |
+| `cachestatus` | `hit` when a previous compilation was updated, otherwise `miss` |
+| `outputcachehit` | `true` when the exact-output cache completed the request without compilation or emit |
+| `totalsyntaxtreecount` | number of input syntax trees |
+| `reusedsyntaxtreecount` | number of input syntax trees reused without reparsing |
+| `compilationcreatems` | milliseconds spent reading inputs, parsing changed files, resolving references, and creating or updating the input compilation |
+| `compilationupdatems` | milliseconds spent applying immutable compilation updates after inputs have been read |
+| `compilemethodsms` | milliseconds spent binding, analyzing, lowering, and generating method bodies |
+| `serializems` | milliseconds spent serializing PE/PDB output; omitted when serialization did not run |
+| `compileandemitms` | milliseconds from the output-cache miss through compilation, analysis, and emit completion |
 
 ## Cache management
 
@@ -318,6 +306,7 @@ The experiment currently has several important limitations:
 - Normal compiler behavior is not fully preserved on cache hits today. In particular, a restored cached result does not currently replay warnings and other compiler diagnostics that would normally be produced during a regular compilation.
 - Because the cache key is based on the current deterministic-key computation, the set of inputs that control cache reuse should be treated as an implementation detail of the experiment rather than a guaranteed contract.
 - The on-disk cache format is intentionally provisional and may change without compatibility support.
+- In-memory compilation reuse is currently limited to C# requests with an explicit output name, without touched-file logging, and without application-config assembly binding policy.
 
 ## Risks and open questions
 

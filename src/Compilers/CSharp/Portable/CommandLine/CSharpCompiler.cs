@@ -35,6 +35,18 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override DiagnosticFormatter DiagnosticFormatter { get { return _diagnosticFormatter; } }
         protected internal new CSharpCommandLineArguments Arguments { get { return (CSharpCommandLineArguments)base.Arguments; } }
 
+        protected virtual CSharpCompilation? TryGetPreviousCompilation()
+            => null;
+
+        protected virtual void OnInputCompilationCreated(
+            CSharpCompilation compilation,
+            bool reusedCompilation,
+            int reusedSyntaxTreeCount,
+            int totalSyntaxTreeCount,
+            long updateMilliseconds)
+        {
+        }
+
         public override Compilation? CreateCompilation(
             TextWriter consoleOutput,
             TouchedFileLogger? touchedFilesLogger,
@@ -54,6 +66,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             var trees = new SyntaxTree?[sourceFiles.Length];
             var normalizedFilePaths = new string?[sourceFiles.Length];
             var diagnosticBag = DiagnosticBag.GetInstance();
+            var previousCompilation = TryGetPreviousCompilation();
+            var previousTreesByPath = CreatePreviousSyntaxTreeMap(previousCompilation);
+            var reusedSyntaxTrees = new bool[sourceFiles.Length];
 
             if (Arguments.CompilationOptions.ConcurrentBuild)
             {
@@ -69,7 +84,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                             ref hadErrors,
                             sourceFiles[i],
                             diagnosticBag,
-                            out normalizedFilePaths[i]);
+                            out normalizedFilePaths[i],
+                            previousTreesByPath,
+                            reusedSyntaxTrees,
+                            i);
                     }),
                     CancellationToken.None);
             }
@@ -84,7 +102,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                         ref hadErrors,
                         sourceFiles[i],
                         diagnosticBag,
-                        out normalizedFilePaths[i]);
+                        out normalizedFilePaths[i],
+                        previousTreesByPath,
+                        reusedSyntaxTrees,
+                        i);
                 }
             }
 
@@ -156,18 +177,40 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             var loggingFileSystem = new LoggingStrongNameFileSystem(touchedFilesLogger, _tempDirectory);
             var optionsProvider = new CompilerSyntaxTreeOptionsProvider(trees, analyzerConfigOptions, globalConfigOptions);
+            var compilationOptions = Arguments.CompilationOptions
+                .WithMetadataReferenceResolver(referenceDirectiveResolver)
+                .WithAssemblyIdentityComparer(assemblyIdentityComparer)
+                .WithXmlReferenceResolver(xmlFileResolver)
+                .WithStrongNameProvider(Arguments.GetStrongNameProvider(loggingFileSystem))
+                .WithSourceReferenceResolver(sourceFileResolver)
+                .WithSyntaxTreeOptionsProvider(optionsProvider);
+            var finalTrees = trees.WhereNotNull().ToImmutableArray();
+            var reusedSyntaxTreeCount = 0;
+            for (var i = 0; i < trees.Length; i++)
+            {
+                if (trees[i] is object && reusedSyntaxTrees[i])
+                {
+                    reusedSyntaxTreeCount++;
+                }
+            }
 
-            return CSharpCompilation.Create(
+            var updateStopwatch = Stopwatch.StartNew();
+            var (compilation, reusedCompilation) = CreateOrUpdateCompilation(
+                previousCompilation,
                 Arguments.CompilationName,
-                trees.WhereNotNull(),
+                finalTrees,
                 resolvedReferences,
-                Arguments.CompilationOptions
-                    .WithMetadataReferenceResolver(referenceDirectiveResolver)
-                    .WithAssemblyIdentityComparer(assemblyIdentityComparer)
-                    .WithXmlReferenceResolver(xmlFileResolver)
-                    .WithStrongNameProvider(Arguments.GetStrongNameProvider(loggingFileSystem))
-                    .WithSourceReferenceResolver(sourceFileResolver)
-                    .WithSyntaxTreeOptionsProvider(optionsProvider));
+                compilationOptions,
+                reusedSyntaxTreeCount);
+            updateStopwatch.Stop();
+
+            OnInputCompilationCreated(
+                compilation,
+                reusedCompilation,
+                reusedSyntaxTreeCount,
+                finalTrees.Length,
+                updateStopwatch.ElapsedMilliseconds);
+            return compilation;
         }
 
         private SyntaxTree? ParseFile(
@@ -176,7 +219,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             ref bool addedDiagnostics,
             CommandLineSourceFile file,
             DiagnosticBag diagnostics,
-            out string? normalizedFilePath)
+            out string? normalizedFilePath,
+            Dictionary<string, SyntaxTree>? previousTreesByPath,
+            bool[] reusedSyntaxTrees,
+            int sourceFileIndex)
         {
             var fileDiagnostics = new List<DiagnosticInfo>();
             var content = TryReadFileContent(file, fileDiagnostics, out normalizedFilePath);
@@ -194,8 +240,136 @@ namespace Microsoft.CodeAnalysis.CSharp
             else
             {
                 Debug.Assert(fileDiagnostics.Count == 0);
+                var treeOptions = file.IsScript ? scriptParseOptions : parseOptions;
+                if (previousTreesByPath is object &&
+                    previousTreesByPath.TryGetValue(file.Path, out var previousTree) &&
+                    previousTree.Options.Equals(treeOptions) &&
+                    CanReuseSourceText(previousTree.GetText(), content, EmbeddedSourcePaths.Contains(file.Path)))
+                {
+                    reusedSyntaxTrees[sourceFileIndex] = true;
+                    return previousTree;
+                }
+
                 return ParseFile(parseOptions, scriptParseOptions, content, file);
             }
+        }
+
+        private static bool CanReuseSourceText(SourceText previous, SourceText current, bool mustBeEmbeddable)
+            => previous.ContentEquals(current) &&
+               previous.ChecksumAlgorithm == current.ChecksumAlgorithm &&
+               Equals(previous.Encoding, current.Encoding) &&
+               previous.GetChecksum().SequenceEqual(current.GetChecksum()) &&
+               (!mustBeEmbeddable || previous.CanBeEmbedded);
+
+        private static Dictionary<string, SyntaxTree>? CreatePreviousSyntaxTreeMap(CSharpCompilation? compilation)
+        {
+            if (compilation is null)
+            {
+                return null;
+            }
+
+            var result = new Dictionary<string, SyntaxTree>(StringComparer.Ordinal);
+            foreach (var tree in compilation.SyntaxTrees)
+            {
+                result.Add(tree.FilePath, tree);
+            }
+
+            return result;
+        }
+
+        private static (CSharpCompilation compilation, bool reusedCompilation) CreateOrUpdateCompilation(
+            CSharpCompilation? previousCompilation,
+            string? assemblyName,
+            ImmutableArray<SyntaxTree> syntaxTrees,
+            List<MetadataReference> references,
+            CSharpCompilationOptions options,
+            int reusedSyntaxTreeCount)
+        {
+            if (previousCompilation is null ||
+                MayHaveReferenceOrLoadDirectives(syntaxTrees) ||
+                !HaveEquivalentCompilationOptions(previousCompilation.Options, options))
+            {
+                return (CSharpCompilation.Create(assemblyName, syntaxTrees, references, options), false);
+            }
+
+            var compilation = previousCompilation;
+            if (!string.Equals(compilation.AssemblyName, assemblyName, StringComparison.Ordinal))
+            {
+                compilation = compilation.WithAssemblyName(assemblyName);
+            }
+
+            compilation = compilation.WithOptions(
+                options
+                    .WithMetadataReferenceResolver(compilation.Options.MetadataReferenceResolver)
+                    .WithSourceReferenceResolver(compilation.Options.SourceReferenceResolver));
+
+            // Resolve references for every request so a file replaced at the same path cannot leave
+            // the updated compilation bound to metadata observed by the previous request.
+            compilation = compilation.WithReferences(references);
+
+            return (WithSyntaxTrees(compilation, syntaxTrees, reusedSyntaxTreeCount), true);
+        }
+
+        private static bool MayHaveReferenceOrLoadDirectives(ImmutableArray<SyntaxTree> syntaxTrees)
+        {
+            foreach (var tree in syntaxTrees)
+            {
+                if (tree.HasReferenceOrLoadDirectives())
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool HaveEquivalentCompilationOptions(
+            CSharpCompilationOptions previousOptions,
+            CSharpCompilationOptions options)
+        {
+            if (previousOptions.SyntaxTreeOptionsProvider is not CompilerSyntaxTreeOptionsProvider previousProvider ||
+                options.SyntaxTreeOptionsProvider is not CompilerSyntaxTreeOptionsProvider provider ||
+                !previousProvider.IsEquivalentTo(provider))
+            {
+                return false;
+            }
+
+            var normalizedOptions = options
+                .WithCurrentLocalTime(previousOptions.CurrentLocalTime)
+                .WithMetadataReferenceResolver(previousOptions.MetadataReferenceResolver)
+                .WithSyntaxTreeOptionsProvider(previousOptions.SyntaxTreeOptionsProvider);
+            return previousOptions.Equals(normalizedOptions);
+        }
+
+        private static CSharpCompilation WithSyntaxTrees(
+            CSharpCompilation compilation,
+            ImmutableArray<SyntaxTree> syntaxTrees,
+            int reusedSyntaxTreeCount)
+        {
+            var previousTrees = compilation.SyntaxTrees;
+            if (previousTrees.Length != syntaxTrees.Length ||
+                reusedSyntaxTreeCount * 2 < syntaxTrees.Length)
+            {
+                return compilation.RemoveAllSyntaxTrees().AddSyntaxTrees(syntaxTrees);
+            }
+
+            for (var i = 0; i < syntaxTrees.Length; i++)
+            {
+                if (!string.Equals(previousTrees[i].FilePath, syntaxTrees[i].FilePath, StringComparison.Ordinal))
+                {
+                    return compilation.RemoveAllSyntaxTrees().AddSyntaxTrees(syntaxTrees);
+                }
+            }
+
+            for (var i = 0; i < syntaxTrees.Length; i++)
+            {
+                if (!ReferenceEquals(previousTrees[i], syntaxTrees[i]))
+                {
+                    compilation = compilation.ReplaceSyntaxTree(previousTrees[i], syntaxTrees[i]);
+                }
+            }
+
+            return compilation;
         }
 
         private static SyntaxTree ParseFile(

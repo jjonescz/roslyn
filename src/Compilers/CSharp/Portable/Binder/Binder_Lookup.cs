@@ -397,11 +397,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // NB: It doesn't matter that submissionImports hasn't been expanded since we're not actually using the alias target. 
                     if (submissionSymbols.IsMultiViable &&
                         considerUsings &&
-                        IsUsingAlias(
-                            submissionImports.UsingAliases,
-                            name,
-                            originalBinder.IsSemanticModelBinder,
-                            originalBinder.ContainingMemberOrLambda))
+                        IsUsingAlias(submissionImports.UsingAliases, name, originalBinder.IsSemanticModelBinder))
                     {
                         // using alias is ambiguous with another definition within the same submission iff the other definition is a 0-ary type or a non-type:
                         Symbol existingDefinition = submissionSymbols.Symbols.First();
@@ -475,11 +471,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             nonViable.Free();
         }
 
-        protected bool IsUsingAlias(
-            ImmutableDictionary<string, AliasAndUsingDirective> usingAliases,
-            string name,
-            bool callerIsSemanticModel,
-            Symbol containingMemberOrLambda)
+        protected bool IsUsingAlias(ImmutableDictionary<string, AliasAndUsingDirective> usingAliases, string name, bool callerIsSemanticModel)
         {
             AliasAndUsingDirective node;
             if (usingAliases.TryGetValue(name, out node))
@@ -488,23 +480,18 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // there's a conflict between an alias and a member.  As a conflict may cause a
                 // speculative lambda binding to fail this is semantically relevant and we need to
                 // mark this using alias as referenced (and thus not something that can be removed).
-                MarkImportDirective(node.UsingDirectiveReference, callerIsSemanticModel, containingMemberOrLambda);
+                MarkImportDirective(node.UsingDirectiveReference, callerIsSemanticModel);
                 return true;
             }
 
             return false;
         }
 
-        protected void MarkImportDirective(
-            SyntaxReference directive,
-            bool callerIsSemanticModel,
-            Symbol containingMemberOrLambda = null)
+        protected void MarkImportDirective(SyntaxReference directive, bool callerIsSemanticModel)
         {
             if (directive != null && !callerIsSemanticModel)
             {
-                Compilation.MarkImportDirectiveAsUsed(
-                    directive,
-                    containingMemberOrLambda ?? ContainingMemberOrLambda);
+                Compilation.MarkImportDirectiveAsUsed(directive);
             }
         }
 
@@ -530,7 +517,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var res = originalBinder.CheckViability(alias.Alias, arity, options, null, diagnose, ref useSiteInfo, basesBeingResolved);
                 if (res.Kind == LookupResultKind.Viable)
                 {
-                    MarkImportDirective(alias.UsingDirectiveReference, callerIsSemanticModel, originalBinder.ContainingMemberOrLambda);
+                    MarkImportDirective(alias.UsingDirectiveReference, callerIsSemanticModel);
                 }
 
                 result.MergeEqual(res);
@@ -546,7 +533,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     var res = originalBinder.CheckViability(a.Alias, arity, options, null, diagnose, ref useSiteInfo, basesBeingResolved);
                     if (res.Kind == LookupResultKind.Viable)
                     {
-                        MarkImportDirective(a.ExternAliasDirectiveReference, callerIsSemanticModel, originalBinder.ContainingMemberOrLambda);
+                        MarkImportDirective(a.ExternAliasDirectiveReference, callerIsSemanticModel);
                     }
 
                     result.MergeEqual(res);

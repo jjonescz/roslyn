@@ -95,17 +95,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             return null;
         }
 
-        internal Cci.IReference? MapReference(Cci.IReference reference)
-        {
-            if (reference.GetInternalSymbol() is not Symbol symbol ||
-                symbol is MethodSymbol { IsDefinition: false })
-            {
-                return null;
-            }
-
-            return (Cci.IReference?)_visitor.Visit(symbol)?.GetCciAdapter();
-        }
-
         internal bool TryGetAnonymousTypeValue(AnonymousTypeManager.AnonymousTypeOrDelegateTemplateSymbol template, out AnonymousTypeValue typeValue)
             => _visitor.TryGetAnonymousTypeValue(template, out typeValue);
 

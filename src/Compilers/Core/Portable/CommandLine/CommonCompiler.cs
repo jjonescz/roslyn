@@ -938,7 +938,10 @@ namespace Microsoft.CodeAnalysis
                     }
                 }
 
+                var compilationCreationStopwatch = Stopwatch.StartNew();
                 Compilation? compilation = CreateCompilation(consoleOutput, touchedFilesLogger, errorLogger, sourceFileAnalyzerConfigOptions, globalConfigOptions);
+                compilationCreationStopwatch.Stop();
+                OnCompilationCreated(compilationCreationStopwatch.ElapsedMilliseconds);
                 if (compilation == null)
                 {
                     return Failed;
@@ -963,6 +966,7 @@ namespace Microsoft.CodeAnalysis
                 var cachedExitCode = CheckCache(compilation, analyzers, generators, additionalTexts, cancellationToken, out var cacheState);
                 if (cachedExitCode.HasValue)
                 {
+                    OnCompilationResultRestoredFromCache(compilation);
                     consoleOutput.WriteLine("Compilation result restored from cache.");
                     return cachedExitCode.Value;
                 }
@@ -1332,137 +1336,35 @@ namespace Microsoft.CodeAnalysis
 
                 if (moduleBeingBuilt != null)
                 {
-                    bool success = false;
-                    bool completedNormally = false;
-                    var methodBodyReuse = PrepareMethodBodyReuse(finalPeFilePath, compilation);
-                    var methodBodyReuseSession = methodBodyReuse?.CreateSession(moduleBeingBuilt);
-                    moduleBeingBuilt.MethodBodyReuse = methodBodyReuseSession;
-                    moduleBeingBuilt.EmittingPdb = Arguments.EmitPdb;
+                    bool success;
 
                     try
                     {
+                        var compileMethodsStopwatch = Stopwatch.StartNew();
                         try
                         {
                             success = compilation.CompileMethods(
                                 moduleBeingBuilt,
                                 Arguments.EmitPdb,
                                 diagnostics,
-                                filterOpt: methodBodyReuseSession is null ? null : methodBodyReuseSession.ShouldCompile,
+                                filterOpt: null,
                                 cancellationToken: cancellationToken);
-
-                            // Prior to generating the xml documentation file,
-                            // we apply programmatic suppressions for compiler warnings from diagnostic suppressors.
-                            // If there are still any unsuppressed errors or warnings escalated to errors
-                            // then we bail out from generating the documentation file.
-                            // This maintains the compiler invariant that xml documentation file should not be
-                            // generated in presence of diagnostics that break the build.
-                            if (analyzerDriver != null && !diagnostics.IsEmptyWithoutResolution)
-                            {
-                                analyzerDriver.ApplyProgrammaticSuppressions(diagnostics, compilation, cancellationToken);
-                            }
-
-                            if (HasUnsuppressedErrors(diagnostics))
-                            {
-                                success = false;
-                            }
-
-                            if (success)
-                            {
-                                // NOTE: as native compiler does, we generate the documentation file
-                                // NOTE: 'in place', replacing the contents of the file if it exists
-                                NoThrowStreamDisposer? xmlStreamDisposerOpt = null;
-
-                                if (finalXmlFilePath != null)
-                                {
-                                    var xmlStreamOpt = OpenFile(finalXmlFilePath,
-                                                                diagnostics,
-                                                                FileMode.OpenOrCreate,
-                                                                FileAccess.Write,
-                                                                FileShare.ReadWrite | FileShare.Delete);
-
-                                    if (xmlStreamOpt == null)
-                                    {
-                                        success = false;
-                                        completedNormally = true;
-                                        return;
-                                    }
-
-                                    try
-                                    {
-                                        xmlStreamOpt.SetLength(0);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        MessageProvider.ReportStreamWriteException(e, finalXmlFilePath, diagnostics);
-                                        success = false;
-                                        completedNormally = true;
-                                        return;
-                                    }
-                                    xmlStreamDisposerOpt = new NoThrowStreamDisposer(
-                                        xmlStreamOpt,
-                                        finalXmlFilePath,
-                                        diagnostics,
-                                        MessageProvider);
-                                }
-
-                                using (xmlStreamDisposerOpt)
-                                {
-                                    using (var win32ResourceStreamOpt = GetWin32Resources(FileSystem, MessageProvider, Arguments, compilation, diagnostics))
-                                    {
-                                        if (HasUnsuppressableErrors(diagnostics))
-                                        {
-                                            success = false;
-                                            completedNormally = true;
-                                            return;
-                                        }
-
-                                        success =
-                                            compilation.GenerateResources(moduleBeingBuilt, win32ResourceStreamOpt, useRawWin32Resources: false, diagnostics, cancellationToken) &&
-                                            compilation.GenerateDocumentationComments(xmlStreamDisposerOpt?.Stream, emitOptions.OutputNameOverride, diagnostics, cancellationToken);
-                                    }
-                                }
-
-                                if (xmlStreamDisposerOpt?.HasFailedToDispose == true)
-                                {
-                                    success = false;
-                                    completedNormally = true;
-                                    return;
-                                }
-
-                                // only report unused usings if we have success.
-                                if (success)
-                                {
-                                    compilation.ReportUnusedImports(diagnostics, cancellationToken);
-                                }
-                            }
-
-                            compilation.CompleteTrees(null);
-
-                            if (analyzerDriver != null)
-                            {
-                                // GetDiagnosticsAsync is called after ReportUnusedImports
-                                // since that method calls EventQueue.TryComplete. Without
-                                // TryComplete, we may miss diagnostics.
-                                var hostDiagnostics = analyzerDriver.GetDiagnosticsAsync(compilation, cancellationToken).Result;
-                                diagnostics.AddRange(hostDiagnostics);
-
-                                if (!diagnostics.IsEmptyWithoutResolution)
-                                {
-                                    // Apply diagnostic suppressions for analyzer and/or compiler diagnostics from diagnostic suppressors.
-                                    analyzerDriver.ApplyProgrammaticSuppressions(diagnostics, compilation, cancellationToken);
-                                }
-
-                                if (errorLogger != null)
-                                {
-                                    var descriptorsWithInfo = analyzerDriver.GetAllDiagnosticDescriptorsWithInfo(cancellationToken, out var totalAnalyzerExecutionTime);
-                                    AddAnalyzerDescriptorsAndExecutionTime(errorLogger, descriptorsWithInfo, totalAnalyzerExecutionTime);
-                                }
-                            }
                         }
                         finally
                         {
-                            moduleBeingBuilt.MethodBodyReuse = null;
-                            moduleBeingBuilt.CompilationFinished();
+                            compileMethodsStopwatch.Stop();
+                            OnCompileMethodsCompleted(compileMethodsStopwatch.ElapsedMilliseconds);
+                        }
+
+                        // Prior to generating the xml documentation file,
+                        // we apply programmatic suppressions for compiler warnings from diagnostic suppressors.
+                        // If there are still any unsuppressed errors or warnings escalated to errors
+                        // then we bail out from generating the documentation file.
+                        // This maintains the compiler invariant that xml documentation file should not be
+                        // generated in presence of diagnostics that break the build.
+                        if (analyzerDriver != null && !diagnostics.IsEmptyWithoutResolution)
+                        {
+                            analyzerDriver.ApplyProgrammaticSuppressions(diagnostics, compilation, cancellationToken);
                         }
 
                         if (HasUnsuppressedErrors(diagnostics))
@@ -1472,22 +1374,120 @@ namespace Microsoft.CodeAnalysis
 
                         if (success)
                         {
-                            var peStreamProvider = new CompilerEmitStreamProvider(this, finalPeFilePath);
-                            var pdbStreamProviderOpt = Arguments.EmitPdbFile ? new CompilerEmitStreamProvider(this, finalPdbFilePath) : null;
+                            // NOTE: as native compiler does, we generate the documentation file
+                            // NOTE: 'in place', replacing the contents of the file if it exists
+                            NoThrowStreamDisposer? xmlStreamDisposerOpt = null;
 
-                            string? finalRefPeFilePath = Arguments.OutputRefFilePath;
-                            var refPeStreamProviderOpt = finalRefPeFilePath != null ? new CompilerEmitStreamProvider(this, finalRefPeFilePath) : null;
-
-                            RSAParameters? privateKeyOpt = null;
-                            if (compilation.Options.StrongNameProvider != null && compilation.SignUsingBuilder && !compilation.Options.PublicSign)
+                            if (finalXmlFilePath != null)
                             {
-                                privateKeyOpt = compilation.StrongNameKeys.PrivateKey;
+                                var xmlStreamOpt = OpenFile(finalXmlFilePath,
+                                                            diagnostics,
+                                                            FileMode.OpenOrCreate,
+                                                            FileAccess.Write,
+                                                            FileShare.ReadWrite | FileShare.Delete);
+
+                                if (xmlStreamOpt == null)
+                                {
+                                    return;
+                                }
+
+                                try
+                                {
+                                    xmlStreamOpt.SetLength(0);
+                                }
+                                catch (Exception e)
+                                {
+                                    MessageProvider.ReportStreamWriteException(e, finalXmlFilePath, diagnostics);
+                                    return;
+                                }
+                                xmlStreamDisposerOpt = new NoThrowStreamDisposer(
+                                    xmlStreamOpt,
+                                    finalXmlFilePath,
+                                    diagnostics,
+                                    MessageProvider);
                             }
 
-                            // If we serialize to a PE stream we need to record the fallback encoding if it was used
-                            // so the compilation can be recreated.
-                            emitOptions = emitOptions.WithFallbackSourceFileEncoding(GetFallbackEncoding());
+                            using (xmlStreamDisposerOpt)
+                            {
+                                using (var win32ResourceStreamOpt = GetWin32Resources(FileSystem, MessageProvider, Arguments, compilation, diagnostics))
+                                {
+                                    if (HasUnsuppressableErrors(diagnostics))
+                                    {
+                                        return;
+                                    }
 
+                                    success =
+                                        compilation.GenerateResources(moduleBeingBuilt, win32ResourceStreamOpt, useRawWin32Resources: false, diagnostics, cancellationToken) &&
+                                        compilation.GenerateDocumentationComments(xmlStreamDisposerOpt?.Stream, emitOptions.OutputNameOverride, diagnostics, cancellationToken);
+                                }
+                            }
+
+                            if (xmlStreamDisposerOpt?.HasFailedToDispose == true)
+                            {
+                                return;
+                            }
+
+                            // only report unused usings if we have success.
+                            if (success)
+                            {
+                                compilation.ReportUnusedImports(diagnostics, cancellationToken);
+                            }
+                        }
+
+                        compilation.CompleteTrees(null);
+
+                        if (analyzerDriver != null)
+                        {
+                            // GetDiagnosticsAsync is called after ReportUnusedImports
+                            // since that method calls EventQueue.TryComplete. Without
+                            // TryComplete, we may miss diagnostics.
+                            var hostDiagnostics = analyzerDriver.GetDiagnosticsAsync(compilation, cancellationToken).Result;
+                            diagnostics.AddRange(hostDiagnostics);
+
+                            if (!diagnostics.IsEmptyWithoutResolution)
+                            {
+                                // Apply diagnostic suppressions for analyzer and/or compiler diagnostics from diagnostic suppressors.
+                                analyzerDriver.ApplyProgrammaticSuppressions(diagnostics, compilation, cancellationToken);
+                            }
+
+                            if (errorLogger != null)
+                            {
+                                var descriptorsWithInfo = analyzerDriver.GetAllDiagnosticDescriptorsWithInfo(cancellationToken, out var totalAnalyzerExecutionTime);
+                                AddAnalyzerDescriptorsAndExecutionTime(errorLogger, descriptorsWithInfo, totalAnalyzerExecutionTime);
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        moduleBeingBuilt.CompilationFinished();
+                    }
+
+                    if (HasUnsuppressedErrors(diagnostics))
+                    {
+                        success = false;
+                    }
+
+                    if (success)
+                    {
+                        var peStreamProvider = new CompilerEmitStreamProvider(this, finalPeFilePath);
+                        var pdbStreamProviderOpt = Arguments.EmitPdbFile ? new CompilerEmitStreamProvider(this, finalPdbFilePath) : null;
+
+                        string? finalRefPeFilePath = Arguments.OutputRefFilePath;
+                        var refPeStreamProviderOpt = finalRefPeFilePath != null ? new CompilerEmitStreamProvider(this, finalRefPeFilePath) : null;
+
+                        RSAParameters? privateKeyOpt = null;
+                        if (compilation.Options.StrongNameProvider != null && compilation.SignUsingBuilder && !compilation.Options.PublicSign)
+                        {
+                            privateKeyOpt = compilation.StrongNameKeys.PrivateKey;
+                        }
+
+                        // If we serialize to a PE stream we need to record the fallback encoding if it was used
+                        // so the compilation can be recreated.
+                        emitOptions = emitOptions.WithFallbackSourceFileEncoding(GetFallbackEncoding());
+
+                        var serializationStopwatch = Stopwatch.StartNew();
+                        try
+                        {
                             success = compilation.SerializeToPeStream(
                                 moduleBeingBuilt,
                                 peStreamProvider,
@@ -1499,40 +1499,28 @@ namespace Microsoft.CodeAnalysis
                                 emitOptions: emitOptions,
                                 privateKeyOpt: privateKeyOpt,
                                 cancellationToken: cancellationToken);
-
-                            peStreamProvider.Close(diagnostics);
-                            refPeStreamProviderOpt?.Close(diagnostics);
-                            pdbStreamProviderOpt?.Close(diagnostics);
-
-                            if (success && touchedFilesLogger != null)
-                            {
-                                if (pdbStreamProviderOpt != null)
-                                {
-                                    touchedFilesLogger.AddWritten(finalPdbFilePath);
-                                }
-                                if (refPeStreamProviderOpt != null)
-                                {
-                                    touchedFilesLogger.AddWritten(finalRefPeFilePath!);
-                                }
-                                touchedFilesLogger.AddWritten(finalPeFilePath);
-                            }
+                        }
+                        finally
+                        {
+                            serializationStopwatch.Stop();
+                            OnSerializationCompleted(serializationStopwatch.ElapsedMilliseconds);
                         }
 
-                        completedNormally = true;
-                    }
-                    finally
-                    {
-                        if (completedNormally)
+                        peStreamProvider.Close(diagnostics);
+                        refPeStreamProviderOpt?.Close(diagnostics);
+                        pdbStreamProviderOpt?.Close(diagnostics);
+
+                        if (success && touchedFilesLogger != null)
                         {
-                            var emitSucceeded = success && !HasUnsuppressedErrors(diagnostics);
-                            var methodBodyReuseStatistics = methodBodyReuseSession?.Complete(emitSucceeded);
-                            OnEmitCompleted(
-                                finalPeFilePath,
-                                compilation,
-                                moduleBeingBuilt,
-                                diagnostics.ToReadOnly(),
-                                methodBodyReuseStatistics,
-                                emitSucceeded);
+                            if (pdbStreamProviderOpt != null)
+                            {
+                                touchedFilesLogger.AddWritten(finalPdbFilePath);
+                            }
+                            if (refPeStreamProviderOpt != null)
+                            {
+                                touchedFilesLogger.AddWritten(finalRefPeFilePath!);
+                            }
+                            touchedFilesLogger.AddWritten(finalPeFilePath);
                         }
                     }
                 }
@@ -1825,30 +1813,37 @@ namespace Microsoft.CodeAnalysis
         }
 
         /// <summary>
-        /// Notifies the compiler that compilation and emit have completed.
+        /// Notifies the compiler that the input compilation has been created.
         /// </summary>
-        protected virtual void OnCompilationCompleted(bool succeeded)
+        protected virtual void OnCompilationCreated(long elapsedMilliseconds)
         {
         }
 
         /// <summary>
-        /// Returns method-body reuse state for the output being compiled, or <see langword="null"/>
-        /// when no baseline is available.
+        /// Notifies the compiler that method compilation has completed.
         /// </summary>
-        protected virtual IMethodBodyReuse? PrepareMethodBodyReuse(string outputFilePath, Compilation compilation)
-            => null;
+        protected virtual void OnCompileMethodsCompleted(long elapsedMilliseconds)
+        {
+        }
 
         /// <summary>
-        /// Notifies the compiler that emit completed so a server host can retain a successful
-        /// in-memory baseline and report method-body reuse statistics.
+        /// Notifies the compiler that PE and PDB serialization has completed.
         /// </summary>
-        protected virtual void OnEmitCompleted(
-            string outputFilePath,
-            Compilation compilation,
-            CommonPEModuleBuilder moduleBuilder,
-            ImmutableArray<Diagnostic> diagnostics,
-            MethodBodyReuseStatistics? methodBodyReuseStatistics,
-            bool succeeded)
+        protected virtual void OnSerializationCompleted(long elapsedMilliseconds)
+        {
+        }
+
+        /// <summary>
+        /// Notifies the compiler that an output-cache hit completed the request without compilation or emit.
+        /// </summary>
+        protected virtual void OnCompilationResultRestoredFromCache(Compilation compilation)
+        {
+        }
+
+        /// <summary>
+        /// Notifies the compiler that compilation and emit have completed.
+        /// </summary>
+        protected virtual void OnCompilationCompleted(bool succeeded)
         {
         }
 

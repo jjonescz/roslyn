@@ -9,9 +9,7 @@ using System.IO;
 using System.Threading;
 using Microsoft.CodeAnalysis.CommandLine;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Emit;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Emit;
 
 namespace Microsoft.CodeAnalysis.CompilerServer
 {
@@ -20,24 +18,30 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         private readonly Func<string, MetadataReferenceProperties, PortableExecutableReference> _metadataProvider;
         private readonly CompilationCache? _cache;
         private readonly CompilationCacheTelemetry _cacheTelemetry = new CompilationCacheTelemetry();
+        private readonly CSharpCompilationCache? _compilationCache;
         private readonly IncrementalCompilationTelemetry _incrementalCompilationTelemetry;
-        private readonly CSharpMethodBodyReuseCache? _methodBodyReuseCache;
         private readonly ICompilerServerLogger _logger;
-        private (string key, CSharpMethodBodyReuse reuse)? _pendingMethodBodyReuse;
+        private readonly string? _compilationCacheKey;
+        private CSharpCompilation? _inputCompilation;
 
-        internal CSharpCompilerServer(Func<string, MetadataReferenceProperties, PortableExecutableReference> metadataProvider, string[] args, BuildPaths buildPaths, string? libDirectory, IAnalyzerAssemblyLoader analyzerLoader, GeneratorDriverCache driverCache, CSharpMethodBodyReuseCache? methodBodyReuseCache = null, ICompilerServerLogger? logger = null)
-            : this(metadataProvider, Path.Combine(buildPaths.ClientDirectory, ResponseFileName), args, buildPaths, libDirectory, analyzerLoader, driverCache, methodBodyReuseCache, logger)
+        internal CSharpCompilerServer(Func<string, MetadataReferenceProperties, PortableExecutableReference> metadataProvider, string[] args, BuildPaths buildPaths, string? libDirectory, IAnalyzerAssemblyLoader analyzerLoader, GeneratorDriverCache driverCache, CSharpCompilationCache? compilationCache = null, ICompilerServerLogger? logger = null)
+            : this(metadataProvider, Path.Combine(buildPaths.ClientDirectory, ResponseFileName), args, buildPaths, libDirectory, analyzerLoader, driverCache, compilationCache, logger)
         {
         }
 
-        internal CSharpCompilerServer(Func<string, MetadataReferenceProperties, PortableExecutableReference> metadataProvider, string? responseFile, string[] args, BuildPaths buildPaths, string? libDirectory, IAnalyzerAssemblyLoader analyzerLoader, GeneratorDriverCache driverCache, CSharpMethodBodyReuseCache? methodBodyReuseCache = null, ICompilerServerLogger? logger = null)
+        internal CSharpCompilerServer(Func<string, MetadataReferenceProperties, PortableExecutableReference> metadataProvider, string? responseFile, string[] args, BuildPaths buildPaths, string? libDirectory, IAnalyzerAssemblyLoader analyzerLoader, GeneratorDriverCache driverCache, CSharpCompilationCache? compilationCache = null, ICompilerServerLogger? logger = null)
             : base(CSharpCommandLineParser.Default, responseFile, args, buildPaths, libDirectory, analyzerLoader, driverCache)
         {
             _metadataProvider = metadataProvider;
             _logger = logger ?? EmptyCompilerServerLogger.Instance;
             _cache = CompilationCache.TryCreate(Arguments, _logger);
+            _compilationCache = compilationCache;
             _incrementalCompilationTelemetry = new IncrementalCompilationTelemetry(_logger);
-            _methodBodyReuseCache = methodBodyReuseCache;
+            _compilationCacheKey = string.IsNullOrWhiteSpace(Arguments.OutputFileName) ||
+                Arguments.TouchedFilesPath is object ||
+                Arguments.AppConfigPath is object
+                ? null
+                : Arguments.GetOutputFilePath(Arguments.OutputFileName);
         }
 
         internal override Func<string, MetadataReferenceProperties, PortableExecutableReference> GetMetadataProvider()
@@ -61,11 +65,77 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         protected override void OnCompilationStarted()
         {
             _cacheTelemetry.StartCompileTimer();
+            if (_compilationCacheKey is object)
+            {
+                _incrementalCompilationTelemetry.StartCompileAndEmit();
+            }
         }
 
         protected override void OnCompilationCompleted(bool succeeded)
         {
             _cacheTelemetry.StopCompileTimer(succeeded);
+            if (_compilationCacheKey is object)
+            {
+                _incrementalCompilationTelemetry.Complete(succeeded);
+            }
+        }
+
+        protected override CSharpCompilation? TryGetPreviousCompilation()
+            => _compilationCacheKey is null
+                ? null
+                : _compilationCache?.TryGetCompilation(_compilationCacheKey);
+
+        protected override void OnInputCompilationCreated(
+            CSharpCompilation compilation,
+            bool reusedCompilation,
+            int reusedSyntaxTreeCount,
+            int totalSyntaxTreeCount,
+            long updateMilliseconds)
+        {
+            if (_compilationCacheKey is null)
+            {
+                return;
+            }
+
+            _inputCompilation = compilation;
+            _incrementalCompilationTelemetry.RecordCompilationReuse(
+                reusedCompilation,
+                reusedSyntaxTreeCount,
+                totalSyntaxTreeCount,
+                updateMilliseconds);
+        }
+
+        protected override void OnCompilationCreated(long elapsedMilliseconds)
+        {
+            if (_compilationCacheKey is object)
+            {
+                _incrementalCompilationTelemetry.RecordCompilationCreation(elapsedMilliseconds);
+            }
+        }
+
+        protected override void OnCompileMethodsCompleted(long elapsedMilliseconds)
+        {
+            if (_compilationCacheKey is object)
+            {
+                _incrementalCompilationTelemetry.RecordCompileMethods(elapsedMilliseconds);
+            }
+        }
+
+        protected override void OnSerializationCompleted(long elapsedMilliseconds)
+        {
+            if (_compilationCacheKey is object)
+            {
+                _incrementalCompilationTelemetry.RecordSerialization(elapsedMilliseconds);
+            }
+        }
+
+        protected override void OnCompilationResultRestoredFromCache(Compilation compilation)
+        {
+            if (_compilationCacheKey is object && _inputCompilation is object)
+            {
+                _compilationCache?.CacheCompilation(_compilationCacheKey, _inputCompilation.RemoveAllReferences());
+                _incrementalCompilationTelemetry.CompleteFromOutputCache();
+            }
         }
 
         protected override void OnCompilationSucceeded(
@@ -79,60 +149,10 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             var (deterministicKey, hashKey) = ((string?, string?))cacheState!;
             CompilationCacheUtilities.OnCompilationSucceeded(_cache, _logger, Arguments, deterministicKey, hashKey, _cacheTelemetry);
 
-            if (_pendingMethodBodyReuse is { } pendingMethodBodyReuse)
+            if (_compilationCacheKey is object && _inputCompilation is object)
             {
-                _methodBodyReuseCache?.CacheReuse(pendingMethodBodyReuse.key, pendingMethodBodyReuse.reuse);
+                _compilationCache?.CacheCompilation(_compilationCacheKey, _inputCompilation.RemoveAllReferences());
             }
-        }
-
-        protected override IMethodBodyReuse? PrepareMethodBodyReuse(string outputFilePath, Compilation compilation)
-        {
-            if (_methodBodyReuseCache is null)
-            {
-                return null;
-            }
-
-            ((CSharpCompilation)compilation).SourceAssembly.EnableMethodBodyReuseTracking();
-            return _methodBodyReuseCache.TryGetReuse(outputFilePath);
-        }
-
-        protected override void OnEmitCompleted(
-            string outputFilePath,
-            Compilation compilation,
-            CommonPEModuleBuilder moduleBuilder,
-            ImmutableArray<Diagnostic> diagnostics,
-            MethodBodyReuseStatistics? methodBodyReuseStatistics,
-            bool succeeded)
-        {
-            if (methodBodyReuseStatistics is object)
-            {
-                _incrementalCompilationTelemetry.RecordMethodBodyReuse(methodBodyReuseStatistics);
-            }
-
-            if (succeeded &&
-                !ContainsWarningsOrErrors(diagnostics) &&
-                ((CSharpCompilation)compilation).SourceAssembly.HasMethodBodyReuseCandidate)
-            {
-                _pendingMethodBodyReuse = (
-                    outputFilePath,
-                    new CSharpMethodBodyReuse(
-                        (CSharpCompilation)compilation,
-                        (PEModuleBuilder)moduleBuilder,
-                        diagnostics));
-            }
-        }
-
-        private static bool ContainsWarningsOrErrors(ImmutableArray<Diagnostic> diagnostics)
-        {
-            foreach (var diagnostic in diagnostics)
-            {
-                if (diagnostic.Severity is DiagnosticSeverity.Warning or DiagnosticSeverity.Error)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         public IReadOnlyList<BuildTelemetryEvent> GetTelemetryEvents()
@@ -150,11 +170,5 @@ namespace Microsoft.CodeAnalysis.CompilerServer
 
             return events;
         }
-
-        /// <summary>
-        /// Records the result produced by a method-body reuse emit.
-        /// </summary>
-        internal void RecordMethodBodyReuseStatistics(MethodBodyReuseStatistics statistics)
-            => _incrementalCompilationTelemetry.RecordMethodBodyReuse(statistics);
     }
 }

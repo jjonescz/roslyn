@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -8,8 +8,6 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.CodeAnalysis.CommandLine;
-using Microsoft.CodeAnalysis.Emit;
-using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CompilerServer
 {
@@ -195,148 +193,137 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         }
     }
 
+    internal enum IncrementalCompilationStatus
+    {
+        None,
+        Succeeded,
+        Failed,
+    }
+
     /// <summary>
-    /// Converts compiler-domain method-body reuse statistics into request telemetry and logging.
+    /// Accumulates compilation-reuse statistics and timings for a single C# compiler-server request.
     /// </summary>
     internal sealed class IncrementalCompilationTelemetry
     {
         internal const string EventName = "roslyn/incrementalcompilation";
 
         private readonly ICompilerServerLogger _logger;
-        private MethodBodyReuseStatistics? _statistics;
+        private readonly Stopwatch _compileAndEmitStopwatch = new();
         private bool _summaryLogged;
+
+        internal IncrementalCompilationStatus Status { get; private set; }
+        internal bool ReusedCompilation { get; private set; }
+        internal int TotalSyntaxTreeCount { get; private set; }
+        internal int ReusedSyntaxTreeCount { get; private set; }
+        internal long CompilationCreationMilliseconds { get; private set; }
+        internal long CompilationUpdateMilliseconds { get; private set; }
+        internal long CompileMethodsMilliseconds { get; private set; }
+        internal long? SerializationMilliseconds { get; private set; }
+        internal long CompileAndEmitMilliseconds { get; private set; }
+        internal bool OutputCacheHit { get; private set; }
 
         internal IncrementalCompilationTelemetry(ICompilerServerLogger logger)
         {
             _logger = logger;
         }
 
-        internal bool HasData => _statistics is object;
+        internal bool HasData => Status != IncrementalCompilationStatus.None;
 
-        internal void RecordMethodBodyReuse(MethodBodyReuseStatistics statistics)
+        internal void RecordCompilationReuse(
+            bool reusedCompilation,
+            int reusedSyntaxTreeCount,
+            int totalSyntaxTreeCount,
+            long updateMilliseconds)
         {
-            Debug.Assert(_statistics is null);
+            ReusedCompilation = reusedCompilation;
+            ReusedSyntaxTreeCount = reusedSyntaxTreeCount;
+            TotalSyntaxTreeCount = totalSyntaxTreeCount;
+            CompilationUpdateMilliseconds = updateMilliseconds;
+        }
 
-            _statistics = statistics;
+        internal void RecordCompilationCreation(long elapsedMilliseconds)
+            => CompilationCreationMilliseconds = elapsedMilliseconds;
+
+        internal void StartCompileAndEmit()
+        {
+            Debug.Assert(!_compileAndEmitStopwatch.IsRunning);
+            _compileAndEmitStopwatch.Restart();
+        }
+
+        internal void RecordCompileMethods(long elapsedMilliseconds)
+            => CompileMethodsMilliseconds = elapsedMilliseconds;
+
+        internal void RecordSerialization(long elapsedMilliseconds)
+            => SerializationMilliseconds = elapsedMilliseconds;
+
+        internal void Complete(bool succeeded)
+        {
+            if (_compileAndEmitStopwatch.IsRunning)
+            {
+                _compileAndEmitStopwatch.Stop();
+                CompileAndEmitMilliseconds = _compileAndEmitStopwatch.ElapsedMilliseconds;
+            }
+
+            Status = succeeded
+                ? IncrementalCompilationStatus.Succeeded
+                : IncrementalCompilationStatus.Failed;
+        }
+
+        internal void CompleteFromOutputCache()
+        {
+            Debug.Assert(!_compileAndEmitStopwatch.IsRunning);
+            OutputCacheHit = true;
+            Status = IncrementalCompilationStatus.Succeeded;
         }
 
         internal BuildTelemetryEvent ToTelemetryEvent()
         {
-            Debug.Assert(_statistics is object);
-            var statistics = _statistics!;
+            Debug.Assert(HasData);
+            var properties = CreateProperties();
             if (!_summaryLogged)
             {
-                _logger.Log(CreateSummary(statistics));
+                var builder = new StringBuilder("Incremental compilation");
+                foreach (var property in properties)
+                {
+                    builder.Append(' ');
+                    builder.Append(property.Key);
+                    builder.Append('=');
+                    builder.Append(property.Value);
+                }
+
+                _logger.Log(builder.ToString());
                 _summaryLogged = true;
             }
 
-            var properties = CreateProperties(statistics);
             return new BuildTelemetryEvent(EventName, properties);
         }
 
-        private static Dictionary<string, string> CreateProperties(MethodBodyReuseStatistics statistics)
+        private Dictionary<string, string> CreateProperties()
         {
-            var properties = new Dictionary<string, string>
+            var properties = new Dictionary<string, string>(12)
             {
-                ["strategy"] = "methodbodyreuse",
+                ["strategy"] = "compilationreuse",
                 ["cachekind"] = "memory",
-                ["status"] = GetStatus(statistics.Status),
-                ["totalbodycount"] = ToInvariantString(statistics.TotalBodyCount),
-                ["compiledbodycount"] = ToInvariantString(statistics.CompiledBodyCount),
-                ["reuseattemptcount"] = ToInvariantString(statistics.ReuseAttemptCount),
-                ["reusedbodycount"] = ToInvariantString(statistics.ReusedBodyCount),
-                ["fallbackbodycount"] = ToInvariantString(statistics.FallbackBodyCount),
+                ["status"] = Status == IncrementalCompilationStatus.Succeeded ? "succeeded" : "failed",
+                ["cachestatus"] = ReusedCompilation ? "hit" : "miss",
+                ["outputcachehit"] = OutputCacheHit ? "true" : "false",
+                ["totalsyntaxtreecount"] = ToInvariantString(TotalSyntaxTreeCount),
+                ["reusedsyntaxtreecount"] = ToInvariantString(ReusedSyntaxTreeCount),
+                ["compilationcreatems"] = ToInvariantString(CompilationCreationMilliseconds),
+                ["compilationupdatems"] = ToInvariantString(CompilationUpdateMilliseconds),
+                ["compilemethodsms"] = ToInvariantString(CompileMethodsMilliseconds),
+                ["compileandemitms"] = ToInvariantString(CompileAndEmitMilliseconds),
             };
 
-            AddNonzeroReasonCounts(properties, statistics);
+            if (SerializationMilliseconds is { } serializationMilliseconds)
+            {
+                properties["serializems"] = ToInvariantString(serializationMilliseconds);
+            }
+
             return properties;
         }
 
-        private static void AddNonzeroReasonCounts(
-            Dictionary<string, string> properties,
-            MethodBodyReuseStatistics statistics)
-        {
-            foreach (MethodBodyReuseGlobalFallbackReason reason in System.Enum.GetValues(typeof(MethodBodyReuseGlobalFallbackReason)))
-            {
-                var count = statistics.GetGlobalFallbackReasonCount(reason);
-                if (count != 0)
-                {
-                    properties["globalreasoncount." + GetReasonName(reason)] = ToInvariantString(count);
-                }
-            }
-
-            foreach (MethodBodyReuseBodyFallbackReason reason in System.Enum.GetValues(typeof(MethodBodyReuseBodyFallbackReason)))
-            {
-                var count = statistics.GetBodyFallbackReasonCount(reason);
-                if (count != 0)
-                {
-                    properties["bodyreasoncount." + GetReasonName(reason)] = ToInvariantString(count);
-                }
-            }
-        }
-
-        private static string CreateSummary(MethodBodyReuseStatistics statistics)
-        {
-            var properties = CreateProperties(statistics);
-            var builder = new StringBuilder("Incremental compilation");
-            foreach (var property in properties)
-            {
-                builder.Append(' ');
-                builder.Append(property.Key);
-                builder.Append('=');
-                builder.Append(property.Value);
-            }
-
-            return builder.ToString();
-        }
-
-        private static string GetStatus(MethodBodyReuseStatus status)
-            => status switch
-            {
-                MethodBodyReuseStatus.Succeeded => "succeeded",
-                MethodBodyReuseStatus.Failed => "failed",
-                _ => throw ExceptionUtilities.UnexpectedValue(status),
-            };
-
-        private static string GetReasonName(MethodBodyReuseGlobalFallbackReason reason)
-            => reason switch
-            {
-                MethodBodyReuseGlobalFallbackReason.PreviousDiagnostics => "previousdiagnostics",
-                MethodBodyReuseGlobalFallbackReason.CompilationOptions => "compilationoptions",
-                MethodBodyReuseGlobalFallbackReason.AssemblyIdentity => "assemblyidentity",
-                MethodBodyReuseGlobalFallbackReason.References => "references",
-                MethodBodyReuseGlobalFallbackReason.DebugInformation => "debuginformation",
-                MethodBodyReuseGlobalFallbackReason.Instrumentation => "instrumentation",
-                MethodBodyReuseGlobalFallbackReason.Declarations => "declarations",
-                MethodBodyReuseGlobalFallbackReason.ParseOptions => "parseoptions",
-                MethodBodyReuseGlobalFallbackReason.Fields => "fields",
-                _ => throw ExceptionUtilities.UnexpectedValue(reason),
-            };
-
-        private static string GetReasonName(MethodBodyReuseBodyFallbackReason reason)
-            => reason switch
-            {
-                MethodBodyReuseBodyFallbackReason.PreviousSymbolUnavailable => "previoussymbolunavailable",
-                MethodBodyReuseBodyFallbackReason.PreviousBodyUnavailable => "previousbodyunavailable",
-                MethodBodyReuseBodyFallbackReason.SourceChanged => "sourcechanged",
-                MethodBodyReuseBodyFallbackReason.Locals => "locals",
-                MethodBodyReuseBodyFallbackReason.ExceptionHandling => "exceptionhandling",
-                MethodBodyReuseBodyFallbackReason.Imports => "imports",
-                MethodBodyReuseBodyFallbackReason.StateMachine => "statemachine",
-                MethodBodyReuseBodyFallbackReason.SynthesizedDebugInformation => "synthesizeddebuginformation",
-                MethodBodyReuseBodyFallbackReason.Dynamic => "dynamic",
-                MethodBodyReuseBodyFallbackReason.StackAlloc => "stackalloc",
-                MethodBodyReuseBodyFallbackReason.CodeCoverage => "codecoverage",
-                MethodBodyReuseBodyFallbackReason.InlineSignature => "inlinesignature",
-                MethodBodyReuseBodyFallbackReason.ReferenceMapping => "referencemapping",
-                MethodBodyReuseBodyFallbackReason.SequencePointDocument => "sequencepointdocument",
-                MethodBodyReuseBodyFallbackReason.StringToken => "stringtoken",
-                MethodBodyReuseBodyFallbackReason.UnsupportedInstruction => "unsupportedinstruction",
-                MethodBodyReuseBodyFallbackReason.FieldUsageMapping => "fieldusagemapping",
-                _ => throw ExceptionUtilities.UnexpectedValue(reason),
-            };
-
-        private static string ToInvariantString(int value)
+        private static string ToInvariantString(long value)
             => value.ToString(CultureInfo.InvariantCulture);
     }
 }

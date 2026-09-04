@@ -31,11 +31,11 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
             TestOutputHelper.WriteLine(message);
         }
 
-        public List<string> GetMessagesSnapshot()
+        internal string[] GetMessagesSnapshot()
         {
             lock (_messagesGate)
             {
-                return new List<string>(Messages);
+                return Messages.ToArray();
             }
         }
     }

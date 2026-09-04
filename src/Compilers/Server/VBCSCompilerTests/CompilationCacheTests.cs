@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -596,69 +595,84 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
         }
 
         [Fact]
-        public void IncrementalCompilationTelemetry_SerializesBoundedStatisticsAndLogsSummary()
+        public void IncrementalCompilationTelemetry_SerializesTimingsAndLogsSummary()
         {
             var logMessages = new List<string>();
             var telemetry = new IncrementalCompilationTelemetry(new CollectingLogger(logMessages));
             Assert.False(telemetry.HasData);
 
-            telemetry.RecordMethodBodyReuse(CreateMethodBodyReuseStatistics());
+            telemetry.RecordCompilationReuse(
+                reusedCompilation: true,
+                reusedSyntaxTreeCount: 2,
+                totalSyntaxTreeCount: 3,
+                updateMilliseconds: 4);
+            telemetry.RecordCompilationCreation(elapsedMilliseconds: 5);
+            telemetry.StartCompileAndEmit();
+            telemetry.RecordCompileMethods(elapsedMilliseconds: 6);
+            telemetry.RecordSerialization(elapsedMilliseconds: 7);
+            telemetry.Complete(succeeded: true);
 
             Assert.True(telemetry.HasData);
             var telemetryEvent = telemetry.ToTelemetryEvent();
             Assert.Equal(IncrementalCompilationTelemetry.EventName, telemetryEvent.EventName);
-            Assert.Equal("methodbodyreuse", telemetryEvent.Properties["strategy"]);
+            Assert.Equal("compilationreuse", telemetryEvent.Properties["strategy"]);
             Assert.Equal("memory", telemetryEvent.Properties["cachekind"]);
             Assert.Equal("succeeded", telemetryEvent.Properties["status"]);
-            Assert.Equal("3", telemetryEvent.Properties["totalbodycount"]);
-            Assert.Equal("2", telemetryEvent.Properties["compiledbodycount"]);
-            Assert.Equal("2", telemetryEvent.Properties["reuseattemptcount"]);
-            Assert.Equal("1", telemetryEvent.Properties["reusedbodycount"]);
-            Assert.Equal("1", telemetryEvent.Properties["fallbackbodycount"]);
-            Assert.Equal("1", telemetryEvent.Properties["bodyreasoncount.exceptionhandling"]);
-            Assert.DoesNotContain("globalreasoncount.fields", telemetryEvent.Properties.Keys);
+            Assert.Equal("hit", telemetryEvent.Properties["cachestatus"]);
+            Assert.Equal("false", telemetryEvent.Properties["outputcachehit"]);
+            Assert.Equal("3", telemetryEvent.Properties["totalsyntaxtreecount"]);
+            Assert.Equal("2", telemetryEvent.Properties["reusedsyntaxtreecount"]);
+            Assert.Equal("5", telemetryEvent.Properties["compilationcreatems"]);
+            Assert.Equal("4", telemetryEvent.Properties["compilationupdatems"]);
+            Assert.Equal("6", telemetryEvent.Properties["compilemethodsms"]);
+            Assert.Equal("7", telemetryEvent.Properties["serializems"]);
+            Assert.True(long.Parse(telemetryEvent.Properties["compileandemitms"]) >= 0);
 
             telemetry.ToTelemetryEvent();
             var message = Assert.Single(logMessages);
-            Assert.Contains("strategy=methodbodyreuse", message);
-            Assert.Contains("totalbodycount=3", message);
-            Assert.Contains("bodyreasoncount.exceptionhandling=1", message);
-            Assert.DoesNotContain(".cs", message);
+            Assert.StartsWith("Incremental compilation ", message, StringComparison.Ordinal);
+            Assert.Contains("strategy=compilationreuse", message, StringComparison.Ordinal);
+            Assert.Contains("compilemethodsms=6", message, StringComparison.Ordinal);
         }
 
         [Fact]
-        public void CSharpCompilerServer_IncrementalCompilationTelemetry_RequiresRealStatistics()
+        public void IncrementalCompilationTelemetry_RecordsOutputCacheHit()
         {
-            var logMessages = new List<string>();
-            var logger = new CollectingLogger(logMessages);
-            var compiler = CreateCSharpCompilerServer(logger);
+            var telemetry = new IncrementalCompilationTelemetry(EmptyCompilerServerLogger.Instance);
+            telemetry.RecordCompilationReuse(
+                reusedCompilation: true,
+                reusedSyntaxTreeCount: 1,
+                totalSyntaxTreeCount: 1,
+                updateMilliseconds: 2);
+            telemetry.RecordCompilationCreation(elapsedMilliseconds: 3);
 
-            Assert.Empty(compiler.GetTelemetryEvents());
+            telemetry.CompleteFromOutputCache();
 
-            compiler.RecordMethodBodyReuseStatistics(CreateMethodBodyReuseStatistics());
-
-            var telemetryEvent = Assert.Single(compiler.GetTelemetryEvents());
-            Assert.Equal(IncrementalCompilationTelemetry.EventName, telemetryEvent.EventName);
-            Assert.Single(logMessages);
+            var telemetryEvent = telemetry.ToTelemetryEvent();
+            Assert.Equal("succeeded", telemetryEvent.Properties["status"]);
+            Assert.Equal("true", telemetryEvent.Properties["outputcachehit"]);
+            Assert.Equal("0", telemetryEvent.Properties["compilemethodsms"]);
+            Assert.Equal("0", telemetryEvent.Properties["compileandemitms"]);
+            Assert.False(telemetryEvent.Properties.ContainsKey("serializems"));
         }
 
         [Fact]
-        public void CSharpMethodBodyReuseCache_IsBoundedAndLeastRecentlyUsed()
+        public void CSharpCompilationCache_IsBoundedAndLeastRecentlyUsed()
         {
-            var cache = new CSharpMethodBodyReuseCache(maxCacheSize: 2);
-            var reuse1 = new TestMethodBodyReuse();
-            var reuse2 = new TestMethodBodyReuse();
-            var reuse3 = new TestMethodBodyReuse();
+            var cache = new CSharpCompilationCache(maxCacheSize: 2);
+            var compilation1 = CSharpCompilation.Create("1");
+            var compilation2 = CSharpCompilation.Create("2");
+            var compilation3 = CSharpCompilation.Create("3");
 
-            cache.CacheReuse("1", reuse1);
-            cache.CacheReuse("2", reuse2);
-            Assert.Same(reuse1, cache.TryGetReuse("1"));
+            cache.CacheCompilation("1", compilation1);
+            cache.CacheCompilation("2", compilation2);
+            Assert.Same(compilation1, cache.TryGetCompilation("1"));
 
-            cache.CacheReuse("3", reuse3);
+            cache.CacheCompilation("3", compilation3);
 
-            Assert.Null(cache.TryGetReuse("2"));
-            Assert.Same(reuse1, cache.TryGetReuse("1"));
-            Assert.Same(reuse3, cache.TryGetReuse("3"));
+            Assert.Null(cache.TryGetCompilation("2"));
+            Assert.Same(compilation1, cache.TryGetCompilation("1"));
+            Assert.Same(compilation3, cache.TryGetCompilation("3"));
         }
 
         [Fact]
@@ -1015,33 +1029,6 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
                 ?? throw new InvalidOperationException("Failed to create cache");
         }
 
-        private CSharpCompilerServer CreateCSharpCompilerServer(ICompilerServerLogger logger)
-            => new(
-                CompilerServerHost.SharedAssemblyReferenceProvider,
-                responseFile: null,
-                args: ["/nologo"],
-                new BuildPaths(
-                    clientDir: AppContext.BaseDirectory,
-                    workingDir: Directory.GetCurrentDirectory(),
-                    sdkDir: RuntimeEnvironment.GetRuntimeDirectory(),
-                    tempDir: Path.GetTempPath()),
-                libDirectory: null,
-                AnalyzerAssemblyLoader.CreateNonLockingLoader(Temp.CreateDirectory().Path),
-                new GeneratorDriverCache(),
-                logger: logger);
-
-        private static MethodBodyReuseStatistics CreateMethodBodyReuseStatistics()
-        {
-            var collector = new MethodBodyReuseStatisticsCollector();
-            collector.RecordCompiledBody();
-            collector.RecordCompiledBody();
-            collector.RecordReuseAttempt();
-            collector.RecordReusedBody();
-            collector.RecordReuseAttempt();
-            collector.RecordFallback(MethodBodyReuseBodyFallbackReason.ExceptionHandling);
-            return collector.Complete(succeeded: true);
-        }
-
         private static CommandLineArguments ParseArguments(string[] args)
             => CSharpCommandLineParser.Default.Parse(args, baseDirectory: Directory.GetCurrentDirectory(), sdkDirectory: null, additionalReferenceDirectories: null);
 
@@ -1109,12 +1096,6 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
             public bool IsLogging => true;
 
             public void Log(string message) => _messages.Add(message);
-        }
-
-        private sealed class TestMethodBodyReuse : IMethodBodyReuse
-        {
-            public IMethodBodyReuseSession CreateSession(CommonPEModuleBuilder moduleBuilder)
-                => throw ExceptionUtilities.Unreachable();
         }
     }
 }

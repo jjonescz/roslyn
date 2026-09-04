@@ -2959,9 +2959,7 @@ namespace Microsoft.CodeAnalysis
             IEnumerable<EmbeddedText>? embeddedTexts,
             RebuildData? rebuildData,
             CompilationTestData? testData,
-            CancellationToken cancellationToken,
-            IMethodBodyReuse? methodBodyReuse = null,
-            Action<MethodBodyReuseStatistics>? methodBodyReuseStatisticsReceiver = null)
+            CancellationToken cancellationToken)
         {
             options = options ?? EmitOptions.Default.WithIncludePrivateMembers(metadataPEStream == null);
 
@@ -2987,25 +2985,14 @@ namespace Microsoft.CodeAnalysis
 
                 if (moduleBeingBuilt != null)
                 {
-                    moduleBeingBuilt.EmittingPdb = pdbStream != null || embedPdb;
-                    var methodBodyReuseSession = methodBodyReuse?.CreateSession(moduleBeingBuilt);
-                    moduleBeingBuilt.MethodBodyReuse = methodBodyReuseSession;
-
                     try
                     {
-                        try
-                        {
-                            success = CompileMethods(
-                                moduleBeingBuilt,
-                                emittingPdb: moduleBeingBuilt.EmittingPdb,
-                                diagnostics: diagnostics,
-                                filterOpt: methodBodyReuseSession is null ? null : methodBodyReuseSession.ShouldCompile,
-                                cancellationToken: cancellationToken);
-                        }
-                        finally
-                        {
-                            moduleBeingBuilt.MethodBodyReuse = null;
-                        }
+                        success = CompileMethods(
+                            moduleBeingBuilt,
+                            emittingPdb: pdbStream != null || embedPdb,
+                            diagnostics: diagnostics,
+                            filterOpt: null,
+                            cancellationToken: cancellationToken);
 
                         if (!options.EmitMetadataOnly)
                         {
@@ -3058,12 +3045,6 @@ namespace Microsoft.CodeAnalysis
                             emitOptions: options,
                             privateKeyOpt: privateKeyOpt,
                             cancellationToken: cancellationToken);
-                    }
-
-                    moduleBeingBuilt.MethodBodyReuseStatistics = methodBodyReuseSession?.Complete(success);
-                    if (moduleBeingBuilt.MethodBodyReuseStatistics is { } methodBodyReuseStatistics)
-                    {
-                        methodBodyReuseStatisticsReceiver?.Invoke(methodBodyReuseStatistics);
                     }
                 }
 

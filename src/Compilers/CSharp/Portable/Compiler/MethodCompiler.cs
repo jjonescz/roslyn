@@ -134,7 +134,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             MethodSymbol? entryPoint = null;
-            if (filterOpt is null || moduleBeingBuiltOpt?.MethodBodyReuse is object)
+            if (filterOpt is null)
             {
                 entryPoint = GetEntryPoint(compilation, moduleBeingBuiltOpt, hasDeclarationErrors, emitMethodBodies, diagnostics, cancellationToken);
             }
@@ -210,7 +210,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             diagnostics.AddRange(compilation.AdditionalCodegenWarnings);
 
             // we can get unused field warnings only if compiling whole compilation.
-            if (filterOpt == null || moduleBeingBuiltOpt?.MethodBodyReuse is object)
+            if (filterOpt == null)
             {
                 WarnUnusedFields(compilation, diagnostics, cancellationToken);
 
@@ -510,27 +510,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 var member = members[memberOrdinal];
 
-                if (_moduleBeingBuiltOpt is object &&
-                    member is MethodSymbol { MethodKind: MethodKind.Ordinary, IsImplicitlyDeclared: false, PartialImplementationPart: null })
-                {
-                    _compilation.SourceAssembly.NoteMethodBodyReuseCandidate();
-                }
-
                 //When a filter is supplied, limit the compilation of members passing the filter.
                 if (!PassesFilter(_filterOpt, member))
                 {
-                    if (_moduleBeingBuiltOpt?.MethodBodyReuse is not { } methodBodyReuse ||
-                        member is not MethodSymbol method)
-                    {
-                        continue;
-                    }
-
-                    if (method.PartialImplementationPart is null &&
-                        methodBodyReuse.TryReuseMethodBody(method, _moduleBeingBuiltOpt, _diagnostics.DiagnosticBag))
-                    {
-                        EnqueueReusedMethodForAnalyzer(method);
-                        continue;
-                    }
+                    continue;
                 }
 
                 switch (member.Kind)
@@ -2551,36 +2534,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         private static bool PassesFilter(Predicate<Symbol> filterOpt, Symbol symbol)
         {
             return (filterOpt == null) || filterOpt(symbol);
-        }
-
-        private void EnqueueReusedMethodForAnalyzer(MethodSymbol method)
-        {
-            if (method is SourceExtensionImplementationMethodSymbol extensionImplementation)
-            {
-                method = extensionImplementation.UnderlyingMethod;
-            }
-
-            if (method is not SourceMemberMethodSymbol sourceMethod ||
-                method.IsImplicitlyDeclared ||
-                _compilation.EventQueue is null)
-            {
-                return;
-            }
-
-            _compilation.RegisterPossibleUpcomingEventEnqueue();
-            try
-            {
-                sourceMethod.SetDiagnostics(ImmutableArray<Diagnostic>.Empty, out var diagnosticsWritten);
-                if (diagnosticsWritten)
-                {
-                    _compilation.EventQueue.TryEnqueue(
-                        new SymbolDeclaredCompilationEvent(_compilation, method, semanticModelWithCachedBoundNodes: null));
-                }
-            }
-            finally
-            {
-                _compilation.UnregisterPossibleUpcomingEventEnqueue();
-            }
         }
     }
 }
