@@ -465,6 +465,13 @@
     <Project Path="src/VisualStudio/VisualStudioDiagnosticsToolWindow/Roslyn.VisualStudio.DiagnosticsWindow.csproj" />
     <Project Path="src/VisualStudio/Xaml/Impl/Microsoft.VisualStudio.LanguageServices.Xaml.csproj" />
   </Folder>
+  <Folder Name="/VisualStudio/EditorConfig/">
+    <Project Path="src/VisualStudio/EditorConfig/Command/Microsoft.VisualStudio.Templates.Editorconfig.Command.csproj" />
+    <Project Path="src/VisualStudio/EditorConfig/Setup/Microsoft.VisualStudio.Templates.Editorconfig.Setup.csproj" />
+    <Project Path="src/VisualStudio/EditorConfig/Templates/Microsoft.VisualStudio.Templates.Editorconfig.csproj" />
+    <Project Path="src/VisualStudio/EditorConfig/Wizard/Microsoft.VisualStudio.Templates.Editorconfig.Wizard.csproj" />
+    <Project Path="src/VisualStudio/EditorConfig/WizardSetup/Microsoft.VisualStudio.Templates.Editorconfig.Wizard.Setup.csproj" />
+  </Folder>
   <Folder Name="/VisualStudio/ExternalAccess/">
     <Project Path="src/VisualStudio/ExternalAccess/Apex/Microsoft.CodeAnalysis.ExternalAccess.Apex.csproj" />
     <Project Path="src/VisualStudio/ExternalAccess/Core/Microsoft.VisualStudio.LanguageServices.ExternalAccess.csproj" />
@@ -536,6 +543,7 @@
   <Project Path="src/Deployment/RoslynDeployment.csproj" />
   <Folder Name="/LanguageServer/ProjectData/">
     <Project Path="src/LanguageServer/ProjectData/Microsoft.NET.ProjectData.Generators/Microsoft.NET.ProjectData.Generators.csproj" />
+    <Project Path="src/LanguageServer/ProjectData/Microsoft.NET.ProjectData.Generators.Tests/Microsoft.NET.ProjectData.Generators.Tests.csproj" />
     <Project Path="src/LanguageServer/ProjectData/Microsoft.NET.ProjectData.Tests/Microsoft.NET.ProjectData.Tests.csproj" />
     <Project Path="src/LanguageServer/ProjectData/Microsoft.NET.ProjectData/Microsoft.NET.ProjectData.csproj" />
   </Folder>
