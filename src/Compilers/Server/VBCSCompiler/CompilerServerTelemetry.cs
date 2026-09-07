@@ -1,4 +1,4 @@
-// Licensed to the .NET Foundation under one or more agreements.
+﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -221,6 +221,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         internal long? SerializationMilliseconds { get; private set; }
         internal long CompileAndEmitMilliseconds { get; private set; }
         internal bool OutputCacheHit { get; private set; }
+        internal bool? CompilationStored { get; private set; }
 
         internal IncrementalCompilationTelemetry(ICompilerServerLogger logger)
         {
@@ -243,6 +244,9 @@ namespace Microsoft.CodeAnalysis.CompilerServer
 
         internal void RecordCompilationCreation(long elapsedMilliseconds)
             => CompilationCreationMilliseconds = elapsedMilliseconds;
+
+        internal void RecordCompilationCacheStore(bool stored)
+            => CompilationStored = stored;
 
         internal void StartCompileAndEmit()
         {
@@ -300,7 +304,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
 
         private Dictionary<string, string> CreateProperties()
         {
-            var properties = new Dictionary<string, string>(12)
+            var properties = new Dictionary<string, string>(13)
             {
                 ["strategy"] = "compilationreuse",
                 ["cachekind"] = "memory",
@@ -318,6 +322,11 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             if (SerializationMilliseconds is { } serializationMilliseconds)
             {
                 properties["serializems"] = ToInvariantString(serializationMilliseconds);
+            }
+
+            if (CompilationStored is { } stored)
+            {
+                properties["storeresult"] = stored ? "stored" : "skippedsmallinput";
             }
 
             return properties;

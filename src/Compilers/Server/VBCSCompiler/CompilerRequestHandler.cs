@@ -70,13 +70,14 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         /// <summary>
         /// Successful C# input compilations available for reuse during the server lifetime.
         /// </summary>
-        private readonly CSharpCompilationCache _csharpCompilationCache = new();
+        private readonly CSharpCompilationCache _csharpCompilationCache;
 
-        internal CompilerServerHost(string clientDirectory, string? sdkDirectory, ICompilerServerLogger logger)
+        internal CompilerServerHost(string clientDirectory, string? sdkDirectory, ICompilerServerLogger logger, CSharpCompilationCache? compilationCache = null)
         {
             ClientDirectory = clientDirectory;
             SdkDirectory = sdkDirectory;
             Logger = logger;
+            _csharpCompilationCache = compilationCache ?? new CSharpCompilationCache();
             Microsoft.CodeAnalysis.AnalyzerAssemblyLoader.CleanLegacyShadowCopyDirectoryIfNeeded(Path.Combine(Path.GetTempPath(), "VBCSCompiler", "AnalyzerAssemblyLoader"));
             AnalyzerAssemblyLoader = Microsoft.CodeAnalysis.AnalyzerAssemblyLoader.CreateNonLockingLoader(Path.Combine(Path.GetTempPath(), "VBCSCompiler", "AnalyzerPathResolver"));
         }

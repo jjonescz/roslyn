@@ -203,6 +203,14 @@ request so replacing a referenced file at the same path cannot leave the compila
 metadata. Source generators, analyzers, binding, lowering, code generation, and PE/PDB serialization
 still run normally.
 
+Only compilations with at least 16,384 UTF-16 characters across their input syntax trees
+are retained. This keeps tiny source inputs, including typical satellite assemblies,
+from displacing larger compilations. The threshold measures source length, not emitted
+assembly size or embedded resource size, and excludes source-generator output.
+It is an experimental heuristic, not a measured break-even point. The same admission
+policy applies after a disk output-cache hit. If a successful compilation shrinks below
+the threshold, any previous entry for that output is removed.
+
 Compilation reuse is skipped when the output name is implicit, touched-file logging is enabled, or
 an application configuration file supplies assembly binding policy. Touched-file logging cannot
 reuse command-line resolvers that retain a logger from an older request, and the app-config assembly
@@ -218,6 +226,7 @@ A completed compilation produces a `roslyn/incrementalcompilation` telemetry eve
 | `status` | `succeeded` or `failed` |
 | `cachestatus` | `hit` when a previous compilation was updated, otherwise `miss` |
 | `outputcachehit` | `true` when the exact-output cache completed the request without compilation or emit |
+| `storeresult` | `stored` when the input compilation was retained in memory, or `skippedsmallinput` when it was below the source-length threshold; omitted when no memory store was attempted |
 | `totalsyntaxtreecount` | number of input syntax trees |
 | `reusedsyntaxtreecount` | number of input syntax trees reused without reparsing |
 | `compilationcreatems` | milliseconds spent reading inputs, parsing changed files, resolving references, and creating or updating the input compilation |

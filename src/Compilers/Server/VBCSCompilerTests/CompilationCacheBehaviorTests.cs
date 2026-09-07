@@ -43,7 +43,7 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
         byte[] incrementalPdb;
 
         {
-            using var serverData = await ServerUtil.CreateServer(_logger);
+            using var serverData = await CreateServerWithCompilationReuse();
             var arguments = BuildCompilationArguments(
                 visualBasic: false,
                 serverData.PipeName,
@@ -83,7 +83,7 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
         Assert.Contains("compileandemitms=", summaries[1], StringComparison.Ordinal);
 
         {
-            using var cleanServerData = await ServerUtil.CreateServer(_logger);
+            using var cleanServerData = await CreateServerWithCompilationReuse();
             var cleanArguments = BuildCompilationArguments(
                 visualBasic: false,
                 cleanServerData.PipeName,
@@ -113,7 +113,7 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
         byte[] incrementalPe;
 
         {
-            using var serverData = await ServerUtil.CreateServer(_logger);
+            using var serverData = await CreateServerWithCompilationReuse();
             var arguments = BuildCompilationArguments(
                 visualBasic: false,
                 serverData.PipeName,
@@ -147,7 +147,7 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
         Assert.Contains("reusedsyntaxtreecount=1", summary, StringComparison.Ordinal);
 
         {
-            using var cleanServerData = await ServerUtil.CreateServer(_logger);
+            using var cleanServerData = await CreateServerWithCompilationReuse();
             var cleanArguments = BuildCompilationArguments(
                 visualBasic: false,
                 cleanServerData.PipeName,
@@ -171,7 +171,7 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
 
         var workingDirectory = Temp.CreateDirectory();
         var analyzerPath = CreateWarningAnalyzerAssembly(workingDirectory);
-        using var serverData = await ServerUtil.CreateServer(_logger);
+        using var serverData = await CreateServerWithCompilationReuse();
         var arguments = BuildCompilationArguments(
             visualBasic: false,
             serverData.PipeName,
@@ -211,7 +211,7 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
         byte[] incrementalPdb;
 
         {
-            using var serverData = await ServerUtil.CreateServer(_logger);
+            using var serverData = await CreateServerWithCompilationReuse();
             var arguments0 = BuildCompilationArguments(
                 visualBasic: false,
                 serverData.PipeName,
@@ -245,7 +245,7 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
         }
 
         {
-            using var cleanServerData = await ServerUtil.CreateServer(_logger);
+            using var cleanServerData = await CreateServerWithCompilationReuse();
             var cleanArguments = BuildCompilationArguments(
                 visualBasic: false,
                 cleanServerData.PipeName,
@@ -268,7 +268,7 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
         const string source = "public static class Test { public static int Value() => 1; }";
 
         var workingDirectory = Temp.CreateDirectory();
-        using var serverData = await ServerUtil.CreateServer(_logger);
+        using var serverData = await CreateServerWithCompilationReuse();
         var arguments0 = BuildCompilationArguments(
             visualBasic: false,
             serverData.PipeName,
@@ -297,6 +297,143 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
             .ElementAt(1);
         Assert.Contains("cachestatus=hit", summary, StringComparison.Ordinal);
         Assert.Contains("reusedsyntaxtreecount=0", summary, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CompilationReuse_SmallInputsDoNotEvictLargeCompilation(bool useOutputCache)
+    {
+        const string dirtySource0 = "public static class Dirty { public static int Value() => 1; }";
+        const string dirtySource1 = "public static class Dirty { public static int Value() => 2; }";
+        var cleanSource = "public static class Clean { public static int Value() => Dirty.Value(); }"
+            .PadRight(CSharpCompilationCache.DefaultMinimumSourceLength);
+        var workingDirectory = Temp.CreateDirectory();
+        var cacheDirectory = useOutputCache ? Temp.CreateDirectory() : null;
+        byte[] incrementalPe;
+        byte[] incrementalPdb;
+
+        {
+            using var serverData = await ServerUtil.CreateServer(_logger);
+            var arguments = BuildCompilationArguments(
+                visualBasic: false,
+                serverData.PipeName,
+                "Dirty.cs",
+                "test.dll",
+                additionalArguments: "Clean.cs /debug:portable /pdb:test.pdb",
+                cachePath: cacheDirectory?.Path);
+            var (exitCode, output) = RunCommandLineCompiler(
+                RequestLanguage.CSharpCompile, arguments, workingDirectory,
+                [new("Dirty.cs", dirtySource0), new("Clean.cs", cleanSource)]);
+            Assert.True(exitCode == 0, output);
+
+            workingDirectory.CreateFile("Satellite.cs").WriteAllText("""
+                [assembly: System.Reflection.AssemblyCulture("cs")]
+                """);
+            File.WriteAllBytes(Path.Combine(workingDirectory.Path, "data.bin"), new byte[64 * 1024]);
+            for (var i = 0; i < 13; i++)
+            {
+                var outputFileName = $"Satellite{i}.resources.dll";
+                var satelliteArguments = BuildCompilationArguments(
+                    visualBasic: false,
+                    serverData.PipeName,
+                    "Satellite.cs",
+                    outputFileName,
+                    additionalArguments: "/resource:data.bin",
+                    cachePath: cacheDirectory?.Path);
+                (exitCode, output) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, satelliteArguments, workingDirectory);
+                Assert.True(exitCode == 0, output);
+                Assert.True(new FileInfo(Path.Combine(workingDirectory.Path, outputFileName)).Length > 64 * 1024);
+
+                if (useOutputCache)
+                {
+                    File.Delete(Path.Combine(workingDirectory.Path, outputFileName));
+                    (exitCode, output) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, satelliteArguments, workingDirectory);
+                    Assert.True(exitCode == 0, output);
+                    Assert.Contains("Compilation result restored from cache.", output, StringComparison.Ordinal);
+                }
+            }
+
+            File.WriteAllText(Path.Combine(workingDirectory.Path, "Dirty.cs"), dirtySource1);
+            (exitCode, output) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, arguments, workingDirectory);
+            Assert.True(exitCode == 0, output);
+            incrementalPe = File.ReadAllBytes(Path.Combine(workingDirectory.Path, "test.dll"));
+            incrementalPdb = File.ReadAllBytes(Path.Combine(workingDirectory.Path, "test.pdb"));
+        }
+
+        var summaries = _logger.GetMessagesSnapshot()
+            .Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal))
+            .ToArray();
+        Assert.Equal(useOutputCache ? 28 : 15, summaries.Length);
+        Assert.Contains("cachestatus=miss", summaries[0], StringComparison.Ordinal);
+        Assert.Contains("storeresult=stored", summaries[0], StringComparison.Ordinal);
+        foreach (var summary in summaries.Skip(1).Take(summaries.Length - 2))
+        {
+            Assert.Contains("cachestatus=miss", summary, StringComparison.Ordinal);
+            Assert.Contains("storeresult=skippedsmallinput", summary, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("cachestatus=hit", summaries[^1], StringComparison.Ordinal);
+        Assert.Contains("outputcachehit=false", summaries[^1], StringComparison.Ordinal);
+        Assert.Contains("reusedsyntaxtreecount=1", summaries[^1], StringComparison.Ordinal);
+        Assert.Contains("storeresult=stored", summaries[^1], StringComparison.Ordinal);
+
+        using var cleanServerData = await ServerUtil.CreateServer(_logger);
+        var cleanArguments = BuildCompilationArguments(
+            visualBasic: false,
+            cleanServerData.PipeName,
+            "Dirty.cs",
+            "test.dll",
+            additionalArguments: "Clean.cs /debug:portable /pdb:test.pdb");
+        var (cleanExitCode, cleanOutput) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, cleanArguments, workingDirectory);
+        Assert.True(cleanExitCode == 0, cleanOutput);
+        Assert.Equal(incrementalPe, File.ReadAllBytes(Path.Combine(workingDirectory.Path, "test.dll")));
+        Assert.Equal(incrementalPdb, File.ReadAllBytes(Path.Combine(workingDirectory.Path, "test.pdb")));
+    }
+
+    [Theory]
+    [InlineData(16_383, false)]
+    [InlineData(16_384, true)]
+    public async Task CompilationReuse_OutputCacheRestoreHonorsSourceThreshold(int sourceLength, bool expectedStored)
+    {
+        var workingDirectory = Temp.CreateDirectory();
+        var cacheDirectory = Temp.CreateDirectory();
+        var source = "public class C { }".PadRight(sourceLength);
+        {
+            using var serverData = await ServerUtil.CreateServer(_logger);
+            var arguments = BuildCompilationArguments(
+                visualBasic: false, serverData.PipeName, "test.cs", "test.dll", cachePath: cacheDirectory.Path);
+            var (exitCode, output) = RunCommandLineCompiler(
+                RequestLanguage.CSharpCompile, arguments, workingDirectory, [new("test.cs", source)]);
+            Assert.True(exitCode == 0, output);
+        }
+
+        {
+            using var serverData = await ServerUtil.CreateServer(_logger);
+            var arguments = BuildCompilationArguments(
+                visualBasic: false, serverData.PipeName, "test.cs", "test.dll", cachePath: cacheDirectory.Path);
+            for (var i = 0; i < 2; i++)
+            {
+                File.Delete(Path.Combine(workingDirectory.Path, "test.dll"));
+                var (exitCode, output) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, arguments, workingDirectory);
+                Assert.True(exitCode == 0, output);
+                Assert.Contains("Compilation result restored from cache.", output, StringComparison.Ordinal);
+            }
+        }
+
+        var summaries = _logger.GetMessagesSnapshot()
+            .Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal))
+            .ToArray();
+        Assert.Equal(3, summaries.Length);
+        Assert.Contains("cachestatus=miss", summaries[1], StringComparison.Ordinal);
+        Assert.Contains("outputcachehit=true", summaries[1], StringComparison.Ordinal);
+        Assert.Contains("outputcachehit=true", summaries[2], StringComparison.Ordinal);
+        Assert.Contains($"cachestatus={(expectedStored ? "hit" : "miss")}", summaries[2], StringComparison.Ordinal);
+        Assert.Contains($"reusedsyntaxtreecount={(expectedStored ? 1 : 0)}", summaries[2], StringComparison.Ordinal);
+        foreach (var summary in summaries)
+        {
+            Assert.Contains($"storeresult={(expectedStored ? "stored" : "skippedsmallinput")}", summary, StringComparison.Ordinal);
+        }
     }
 
     [Theory]
@@ -624,6 +761,13 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
 
     private static RequestLanguage GetLanguage(bool visualBasic)
         => visualBasic ? RequestLanguage.VisualBasicCompile : RequestLanguage.CSharpCompile;
+
+    private Task<ServerData> CreateServerWithCompilationReuse()
+        => ServerUtil.CreateServer(_logger, compilerServerHost: new CompilerServerHost(
+            ServerUtil.DefaultClientDirectory,
+            ServerUtil.DefaultSdkDirectory,
+            _logger,
+            new CSharpCompilationCache(minimumSourceLength: 0)));
 
     private static string BuildCompilationArguments(bool visualBasic, string pipeName, string sourceFileName, string outputFileName, string additionalArguments = "", string cachePath = null)
     {

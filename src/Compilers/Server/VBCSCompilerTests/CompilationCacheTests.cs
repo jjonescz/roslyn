@@ -627,6 +627,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
             Assert.Equal("6", telemetryEvent.Properties["compilemethodsms"]);
             Assert.Equal("7", telemetryEvent.Properties["serializems"]);
             Assert.True(long.Parse(telemetryEvent.Properties["compileandemitms"]) >= 0);
+            Assert.False(telemetryEvent.Properties.ContainsKey("storeresult"));
 
             telemetry.ToTelemetryEvent();
             var message = Assert.Single(logMessages);
@@ -656,19 +657,121 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
             Assert.False(telemetryEvent.Properties.ContainsKey("serializems"));
         }
 
+        [Theory]
+        [InlineData(true, "stored")]
+        [InlineData(false, "skippedsmallinput")]
+        public void IncrementalCompilationTelemetry_RecordsStoreResult(bool stored, string expectedResult)
+        {
+            var logMessages = new List<string>();
+            var telemetry = new IncrementalCompilationTelemetry(new CollectingLogger(logMessages));
+            telemetry.RecordCompilationCacheStore(stored);
+            telemetry.Complete(succeeded: true);
+
+            Assert.Equal(expectedResult, telemetry.ToTelemetryEvent().Properties["storeresult"]);
+            Assert.Contains($"storeresult={expectedResult}", Assert.Single(logMessages), StringComparison.Ordinal);
+        }
+
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(16_383, false)]
+        [InlineData(16_384, true)]
+        [InlineData(16_385, true)]
+        public void CSharpCompilationCache_SourceLengthThreshold(int sourceLength, bool expectedStored)
+        {
+            var cache = new CSharpCompilationCache();
+            var compilation = CSharpCompilation.Create("test", syntaxTrees:
+                [CSharpSyntaxTree.ParseText(new string(' ', sourceLength))]);
+
+            Assert.Equal(expectedStored, cache.CacheCompilation("test", compilation));
+            Assert.Same(expectedStored ? compilation : null, cache.TryGetCompilation("test"));
+        }
+
+        [Theory]
+        [InlineData(8_191, false)]
+        [InlineData(8_192, true)]
+        public void CSharpCompilationCache_AggregatesSourceLengths(int treeLength, bool expectedStored)
+        {
+            var cache = new CSharpCompilationCache();
+            var compilation = CSharpCompilation.Create("test", syntaxTrees:
+                [
+                    CSharpSyntaxTree.ParseText(new string(' ', treeLength)),
+                    CSharpSyntaxTree.ParseText(new string(' ', treeLength)),
+                ]);
+
+            Assert.Equal(expectedStored, cache.CacheCompilation("test", compilation));
+            Assert.Same(expectedStored ? compilation : null, cache.TryGetCompilation("test"));
+        }
+
+        [Fact]
+        public void CSharpCompilationCache_CountsCharactersNotEncodedBytes()
+        {
+            var cache = new CSharpCompilationCache();
+            var source = "//" + new string('\u00e9', 10_000);
+            var tree = CSharpSyntaxTree.ParseText(source, encoding: Encoding.UTF8);
+            var compilation = CSharpCompilation.Create("test", syntaxTrees: [tree]);
+            Assert.True(Encoding.UTF8.GetByteCount(source) > CSharpCompilationCache.DefaultMinimumSourceLength);
+
+            Assert.False(cache.CacheCompilation("test", compilation));
+            Assert.Null(cache.TryGetCompilation("test"));
+        }
+
+        [Fact]
+        public void CSharpCompilationCache_SmallInputsDoNotEvictExistingEntries()
+        {
+            var cache = new CSharpCompilationCache(maxCacheSize: 2);
+            var compilation = CSharpCompilation.Create("large", syntaxTrees:
+                [CSharpSyntaxTree.ParseText(new string(' ', CSharpCompilationCache.DefaultMinimumSourceLength))]);
+            Assert.True(cache.CacheCompilation("large1", compilation));
+            Assert.True(cache.CacheCompilation("large2", compilation));
+
+            var smallCompilation = CSharpCompilation.Create("small", syntaxTrees:
+                [CSharpSyntaxTree.ParseText("class C { }")]);
+            for (var i = 0; i < 13; i++)
+            {
+                var key = $"satellite{i}";
+                Assert.False(cache.CacheCompilation(key, smallCompilation));
+                Assert.Null(cache.TryGetCompilation(key));
+            }
+
+            Assert.Same(compilation, cache.TryGetCompilation("large1"));
+            Assert.Same(compilation, cache.TryGetCompilation("large2"));
+        }
+
+        [Theory]
+        [InlineData("1")]
+        [InlineData("2")]
+        [InlineData("3")]
+        public void CSharpCompilationCache_ShrinkingInputRemovesPreviousEntry(string key)
+        {
+            var cache = new CSharpCompilationCache(maxCacheSize: 3);
+            var compilation = CSharpCompilation.Create("large", syntaxTrees:
+                [CSharpSyntaxTree.ParseText(new string(' ', CSharpCompilationCache.DefaultMinimumSourceLength))]);
+            Assert.True(cache.CacheCompilation("1", compilation));
+            Assert.True(cache.CacheCompilation("2", compilation));
+            Assert.True(cache.CacheCompilation("3", compilation));
+
+            Assert.False(cache.CacheCompilation(key, CSharpCompilation.Create("small")));
+            Assert.Null(cache.TryGetCompilation(key));
+            Assert.True(cache.CacheCompilation("4", compilation));
+            foreach (var remainingKey in new[] { "1", "2", "3", "4" })
+            {
+                Assert.Same(remainingKey == key ? null : compilation, cache.TryGetCompilation(remainingKey));
+            }
+        }
+
         [Fact]
         public void CSharpCompilationCache_IsBoundedAndLeastRecentlyUsed()
         {
-            var cache = new CSharpCompilationCache(maxCacheSize: 2);
+            var cache = new CSharpCompilationCache(maxCacheSize: 2, minimumSourceLength: 0);
             var compilation1 = CSharpCompilation.Create("1");
             var compilation2 = CSharpCompilation.Create("2");
             var compilation3 = CSharpCompilation.Create("3");
 
-            cache.CacheCompilation("1", compilation1);
-            cache.CacheCompilation("2", compilation2);
+            Assert.True(cache.CacheCompilation("1", compilation1));
+            Assert.True(cache.CacheCompilation("2", compilation2));
             Assert.Same(compilation1, cache.TryGetCompilation("1"));
 
-            cache.CacheCompilation("3", compilation3);
+            Assert.True(cache.CacheCompilation("3", compilation3));
 
             Assert.Null(cache.TryGetCompilation("2"));
             Assert.Same(compilation1, cache.TryGetCompilation("1"));

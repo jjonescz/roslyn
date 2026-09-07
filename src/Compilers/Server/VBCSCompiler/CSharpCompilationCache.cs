@@ -15,22 +15,66 @@ namespace Microsoft.CodeAnalysis.CompilerServer;
 internal sealed class CSharpCompilationCache
 {
     private const int DefaultMaxCacheSize = 10;
+    internal const int DefaultMinimumSourceLength = 16_384;
 
     private readonly (string key, CSharpCompilation compilation)[] _cachedCompilations;
+    private readonly int _minimumSourceLength;
     private readonly object _cacheLock = new();
     private int _cacheSize;
 
-    internal CSharpCompilationCache(int maxCacheSize = DefaultMaxCacheSize)
+    internal CSharpCompilationCache(int maxCacheSize = DefaultMaxCacheSize, int minimumSourceLength = DefaultMinimumSourceLength)
     {
         Debug.Assert(maxCacheSize > 0);
+        Debug.Assert(minimumSourceLength >= 0);
         _cachedCompilations = new (string, CSharpCompilation)[maxCacheSize];
+        _minimumSourceLength = minimumSourceLength;
     }
 
     internal CSharpCompilation? TryGetCompilation(string key)
         => AddOrUpdateMostRecentlyUsed(key, compilation: null);
 
-    internal void CacheCompilation(string key, CSharpCompilation compilation)
-        => AddOrUpdateMostRecentlyUsed(key, compilation);
+    internal bool CacheCompilation(string key, CSharpCompilation compilation)
+    {
+        if (!HasMinimumSourceLength(compilation))
+        {
+            RemoveCompilation(key);
+            return false;
+        }
+
+        AddOrUpdateMostRecentlyUsed(key, compilation);
+        return true;
+    }
+
+    private bool HasMinimumSourceLength(CSharpCompilation compilation)
+    {
+        long sourceLength = 0;
+        foreach (var tree in compilation.SyntaxTrees)
+        {
+            sourceLength += tree.Length;
+            if (sourceLength >= _minimumSourceLength)
+            {
+                return true;
+            }
+        }
+
+        return sourceLength >= _minimumSourceLength;
+    }
+
+    private void RemoveCompilation(string key)
+    {
+        lock (_cacheLock)
+        {
+            for (var index = 0; index < _cacheSize; index++)
+            {
+                if (PathUtilities.Comparer.Equals(_cachedCompilations[index].key, key))
+                {
+                    Array.Copy(_cachedCompilations, index + 1, _cachedCompilations, index, _cacheSize - index - 1);
+                    _cachedCompilations[--_cacheSize] = default;
+                    break;
+                }
+            }
+        }
+    }
 
     private CSharpCompilation? AddOrUpdateMostRecentlyUsed(string key, CSharpCompilation? compilation)
     {

@@ -133,7 +133,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         {
             if (_compilationCacheKey is object && _inputCompilation is object)
             {
-                _compilationCache?.CacheCompilation(_compilationCacheKey, _inputCompilation.RemoveAllReferences());
+                CacheInputCompilation();
                 _incrementalCompilationTelemetry.CompleteFromOutputCache();
             }
         }
@@ -149,9 +149,15 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             var (deterministicKey, hashKey) = ((string?, string?))cacheState!;
             CompilationCacheUtilities.OnCompilationSucceeded(_cache, _logger, Arguments, deterministicKey, hashKey, _cacheTelemetry);
 
-            if (_compilationCacheKey is object && _inputCompilation is object)
+            CacheInputCompilation();
+        }
+
+        private void CacheInputCompilation()
+        {
+            if (_compilationCacheKey is object && _inputCompilation is object && _compilationCache is object)
             {
-                _compilationCache?.CacheCompilation(_compilationCacheKey, _inputCompilation.RemoveAllReferences());
+                var stored = _compilationCache.CacheCompilation(_compilationCacheKey, _inputCompilation.RemoveAllReferences());
+                _incrementalCompilationTelemetry.RecordCompilationCacheStore(stored);
             }
         }
 
