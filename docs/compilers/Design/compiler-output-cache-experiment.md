@@ -195,7 +195,7 @@ The event carries these properties:
 
 ### In-memory C# compilation reuse
 
-The compiler server also retains up to 10 successful input `CSharpCompilation` instances, keyed
+By default, the compiler server also retains up to 10 successful input `CSharpCompilation` instances, keyed
 by output path and evicted in least-recently-used order. On a later request for the same output,
 unchanged source text reuses its existing syntax tree and the compiler derives the next compilation
 through the normal immutable compilation update APIs. References are resolved again for every
@@ -203,13 +203,31 @@ request so replacing a referenced file at the same path cannot leave the compila
 metadata. Source generators, analyzers, binding, lowering, code generation, and PE/PDB serialization
 still run normally.
 
-Only compilations with at least 16,384 UTF-16 characters across their input syntax trees
+By default, only compilations with at least 16,384 UTF-16 characters across their input syntax trees
 are retained. This keeps tiny source inputs, including typical satellite assemblies,
 from displacing larger compilations. The threshold measures source length, not emitted
 assembly size or embedded resource size, and excludes source-generator output.
 It is an experimental heuristic, not a measured break-even point. The same admission
 policy applies after a disk output-cache hit. If a successful compilation shrinks below
 the threshold, any previous entry for that output is removed.
+
+The following experimental environment variables configure the in-memory cache:
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `ROSLYN_COMPILATION_CACHE_MIN_SOURCE_LENGTH` | `16384` | Minimum total input-source length in UTF-16 characters; `0` admits all sizes, including empty inputs |
+| `ROSLYN_COMPILATION_CACHE_MAX_ENTRIES` | `10` | Maximum retained compilations; `0` disables compilation reuse without disabling shared compilation, source-generator caching, or the disk output cache |
+
+Both accept nonnegative 32-bit integers. An unset variable uses its default. Invalid,
+negative, or overflowing values are logged and replaced with the corresponding default.
+Entry storage grows as needed rather than allocating the configured maximum at startup.
+There is no separate memory budget: increasing the entry limit can increase retained memory.
+
+Settings are read once when the production compiler-server host is created, and the effective
+values are written to the server log as `Compilation reuse cache settings: ...`.
+Set the variables before starting a build and restart the relevant compiler server after
+changing them; reconnecting to an existing server does not reconfigure its cache.
+Use `RoslynCommandLineLogFile` (or the server's `-log:` argument) to capture these messages.
 
 Compilation reuse is skipped when the output name is implicit, touched-file logging is enabled, or
 an application configuration file supplies assembly binding policy. Touched-file logging cannot
@@ -226,7 +244,10 @@ A completed compilation produces a `roslyn/incrementalcompilation` telemetry eve
 | `status` | `succeeded` or `failed` |
 | `cachestatus` | `hit` when a previous compilation was updated, otherwise `miss` |
 | `outputcachehit` | `true` when the exact-output cache completed the request without compilation or emit |
-| `storeresult` | `stored` when the input compilation was retained in memory, or `skippedsmallinput` when it was below the source-length threshold; omitted when no memory store was attempted |
+| `storeresult` | `stored`, `skippedsmallinput`, or `disabled` (zero entry limit); omitted when no memory store was attempted |
+| `cacheentrycount` | number of entries currently retained in the server's compilation cache |
+| `retainedsourcechars` | sum of input-source lengths over retained entries, in UTF-16 characters; not a heap-memory measurement and not deduplicated across entries |
+| `cacheevictions` | cumulative capacity-driven evictions since this cache was created; replacing or removing a shrinking entry is not an eviction |
 | `totalsyntaxtreecount` | number of input syntax trees |
 | `reusedsyntaxtreecount` | number of input syntax trees reused without reparsing |
 | `compilationcreatems` | milliseconds spent reading inputs, parsing changed files, resolving references, and creating or updating the input compilation |
@@ -234,6 +255,10 @@ A completed compilation produces a `roslyn/incrementalcompilation` telemetry eve
 | `compilemethodsms` | milliseconds spent binding, analyzing, lowering, and generating method bodies |
 | `serializems` | milliseconds spent serializing PE/PDB output; omitted when serialization did not run |
 | `compileandemitms` | milliseconds from the output-cache miss through compilation, analysis, and emit completion |
+
+The three cache counters are an atomic snapshot taken after an admission attempt and are
+omitted when no store was attempted. Concurrent requests can contribute to these
+server-wide counts; they are not per-request allocation or eviction measurements.
 
 ## Cache management
 

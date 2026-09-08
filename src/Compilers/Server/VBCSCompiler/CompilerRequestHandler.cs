@@ -41,6 +41,9 @@ namespace Microsoft.CodeAnalysis.CompilerServer
 
     internal sealed class CompilerServerHost : ICompilerServerHost
     {
+        internal const string CompilationCacheMinSourceLengthEnvironmentVariable = "ROSLYN_COMPILATION_CACHE_MIN_SOURCE_LENGTH";
+        internal const string CompilationCacheMaxEntriesEnvironmentVariable = "ROSLYN_COMPILATION_CACHE_MAX_ENTRIES";
+
         public IAnalyzerAssemblyLoaderInternal AnalyzerAssemblyLoader { get; }
 
         public static Func<string, MetadataReferenceProperties, PortableExecutableReference> SharedAssemblyReferenceProvider { get; } = (path, properties) => new CachingMetadataReference(path, properties);
@@ -78,8 +81,35 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             SdkDirectory = sdkDirectory;
             Logger = logger;
             _csharpCompilationCache = compilationCache ?? new CSharpCompilationCache();
+            Logger.Log(FormattableString.Invariant(
+                $"Compilation reuse cache settings: maxentries={_csharpCompilationCache.MaxCacheSize} minsourcelength={_csharpCompilationCache.MinimumSourceLength}"));
             Microsoft.CodeAnalysis.AnalyzerAssemblyLoader.CleanLegacyShadowCopyDirectoryIfNeeded(Path.Combine(Path.GetTempPath(), "VBCSCompiler", "AnalyzerAssemblyLoader"));
             AnalyzerAssemblyLoader = Microsoft.CodeAnalysis.AnalyzerAssemblyLoader.CreateNonLockingLoader(Path.Combine(Path.GetTempPath(), "VBCSCompiler", "AnalyzerPathResolver"));
+        }
+
+        internal static CSharpCompilationCache CreateCompilationCache(IBuildEnvironment buildEnvironment, ICompilerServerLogger logger)
+        {
+            var maxEntries = ReadSetting(CompilationCacheMaxEntriesEnvironmentVariable, CSharpCompilationCache.DefaultMaxCacheSize);
+            var minimumSourceLength = ReadSetting(CompilationCacheMinSourceLengthEnvironmentVariable, CSharpCompilationCache.DefaultMinimumSourceLength);
+            return new CSharpCompilationCache(maxEntries, minimumSourceLength);
+
+            int ReadSetting(string name, int defaultValue)
+            {
+                var value = buildEnvironment.GetEnvironmentVariable(name);
+                if (value is null)
+                {
+                    return defaultValue;
+                }
+
+                if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result) && result >= 0)
+                {
+                    return result;
+                }
+
+                logger.Log(FormattableString.Invariant(
+                    $"Invalid {name}='{value}': expected a nonnegative 32-bit integer. Using default {defaultValue}."));
+                return defaultValue;
+            }
         }
 
         public bool TryCreateCompiler(in RunRequest request, BuildPaths buildPaths, [NotNullWhen(true)] out CommonCompiler? compiler)

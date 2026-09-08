@@ -437,6 +437,81 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
     }
 
     [Theory]
+    [InlineData(0, "miss", 0)]
+    [InlineData(1, "miss", 2)]
+    [InlineData(2, "hit", 0)]
+    public async Task CompilationReuse_ConfiguredCapacity(int maxEntries, string expectedLastCacheStatus, int expectedEvictions)
+    {
+        var workingDirectory = Temp.CreateDirectory();
+        var environment = new TestableBuildEnvironment(workingDirectory.Path);
+        environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMaxEntriesEnvironmentVariable] = maxEntries.ToString();
+        environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMinSourceLengthEnvironmentVariable] = "0";
+        var host = BuildServerController.CreateCompilerServerHost(_logger, environment);
+        using var serverData = await ServerUtil.CreateServer(_logger, compilerServerHost: host);
+        environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMaxEntriesEnvironmentVariable] = "3";
+        environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMinSourceLengthEnvironmentVariable] = "1000";
+
+        const string source = "public class C { }";
+        workingDirectory.CreateFile("test.cs").WriteAllText(source);
+        foreach (var outputFileName in new[] { "first.dll", "second.dll", "first.dll" })
+        {
+            var arguments = BuildCompilationArguments(visualBasic: false, serverData.PipeName, "test.cs", outputFileName);
+            var (exitCode, output) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, arguments, workingDirectory);
+            Assert.True(exitCode == 0, output);
+        }
+
+        var summaries = _logger.GetMessagesSnapshot()
+            .Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal))
+            .ToArray();
+        Assert.Equal(3, summaries.Length);
+        Assert.Contains("cachestatus=miss", summaries[0], StringComparison.Ordinal);
+        Assert.Contains("cachestatus=miss", summaries[1], StringComparison.Ordinal);
+        Assert.Contains($"cachestatus={expectedLastCacheStatus}", summaries[2], StringComparison.Ordinal);
+        Assert.Contains($"cacheentrycount={maxEntries}", summaries[2], StringComparison.Ordinal);
+        Assert.Contains($"retainedsourcechars={maxEntries * source.Length}", summaries[2], StringComparison.Ordinal);
+        Assert.Contains($"cacheevictions={expectedEvictions}", summaries[2], StringComparison.Ordinal);
+        Assert.All(summaries, summary =>
+            Assert.Contains($"storeresult={(maxEntries == 0 ? "disabled" : "stored")}", summary, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task CompilationReuse_DisabledDoesNotDisableOutputCache()
+    {
+        var workingDirectory = Temp.CreateDirectory();
+        var cacheDirectory = Temp.CreateDirectory();
+        var environment = new TestableBuildEnvironment(workingDirectory.Path);
+        environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMaxEntriesEnvironmentVariable] = "0";
+        var host = BuildServerController.CreateCompilerServerHost(_logger, environment);
+        using var serverData = await ServerUtil.CreateServer(_logger, compilerServerHost: host);
+        var arguments = BuildCompilationArguments(
+            visualBasic: false, serverData.PipeName, "test.cs", "test.dll", cachePath: cacheDirectory.Path);
+        var (exitCode, output) = RunCommandLineCompiler(
+            RequestLanguage.CSharpCompile, arguments, workingDirectory, [new("test.cs", "public class C { }")]);
+        Assert.True(exitCode == 0, output);
+        var originalPe = File.ReadAllBytes(Path.Combine(workingDirectory.Path, "test.dll"));
+
+        File.Delete(Path.Combine(workingDirectory.Path, "test.dll"));
+        (exitCode, output) = RunCommandLineCompiler(RequestLanguage.CSharpCompile, arguments, workingDirectory);
+        Assert.True(exitCode == 0, output);
+        Assert.Contains("Compilation result restored from cache.", output, StringComparison.Ordinal);
+        Assert.Equal(originalPe, File.ReadAllBytes(Path.Combine(workingDirectory.Path, "test.dll")));
+
+        var summaries = _logger.GetMessagesSnapshot()
+            .Where(static message => message.StartsWith("Incremental compilation", StringComparison.Ordinal))
+            .ToArray();
+        Assert.Equal(2, summaries.Length);
+        Assert.Contains("outputcachehit=false", summaries[0], StringComparison.Ordinal);
+        Assert.Contains("outputcachehit=true", summaries[1], StringComparison.Ordinal);
+        Assert.All(summaries, summary =>
+        {
+            Assert.Contains("cachestatus=miss", summary, StringComparison.Ordinal);
+            Assert.Contains("storeresult=disabled", summary, StringComparison.Ordinal);
+            Assert.Contains("reusedsyntaxtreecount=0", summary, StringComparison.Ordinal);
+            Assert.Contains("cacheentrycount=0 retainedsourcechars=0 cacheevictions=0", summary, StringComparison.Ordinal);
+        });
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task CacheHit_OmitsWarningDiagnosticsFromOutput(bool visualBasic)

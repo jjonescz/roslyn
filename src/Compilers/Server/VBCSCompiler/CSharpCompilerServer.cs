@@ -156,8 +156,8 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         {
             if (_compilationCacheKey is object && _inputCompilation is object && _compilationCache is object)
             {
-                var stored = _compilationCache.CacheCompilation(_compilationCacheKey, _inputCompilation.RemoveAllReferences());
-                _incrementalCompilationTelemetry.RecordCompilationCacheStore(stored);
+                var result = _compilationCache.CacheCompilation(_compilationCacheKey, _inputCompilation.RemoveAllReferences());
+                _incrementalCompilationTelemetry.RecordCompilationCacheStore(result, _compilationCache.GetStatistics());
             }
         }
 

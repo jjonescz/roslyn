@@ -34,6 +34,37 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
 
         public class StartupTests : VBCSCompilerServerTests
         {
+            [Theory]
+            [InlineData(null, null, 10, 16_384)]
+            [InlineData("0", "0", 0, 0)]
+            [InlineData("25", "1000", 25, 1000)]
+            [InlineData("invalid", "-1", 10, 16_384)]
+            public void CompilationCacheSettingsFromEnvironment(
+                string maxEntries, string minimumSourceLength, int expectedMaxEntries, int expectedMinimumSourceLength)
+            {
+                var logPath = Path.Combine(TempRoot.CreateDirectory().Path, "server.log");
+                var filePath = typeof(VBCSCompiler).Assembly.Location;
+                var arguments = $@"-pipename:{ServerUtil.GetPipeName()} -timeout:1 -log:""{logPath}""";
+                if (BuildServerConnection.IsBuiltinToolRunningOnCoreClr)
+                {
+                    arguments = RuntimeHostInfo.GetDotNetExecCommandLine(filePath, arguments);
+                    filePath = RuntimeHostInfo.GetDotNetHostPath(StandardBuildEnvironment.Instance);
+                }
+
+                var result = ProcessUtilities.Run(filePath, arguments, additionalEnvironmentVars:
+                    new Dictionary<string, string>
+                    {
+                        [CompilerServerHost.CompilationCacheMaxEntriesEnvironmentVariable] = maxEntries,
+                        [CompilerServerHost.CompilationCacheMinSourceLengthEnvironmentVariable] = minimumSourceLength,
+                    });
+                Assert.True(result.ExitCode == CommonCompiler.Succeeded, result.ToString());
+                var log = File.ReadAllText(logPath);
+                Assert.Contains(
+                    $"Compilation reuse cache settings: maxentries={expectedMaxEntries} minsourcelength={expectedMinimumSourceLength}",
+                    log);
+                Assert.Contains("Keep alive timeout is: 1000 milliseconds.", log);
+            }
+
             [ConditionalFact(typeof(WindowsOnly))]
             [WorkItem(217709, "https://devdiv.visualstudio.com/DevDiv/_workitems/edit/217709")]
             public async Task ShadowCopyAnalyzerAssemblyLoaderMissingDirectory()

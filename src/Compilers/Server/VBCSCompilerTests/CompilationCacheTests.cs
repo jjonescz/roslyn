@@ -594,6 +594,157 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
             Assert.True(long.Parse(telemetryEvent.Properties["compilems"]) >= 0);
         }
 
+        [Theory]
+        [InlineData(null, null, 10, 16_384)]
+        [InlineData("20", "0", 20, 0)]
+        [InlineData("0", "123", 0, 123)]
+        [InlineData("  +12 ", " 42 ", 12, 42)]
+        [InlineData("2147483647", "2147483647", int.MaxValue, int.MaxValue)]
+        public void CompilationCacheSettings_ParsesEnvironment(string maxEntries, string minimumSourceLength, int expectedMaxEntries, int expectedMinimumSourceLength)
+        {
+            var environment = new TestableBuildEnvironment(Temp.CreateDirectory().Path);
+            if (maxEntries is not null)
+            {
+                environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMaxEntriesEnvironmentVariable] = maxEntries;
+            }
+
+            if (minimumSourceLength is not null)
+            {
+                environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMinSourceLengthEnvironmentVariable] = minimumSourceLength;
+            }
+
+            var logMessages = new List<string>();
+            var cache = CompilerServerHost.CreateCompilationCache(environment, new CollectingLogger(logMessages));
+            Assert.Equal(expectedMaxEntries, cache.MaxCacheSize);
+            Assert.Equal(expectedMinimumSourceLength, cache.MinimumSourceLength);
+            Assert.Equal((0, 0L, 0L), cache.GetStatistics());
+            Assert.Empty(logMessages);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData(" ")]
+        [InlineData("-1")]
+        [InlineData("2147483648")]
+        [InlineData("invalid")]
+        [InlineData("1,000")]
+        [InlineData("1.5")]
+        public void CompilationCacheSettings_InvalidValuesLogAndUseDefaults(string value)
+        {
+            var environment = new TestableBuildEnvironment(Temp.CreateDirectory().Path);
+            var logMessages = new List<string>();
+            var logger = new CollectingLogger(logMessages);
+            environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMaxEntriesEnvironmentVariable] = value;
+            environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMinSourceLengthEnvironmentVariable] = "0";
+
+            var cache = CompilerServerHost.CreateCompilationCache(environment, logger);
+            Assert.Equal(10, cache.MaxCacheSize);
+            Assert.Equal(0, cache.MinimumSourceLength);
+            Assert.Equal(
+                $"Invalid ROSLYN_COMPILATION_CACHE_MAX_ENTRIES='{value}': expected a nonnegative 32-bit integer. Using default 10.",
+                Assert.Single(logMessages));
+
+            logMessages.Clear();
+            environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMaxEntriesEnvironmentVariable] = "1";
+            environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMinSourceLengthEnvironmentVariable] = value;
+
+            cache = CompilerServerHost.CreateCompilationCache(environment, logger);
+            Assert.Equal(1, cache.MaxCacheSize);
+            Assert.Equal(16_384, cache.MinimumSourceLength);
+            Assert.Equal(
+                $"Invalid ROSLYN_COMPILATION_CACHE_MIN_SOURCE_LENGTH='{value}': expected a nonnegative 32-bit integer. Using default 16384.",
+                Assert.Single(logMessages));
+        }
+
+        [Fact]
+        public void CompilationCacheSettings_AreReadOnlyAtCreation()
+        {
+            var environment = new TestableBuildEnvironment(Temp.CreateDirectory().Path);
+            environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMaxEntriesEnvironmentVariable] = "1";
+            environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMinSourceLengthEnvironmentVariable] = "0";
+            var cache = CompilerServerHost.CreateCompilationCache(environment, _logger);
+
+            environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMaxEntriesEnvironmentVariable] = "0";
+            environment.EnvironmentVariables[CompilerServerHost.CompilationCacheMinSourceLengthEnvironmentVariable] = "100";
+            var compilation = CSharpCompilation.Create("test");
+            Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation("test", compilation));
+            Assert.Same(compilation, cache.TryGetCompilation("test"));
+            Assert.Equal(1, cache.MaxCacheSize);
+            Assert.Equal(0, cache.MinimumSourceLength);
+
+            var newCache = CompilerServerHost.CreateCompilationCache(environment, _logger);
+            Assert.Equal(0, newCache.MaxCacheSize);
+            Assert.Equal(100, newCache.MinimumSourceLength);
+            Assert.Equal(CompilationCacheAdmissionResult.Disabled, newCache.CacheCompilation("test", compilation));
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(16_384)]
+        public void CSharpCompilationCache_ZeroCapacityDisablesReuse(int minimumSourceLength)
+        {
+            var cache = new CSharpCompilationCache(maxCacheSize: 0, minimumSourceLength);
+            var compilation = CSharpCompilation.Create("test", syntaxTrees:
+                [CSharpSyntaxTree.ParseText(new string(' ', 20_000))]);
+            Assert.Null(cache.TryGetCompilation("test"));
+            Assert.Equal(CompilationCacheAdmissionResult.Disabled, cache.CacheCompilation("test", compilation));
+            Assert.Equal(CompilationCacheAdmissionResult.Disabled, cache.CacheCompilation("empty", CSharpCompilation.Create("empty")));
+            Assert.Null(cache.TryGetCompilation("test"));
+            Assert.Equal((0, 0L, 0L), cache.GetStatistics());
+        }
+
+        [Fact]
+        public void CSharpCompilationCache_StatisticsTrackUpdatesHitsAndEvictions()
+        {
+            var cache = new CSharpCompilationCache(maxCacheSize: 2, minimumSourceLength: 0);
+            var first = CSharpCompilation.Create("first", syntaxTrees:
+                [CSharpSyntaxTree.ParseText(new string(' ', 20)), CSharpSyntaxTree.ParseText(new string(' ', 30))]);
+            var second = CSharpCompilation.Create("second", syntaxTrees:
+                [CSharpSyntaxTree.ParseText(new string(' ', 100))]);
+            var replacement = first.ReplaceSyntaxTree(first.SyntaxTrees[0], CSharpSyntaxTree.ParseText(new string(' ', 70)));
+
+            Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation("1", first));
+            Assert.Equal((1, 50L, 0L), cache.GetStatistics());
+            Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation("2", second));
+            Assert.Equal((2, 150L, 0L), cache.GetStatistics());
+            Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation("1", replacement));
+            Assert.Equal((2, 200L, 0L), cache.GetStatistics());
+            Assert.Same(second, cache.TryGetCompilation("2"));
+            Assert.Null(cache.TryGetCompilation("missing"));
+            Assert.Equal((2, 200L, 0L), cache.GetStatistics());
+
+            Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation("3", first));
+            Assert.Null(cache.TryGetCompilation("1"));
+            Assert.Same(second, cache.TryGetCompilation("2"));
+            Assert.Equal((2, 150L, 1L), cache.GetStatistics());
+
+            var logMessages = new List<string>();
+            var telemetry = new IncrementalCompilationTelemetry(new CollectingLogger(logMessages));
+            telemetry.RecordCompilationCacheStore(CompilationCacheAdmissionResult.Stored, cache.GetStatistics());
+            telemetry.Complete(succeeded: true);
+            var properties = telemetry.ToTelemetryEvent().Properties;
+            Assert.Equal("2", properties["cacheentrycount"]);
+            Assert.Equal("150", properties["retainedsourcechars"]);
+            Assert.Equal("1", properties["cacheevictions"]);
+            var summary = Assert.Single(logMessages);
+            Assert.Contains("cacheentrycount=2 retainedsourcechars=150 cacheevictions=1", summary, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void CSharpCompilationCache_ConcurrentStoresKeepStatisticsConsistent()
+        {
+            var cache = new CSharpCompilationCache(maxCacheSize: 3, minimumSourceLength: 0);
+            var compilation = CSharpCompilation.Create("test", syntaxTrees: [CSharpSyntaxTree.ParseText("class C { }")]);
+            Parallel.For(0, 100, i =>
+            {
+                var key = i.ToString();
+                Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation(key, compilation));
+                cache.TryGetCompilation(key);
+            });
+
+            Assert.Equal((3, 3L * "class C { }".Length, 97L), cache.GetStatistics());
+        }
+
         [Fact]
         public void IncrementalCompilationTelemetry_SerializesTimingsAndLogsSummary()
         {
@@ -628,6 +779,9 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
             Assert.Equal("7", telemetryEvent.Properties["serializems"]);
             Assert.True(long.Parse(telemetryEvent.Properties["compileandemitms"]) >= 0);
             Assert.False(telemetryEvent.Properties.ContainsKey("storeresult"));
+            Assert.False(telemetryEvent.Properties.ContainsKey("cacheentrycount"));
+            Assert.False(telemetryEvent.Properties.ContainsKey("retainedsourcechars"));
+            Assert.False(telemetryEvent.Properties.ContainsKey("cacheevictions"));
 
             telemetry.ToTelemetryEvent();
             var message = Assert.Single(logMessages);
@@ -658,13 +812,16 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
         }
 
         [Theory]
-        [InlineData(true, "stored")]
-        [InlineData(false, "skippedsmallinput")]
-        public void IncrementalCompilationTelemetry_RecordsStoreResult(bool stored, string expectedResult)
+        [InlineData(1, 0, "stored")]
+        [InlineData(1, 1, "skippedsmallinput")]
+        [InlineData(0, 0, "disabled")]
+        public void IncrementalCompilationTelemetry_RecordsStoreResult(int maxEntries, int minimumSourceLength, string expectedResult)
         {
             var logMessages = new List<string>();
             var telemetry = new IncrementalCompilationTelemetry(new CollectingLogger(logMessages));
-            telemetry.RecordCompilationCacheStore(stored);
+            var cache = new CSharpCompilationCache(maxEntries, minimumSourceLength);
+            var result = cache.CacheCompilation("test", CSharpCompilation.Create("test"));
+            telemetry.RecordCompilationCacheStore(result, cache.GetStatistics());
             telemetry.Complete(succeeded: true);
 
             Assert.Equal(expectedResult, telemetry.ToTelemetryEvent().Properties["storeresult"]);
@@ -682,7 +839,8 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
             var compilation = CSharpCompilation.Create("test", syntaxTrees:
                 [CSharpSyntaxTree.ParseText(new string(' ', sourceLength))]);
 
-            Assert.Equal(expectedStored, cache.CacheCompilation("test", compilation));
+            Assert.Equal(expectedStored ? CompilationCacheAdmissionResult.Stored : CompilationCacheAdmissionResult.SkippedSmallInput,
+                cache.CacheCompilation("test", compilation));
             Assert.Same(expectedStored ? compilation : null, cache.TryGetCompilation("test"));
         }
 
@@ -698,7 +856,8 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
                     CSharpSyntaxTree.ParseText(new string(' ', treeLength)),
                 ]);
 
-            Assert.Equal(expectedStored, cache.CacheCompilation("test", compilation));
+            Assert.Equal(expectedStored ? CompilationCacheAdmissionResult.Stored : CompilationCacheAdmissionResult.SkippedSmallInput,
+                cache.CacheCompilation("test", compilation));
             Assert.Same(expectedStored ? compilation : null, cache.TryGetCompilation("test"));
         }
 
@@ -711,7 +870,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
             var compilation = CSharpCompilation.Create("test", syntaxTrees: [tree]);
             Assert.True(Encoding.UTF8.GetByteCount(source) > CSharpCompilationCache.DefaultMinimumSourceLength);
 
-            Assert.False(cache.CacheCompilation("test", compilation));
+            Assert.Equal(CompilationCacheAdmissionResult.SkippedSmallInput, cache.CacheCompilation("test", compilation));
             Assert.Null(cache.TryGetCompilation("test"));
         }
 
@@ -721,20 +880,21 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
             var cache = new CSharpCompilationCache(maxCacheSize: 2);
             var compilation = CSharpCompilation.Create("large", syntaxTrees:
                 [CSharpSyntaxTree.ParseText(new string(' ', CSharpCompilationCache.DefaultMinimumSourceLength))]);
-            Assert.True(cache.CacheCompilation("large1", compilation));
-            Assert.True(cache.CacheCompilation("large2", compilation));
+            Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation("large1", compilation));
+            Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation("large2", compilation));
 
             var smallCompilation = CSharpCompilation.Create("small", syntaxTrees:
                 [CSharpSyntaxTree.ParseText("class C { }")]);
             for (var i = 0; i < 13; i++)
             {
                 var key = $"satellite{i}";
-                Assert.False(cache.CacheCompilation(key, smallCompilation));
+                Assert.Equal(CompilationCacheAdmissionResult.SkippedSmallInput, cache.CacheCompilation(key, smallCompilation));
                 Assert.Null(cache.TryGetCompilation(key));
             }
 
             Assert.Same(compilation, cache.TryGetCompilation("large1"));
             Assert.Same(compilation, cache.TryGetCompilation("large2"));
+            Assert.Equal((2, 2L * CSharpCompilationCache.DefaultMinimumSourceLength, 0L), cache.GetStatistics());
         }
 
         [Theory]
@@ -746,17 +906,20 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
             var cache = new CSharpCompilationCache(maxCacheSize: 3);
             var compilation = CSharpCompilation.Create("large", syntaxTrees:
                 [CSharpSyntaxTree.ParseText(new string(' ', CSharpCompilationCache.DefaultMinimumSourceLength))]);
-            Assert.True(cache.CacheCompilation("1", compilation));
-            Assert.True(cache.CacheCompilation("2", compilation));
-            Assert.True(cache.CacheCompilation("3", compilation));
+            Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation("1", compilation));
+            Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation("2", compilation));
+            Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation("3", compilation));
 
-            Assert.False(cache.CacheCompilation(key, CSharpCompilation.Create("small")));
+            Assert.Equal(CompilationCacheAdmissionResult.SkippedSmallInput, cache.CacheCompilation(key, CSharpCompilation.Create("small")));
             Assert.Null(cache.TryGetCompilation(key));
-            Assert.True(cache.CacheCompilation("4", compilation));
+            Assert.Equal((2, 2L * CSharpCompilationCache.DefaultMinimumSourceLength, 0L), cache.GetStatistics());
+            Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation("4", compilation));
             foreach (var remainingKey in new[] { "1", "2", "3", "4" })
             {
                 Assert.Same(remainingKey == key ? null : compilation, cache.TryGetCompilation(remainingKey));
             }
+
+            Assert.Equal((3, 3L * CSharpCompilationCache.DefaultMinimumSourceLength, 0L), cache.GetStatistics());
         }
 
         [Fact]
@@ -767,15 +930,16 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
             var compilation2 = CSharpCompilation.Create("2");
             var compilation3 = CSharpCompilation.Create("3");
 
-            Assert.True(cache.CacheCompilation("1", compilation1));
-            Assert.True(cache.CacheCompilation("2", compilation2));
+            Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation("1", compilation1));
+            Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation("2", compilation2));
             Assert.Same(compilation1, cache.TryGetCompilation("1"));
 
-            Assert.True(cache.CacheCompilation("3", compilation3));
+            Assert.Equal(CompilationCacheAdmissionResult.Stored, cache.CacheCompilation("3", compilation3));
 
             Assert.Null(cache.TryGetCompilation("2"));
             Assert.Same(compilation1, cache.TryGetCompilation("1"));
             Assert.Same(compilation3, cache.TryGetCompilation("3"));
+            Assert.Equal((2, 0L, 1L), cache.GetStatistics());
         }
 
         [Fact]

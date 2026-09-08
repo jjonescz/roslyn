@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.CodeAnalysis.CommandLine;
+using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CompilerServer
 {
@@ -221,7 +222,8 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         internal long? SerializationMilliseconds { get; private set; }
         internal long CompileAndEmitMilliseconds { get; private set; }
         internal bool OutputCacheHit { get; private set; }
-        internal bool? CompilationStored { get; private set; }
+        internal CompilationCacheAdmissionResult? StoreResult { get; private set; }
+        internal (int EntryCount, long RetainedSourceLength, long EvictionCount) CacheStatistics { get; private set; }
 
         internal IncrementalCompilationTelemetry(ICompilerServerLogger logger)
         {
@@ -245,8 +247,13 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         internal void RecordCompilationCreation(long elapsedMilliseconds)
             => CompilationCreationMilliseconds = elapsedMilliseconds;
 
-        internal void RecordCompilationCacheStore(bool stored)
-            => CompilationStored = stored;
+        internal void RecordCompilationCacheStore(
+            CompilationCacheAdmissionResult result,
+            (int EntryCount, long RetainedSourceLength, long EvictionCount) statistics)
+        {
+            StoreResult = result;
+            CacheStatistics = statistics;
+        }
 
         internal void StartCompileAndEmit()
         {
@@ -304,7 +311,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
 
         private Dictionary<string, string> CreateProperties()
         {
-            var properties = new Dictionary<string, string>(13)
+            var properties = new Dictionary<string, string>(16)
             {
                 ["strategy"] = "compilationreuse",
                 ["cachekind"] = "memory",
@@ -324,9 +331,18 @@ namespace Microsoft.CodeAnalysis.CompilerServer
                 properties["serializems"] = ToInvariantString(serializationMilliseconds);
             }
 
-            if (CompilationStored is { } stored)
+            if (StoreResult is { } result)
             {
-                properties["storeresult"] = stored ? "stored" : "skippedsmallinput";
+                properties["storeresult"] = result switch
+                {
+                    CompilationCacheAdmissionResult.Stored => "stored",
+                    CompilationCacheAdmissionResult.SkippedSmallInput => "skippedsmallinput",
+                    CompilationCacheAdmissionResult.Disabled => "disabled",
+                    _ => throw ExceptionUtilities.UnexpectedValue(result),
+                };
+                properties["cacheentrycount"] = ToInvariantString(CacheStatistics.EntryCount);
+                properties["retainedsourcechars"] = ToInvariantString(CacheStatistics.RetainedSourceLength);
+                properties["cacheevictions"] = ToInvariantString(CacheStatistics.EvictionCount);
             }
 
             return properties;

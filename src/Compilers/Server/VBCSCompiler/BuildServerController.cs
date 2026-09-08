@@ -84,11 +84,12 @@ namespace Microsoft.CodeAnalysis.CompilerServer
 
         internal static IClientConnectionHost CreateClientConnectionHost(string pipeName, ICompilerServerLogger logger) => new NamedPipeClientConnectionHost(pipeName, logger);
 
-        internal static ICompilerServerHost CreateCompilerServerHost(ICompilerServerLogger logger)
+        internal static ICompilerServerHost CreateCompilerServerHost(ICompilerServerLogger logger, IBuildEnvironment? buildEnvironment = null)
         {
             var clientDirectory = BuildClient.GetClientDirectory();
             var sdkDirectory = BuildClient.GetSystemSdkDirectory();
-            return new CompilerServerHost(clientDirectory, sdkDirectory, logger);
+            var compilationCache = buildEnvironment is null ? null : CompilerServerHost.CreateCompilationCache(buildEnvironment, logger);
+            return new CompilerServerHost(clientDirectory, sdkDirectory, logger, compilationCache);
         }
 
         private static string? GetDefaultPipeName()
@@ -111,7 +112,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             }
 
             listener ??= new EmptyDiagnosticListener();
-            compilerServerHost ??= CreateCompilerServerHost(_logger);
+            compilerServerHost ??= CreateCompilerServerHost(_logger, StandardBuildEnvironment.Instance);
             clientConnectionHost ??= CreateClientConnectionHost(pipeName, _logger);
 
             // Grab the server mutex to prevent multiple servers from starting with the same
