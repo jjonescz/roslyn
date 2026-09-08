@@ -23,6 +23,9 @@ namespace Microsoft.CodeAnalysis.CompilerServer
     internal sealed class BuildServerController
     {
         internal const string KeepAliveSettingName = "keepalive";
+        internal const string KeepAliveEnvironmentVariable = "ROSLYN_COMPILER_SERVER_KEEPALIVE_SECONDS";
+        // Task.Delay on .NET Framework limits finite delays to Int32.MaxValue milliseconds.
+        internal const int MaxKeepAliveSeconds = int.MaxValue / 1000;
 
         private readonly ICompilerServerLogger _logger;
 
@@ -45,8 +48,23 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             return RunServer(options.PipeName, keepAlive: options.KeepAlive, cancellationToken: cancellationTokenSource.Token);
         }
 
-        internal static TimeSpan GetDefaultKeepAlive(ICompilerServerLogger logger, NameValueCollection? appSettings = null)
+        internal static TimeSpan GetDefaultKeepAlive(
+            ICompilerServerLogger logger,
+            NameValueCollection? appSettings = null,
+            IBuildEnvironment? buildEnvironment = null)
         {
+            if (buildEnvironment?.GetEnvironmentVariable(KeepAliveEnvironmentVariable) is { } value)
+            {
+                if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var seconds) &&
+                    seconds >= 0 && seconds <= MaxKeepAliveSeconds)
+                {
+                    return seconds == 0 ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds(seconds);
+                }
+
+                logger.Log(FormattableString.Invariant(
+                    $"Invalid {KeepAliveEnvironmentVariable}='{value}': expected an integer from 0 to {MaxKeepAliveSeconds}. Using the default keep alive timeout."));
+            }
+
             try
             {
 #if NET472
@@ -128,7 +146,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
                     return CommonCompiler.Failed;
                 }
 
-                keepAlive ??= GetDefaultKeepAlive(_logger);
+                keepAlive ??= GetDefaultKeepAlive(_logger, buildEnvironment: StandardBuildEnvironment.Instance);
                 compilerServerHost.Logger.Log("Keep alive timeout is: {0} milliseconds.", keepAlive.Value.TotalMilliseconds);
                 FatalError.SetHandlers(FailFast.Handler, nonFatalHandler: null);
 

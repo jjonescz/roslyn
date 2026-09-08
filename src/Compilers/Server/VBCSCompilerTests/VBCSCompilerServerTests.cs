@@ -35,6 +35,46 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
         public class StartupTests : VBCSCompilerServerTests
         {
             [Theory]
+            [InlineData("1", "")]
+            [InlineData("0", " -timeout:1")]
+            [InlineData("invalid", " -timeout:1")]
+            public void KeepAliveFromEnvironment(string keepAlive, string additionalArguments)
+            {
+                var logPath = Path.Combine(TempRoot.CreateDirectory().Path, "server.log");
+                var filePath = typeof(VBCSCompiler).Assembly.Location;
+                var arguments = $@"-pipename:{ServerUtil.GetPipeName()} -log:""{logPath}""{additionalArguments}";
+                if (BuildServerConnection.IsBuiltinToolRunningOnCoreClr)
+                {
+                    arguments = RuntimeHostInfo.GetDotNetExecCommandLine(filePath, arguments);
+                    filePath = RuntimeHostInfo.GetDotNetHostPath(StandardBuildEnvironment.Instance);
+                }
+
+                var startInfo = new ProcessStartInfo(filePath, arguments)
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+                startInfo.Environment[BuildServerController.KeepAliveEnvironmentVariable] = keepAlive;
+                using var process = Process.Start(startInfo);
+                try
+                {
+                    Assert.True(process.WaitForExit(30_000), "The compiler server did not exit after its one-second idle timeout.");
+                    Assert.Equal(CommonCompiler.Succeeded, process.ExitCode);
+                    var log = File.ReadAllText(logPath);
+                    Assert.Contains("Keep alive timeout is: 1000 milliseconds.", log);
+                    Assert.DoesNotContain($"Invalid {BuildServerController.KeepAliveEnvironmentVariable}", log);
+                }
+                finally
+                {
+                    if (!process.HasExited)
+                    {
+                        process.Kill();
+                        process.WaitForExit();
+                    }
+                }
+            }
+
+            [Theory]
             [InlineData(null, null, 10, 16_384)]
             [InlineData("0", "0", 0, 0)]
             [InlineData("25", "1000", 25, 1000)]

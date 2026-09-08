@@ -229,6 +229,23 @@ Set the variables before starting a build and restart the relevant compiler serv
 changing them; reconnecting to an existing server does not reconfigure its cache.
 Use `RoslynCommandLineLogFile` (or the server's `-log:` argument) to capture these messages.
 
+To keep the server and its in-memory caches alive between builds, set
+`ROSLYN_COMPILER_SERVER_KEEPALIVE_SECONDS` before starting the server:
+
+```powershell
+$env:ROSLYN_COMPILER_SERVER_KEEPALIVE_SECONDS = "3600" # One hour of idle time
+```
+
+`0` disables idle shutdown; finite values must be between `1` and `2147483` seconds
+(the portable timer limit). The startup precedence is explicit `-timeout:<seconds>`,
+then this environment variable, then the existing default: 600 seconds, or the
+`keepalive` app-config setting on .NET Framework. Invalid environment values are logged
+and fall back to that default. The effective timeout is logged in milliseconds
+(`-1` means infinite). Restart the relevant server after changing the variable.
+This controls idle shutdown, not a maximum compilation duration or a guarantee that
+the server cannot exit for other reasons. Existing client-request keep-alive updates
+continue to work and can change the timeout after startup.
+
 Compilation reuse is skipped when the output name is implicit, touched-file logging is enabled, or
 an application configuration file supplies assembly binding policy. Touched-file logging cannot
 reuse command-line resolvers that retain a logger from an older request, and the app-config assembly
