@@ -165,7 +165,7 @@ Present the inferred cadence and ask the user to confirm the Roslyn snap date/ti
 
 Two VS versions are involved, and their schedules have different purposes:
 - **Snapped version** (the current `main` version): supplies the upcoming VS `main` → `rel/insiders` snap date and the `release/insiders` QB window. For a snap for 18.11, use the Dev18.11 schedule.
-- **After-snap main version** (current version + 1 minor): supplies the start of the new `main` feature-development cycle. For a snap for 18.11, use Dev18.12 only for this context; do **not** use its later QB dates in the 18.11 announcement.
+- **After-snap main version** (current version + 1 minor): supplies the start of the new `main` feature-development cycle and the deadline for its new milestone. For a snap for 18.11, use Dev18.12 for these purposes; do **not** use its later QB dates in the 18.11 announcement.
 
 Use an MCP server to find the schedule:
 1. Search the `DevDiv.wiki` repository in organization/project `devdiv/DevDiv` for `Dev{version} Schedule` with `project_search` method `wiki`.
@@ -174,7 +174,11 @@ Use an MCP server to find the schedule:
    - `Snap main to rel/insiders` date, start time, and notes.
    - The first `QB Mode` row whose branch is `rel/insiders`, including start, end, and submission deadline.
    - Its final build, sign-off, and ship dates for context.
-4. For the after-snap main version, extract the first feature-development start on `main`.
+4. For the after-snap main version, extract:
+   - The first feature-development start on `main`.
+   - Its `Snap main to rel/insiders` date, which is the deadline for the **next milestone** (steps 1.5 and 3.7). This is not the current Roslyn snap cutoff, a QB deadline, or a ship date.
+
+Represent the next milestone's due date as the schedule's calendar date at midnight UTC (`YYYY-MM-DDT00:00:00Z`), matching Roslyn's existing milestone convention. This represents a due date, not the VS snap's actual time; do not convert the noon PT snap timestamp into this field. For example, when snapping for 18.12, create milestone `18.13` with `due_on=2026-10-30T00:00:00Z` if Dev18.13 schedules its VS snap for October 30. Record the schedule link and proposed deadline in the plan. If that schedule is missing, draft, or ambiguous, ask the user to confirm the deadline; do not guess or create an undated next milestone.
 
 Do not silently substitute one version's schedule for the other. If the schedule is missing, ambiguous, places the VS snap on an unexpected day, or conflicts with the proposed Roslyn snap date, stop and ask the user to confirm the cadence. The Roslyn snap must precede the VS `main` → `rel/insiders` snap; the user-confirmed Roslyn date/time defines the content cutoff.
 
@@ -229,10 +233,12 @@ Present the draft to the user for review and editing before they send it.
   ```
   gh issue list --repo {owner}/{repo} --search "is:closed milestone:Next" --json number,title
   ```
-- List all milestones:
+- List all milestones, including closed ones, with their due dates:
   ```
-  gh api repos/{owner}/{repo}/milestones --paginate --jq ".[] | {number:.number,title:.title}"
+  gh api "repos/{owner}/{repo}/milestones?state=all&per_page=100" --paginate --jq '.[] | {number,title,state,due_on}'
   ```
+- Identify two distinct milestones: the **snapped-version milestone** (`{milestoneName}`, e.g., `18.12`) for included PRs, and the **after-snap main milestone** (`{nextMilestoneName}`, e.g., `18.13`) for the new development cycle. Record each one's existing number, state, and due date, or that it is absent.
+- Record `{nextMilestoneDueOn}` from the after-snap version's schedule in step 1.4. If the next milestone is already open with that due date, plan no change. If it is closed or its date is missing/different, include the proposed reopening/date change in the approval request rather than silently overwriting it.
 
 #### 1.6 Determine snap point
 
@@ -287,7 +293,9 @@ After gathering, present **all** planned actions in a numbered list for the user
 
 8. **Update the InfraSwat dashboard manually**: After the Maestro configuration PR merges, update the Roslyn build widgets on the [dnceng Roslyn/Razor InfraSwat dashboard](https://dev.azure.com/dnceng/internal/_dashboards/dashboard/7cd4c2dc-8e75-4cb6-9936-e937c0e496c4) so their displayed VS/SDK versions and configured branches match the post-snap state.
 
-9. **Move milestones**: Assign the target milestone (e.g., `18.6`) to the PRs included since the previous snap. Create the milestone if it doesn't exist.
+9. **Update milestones**:
+   - Assign the snapped-version milestone (e.g., `18.12`) to the PRs included since the previous snap. Create it if it doesn't exist.
+   - Ensure the next milestone for after-snap `main` (e.g., `18.13`) exists and is open, with the deadline derived from that version's scheduled VS `main` → `rel/insiders` snap. Present its name, due date, schedule link, and any changes to an existing milestone for explicit approval. Do not assign the current snap's PRs to this next milestone.
 
 10. **Preserve or retire old stable**: If old stable content still serves an SDK band, create `release/<sdk-band>` (for example, `release/10.0.4xx`) directly from the pre-snap `release/stable` commit **before** stable is overwritten. Transfer the SDK flow and provision the incoming Arcade dependency subscription for that branch. If the previous servicing branch (for example, `release/10.0.3xx`) is no longer needed, retire its default channel and explicitly approved subscriptions. If old stable is fully retired, skip branch creation and remove its obsolete flows.
 
@@ -685,7 +693,9 @@ Verify each widget still points to the intended build definition and branch afte
 - `Roslyn stable -> stable/18.10`
 - `Roslyn 10.0.4xx -> 10.0.4xx (2026/08/11)`, with `fullBranchName` = `refs/heads/release/10.0.4xx` (preserve or update the dashboard's date suffix as appropriate)
 
-#### 3.7 Move milestones
+#### 3.7 Update milestones
+
+**Assign included PRs to the snapped-version milestone**
 
 Create the target milestone if needed (milestone name is just the version number, e.g., `18.6`):
 ```
@@ -735,6 +745,25 @@ foreach ($pr in $prs) {
 
 Verify each assignment through the issue REST endpoint rather than GitHub search, whose milestone index can lag. Do not move unrelated stale items from `Next`. Handle closed issues only when the user provides or confirms an explicit issue set.
 
+**Create the next milestone for main**
+
+Ensure the approved `{nextMilestoneName}` exists and is open with `{nextMilestoneDueOn}` from step 1.4. This is separate from assigning included PRs to `{milestoneName}` above.
+
+Immediately before writing, repeat the paginated, all-states milestone lookup from step 1.5 and match the exact title:
+- If it is already open with the approved due date, report "already up to date."
+- If it exists but is closed or has a missing/different due date, update only the explicitly approved fields using `PATCH repos/{owner}/{repo}/milestones/{nextMilestoneNumber}`. Stop for confirmation if the observed state differs from the approved plan; do not reopen or reschedule it silently.
+- If it is absent, create it with the approved due date:
+  ```
+  gh api -X POST repos/{owner}/{repo}/milestones --field title="{nextMilestoneName}" --field state="open" --field due_on="{nextMilestoneDueOn}"
+  ```
+
+Use the milestone number from the lookup or creation response and re-read it directly:
+```
+gh api repos/{owner}/{repo}/milestones/{nextMilestoneNumber} --jq '{number,title,state,due_on,html_url}'
+```
+
+Verify the exact title, open state, and approved due date before marking this step complete. A failed write or mismatched response must stop the workflow, not be treated as success. Record the milestone number, URL, and due date in the session state and completion summary. Do not move any issues or PRs into it as part of this creation step.
+
 #### 3.8 Reply to the snap announcement email
 
 After all snap steps are completed, draft a reply to the pre-snap announcement email (from step 1.4) confirming the snap is done. Don't include links to created PRs. Summarize what each branch now targets using the verified post-change VS and SDK-flow matrices. Mention any pending follow-ups (e.g., SDK channel not yet created).
@@ -779,6 +808,8 @@ After completing the snap, review whether any steps needed to be done differentl
 | VS insertion (stable) | `rel/stable` | prefix `[Stable]` |
 | Darc channel | `VS {VS Major}.{VS Minor}` | `VS 18.6` |
 | Target milestone | `{VS Major}.{VS Minor}` | `18.6` |
+| Next milestone | After-snap `main` VS version | `18.7` |
+| Next milestone deadline | That version's scheduled VS `main` → `rel/insiders` snap date | `YYYY-MM-DDT00:00:00Z` |
 | Servicing branches | `release/dev{vs-version}` or `release/{sdk-band}` | `release/dev18.3`, `release/10.0.4xx` |
 
 ## Error Handling
@@ -786,4 +817,4 @@ After completing the snap, review whether any steps needed to be done differentl
 - If a `gh` or `darc` command fails, stop and report the error. Do not retry automatically.
 - If the target branch does not exist and cannot be created, report the issue.
 - If a subscription already exists in the expected state, skip it and report "already up to date."
-- When moving milestones, if a milestone doesn't exist yet, create it first.
+- Create a missing snapped-version milestone before assigning PRs. Create the next milestone only with its approved schedule-derived due date; verify existing milestones before creating or updating them.
