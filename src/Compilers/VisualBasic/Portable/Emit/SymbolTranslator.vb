@@ -249,6 +249,12 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Emit
         ) As Microsoft.Cci.ITypeReference
             Debug.Assert(diagnostics IsNot Nothing)
 
+            ' Pointer types are error symbols in VB, but can occur in synthesized method signatures.
+            Dim pointer = TryCast(typeSymbol, PointerTypeSymbol)
+            If pointer IsNot Nothing Then
+                Return New PointerTypeReference(pointer.PointedAtType)
+            End If
+
             Select Case typeSymbol.Kind
                 Case SymbolKind.ArrayType
                     Return Translate(DirectCast(typeSymbol, ArrayTypeSymbol))
