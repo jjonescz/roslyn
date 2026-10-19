@@ -18,6 +18,8 @@ jobs:
     outputs:
       matrix: ${{ steps.branches.outputs.matrix }}
     steps:
+      - name: Enable Git long paths
+        run: git config --global core.longpaths true
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
@@ -47,6 +49,8 @@ jobs:
       group: update-fba-sources-${{ matrix.branch }}
       cancel-in-progress: false
     steps:
+      - name: Enable Git long paths
+        run: git config --global core.longpaths true
       - name: Check out automation
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
