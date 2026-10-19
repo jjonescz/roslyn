@@ -1,16 +1,19 @@
 name: Update FBA sources
 
 on:
-  schedule:
-    - cron: '23 6 * * *'
   workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Fork branch to update; leave empty to discover main and release/* branches'
+        type: string
+        default: fba-periodic-jjonescz
 
 permissions:
   contents: read
 
 jobs:
   discover:
-    if: github.repository == 'dotnet/roslyn'
+    if: github.repository == 'jjonescz/roslyn'
     runs-on: windows-latest
     outputs:
       matrix: ${{ steps.branches.outputs.matrix }}
@@ -23,10 +26,12 @@ jobs:
       - name: Discover target branches and matching SDKs
         id: branches
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          TARGET_BRANCH: ${{ inputs.target_branch }}
         with:
           script: |
             const updater = require('./.github/scripts/update-fba-sources.cjs');
-            await updater.discover({ github, context, core });
+            await updater.discover({ github, context, core, targetBranch: process.env.TARGET_BRANCH });
 
   update:
     needs: discover

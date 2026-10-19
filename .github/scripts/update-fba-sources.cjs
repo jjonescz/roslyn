@@ -74,8 +74,12 @@ function selectSdk(branch, version, sdks) {
   return matches[0];
 }
 
-async function discover({ github, context, core }) {
+async function discover({ github, context, core, targetBranch }) {
   const branches = await github.paginate(github.rest.repos.listBranches, { ...context.repo, per_page: 100 });
+  if (targetBranch && !branches.some(branch => branch.name === targetBranch)) {
+    throw new Error(`Target branch '${targetBranch}' does not exist in ${context.repo.owner}/${context.repo.repo}.`);
+  }
+
   const sdkBranches = await github.paginate(github.rest.repos.listBranches, { owner: 'dotnet', repo: 'sdk', per_page: 100 });
   const sdks = [];
   for (const { name, commit } of sdkBranches) {
@@ -91,11 +95,15 @@ async function discover({ github, context, core }) {
 
   const include = [];
   for (const { name, commit } of branches) {
-    if (name !== 'main' && !name.startsWith('release/')) {
+    if (targetBranch ? name !== targetBranch : name !== 'main' && !name.startsWith('release/')) {
       continue;
     }
 
     if (await readFile(github, context.repo.owner, context.repo.repo, `${syncedRoot}/commitid.txt`, commit.sha, true) === null) {
+      if (targetBranch) {
+        throw new Error(`Target branch '${targetBranch}' has no synced FBA sources.`);
+      }
+
       core.info(`Skipping ${name}: no synced FBA sources.`);
       continue;
     }

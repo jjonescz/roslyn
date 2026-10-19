@@ -73,12 +73,13 @@ function discoveryFixture() {
   ];
   const files = new Map([
     ['roslyn/roslyn-main/eng/Versions.props', versions],
+    ['roslyn/roslyn-feature/eng/Versions.props', versions],
     ['roslyn/roslyn-stable/eng/Versions.props', versions.replace('<MinorVersion>13', '<MinorVersion>11')],
     ['roslyn/roslyn-unmatched/eng/Versions.props', versions.replace('<MinorVersion>13', '<MinorVersion>99')],
     ['sdk/sdk-main/eng/Version.Details.xml', '<Dependency Name="Microsoft.CodeAnalysis.CSharp" Version="5.13.0-1.123" />'],
     ['sdk/sdk-rc/eng/Version.Details.xml', '<Dependency Name="Microsoft.CodeAnalysis.CSharp" Version="5.11.0-1.123" />'],
   ]);
-  for (const ref of ['roslyn-main', 'roslyn-stable', 'roslyn-unmatched']) {
+  for (const ref of ['roslyn-main', 'roslyn-feature', 'roslyn-stable', 'roslyn-unmatched']) {
     files.set(`roslyn/${ref}/${commitIdPath}`, previousCommit);
   }
 
@@ -117,6 +118,37 @@ test('discovers main and historical release branches with FBA, pinning SDK commi
     { branch: 'release/unmatched', version: '5.99', sdkBranch: '', sdkCommit: '' },
   ]);
   assert.deepEqual(values.matrix, { include });
+});
+
+test('an explicit target selects only that fork branch, including non-release branches', async () => {
+  const { github } = discoveryFixture();
+  const { core, values } = outputs();
+  const getContent = github.rest.repos.getContent;
+  github.rest.repos.getContent = async args => {
+    assert.equal(args.owner, args.repo === 'sdk' ? 'dotnet' : 'jjonescz');
+    return getContent(args);
+  };
+  const include = await discover({
+    github, context: { repo: { owner: 'jjonescz', repo: 'roslyn' } }, core, targetBranch: 'feature/test',
+  });
+  assert.deepEqual(include, [
+    { branch: 'feature/test', version: '5.13', sdkBranch: 'main', sdkCommit: 'sdk-main' },
+  ]);
+  assert.deepEqual(values.matrix, { include });
+});
+
+test('an empty explicit target retains automatic branch discovery', async () => {
+  const { github } = discoveryFixture();
+  const include = await discover({ github, context, core: outputs().core, targetBranch: '' });
+  assert.deepEqual(include.map(target => target.branch), ['main', 'release/stable', 'release/unmatched']);
+});
+
+test('fails explicitly for an absent target or a selected branch without FBA sources', async () => {
+  const { github } = discoveryFixture();
+  const { core, values } = outputs();
+  await assert.rejects(discover({ github, context, core, targetBranch: 'missing' }), /Target branch 'missing' does not exist/);
+  await assert.rejects(discover({ github, context, core, targetBranch: 'release/old' }), /Target branch 'release\/old' has no synced FBA sources/);
+  assert.equal(values.matrix, undefined);
 });
 
 test('does not mistake API authorization or rate-limit errors for missing FBA sources', async () => {
@@ -160,7 +192,7 @@ test('suppresses only the exact snapshot from an unmerged closed PR', () => {
   assert.equal(isSuppressed([{ body: null, merged_at: null }], snapshot), false);
 });
 
-function syncFixture(t) {
+function syncFixture(t, owner = 'dotnet') {
   const targetDirectory = temporaryDirectory(t);
   const sources = path.join(targetDirectory, sourceRoot);
   fs.mkdirSync(sources, { recursive: true });
@@ -173,14 +205,19 @@ function syncFixture(t) {
   const github = {
     rest: { pulls: { list() {} } },
     async paginate(route, args) {
+      assert.equal(args.owner, owner);
+      assert.equal(args.repo, 'roslyn');
       assert.equal(args.base, 'main');
-      assert.equal(args.head, 'dotnet:automation/fba/main');
+      assert.equal(args.head, `${owner}:automation/fba/main`);
       assert.equal(args.state, 'closed');
       assert.equal(args.per_page, 100);
       return pulls;
     },
   };
-  const options = { github, context, core, targetDirectory, branch: 'main', version: '5.13', sdkBranch: 'main', sdkCommit };
+  const options = {
+    github, context: { repo: { owner, repo: 'roslyn' } }, core,
+    targetDirectory, branch: 'main', version: '5.13', sdkBranch: 'main', sdkCommit,
+  };
   return { options, sources, pulls, values };
 }
 
@@ -205,6 +242,15 @@ test('emits a content-specific PR marker and SDK provenance for changed sources'
   assert.equal(values.head, 'automation/fba/main');
   assert.ok(values.body.includes(`<!-- fba-source-snapshot: ${fingerprint(sources)} -->`));
   assert.ok(values.body.includes(`https://github.com/dotnet/sdk/compare/${previousCommit}...${sdkCommit}`));
+});
+
+test('fork synchronization queries fork PRs while retaining SDK provenance', async t => {
+  const { options, sources, values } = syncFixture(t, 'jjonescz');
+  t.mock.method(childProcess, 'execFileSync', () => fs.writeFileSync(path.join(sources, 'Helper.cs'), 'new source'));
+  await synchronize(options);
+  assert.equal(values.changed, true);
+  assert.equal(values.head, 'automation/fba/main');
+  assert.ok(values.body.includes(`https://github.com/dotnet/sdk/commit/${sdkCommit}`));
 });
 
 test('a closed PR suppresses identical sources even after an unrelated SDK commit', async t => {
