@@ -6,7 +6,6 @@ on:
       target_branch:
         description: 'Fork branch to update; leave empty to discover main and release/* branches'
         type: string
-        default: fba-periodic-jjonescz
 
 permissions:
   contents: read
