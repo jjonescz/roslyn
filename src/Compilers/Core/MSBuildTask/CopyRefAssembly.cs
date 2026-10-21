@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.IO;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Microsoft.CodeAnalysis.CommandLine;
@@ -47,6 +48,24 @@ namespace Microsoft.CodeAnalysis.BuildTasks
 
             if (TaskEnvironment.FileExists(fullDestinationPath))
             {
+                // Fast path: check size and timestamp first to avoid expensive MVID extraction
+                try
+                {
+                    var sourceInfo = new FileInfo(SourcePath);
+                    var destInfo = new FileInfo(DestinationPath);
+
+                    if (sourceInfo.Length == destInfo.Length &&
+                        sourceInfo.LastWriteTimeUtc == destInfo.LastWriteTimeUtc)
+                    {
+                        Log.LogMessageFromResources(MessageImportance.Low, "CopyRefAssembly_SkippingCopy1", DestinationPath);
+                        return true;
+                    }
+                }
+                catch (Exception)
+                {
+                    // If we can't check size/timestamp, fall through to MVID checking
+                }
+
                 var source = Guid.Empty;
                 try
                 {
