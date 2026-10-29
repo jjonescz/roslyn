@@ -3339,6 +3339,69 @@ static partial class B
             }
         }
 
+        [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/86086")]
+        public async Task TestPartialPropertySyntaxNodeActions(bool separateFiles)
+        {
+            var definition = """
+                partial class C
+                {
+                    public partial int P { get; set; }
+                }
+                """;
+            var implementation = """
+                partial class C
+                {
+                    public partial int P { get => 1; set { } }
+                }
+                """;
+            var sources = separateFiles
+                ? new[] { definition, implementation }
+                : new[] { definition + Environment.NewLine + implementation };
+            var compilation = CreateCompilation(sources, parseOptions: TestOptions.RegularPreview);
+            compilation.VerifyEmitDiagnostics();
+
+            var analyzer = new GeneratedCodeSyntaxAndOperationAnalyzer(
+                GeneratedCodeAnalysisFlags.None,
+                [SyntaxKind.PropertyDeclaration, SyntaxKind.GetAccessorDeclaration, SyntaxKind.SetAccessorDeclaration],
+                []);
+            var expectedDefinition = new[]
+            {
+                // (3,5): warning GeneratedCodeAnalyzerWarning: GeneratedCodeAnalyzerMessage for 'Node: public partial int P { get; set; }'
+                //     public partial int P { get; set; }
+                Diagnostic("GeneratedCodeAnalyzerWarning", "public partial int P { get; set; }").WithArguments("Node: public partial int P { get; set; }").WithLocation(3, 5),
+                // (3,28): warning GeneratedCodeAnalyzerWarning: GeneratedCodeAnalyzerMessage for 'Node: get;'
+                //     public partial int P { get; set; }
+                Diagnostic("GeneratedCodeAnalyzerWarning", "get;").WithArguments("Node: get;").WithLocation(3, 28),
+                // (3,33): warning GeneratedCodeAnalyzerWarning: GeneratedCodeAnalyzerMessage for 'Node: set;'
+                //     public partial int P { get; set; }
+                Diagnostic("GeneratedCodeAnalyzerWarning", "set;").WithArguments("Node: set;").WithLocation(3, 33),
+            };
+            int implementationLine = separateFiles ? 3 : 7;
+            var expectedImplementation = new[]
+            {
+                // (3,5) or (7,5): warning GeneratedCodeAnalyzerWarning: GeneratedCodeAnalyzerMessage for 'Node: public partial int P { get => 1; set { } }'
+                //     public partial int P { get => 1; set { } }
+                Diagnostic("GeneratedCodeAnalyzerWarning", "public partial int P { get => 1; set { } }").WithArguments("Node: public partial int P { get => 1; set { } }").WithLocation(implementationLine, 5),
+                // (3,28) or (7,28): warning GeneratedCodeAnalyzerWarning: GeneratedCodeAnalyzerMessage for 'Node: get => 1;'
+                //     public partial int P { get => 1; set { } }
+                Diagnostic("GeneratedCodeAnalyzerWarning", "get => 1;").WithArguments("Node: get => 1;").WithLocation(implementationLine, 28),
+                // (3,38) or (7,38): warning GeneratedCodeAnalyzerWarning: GeneratedCodeAnalyzerMessage for 'Node: set { }'
+                //     public partial int P { get => 1; set { } }
+                Diagnostic("GeneratedCodeAnalyzerWarning", "set { }").WithArguments("Node: set { }").WithLocation(implementationLine, 38),
+            };
+            var expected = expectedDefinition.Concat(expectedImplementation).ToArray();
+
+            var diagnostics = await compilation.WithAnalyzers([analyzer]).GetAnalyzerDiagnosticsAsync();
+            diagnostics.Where(d => d.Id != GeneratedCodeSyntaxAndOperationAnalyzer.Summary.Id).Verify(expected);
+
+            for (int i = 0; i < compilation.SyntaxTrees.Length; i++)
+            {
+                diagnostics = await compilation.WithAnalyzers([analyzer]).GetAnalyzerSemanticDiagnosticsAsync(
+                    compilation.GetSemanticModel(compilation.SyntaxTrees[i]), filterSpan: null, CancellationToken.None);
+                diagnostics.Verify(!separateFiles ? expected : i == 0 ? expectedDefinition : expectedImplementation);
+            }
+        }
+
         [Theory, CombinatorialData, WorkItem(32702, "https://github.com/dotnet/roslyn/issues/71149")]
         public async Task TestPartialMethodFileSymbolEndDiagnosticsAsync(bool separateFiles)
         {
