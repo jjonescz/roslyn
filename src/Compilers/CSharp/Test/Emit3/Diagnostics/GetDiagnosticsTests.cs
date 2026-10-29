@@ -198,6 +198,7 @@ namespace N1
         partial void ImpartialMethod1();
         partial void ImpartialMethod2() { }
         partial void PartialMethod();
+        partial void PartialMethod2() { }
     }
 } 
 ";
@@ -208,6 +209,7 @@ namespace N1
     {
         private void NonPartialMethod2() { }
         partial void PartialMethod() { }
+        partial void PartialMethod2();
     }
 } 
 ";
@@ -235,6 +237,7 @@ namespace N1
             Assert.True(declaredSymbolNames.Contains("ImpartialMethod1"));
             Assert.True(declaredSymbolNames.Contains("ImpartialMethod2"));
             Assert.True(declaredSymbolNames.Contains("PartialMethod"));
+            Assert.True(declaredSymbolNames.Contains("PartialMethod2"));
             Assert.True(completedCompilationUnits.Contains(tree1.FilePath));
         }
 
