@@ -292,8 +292,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         public override bool IsDefinedInSourceTree(SyntaxTree tree, TextSpan? definedWithinSpan, CancellationToken cancellationToken = default)
         {
-            Debug.Assert(syntaxReferenceOpt is not null);
-            return IsDefinedInSourceTree(syntaxReferenceOpt, tree, definedWithinSpan)
+            Debug.Assert(this.DeclaringSyntaxReferences.Length == 1);
+            return IsDefinedInSourceTree(this.SyntaxRef, tree, definedWithinSpan)
                 || SourcePartialImplementationPart?.IsDefinedInSourceTree(tree, definedWithinSpan, cancellationToken) == true;
         }
 
