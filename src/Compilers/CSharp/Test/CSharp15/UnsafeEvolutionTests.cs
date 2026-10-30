@@ -4104,6 +4104,145 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
             Diagnostic(ErrorCode.ERR_UnsafeOperation, "*").WithLocation(7, 15));
     }
 
+    [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/86211")]
+    public void UnsafeExpression_PropertyAccess(
+        [CombinatorialValues("P", "this[0]")] string member,
+        [CombinatorialValues("unsafe(VALUE)", "(unsafe((VALUE)))", "checked(unsafe(VALUE))", "unchecked(unsafe(VALUE))", "unsafe(checked(VALUE))", "unsafe(unchecked(VALUE))")] string expression)
+    {
+        var access = expression.Replace("VALUE", member);
+        var source = $$"""
+            class C
+            {
+                unsafe int P { get; set; }
+                unsafe int this[int index] { get => 0; set { } }
+
+                void M()
+                {
+                    _ = {{access}};
+                    {{access}} = 1;
+                    _ = {{access}}++;
+                    {{access}} += 1;
+                }
+            }
+            """;
+
+        CreateCompilation(source, options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyEmitDiagnostics();
+    }
+
+    [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/86211")]
+    public void UnsafeExpression_RefPropertyAccess(
+        [CombinatorialValues("unsafe(P)", "(unsafe((P)))", "checked(unsafe(P))", "unchecked(unsafe(P))", "unsafe(checked(P))", "unsafe(unchecked(P))")] string access)
+    {
+        var source = $$"""
+            class C
+            {
+                int _value;
+                unsafe ref int P => ref _value;
+
+                void M()
+                {
+                    _ = {{access}};
+                    {{access}} = 1;
+                    ref int local = ref {{access}};
+                    Consume(ref {{access}});
+                }
+
+                static void Consume(ref int value) { }
+            }
+            """;
+
+        CreateCompilation(source, options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyEmitDiagnostics();
+    }
+
+    [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/86211")]
+    public void UnsafeExpression_FieldLikeEventAccess(
+        [CombinatorialValues("unsafe(E)", "(unsafe((E)))", "checked(unsafe(E))", "unchecked(unsafe(E))", "unsafe(checked(E))", "unsafe(unchecked(E))")] string access)
+    {
+        var source = $$"""
+            delegate void D();
+
+            class C
+            {
+                unsafe event D E;
+
+                void M()
+                {
+                    _ = {{access}};
+                    {{access}} = null;
+                    ({{access}})();
+                    Consume(ref {{access}});
+                }
+
+                static void Consume(ref D value) { }
+            }
+            """;
+
+        CreateCompilation(source, options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyEmitDiagnostics();
+    }
+
+    [Theory, CombinatorialData, WorkItem("https://github.com/dotnet/roslyn/issues/86211")]
+    public void UnsafeExpression_SuppressedMemberAccess(
+        [CombinatorialValues("unsafe(VALUE!)", "unsafe(VALUE)!")] string expression)
+    {
+        var source = $$"""
+            delegate void D();
+
+            class C
+            {
+                int _value;
+                unsafe int P { get; set; }
+                unsafe int this[int index] => 0;
+                unsafe ref int R => ref _value;
+                unsafe event D E;
+
+                void M()
+                {
+                    _ = {{expression.Replace("VALUE", "P")}};
+                    _ = {{expression.Replace("VALUE", "this[0]")}};
+                    _ = {{expression.Replace("VALUE", "R")}};
+                    _ = {{expression.Replace("VALUE", "E")}};
+                }
+            }
+            """;
+
+        CreateCompilation(source, options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyEmitDiagnostics();
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/86211")]
+    public void UnsafeExpression_MemberAccessContext()
+    {
+        var source = """
+            class C
+            {
+                unsafe int P { get; set; }
+                unsafe C Next => this;
+
+                void M()
+                {
+                    _ = unsafe(P) + P;
+                    unsafe(P) = P;
+                    _ = unsafe(Next).P;
+                }
+            }
+            """;
+
+        CreateCompilation(source, options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyEmitDiagnostics(
+            // (8,25): error CS9362: 'C.P.get' must be used in an unsafe context because it is marked as 'unsafe'
+            //         _ = unsafe(P) + P;
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "P").WithArguments("C.P.get").WithLocation(8, 25),
+            // (9,21): error CS9362: 'C.P.get' must be used in an unsafe context because it is marked as 'unsafe'
+            //         unsafe(P) = P;
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "P").WithArguments("C.P.get").WithLocation(9, 21),
+            // (10,13): error CS9362: 'C.P.get' must be used in an unsafe context because it is marked as 'unsafe'
+            //         _ = unsafe(Next).P;
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "unsafe(Next).P").WithArguments("C.P.get").WithLocation(10, 13));
+    }
+
     [Fact]
     public void UnsafeExpression_Lambda()
     {
@@ -4120,6 +4259,136 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
 
         CreateCompilation(source, options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
             .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void UnsafeExpression_Lambda_UnsafeMember_SafeContext()
+    {
+        var source = """
+            class C
+            {
+                static unsafe int F() => 0;
+
+                static System.Func<int> M() => () => F();
+            }
+            """;
+
+        CreateCompilation(source, options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (5,42): error CS9362: 'C.F()' must be used in an unsafe context because it is marked as 'unsafe'
+            //     static System.Func<int> M() => () => F();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "F()").WithArguments("C.F()").WithLocation(5, 42));
+    }
+
+    [Fact]
+    public void UnsafeExpression_Lambda_UnsafeMember_UnsafeContext()
+    {
+        var source = """
+            class C
+            {
+                static unsafe int F() => 0;
+
+                static System.Func<int> M() => unsafe(() => F());
+            }
+            """;
+
+        CreateCompilation(source, options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyEmitDiagnostics();
+    }
+
+    [Fact]
+    public void UnsafeExpression_TargetTypedNew_SafeContext()
+    {
+        var source = """
+            class C
+            {
+                public unsafe C() { }
+
+                static C M() => "new();
+            }
+            """;
+
+        CreateCompilation(source, options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyDiagnostics(
+            // (5,21): error CS9362: 'C.C()' must be used in an unsafe context because it is marked as 'unsafe'
+            //     static C M() => new();
+            Diagnostic(ErrorCode.ERR_UnsafeMemberOperation, "new()").WithArguments("C.C()").WithLocation(5, 21));
+    }
+
+    [Fact]
+    public void UnsafeExpression_TargetTypedNew_UnsafeContext()
+    {
+        var source = """
+            class C
+            {
+                public unsafe C() { }
+
+                static C M() => unsafe(new());
+            }
+            """;
+
+        CreateCompilation(source, options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyEmitDiagnostics();
+    }
+
+    [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/86211")]
+    public void UnsafeExpression_RefSafety()
+    {
+        var source = """
+            using System;
+
+            delegate ref int D();
+
+            class C
+            {
+                void M()
+                {
+                    Span<int> span = default;
+                    int outer = 0;
+                    ref int reference = ref outer;
+                    {
+                        Span<int> innerSpan = stackalloc int[1];
+                        int inner = 0;
+                        _ = unsafe(span = innerSpan);
+                        _ = unsafe(reference = ref inner);
+                        unsafe
+                        {
+                            span = innerSpan;
+                            reference = ref inner;
+                        }
+                    }
+                }
+
+                D LambdaExpression() => unsafe(() => { int local = 0; return ref local; });
+
+                D LambdaBlock()
+                {
+                    unsafe { return () => { int local = 0; return ref local; }; }
+                }
+            }
+            """;
+
+        // PROTOTYPE: Unsafe expressions should downgrade these ref-safety errors to warnings.
+        CreateCompilationWithSpan(source, options: TestOptions.UnsafeReleaseDll.WithUpdatedMemorySafetyRules())
+            .VerifyEmitDiagnostics(
+            // (15,31): error CS8352: Cannot use variable 'innerSpan' in this context because it may expose referenced variables outside of their declaration scope
+            //             _ = unsafe(span = innerSpan);
+            Diagnostic(ErrorCode.ERR_EscapeVariable, "innerSpan").WithArguments("innerSpan").WithLocation(15, 31),
+            // (16,24): error CS8374: Cannot ref-assign 'inner' to 'reference' because 'inner' has a narrower escape scope than 'reference'.
+            //             _ = unsafe(reference = ref inner);
+            Diagnostic(ErrorCode.ERR_RefAssignNarrower, "reference = ref inner").WithArguments("reference", "inner").WithLocation(16, 24),
+            // (19,24): warning CS9080: Use of variable 'innerSpan' in this context may expose referenced variables outside of their declaration scope
+            //                 span = innerSpan;
+            Diagnostic(ErrorCode.WRN_EscapeVariable, "innerSpan").WithArguments("innerSpan").WithLocation(19, 24),
+            // (20,17): warning CS9085: This ref-assigns 'inner' to 'reference' but 'inner' has a narrower escape scope than 'reference'.
+            //                 reference = ref inner;
+            Diagnostic(ErrorCode.WRN_RefAssignNarrower, "reference = ref inner").WithArguments("reference", "inner").WithLocation(20, 17),
+            // (25,70): error CS8168: Cannot return local 'local' by reference because it is not a ref local
+            //     D LambdaExpression() => unsafe(() => { int local = 0; return ref local; });
+            Diagnostic(ErrorCode.ERR_RefReturnLocal, "local").WithArguments("local").WithLocation(25, 70),
+            // (29,59): warning CS9091: This returns local 'local' by reference but it is not a ref local
+            //         unsafe { return () => { int local = 0; return ref local; }; }
+            Diagnostic(ErrorCode.WRN_RefReturnLocal, "local").WithArguments("local").WithLocation(29, 59));
     }
 
     [Fact]
