@@ -13,6 +13,9 @@
     -->
     <SkipTests Condition="'$(TestRuntime)' == 'Mono'">true</SkipTests>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(EnableBuildXLCompilerCachePrototype)' == 'true' and '$(TargetFramework)' != '' and '$(TargetFramework)' != 'net472'">
+    <DefineConstants>$(DefineConstants);BUILDXL_COMPILER_CACHE</DefineConstants>
+  </PropertyGroup>
   <ItemGroup Label="Project References">
     <ProjectReference Include="..\..\Test\Core\Microsoft.CodeAnalysis.Test.Utilities.csproj" />
     <ProjectReference Include="..\..\CSharp\csc\AnyCpu\csc.csproj">

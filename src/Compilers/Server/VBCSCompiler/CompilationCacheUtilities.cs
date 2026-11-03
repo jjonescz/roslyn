@@ -24,7 +24,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         /// <paramref name="hashKey"/> so callers can store them to avoid recomputing on success.
         /// </summary>
         internal static int? CheckCache(
-            CompilationCache? cache,
+            ICompilationCache? cache,
             ICompilerServerLogger logger,
             CommandLineArguments arguments,
             Compilation compilation,
@@ -80,7 +80,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
 
             var outputFiles = BuildOutputFiles(arguments, dllName);
             telemetry.StartRestoreTimer();
-            var restored = cache.TryRestoreCachedResult(dllName, hashKey, outputFiles, logger, outputTimestampUtc);
+            var restored = cache.TryRestoreCachedResult(dllName, hashKey, outputFiles, logger, outputTimestampUtc, cancellationToken);
             telemetry.StopRestoreTimer();
 
             if (restored)
@@ -99,12 +99,13 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         /// Stores the compiled output in the cache after a successful compilation.
         /// </summary>
         internal static void OnCompilationSucceeded(
-            CompilationCache? cache,
+            ICompilationCache? cache,
             ICompilerServerLogger logger,
             CommandLineArguments arguments,
             string? deterministicKey,
             string? hashKey,
-            CompilationCacheTelemetry telemetry)
+            CompilationCacheTelemetry telemetry,
+            CancellationToken cancellationToken)
         {
             if (cache is null || arguments.OutputFileName is null || deterministicKey is null || hashKey is null)
             {
@@ -114,7 +115,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             var dllName = arguments.OutputFileName;
             var outputFiles = BuildOutputFiles(arguments, dllName);
             telemetry.StartStoreTimer();
-            telemetry.StoreResult = cache.TryStoreResult(dllName, hashKey, outputFiles, deterministicKey, logger);
+            telemetry.StoreResult = cache.TryStoreResult(dllName, hashKey, outputFiles, deterministicKey, logger, cancellationToken);
             telemetry.StopStoreTimer();
         }
 

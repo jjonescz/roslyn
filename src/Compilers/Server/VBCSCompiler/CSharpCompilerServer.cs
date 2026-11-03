@@ -16,7 +16,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
     internal sealed class CSharpCompilerServer : CSharpCompiler, ICompilerServerTelemetryProvider
     {
         private readonly Func<string, MetadataReferenceProperties, PortableExecutableReference> _metadataProvider;
-        private readonly CompilationCache? _cache;
+        private readonly ICompilationCache? _cache;
         private readonly CompilationCacheTelemetry _cacheTelemetry = new CompilationCacheTelemetry();
         private readonly ICompilerServerLogger _logger;
 
@@ -30,7 +30,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         {
             _metadataProvider = metadataProvider;
             _logger = logger ?? EmptyCompilerServerLogger.Instance;
-            _cache = CompilationCache.TryCreate(Arguments, _logger);
+            _cache = CompilationCacheFactory.TryCreate(Arguments, _logger);
         }
 
         internal override Func<string, MetadataReferenceProperties, PortableExecutableReference> GetMetadataProvider()
@@ -70,7 +70,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             CancellationToken cancellationToken)
         {
             var (deterministicKey, hashKey) = ((string?, string?))cacheState!;
-            CompilationCacheUtilities.OnCompilationSucceeded(_cache, _logger, Arguments, deterministicKey, hashKey, _cacheTelemetry);
+            CompilationCacheUtilities.OnCompilationSucceeded(_cache, _logger, Arguments, deterministicKey, hashKey, _cacheTelemetry, cancellationToken);
         }
 
         public IReadOnlyList<BuildTelemetryEvent> GetTelemetryEvents()

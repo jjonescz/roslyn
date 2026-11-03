@@ -350,6 +350,53 @@ public sealed class CompilationCacheBehaviorTests(ITestOutputHelper testOutputHe
         Assert.DoesNotContain("Compilation result restored from cache.", output, StringComparison.Ordinal);
     }
 
+#if BUILDXL_COMPILER_CACHE
+    [ConditionalTheory(typeof(BuildXLCompilationCacheTests.SupportedPlatform))]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BuildXLCompilationCache_NewServerRestoresOutputs(bool visualBasic)
+    {
+        var workingDirectory = Temp.CreateDirectory();
+        var cacheDirectory = Temp.CreateDirectory();
+        var sourceFileName = visualBasic ? "test.vb" : "test.cs";
+        var source = visualBasic ? "Public Class TestType\nEnd Class" : "public class TestType { }";
+        var features = $"/features:{CompilationCacheFactory.UseBuildXLCacheFeatureFlag}={cacheDirectory.Path} /debug:portable /pdb:test.pdb /refout:ref.dll /doc:test.xml";
+        var outputNames = new[] { "test.dll", "test.pdb", "ref.dll", "test.xml" };
+        var expected = new List<byte[]>();
+
+        using (var server = await ServerUtil.CreateServer(_logger))
+        {
+            var arguments = BuildCompilationArguments(visualBasic, server.PipeName, sourceFileName, "test.dll", features);
+            var (exitCode, output) = RunCommandLineCompiler(GetLanguage(visualBasic), arguments, workingDirectory, [new(sourceFileName, source)]);
+            Assert.Equal(0, exitCode);
+            Assert.DoesNotContain("Compilation result restored from cache.", output, StringComparison.Ordinal);
+            foreach (var name in outputNames)
+            {
+                var path = Path.Combine(workingDirectory.Path, name);
+                expected.Add(File.ReadAllBytes(path));
+                File.Delete(path);
+            }
+        }
+
+        using (var server = await ServerUtil.CreateServer(_logger))
+        {
+            var arguments = BuildCompilationArguments(visualBasic, server.PipeName, sourceFileName, "test.dll", features);
+            var (exitCode, output) = RunCommandLineCompiler(GetLanguage(visualBasic), arguments, workingDirectory);
+            Assert.Equal(0, exitCode);
+            Assert.Contains("Compilation result restored from cache.", output, StringComparison.Ordinal);
+            for (var i = 0; i < outputNames.Length; i++)
+                Assert.Equal(expected[i], File.ReadAllBytes(Path.Combine(workingDirectory.Path, outputNames[i])));
+
+            var changedSource = visualBasic ? "Public Class ChangedType\nEnd Class" : "public class ChangedType { }";
+            File.WriteAllText(Path.Combine(workingDirectory.Path, sourceFileName), changedSource);
+            (exitCode, output) = RunCommandLineCompiler(GetLanguage(visualBasic), arguments, workingDirectory);
+            Assert.Equal(0, exitCode);
+            Assert.DoesNotContain("Compilation result restored from cache.", output, StringComparison.Ordinal);
+            Assert.NotEqual(expected[0], File.ReadAllBytes(Path.Combine(workingDirectory.Path, "test.dll")));
+        }
+    }
+#endif
+
     private static RequestLanguage GetLanguage(bool visualBasic)
         => visualBasic ? RequestLanguage.VisualBasicCompile : RequestLanguage.CSharpCompile;
 

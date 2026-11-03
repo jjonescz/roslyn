@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using Microsoft.CodeAnalysis.CommandLine;
 using Roslyn.Utilities;
 
@@ -47,7 +48,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
     ///   <item><c>&lt;dll name&gt;.key</c> — the full deterministic key JSON</item>
     /// </list>
     /// </remarks>
-    internal sealed class CompilationCache
+    internal sealed class CompilationCache : ICompilationCache
     {
         private const string DefaultCacheDirectoryName = "roslyn-cache";
         private const string AssemblyFileName = "assembly";
@@ -84,6 +85,21 @@ namespace Microsoft.CodeAnalysis.CompilerServer
         /// Returns the cache root path, if set.
         /// </summary>
         internal string CachePath => _cachePath;
+
+        bool ICompilationCache.TryRestoreCachedResult(string dllName, string hashKey, CompilationOutputFiles outputFiles, ICompilerServerLogger logger, DateTime outputTimestampUtc, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return TryRestoreCachedResult(dllName, hashKey, outputFiles, logger, outputTimestampUtc);
+        }
+
+        CompilationCacheStoreResult ICompilationCache.TryStoreResult(string dllName, string hashKey, CompilationOutputFiles outputFiles, string deterministicKey, ICompilerServerLogger logger, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return TryStoreResult(dllName, hashKey, outputFiles, deterministicKey, logger);
+        }
+
+        void ICompilationCache.LogCacheMiss(string dllName, string hashKey, string deterministicKey, ICompilerServerLogger logger)
+            => LogCacheMiss(dllName, hashKey, deterministicKey, logger);
 
         /// <summary>
         /// Returns the default cache path used when no explicit path is configured.

@@ -32,6 +32,25 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
         }
 
         [Fact]
+        public void Factory_DefaultUsesDirectoryBackend()
+        {
+            Assert.Null(CompilationCacheFactory.TryCreate(ParseArguments(["test.cs"]), _logger));
+            var cache = CompilationCacheFactory.TryCreate(ParseArguments(["/features:use-global-cache", "test.cs"]), _logger);
+            Assert.IsType<CompilationCache>(cache);
+        }
+
+#if !NET || !BUILDXL_COMPILER_CACHE
+        [Fact]
+        public void Factory_UnavailableBuildXL_DoesNotFallBackToDirectoryCache()
+        {
+            var messages = new List<string>();
+            var arguments = ParseArguments(["/features:use-global-cache", "/features:use-buildxl-cache=C:\\cache", "test.cs"]);
+            Assert.Null(CompilationCacheFactory.TryCreate(arguments, new CollectingLogger(messages)));
+            Assert.Contains("EnableBuildXLCompilerCachePrototype=true", Assert.Single(messages), StringComparison.Ordinal);
+        }
+#endif
+
+        [Fact]
         public void TryCreate_ReturnsNull_WhenFeatureFlagNotSet()
         {
             var cache = CompilationCache.TryCreate(ParseArguments(["test.cs"]), _logger);

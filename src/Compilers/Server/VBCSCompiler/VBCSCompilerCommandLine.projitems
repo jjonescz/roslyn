@@ -16,6 +16,14 @@
   <PropertyGroup Label="Configuration">
     <Import_RootNamespace>CommandLine</Import_RootNamespace>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(EnableBuildXLCompilerCachePrototype)' == 'true' and '$(TargetFramework)' != '' and '$(TargetFramework)' != 'net472'">
+    <DefineConstants>$(DefineConstants);BUILDXL_COMPILER_CACHE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(EnableBuildXLCompilerCachePrototype)' == 'true' and '$(TargetFrameworkIdentifier)' == '.NETCoreApp'">
+    <PackageReference Include="Microsoft.BuildXL.Cache.MemoizationStore.Library" />
+    <PackageReference Include="RocksDbNative" />
+    <PackageReference Include="protobuf-net.Grpc" />
+  </ItemGroup>
   <ItemGroup>
     <!-- Shared items -->
     <Compile Include="$(MSBuildThisFileDirectory)..\..\Shared\BuildClient.cs" />
@@ -34,8 +42,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)Assembly.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BuildProtocolUtil.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BuildServerController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BuildXLCompilationCache.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ClientConnectionHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CompilationCache.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CompilationCacheFactory.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CompilationCacheUtilities.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CompilerRequestHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CompilerServerTelemetry.cs" />
@@ -44,6 +54,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticListener.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IClientConnection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ICompilerServerHost.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ICompilationCache.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MemoryHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MetadataCache.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NamedPipeClientConnection.cs" />

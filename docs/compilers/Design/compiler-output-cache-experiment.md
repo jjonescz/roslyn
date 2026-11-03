@@ -71,7 +71,7 @@ or an explicit `use-global-cache=<path>` feature flag. Explicit feature flags ta
 
 ### Low-level enablement
 
-At runtime, the cache is enabled when the compiler request carries the `use-global-cache` feature flag. If that feature flag is absent, the server behaves exactly as it did before and no compilation outputs are cached.
+At runtime, the directory-backed cache is enabled when the compiler request carries the `use-global-cache` feature flag. When neither this flag nor the BuildXL prototype flag described below is present, no compilation outputs are cached.
 
 The feature flag can be used in either of these forms:
 
@@ -92,6 +92,64 @@ Without the MSBuild opt-in, there are two ways to get the feature onto the reque
 2. Set `ROSLYN_CACHE_PATH` in the client environment before invoking the compiler or build. Roslyn normalizes that value into the same feature flag when constructing the compiler-server request.
 
 If both are supplied, the explicit feature flag wins over `ROSLYN_CACHE_PATH`.
+
+### BuildXL local backend prototype
+
+An additional, build-gated prototype uses BuildXL's content and memoization stores
+instead of the directory-entry format. It currently supports Windows x64 only and
+does not connect to a remote cache or discover 1ES cache configuration.
+
+Build a compiler server that includes the prototype:
+
+```powershell
+dotnet build src\Compilers\Server\VBCSCompiler\AnyCpu\VBCSCompiler.csproj --framework net10.0 -p:EnableBuildXLCompilerCachePrototype=true -p:RestoreUseStaticGraphEvaluation=false
+```
+
+The additional property includes the pinned BuildXL packages and native RocksDB
+dependency only in the .NET server build. It does not enable caching at runtime,
+and does not add BuildXL dependencies to the portable compiler assemblies.
+The repository package configuration restricts the additional public package
+feed to BuildXL and its explicitly selected dependencies.
+
+When invoking that compiler toolset, select the backend with an absolute local path:
+
+```text
+/deterministic+ /features:use-buildxl-cache=C:\compiler-cache
+```
+
+The build must use shared compilation so the request runs on the compiler server.
+The feature can also be supplied through MSBuild's `Features` property when using
+the prototype toolset. `UseRoslynCompilerCache=true` can still supply the existing
+determinism and source-path policy; `use-buildxl-cache` takes precedence over its
+`use-global-cache` flag for backend selection.
+
+If the prototype is not built in, the platform is unsupported, the path is not
+absolute, or the compilation is not deterministic, the server logs why the
+BuildXL cache is disabled and compiles normally. It does not silently select the
+directory backend instead.
+
+The backend stores its private data under `<path>\buildxl-v1`. It uses a 1 GiB
+content-store quota and a versioned fingerprint/output manifest for the assembly,
+PDB, reference assembly, and XML documentation. Content is copied into and out of
+the store, rather than hard-linked to mutable build outputs. Missing content or
+failed cache operations are logged and fall back to compilation.
+
+This first prototype opens and closes the local cache for each operation and
+serializes access per cache root across processes. A busy cache is skipped rather
+than delaying compilation. Content operations have a 30-second cancellation budget;
+cache startup and shutdown do not have that timeout. Session reuse, contention
+performance, and remote configuration remain outside this prototype.
+
+The directory backend's statistics and purge commands do not manage this backend.
+The existing experimental diagnostic and auxiliary-output limitations also apply:
+this prototype changes storage, not the completeness of the cached compiler result.
+
+To exercise the backend and its C#/VB server integration without installing a
+custom SDK toolset, run the focused tests:
+
+```powershell
+dotnet test src\Compilers\Server\VBCSCompilerTests\VBCSCompiler.UnitTests.csproj --framework net10.0 --filter "FullyQualifiedName~BuildXLCompilationCache" -p:EnableBuildXLCompilerCachePrototype=true -p:RestoreUseStaticGraphEvaluation=false
+```
 
 ## Path mapping for cache reuse and debugging
 
@@ -140,6 +198,9 @@ The cache is additionally grouped by output file name, so the effective lookup s
 ```
 
 ## Cache format
+
+This section describes the directory backend. The BuildXL prototype uses its
+stores' private format instead.
 
 Each cache entry is a directory containing the outputs of a successful compilation plus the full deterministic key used to produce them.
 
