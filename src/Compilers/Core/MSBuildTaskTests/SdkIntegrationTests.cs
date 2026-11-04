@@ -184,6 +184,105 @@ public sealed class SdkIntegrationTests : IDisposable
         ArtifactUploadUtil.SetSucceeded();
     }
 
+    [ConditionalFact(typeof(DotNetSdkAvailable), typeof(CoreClrOnly))]
+    public async Task CompilerCache_ReusesAcrossWorktrees()
+    {
+        var firstWorktree = ProjectDir.CreateDirectory("first");
+        var secondWorktree = Path.Combine(ProjectDir.Path, "second");
+        var cachePath = ProjectDir.CreateDirectory("cache").Path;
+        var pipeName = Guid.NewGuid().ToString("N");
+        firstWorktree.CreateFile("test.csproj").WriteAllText($"""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>{NetCoreTfm}</TargetFramework>
+                <UseRoslynCompilerCache>true</UseRoslynCompilerCache>
+              </PropertyGroup>
+            </Project>
+            """);
+        firstWorktree.CreateFile("C.cs").WriteAllText("public class C { }");
+        firstWorktree.CreateFile(".gitignore").WriteAllText("bin/\nobj/\nmsbuild.binlog\n");
+
+        runGit("init");
+        runGit("remote add origin https://github.com/dotnet/roslyn-cache-test.git");
+        runGit("add .");
+        runGit("-c user.name=RoslynTests -c user.email=roslyn-tests@example.invalid commit -m \"Initial project\"");
+        runGit($"worktree add --detach \"{secondWorktree}\" HEAD");
+
+        try
+        {
+            build(firstWorktree.Path, expectCacheHit: false);
+            build(firstWorktree.Path, expectCacheHit: true);
+            build(secondWorktree, expectCacheHit: true);
+        }
+        finally
+        {
+            try
+            {
+                Assert.True(await BuildServerConnection.RunServerShutdownRequestAsync(
+                    pipeName, timeoutOverride: null, waitForProcess: true, EmptyCompilerServerLogger.Instance, CancellationToken.None));
+            }
+            finally
+            {
+                // Read-only Git objects would prevent TempRoot from removing the repository on Windows.
+                foreach (var file in Directory.EnumerateFiles(Path.Combine(firstWorktree.Path, ".git"), "*", SearchOption.AllDirectories))
+                {
+                    File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+                }
+            }
+        }
+
+        ArtifactUploadUtil.SetSucceeded();
+
+        void runGit(string arguments)
+        {
+            var result = ProcessUtilities.Run(
+                "git", "-c core.hooksPath= -c core.autocrlf=false -c commit.gpgSign=false " + arguments, firstWorktree.Path);
+            Assert.True(result.ExitCode == 0, $"git {arguments} failed: {result.Output}");
+        }
+
+        void build(string worktree, bool expectCacheHit)
+        {
+            var binlogPath = RunBuild(
+                Path.Combine(worktree, "test.csproj"),
+                additionalArguments: $"-t:Rebuild -p:SharedCompilationId={pipeName} -nodeReuse:false",
+                additionalEnvironmentVars: new Dictionary<string, string>
+                {
+                    ["ROSLYN_CACHE_PATH"] = cachePath,
+                });
+            var buildLog = BinaryLog.ReadBuild(binlogPath);
+            var messages = buildLog.FindChildrenRecursive<Message>().ToArray();
+            Assert.Contains(messages, message => message.Text.Contains("server processed compilation", StringComparison.Ordinal));
+
+            var configPath = Path.Combine(worktree, "obj", "Debug", NetCoreTfm, "test.GeneratedMSBuildEditorConfig.editorconfig");
+            TestOutputHelper.WriteLine($"Generated configuration: {configPath}");
+            foreach (var line in File.ReadLines(configPath).Where(line => line.StartsWith("build_property.ProjectDir", StringComparison.OrdinalIgnoreCase)))
+            {
+                TestOutputHelper.WriteLine(line);
+            }
+
+            if (worktree == secondWorktree)
+            {
+                foreach (var extension in new[] { ".dll", ".pdb" })
+                {
+                    var relativePath = Path.Combine("bin", "Debug", NetCoreTfm, "test" + extension);
+                    Assert.Equal(
+                        File.ReadAllBytes(Path.Combine(firstWorktree.Path, relativePath)),
+                        File.ReadAllBytes(Path.Combine(secondWorktree, relativePath)));
+                }
+            }
+
+            var cacheHit = messages.Any(message => message.Text == "Compilation result restored from cache.");
+            if (expectCacheHit)
+            {
+                Assert.True(cacheHit, $"Expected a compiler cache hit in worktree '{worktree}'.");
+            }
+            else
+            {
+                Assert.False(cacheHit, "The first compilation should populate an empty cache.");
+            }
+        }
+    }
+
     [ConditionalTheory(typeof(DotNetSdkAvailable), typeof(CoreClrOnly)), CombinatorialData]
     [WorkItem("https://github.com/dotnet/roslyn/issues/86198")]
     public async Task CompilerCache_ReplaysWarningsWithMSBuildWarnAsError(bool visualBasic)
