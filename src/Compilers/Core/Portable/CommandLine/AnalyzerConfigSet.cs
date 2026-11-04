@@ -168,6 +168,27 @@ namespace Microsoft.CodeAnalysis
         public AnalyzerConfigOptionsResult GlobalConfigOptions
             => _lazyConfigOptions.Initialize(static @this => @this.ParseGlobalConfigOptions(), this);
 
+        internal bool HasNamedSections
+        {
+            get
+            {
+                if (!_globalConfig.NamedSections.IsEmpty)
+                {
+                    return true;
+                }
+
+                foreach (var config in _analyzerConfigs)
+                {
+                    if (!config.NamedSections.IsEmpty)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
         /// <summary>
         /// Returns a <see cref="AnalyzerConfigOptionsResult"/> for a source file. This computes which <see cref="AnalyzerConfig"/> rules applies to this file, and correctly applies
         /// precedence rules if there are multiple rules for the same file.

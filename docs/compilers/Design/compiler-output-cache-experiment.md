@@ -131,6 +131,12 @@ The cache key is based on Roslyn's deterministic compilation key. For a given co
 - emit options
 - manifest resources
 - supplied analyzer-configuration paths and content
+- effective analyzer-configuration options for source and additional files
+
+Configuration sections match original input paths, not `PathMap`-mapped paths.
+The key records the resulting options so mapped builds can share entries only when their effective settings agree.
+Generated filenames are not known before cache lookup. When generators are present and configuration has named sections,
+the key conservatively includes the original generated-source base directory and configuration paths as well.
 
 That deterministic key is then hashed with SHA-256 and used as the directory key for the cache entry.
 
@@ -308,6 +314,7 @@ Because the timestamp is set to the moment before the build started, every entry
 The experiment currently has several important limitations:
 
 - `PathMap` stability is effectively required for useful cache reuse. Differences in path mapping participate in the deterministic key, so builds that do not normalize machine-specific source paths are much less likely to hit the same cache entry across machines or worktrees.
+- `PathMap` does not normalize analyzer-configuration contents or option values. SDK-generated properties such as `build_property.ProjectDir` can prevent cross-worktree cache hits even when the emitted DLL and PDB would be identical.
 - `SourceLink` stability is also required for useful reuse. Differences in Source Link input participate in the deterministic key and will prevent matching builds from sharing cache entries. This likely means that Source Link needs to be disabled for the project.
 - Normal compiler behavior is not fully preserved on cache hits today. Although console diagnostics are replayed, other side effects such as touched-file logs, generated files, SARIF diagnostic logs, and analyzer timing reports are not restored.
 - Entries with nonempty diagnostics are only reused when the diagnostic-rendering context matches. A request in a different context recompiles but does not replace the existing entry.

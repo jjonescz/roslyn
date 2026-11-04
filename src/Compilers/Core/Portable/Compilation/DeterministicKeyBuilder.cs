@@ -131,6 +131,8 @@ namespace Microsoft.CodeAnalysis
             Stream? sourceLinkStream,
             ImmutableArray<ResourceDescription> resources,
             ImmutableArray<(string Path, SourceText Content)> analyzerConfigFiles,
+            AnalyzerConfigSet? analyzerConfigSet,
+            string? generatedSourceBaseDirectory,
             DeterministicKeyOptions options,
             CancellationToken cancellationToken)
         {
@@ -144,6 +146,8 @@ namespace Microsoft.CodeAnalysis
             resources = resources.NullToEmpty();
             analyzerConfigFiles = analyzerConfigFiles.NullToEmpty();
 
+            Debug.Assert(analyzerConfigFiles.IsEmpty || analyzerConfigSet is not null);
+
             var (writer, builder) = CreateWriter();
 
             writer.WriteObjectStart();
@@ -154,6 +158,8 @@ namespace Microsoft.CodeAnalysis
             writeAdditionalTexts();
             writer.WriteKey("analyzerConfigs");
             writeAnalyzerConfigs();
+            writer.WriteKey("analyzerConfigOptions");
+            writeAnalyzerConfigOptions();
             writer.WriteKey("analyzers");
             writeAnalyzers();
             writer.WriteKey("generators");
@@ -208,6 +214,54 @@ namespace Microsoft.CodeAnalysis
                     writer.WriteObjectEnd();
                 }
                 writer.WriteArrayEnd();
+            }
+
+            void writeAnalyzerConfigOptions()
+            {
+                if (analyzerConfigSet is null)
+                {
+                    writer.WriteNull();
+                    return;
+                }
+
+                writer.WriteObjectStart();
+                writer.WriteKey("global");
+                WriteAnalyzerConfigOptions(writer, analyzerConfigSet.GlobalConfigOptions, cancellationToken);
+                writer.WriteArrayStart("sourceFiles");
+                foreach (var tree in syntaxTrees)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    WriteAnalyzerConfigOptions(writer, analyzerConfigSet.GetOptionsForSourcePath(tree.FilePath), cancellationToken);
+                }
+                writer.WriteArrayEnd();
+                writer.WriteArrayStart("additionalFiles");
+                foreach (var text in additionalTexts)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    WriteAnalyzerConfigOptions(writer, analyzerConfigSet.GetOptionsForSourcePath(text.Path), cancellationToken);
+                }
+                writer.WriteArrayEnd();
+
+                // Generated names are unknown before cache lookup, so retain their unmapped matching inputs for named sections.
+                writer.WriteKey("generatedSources");
+                if (!generators.IsEmpty && analyzerConfigSet.HasNamedSections)
+                {
+                    writer.WriteObjectStart();
+                    writer.Write("baseDirectory", generatedSourceBaseDirectory);
+                    writer.WriteArrayStart("configPaths");
+                    foreach (var (path, _) in analyzerConfigFiles)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        writer.Write(path);
+                    }
+                    writer.WriteArrayEnd();
+                    writer.WriteObjectEnd();
+                }
+                else
+                {
+                    writer.WriteNull();
+                }
+                writer.WriteObjectEnd();
             }
 
             void writeAnalyzers()
@@ -355,6 +409,28 @@ namespace Microsoft.CodeAnalysis
             writer.WriteKey("text");
             WriteSourceText(writer, syntaxTree.GetText(cancellationToken));
             writer.Write("parseOptionsIndex", parseOptionsIndex);
+            writer.WriteObjectEnd();
+        }
+
+        private static void WriteAnalyzerConfigOptions(JsonWriter writer, AnalyzerConfigOptionsResult options, CancellationToken cancellationToken)
+        {
+            writer.WriteObjectStart();
+            writer.WriteKey("treeOptions");
+            writer.WriteObjectStart();
+            foreach (var key in options.TreeOptions.Keys.OrderBy(StringComparer.Ordinal))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                writer.Write(key, options.TreeOptions[key]);
+            }
+            writer.WriteObjectEnd();
+            writer.WriteKey("analyzerOptions");
+            writer.WriteObjectStart();
+            foreach (var key in options.AnalyzerOptions.Keys.OrderBy(StringComparer.Ordinal))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                writer.Write(key, options.AnalyzerOptions[key]);
+            }
+            writer.WriteObjectEnd();
             writer.WriteObjectEnd();
         }
 

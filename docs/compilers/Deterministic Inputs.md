@@ -53,6 +53,7 @@ This creates an additional output file (e.g., `MyAssembly.dll.key`) in the outpu
 - Emit options
 - Analyzer and generator information
 - Analyzer-configuration file paths and content checksums
+- Effective analyzer-configuration options for source and additional files, and generated-file matching paths when configuration has named sections
 
 Compare the `.key` files from two supposedly identical builds to identify which inputs differ:
 

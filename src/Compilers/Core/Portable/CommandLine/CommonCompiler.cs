@@ -972,7 +972,7 @@ namespace Microsoft.CodeAnalysis
 
                 var additionalTexts = ImmutableArray<AdditionalText>.CastUp(additionalTextFiles);
 
-                var cachedExitCode = CheckCache(compilation, analyzers, generators, additionalTexts, consoleOutput, cancellationToken, out var cacheState);
+                var cachedExitCode = CheckCache(compilation, analyzers, generators, additionalTexts, analyzerConfigSet, consoleOutput, cancellationToken, out var cacheState);
                 if (cachedExitCode.HasValue)
                 {
                     consoleOutput.WriteLine("Compilation result restored from cache.");
@@ -1183,7 +1183,7 @@ namespace Microsoft.CodeAnalysis
                     // We pass it to the generators, which will realize any symbols they require.
                     var explicitGeneratedOutDir = Arguments.GeneratedFilesOutputDirectory;
                     var hasExplicitGeneratedOutDir = !string.IsNullOrWhiteSpace(explicitGeneratedOutDir);
-                    var baseDirectory = hasExplicitGeneratedOutDir ? explicitGeneratedOutDir! : Arguments.OutputDirectory;
+                    var baseDirectory = Arguments.GeneratedFilesBaseDirectory;
                     (compilation, generatorTimingInfo) = RunGenerators(compilation, baseDirectory, Arguments.ParseOptions, generators, analyzerConfigProvider, additionalTextFiles, diagnostics);
 
                     bool hasAnalyzerConfigs = !Arguments.AnalyzerConfigPaths.IsEmpty;
@@ -1329,6 +1329,7 @@ namespace Microsoft.CodeAnalysis
                         emitOptions,
                         sourceLinkStreamDisposerOpt?.Stream,
                         Arguments.ManifestResources,
+                        analyzerConfigSet,
                         cancellationToken);
                 }
 
@@ -1799,6 +1800,7 @@ namespace Microsoft.CodeAnalysis
             ImmutableArray<DiagnosticAnalyzer> analyzers,
             ImmutableArray<ISourceGenerator> generators,
             ImmutableArray<AdditionalText> additionalTexts,
+            AnalyzerConfigSet? analyzerConfigSet,
             TextWriter consoleOutput,
             CancellationToken cancellationToken,
             out object? cacheState)
@@ -1848,6 +1850,7 @@ namespace Microsoft.CodeAnalysis
             EmitOptions? emitOptions,
             Stream? sourceLinkStream,
             ImmutableArray<ResourceDescription> resources,
+            AnalyzerConfigSet? analyzerConfigSet,
             CancellationToken cancellationToken)
         {
             Debug.Assert(Arguments.AnalyzerConfigPaths.IsEmpty || !AnalyzerConfigFiles.IsDefault);
@@ -1860,6 +1863,8 @@ namespace Microsoft.CodeAnalysis
                 sourceLinkStream,
                 resources,
                 AnalyzerConfigFiles,
+                analyzerConfigSet,
+                Arguments.GeneratedFilesBaseDirectory,
                 cancellationToken: cancellationToken);
 
             var filePath = Path.Combine(Arguments.OutputDirectory, Arguments.OutputFileName + ".key");

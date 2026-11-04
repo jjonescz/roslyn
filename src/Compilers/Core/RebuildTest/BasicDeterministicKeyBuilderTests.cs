@@ -425,6 +425,20 @@ namespace Microsoft.CodeAnalysis.Rebuild.UnitTests
       }}
     }}
   ],
+  ""analyzerConfigOptions"": {{
+    ""global"": {{
+      ""treeOptions"": {{}},
+      ""analyzerOptions"": {{}}
+    }},
+    ""sourceFiles"": [
+      {{
+        ""treeOptions"": {{}},
+        ""analyzerOptions"": {{}}
+      }}
+    ],
+    ""additionalFiles"": [],
+    ""generatedSources"": null
+  }},
   ""analyzers"": [],
   ""generators"": [],
   ""emitOptions"": {{

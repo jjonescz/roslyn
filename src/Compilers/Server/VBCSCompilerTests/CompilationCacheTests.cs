@@ -883,11 +883,16 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
                 syntaxTrees: [CSharpSyntaxTree.ParseText("public class C { }", path: sourceFile)],
                 options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, deterministic: true));
             const string configContent = "is_global = true\ncache_value = 1";
+            var configText = SourceText.From(configContent);
+            var firstConfigPath = Path.Combine(firstConfigDirectory, ".globalconfig");
+            var secondConfigPath = Path.Combine(secondConfigDirectory, ".globalconfig");
+            var firstConfigSet = AnalyzerConfigSet.Create(new[] { AnalyzerConfig.Parse(configText, firstConfigPath) });
+            var secondConfigSet = AnalyzerConfigSet.Create(new[] { AnalyzerConfig.Parse(configText, secondConfigPath) });
             var firstArguments = ParseArguments([$"/out:{outputFile}", "/t:library", "/deterministic", $"/pathmap:{firstConfigDirectory}=X:\\mapped", sourceFile]);
             var telemetry = new CompilationCacheTelemetry();
             Assert.Null(CompilationCacheUtilities.CheckCache(
-                cache, _logger, firstArguments, compilation, [], [], [], [(Path.Combine(firstConfigDirectory, ".globalconfig"), SourceText.From(configContent))],
-                CultureInfo.GetCultureInfo("en"), TextWriter.Null, telemetry, CancellationToken.None, out var firstState));
+                cache, _logger, firstArguments, compilation, [], [], [], [(firstConfigPath, configText)],
+                CultureInfo.GetCultureInfo("en"), TextWriter.Null, telemetry, CancellationToken.None, out var firstState, firstConfigSet));
             File.WriteAllBytes(outputFile, [1]);
             CompilationCacheUtilities.OnCompilationSucceeded(cache, _logger, firstArguments, firstState, "", telemetry);
             Assert.Equal(CompilationCacheStoreResult.Stored, telemetry.StoreResult);
@@ -895,8 +900,8 @@ namespace Microsoft.CodeAnalysis.CompilerServer.UnitTests
 
             var secondArguments = ParseArguments([$"/out:{outputFile}", "/t:library", "/deterministic", $"/pathmap:{secondConfigDirectory}=X:\\mapped", sourceFile]);
             var exitCode = CompilationCacheUtilities.CheckCache(
-                cache, _logger, secondArguments, compilation, [], [], [], [(Path.Combine(secondConfigDirectory, ".globalconfig"), SourceText.From(configContent))],
-                CultureInfo.GetCultureInfo("en"), TextWriter.Null, new CompilationCacheTelemetry(), CancellationToken.None, out var secondState);
+                cache, _logger, secondArguments, compilation, [], [], [], [(secondConfigPath, configText)],
+                CultureInfo.GetCultureInfo("en"), TextWriter.Null, new CompilationCacheTelemetry(), CancellationToken.None, out var secondState, secondConfigSet);
 
             Assert.NotNull(firstState);
             Assert.NotNull(secondState);

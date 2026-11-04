@@ -47,7 +47,8 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             TextWriter consoleOutput,
             CompilationCacheTelemetry telemetry,
             CancellationToken cancellationToken,
-            out CacheState? cacheState)
+            out CacheState? cacheState,
+            AnalyzerConfigSet? analyzerConfigSet = null)
         {
             cacheState = null;
 
@@ -78,6 +79,8 @@ namespace Microsoft.CodeAnalysis.CompilerServer
                     sourceLinkStream,
                     arguments.ManifestResources,
                     analyzerConfigFiles,
+                    analyzerConfigSet,
+                    arguments.GeneratedFilesBaseDirectory,
                     cancellationToken: cancellationToken);
                 diagnosticContext = GetDiagnosticContext(arguments, compilation, additionalTexts, culture, cancellationToken);
             }
@@ -158,10 +161,7 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             writer.Write("culture", culture.Name);
             writer.Write("currentCulture", CultureInfo.CurrentCulture.Name);
             writer.Write("baseDirectory", arguments.BaseDirectory);
-            // Generated-source diagnostic paths depend on this directory. Keep the fallback in sync with CompileAndEmit.
-            writer.Write("generatedSourceBaseDirectory", string.IsNullOrWhiteSpace(arguments.GeneratedFilesOutputDirectory)
-                ? arguments.OutputDirectory
-                : arguments.GeneratedFilesOutputDirectory);
+            writer.Write("generatedSourceBaseDirectory", arguments.GeneratedFilesBaseDirectory);
             writer.Write("fullPaths", arguments.PrintFullPaths);
             writer.Write("endLocations", arguments is CSharp.CSharpCommandLineArguments { ShouldIncludeErrorEndLocation: true });
             writer.Write("newLine", Environment.NewLine);
@@ -184,6 +184,13 @@ namespace Microsoft.CodeAnalysis.CompilerServer
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 writer.Write(additionalText.Path);
+            }
+            writer.WriteArrayEnd();
+            writer.WriteArrayStart("analyzerConfigPaths");
+            foreach (var path in arguments.AnalyzerConfigPaths)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                writer.Write(path);
             }
             writer.WriteArrayEnd();
             writer.WriteObjectEnd();

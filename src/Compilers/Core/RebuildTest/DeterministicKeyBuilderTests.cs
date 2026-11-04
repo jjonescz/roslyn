@@ -766,6 +766,9 @@ namespace Microsoft.CodeAnalysis.Rebuild.UnitTests
             AssertJsonCore(expected, array.ToString(Formatting.Indented));
         }
 
+        private static AnalyzerConfigSet CreateAnalyzerConfigSet(ImmutableArray<(string Path, SourceText Content)> configFiles)
+            => AnalyzerConfigSet.Create(configFiles.SelectAsArray(static config => AnalyzerConfig.Parse(config.Content, Path.GetFullPath(config.Path))));
+
         [Fact]
         public void AnalyzerConfigDefaultAndEmpty()
         {
@@ -776,7 +779,9 @@ namespace Microsoft.CodeAnalysis.Rebuild.UnitTests
             AssertJsonSection("""
                 "analyzerConfigs": []
                 """, key, "analyzerConfigs");
-            Assert.NotEqual(key, compilation.GetDeterministicKey(analyzerConfigFiles: [(".editorconfig", SourceText.From(""))]));
+            ImmutableArray<(string Path, SourceText Content)> configs = [(".editorconfig", SourceText.From(""))];
+            Assert.NotEqual(key, compilation.GetDeterministicKey(
+                analyzerConfigFiles: configs, analyzerConfigSet: CreateAnalyzerConfigSet(configs)));
         }
 
         [Theory, CombinatorialData]
@@ -786,14 +791,19 @@ namespace Microsoft.CodeAnalysis.Rebuild.UnitTests
             var changedContent = globalConfig ? "is_global = true\ncache_value = 2" : "root = true";
             var compilation = CreateCompilation([]);
             ImmutableArray<(string Path, SourceText Content)> configs = [(".globalconfig", SourceText.From(content))];
-            var key = compilation.GetDeterministicKey(analyzerConfigFiles: configs);
+            ImmutableArray<(string Path, SourceText Content)> changedConfigs = [(".globalconfig", SourceText.From(changedContent))];
+            var configSet = CreateAnalyzerConfigSet(configs);
+            var key = compilation.GetDeterministicKey(analyzerConfigFiles: configs, analyzerConfigSet: configSet);
 
-            Assert.NotEqual(key, compilation.GetDeterministicKey(analyzerConfigFiles: [(".globalconfig", SourceText.From(changedContent))]));
-            Assert.Equal(key, compilation.GetDeterministicKey(analyzerConfigFiles: configs));
+            Assert.NotEqual(key, compilation.GetDeterministicKey(
+                analyzerConfigFiles: changedConfigs, analyzerConfigSet: CreateAnalyzerConfigSet(changedConfigs)));
+            Assert.Equal(key, compilation.GetDeterministicKey(analyzerConfigFiles: configs, analyzerConfigSet: configSet));
             Assert.Equal(key, Compilation.GetDeterministicKey(
-                compilation.Options, [], compilation.References.ToImmutableArray(), ImmutableArray<byte>.Empty, analyzerConfigFiles: configs));
+                compilation.Options, [], compilation.References.ToImmutableArray(), ImmutableArray<byte>.Empty,
+                analyzerConfigFiles: configs, analyzerConfigSet: configSet));
             Assert.Equal(key, DeterministicKey.GetDeterministicKey(
-                compilation.Options, [], compilation.References.ToImmutableArray(), ImmutableArray<byte>.Empty, analyzerConfigFiles: configs));
+                compilation.Options, [], compilation.References.ToImmutableArray(), ImmutableArray<byte>.Empty,
+                analyzerConfigFiles: configs, analyzerConfigSet: configSet));
         }
 
         [Theory, CombinatorialData]
@@ -806,10 +816,12 @@ namespace Microsoft.CodeAnalysis.Rebuild.UnitTests
                 ? [KeyValuePair.Create(firstDirectory, "/_/"), KeyValuePair.Create(secondDirectory, "/_/")]
                 : [];
             var options = ignorePaths ? DeterministicKeyOptions.IgnorePaths : DeterministicKeyOptions.Default;
+            ImmutableArray<(string Path, SourceText Content)> firstConfigs = [(firstDirectory + ".editorconfig", SourceText.From("root = true"))];
+            ImmutableArray<(string Path, SourceText Content)> secondConfigs = [(secondDirectory + ".editorconfig", SourceText.From("root = true"))];
             var key = compilation.GetDeterministicKey(
-                analyzerConfigFiles: [(firstDirectory + ".editorconfig", SourceText.From("root = true"))], pathMap: pathMap, options: options);
+                analyzerConfigFiles: firstConfigs, analyzerConfigSet: CreateAnalyzerConfigSet(firstConfigs), pathMap: pathMap, options: options);
             var otherKey = compilation.GetDeterministicKey(
-                analyzerConfigFiles: [(secondDirectory + ".editorconfig", SourceText.From("root = true"))], pathMap: pathMap, options: options);
+                analyzerConfigFiles: secondConfigs, analyzerConfigSet: CreateAnalyzerConfigSet(secondConfigs), pathMap: pathMap, options: options);
 
             if (pathMapped || ignorePaths)
             {
@@ -824,6 +836,53 @@ namespace Microsoft.CodeAnalysis.Rebuild.UnitTests
             Assert.Equal(ignorePaths ? ".editorconfig" : pathMapped ? "/_/.editorconfig" : firstDirectory + ".editorconfig", config.Value<string>("fileName"));
         }
 
+        [Theory, CombinatorialData]
+        public void AnalyzerConfigEffectiveOptions(bool additionalFile, bool differentOptions)
+        {
+            var firstDirectory = Path.GetFullPath("config-root1") + Path.DirectorySeparatorChar;
+            var secondDirectory = Path.GetFullPath("config-root2") + Path.DirectorySeparatorChar;
+            var firstPath = firstDirectory + "test.cs";
+            var secondPath = secondDirectory + "test.cs";
+            var configPath = Path.GetFullPath(".globalconfig");
+            var content = $"""
+                is_global = true
+                [{firstPath.Replace('\\', '/')}]
+                dotnet_diagnostic.TEST0001.severity = none
+                cache_value = 1
+                [{secondPath.Replace('\\', '/')}]
+                dotnet_diagnostic.TEST0001.severity = {(differentOptions ? "warning" : "none")}
+                cache_value = {(differentOptions ? "2" : "1")}
+                """;
+            ImmutableArray<(string Path, SourceText Content)> configs = [(configPath, SourceText.From(content))];
+            var configSet = CreateAnalyzerConfigSet(configs);
+            ImmutableArray<KeyValuePair<string, string>> pathMap =
+                [KeyValuePair.Create(firstDirectory, "/_/"), KeyValuePair.Create(secondDirectory, "/_/")];
+            var firstCompilation = CreateCompilation(additionalFile ? [] : [ParseSyntaxTree("", firstPath, HashAlgorithm)]);
+            var secondCompilation = CreateCompilation(additionalFile ? [] : [ParseSyntaxTree("", secondPath, HashAlgorithm)]);
+            ImmutableArray<AdditionalText> firstAdditional = additionalFile ? [new TestAdditionalText(firstPath, SourceText.From(""))] : [];
+            ImmutableArray<AdditionalText> secondAdditional = additionalFile ? [new TestAdditionalText(secondPath, SourceText.From(""))] : [];
+            var key = firstCompilation.GetDeterministicKey(
+                additionalTexts: firstAdditional, pathMap: pathMap, analyzerConfigFiles: configs, analyzerConfigSet: configSet);
+            var otherKey = secondCompilation.GetDeterministicKey(
+                additionalTexts: secondAdditional, pathMap: pathMap, analyzerConfigFiles: configs, analyzerConfigSet: configSet);
+
+            var section = additionalFile ? "additionalFiles" : "sourceFiles";
+            var firstOptions = Assert.Single((JArray)GetJsonProperty(key, "analyzerConfigOptions." + section).Value);
+            var secondOptions = Assert.Single((JArray)GetJsonProperty(otherKey, "analyzerConfigOptions." + section).Value);
+            Assert.Equal("Suppress", firstOptions["treeOptions"]!["test0001"]!.Value<string>());
+            Assert.Equal("1", firstOptions["analyzerOptions"]!["cache_value"]!.Value<string>());
+            Assert.Equal(differentOptions ? "Warn" : "Suppress", secondOptions["treeOptions"]!["test0001"]!.Value<string>());
+            Assert.Equal(differentOptions ? "2" : "1", secondOptions["analyzerOptions"]!["cache_value"]!.Value<string>());
+            if (differentOptions)
+            {
+                Assert.NotEqual(key, otherKey);
+            }
+            else
+            {
+                Assert.Equal(key, otherKey);
+            }
+        }
+
         [Fact]
         public void AnalyzerConfigMultipleFiles()
         {
@@ -833,13 +892,19 @@ namespace Microsoft.CodeAnalysis.Rebuild.UnitTests
                 (".globalconfig", SourceText.From("is_global = true")),
                 (".editorconfig", SourceText.From("root = true")),
             ];
-            var key = compilation.GetDeterministicKey(analyzerConfigFiles: configs);
+            var key = compilation.GetDeterministicKey(analyzerConfigFiles: configs, analyzerConfigSet: CreateAnalyzerConfigSet(configs));
             var array = (JArray)GetJsonProperty(key, "analyzerConfigs").Value;
 
             Assert.Equal(new[] { ".globalconfig", ".editorconfig" }, array.Select(config => config.Value<string>("fileName")));
-            Assert.NotEqual(key, compilation.GetDeterministicKey(analyzerConfigFiles: [configs[0]]));
-            Assert.NotEqual(key, compilation.GetDeterministicKey(analyzerConfigFiles: [configs[1], configs[0]]));
-            Assert.NotEqual(key, compilation.GetDeterministicKey(analyzerConfigFiles: [configs[0], (configs[1].Path, SourceText.From("root = false"))]));
+            ImmutableArray<(string Path, SourceText Content)> fewerConfigs = [configs[0]];
+            ImmutableArray<(string Path, SourceText Content)> reversedConfigs = [configs[1], configs[0]];
+            ImmutableArray<(string Path, SourceText Content)> changedConfigs = [configs[0], (configs[1].Path, SourceText.From("root = false"))];
+            Assert.NotEqual(key, compilation.GetDeterministicKey(
+                analyzerConfigFiles: fewerConfigs, analyzerConfigSet: CreateAnalyzerConfigSet(fewerConfigs)));
+            Assert.NotEqual(key, compilation.GetDeterministicKey(
+                analyzerConfigFiles: reversedConfigs, analyzerConfigSet: CreateAnalyzerConfigSet(reversedConfigs)));
+            Assert.NotEqual(key, compilation.GetDeterministicKey(
+                analyzerConfigFiles: changedConfigs, analyzerConfigSet: CreateAnalyzerConfigSet(changedConfigs)));
         }
 
         [Theory, CombinatorialData]
@@ -850,7 +915,8 @@ namespace Microsoft.CodeAnalysis.Rebuild.UnitTests
             var algorithm = sha256 ? SourceHashAlgorithm.Sha256 : SourceHashAlgorithm.Sha1;
             var text = SourceText.From("root = true", encoding, algorithm);
 
-            var key = compilation.GetDeterministicKey(analyzerConfigFiles: [(".editorconfig", text)]);
+            ImmutableArray<(string Path, SourceText Content)> configs = [(".editorconfig", text)];
+            var key = compilation.GetDeterministicKey(analyzerConfigFiles: configs, analyzerConfigSet: CreateAnalyzerConfigSet(configs));
             var config = Assert.Single((JArray)GetJsonProperty(key, "analyzerConfigs").Value);
             var textInfo = Assert.IsType<JObject>(config["text"]);
 
