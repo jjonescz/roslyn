@@ -1906,6 +1906,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             switch (lowestBoundNode)
             {
+                case BoundAnonymousPropertyDeclaration declaration:
+                    return new SymbolInfo(declaration.Property.GetPublicSymbol());
+                case BoundLabel label:
+                    return new SymbolInfo(label.Label.GetPublicSymbol());
                 case BoundPositionalSubpattern subpattern:
                     return GetSymbolInfoForSubpattern(subpattern.Symbol);
                 case BoundPropertySubpattern subpattern:
@@ -2043,6 +2047,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (lowestBoundNode is BoundPropertySubpatternMember member)
             {
                 return new CSharpTypeInfo(member.Type, member.Type, nullability: default, convertedNullability: default, Conversion.Identity);
+            }
+            if (lowestBoundNode is BoundAnonymousPropertyDeclaration declaration)
+            {
+                return new CSharpTypeInfo(declaration.Type, declaration.Type, declaration.TopLevelNullability, declaration.TopLevelNullability, Conversion.Identity);
             }
 
             var boundExpr = lowestBoundNode as BoundExpression;

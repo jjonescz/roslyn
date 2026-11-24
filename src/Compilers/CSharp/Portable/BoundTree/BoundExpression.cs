@@ -600,14 +600,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
     }
 
-    internal partial class BoundAnonymousPropertyDeclaration
-    {
-        public override Symbol ExpressionSymbol
-        {
-            get { return this.Property; }
-        }
-    }
-
     internal partial class BoundLambda
     {
         public override Symbol ExpressionSymbol
@@ -652,17 +644,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             get
             {
                 return this.RangeVariableSymbol;
-            }
-        }
-    }
-
-    internal partial class BoundLabel
-    {
-        public override Symbol ExpressionSymbol
-        {
-            get
-            {
-                return this.Label;
             }
         }
     }

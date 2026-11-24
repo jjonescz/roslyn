@@ -124,7 +124,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         {
                             if (symbol.Kind == SymbolKind.Property)
                             {
-                                declarators.Add(new BoundAnonymousPropertyDeclaration(fieldSyntaxNodes[i], isInUnsafeRegion: InUnsafeRegion, (PropertySymbol)symbol, field.Type));
+                                declarators.Add(new BoundAnonymousPropertyDeclaration(fieldSyntaxNodes[i], field.Type, (PropertySymbol)symbol));
                                 break;
                             }
                         }

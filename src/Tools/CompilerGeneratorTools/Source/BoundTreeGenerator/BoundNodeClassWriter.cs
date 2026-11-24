@@ -1560,12 +1560,12 @@ namespace BoundTreeGenerator
                         var updatedNullabilities = "_updatedNullabilities";
                         var snapshotManager = "_snapshotManager";
                         var remappedSymbols = "_remappedSymbols";
-                        WriteLine($"private readonly ImmutableDictionary<BoundExpression, (NullabilityInfo Info, TypeSymbol? Type)> {updatedNullabilities};");
+                        WriteLine($"private readonly ImmutableDictionary<BoundNode, (NullabilityInfo Info, TypeSymbol? Type)> {updatedNullabilities};");
                         WriteLine($"private readonly NullableWalker.SnapshotManager? {snapshotManager};");
                         WriteLine($"private readonly ImmutableDictionary<Symbol, Symbol>.Builder {remappedSymbols};");
 
                         Blank();
-                        WriteLine("public NullabilityRewriter(ImmutableDictionary<BoundExpression, (NullabilityInfo Info, TypeSymbol? Type)> updatedNullabilities, NullableWalker.SnapshotManager? snapshotManager, ImmutableDictionary<Symbol, Symbol>.Builder remappedSymbols)");
+                        WriteLine("public NullabilityRewriter(ImmutableDictionary<BoundNode, (NullabilityInfo Info, TypeSymbol? Type)> updatedNullabilities, NullableWalker.SnapshotManager? snapshotManager, ImmutableDictionary<Symbol, Symbol>.Builder remappedSymbols)");
                         Brace();
                         WriteLine($"{updatedNullabilities} = updatedNullabilities;");
                         WriteLine($"{snapshotManager} = snapshotManager;");
@@ -1578,9 +1578,10 @@ namespace BoundTreeGenerator
                                 continue;
 
                             var allSpecifiableFields = AllSpecifiableFields(node).ToList();
-                            var isExpression = IsDerivedType("BoundExpression", node.Name);
+                            // Anonymous-property declarations expose analyzed type and nullability through the semantic model.
+                            var hasNullability = IsDerivedType("BoundExpression", node.Name) || node.Name == "BoundAnonymousPropertyDeclaration";
 
-                            if (!isExpression && !allSpecifiableFields.Any(f => symbolIsPotentiallyUpdated(f) || immutableArrayIsPotentiallyUpdated(f)))
+                            if (!hasNullability && !allSpecifiableFields.Any(f => symbolIsPotentiallyUpdated(f) || immutableArrayIsPotentiallyUpdated(f)))
                             {
                                 continue;
                             }
@@ -1610,7 +1611,7 @@ namespace BoundTreeGenerator
                                 WriteNodeVisitCall(field, forceVisit: VisitFieldOnlyInNullabilityRewriter(field));
                             }
 
-                            if (isExpression)
+                            if (hasNullability)
                             {
                                 if (hadField)
                                 {

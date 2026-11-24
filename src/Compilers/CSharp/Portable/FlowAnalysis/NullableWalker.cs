@@ -238,7 +238,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// Contains the map of expressions to inferred nullabilities and types used by the optional rewriter phase of the
         /// compiler.
         /// </summary>
-        private readonly ImmutableDictionary<BoundExpression, (NullabilityInfo Info, TypeSymbol? Type)>.Builder? _analyzedNullabilityMapOpt;
+        private readonly ImmutableDictionary<BoundNode, (NullabilityInfo Info, TypeSymbol? Type)>.Builder? _analyzedNullabilityMapOpt;
 
         /// <summary>
         /// Manages creating snapshots of the walker as appropriate. Null if we're not taking snapshots of
@@ -383,9 +383,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
         /// <summary>
-        /// Sets the analyzed nullability of the expression to be the given result.
+        /// Sets the analyzed nullability of the node to be the given result.
         /// </summary>
-        private void SetAnalyzedNullability(BoundExpression? expr, VisitResult result, bool? isLvalue = null)
+        private void SetAnalyzedNullability(BoundNode? expr, VisitResult result, bool? isLvalue = null)
         {
             if (expr == null
                 // BoundExpressionWithNullability is not produced by the binder but is used within nullability analysis to pass information to internal components.
@@ -404,6 +404,13 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (_analyzedNullabilityMapOpt != null)
             {
+                TypeSymbol? originalType = expr switch
+                {
+                    BoundExpression expression => expression.Type,
+                    BoundAnonymousPropertyDeclaration declaration => declaration.Type,
+                    _ => throw ExceptionUtilities.UnexpectedValue(expr.Kind),
+                };
+
                 // https://github.com/dotnet/roslyn/issues/34993: enable and verify these assertions
 #if false
                 if (_analyzedNullabilityMapOpt.TryGetValue(expr, out var existing))
@@ -433,7 +440,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 _analyzedNullabilityMapOpt[expr] = (new NullabilityInfo(result.LValueType.ToPublicAnnotation(), result.RValueType.State.ToPublicFlowState()),
                                                     // https://github.com/dotnet/roslyn/issues/35046 We're dropping the result if the type doesn't match up completely
                                                     // with the existing type
-                                                    expr.Type?.Equals(result.RValueType.Type, TypeCompareKind.AllIgnoreOptions) == true ? result.RValueType.Type : expr.Type);
+                                                    originalType?.Equals(result.RValueType.Type, TypeCompareKind.AllIgnoreOptions) == true ? result.RValueType.Type : originalType);
             }
         }
 
@@ -506,7 +513,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Variables? variables,
             MethodSymbol? baseOrThisInitializer,
             ArrayBuilder<(BoundReturnStatement, TypeWithAnnotations)>? returnTypesOpt,
-            ImmutableDictionary<BoundExpression, (NullabilityInfo, TypeSymbol?)>.Builder? analyzedNullabilityMapOpt,
+            ImmutableDictionary<BoundNode, (NullabilityInfo, TypeSymbol?)>.Builder? analyzedNullabilityMapOpt,
             SnapshotManager.Builder? snapshotBuilderOpt,
             bool isSpeculative = false)
             : base(compilation, symbol, node, EmptyStructTypeCache.CreatePrecise(), trackUnassignments: true)
@@ -1661,12 +1668,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             out SnapshotManager? snapshotManager,
             ref ImmutableDictionary<Symbol, Symbol>? remappedSymbols)
         {
-            ImmutableDictionary<BoundExpression, (NullabilityInfo, TypeSymbol?)> analyzedNullabilitiesMap;
+            ImmutableDictionary<BoundNode, (NullabilityInfo, TypeSymbol?)> analyzedNullabilitiesMap;
             (snapshotManager, analyzedNullabilitiesMap) = AnalyzeWithSemanticInfo(compilation, symbol, node, binder, initialState, diagnostics, createSnapshots, requiresAnalysis: true);
             return Rewrite(analyzedNullabilitiesMap, snapshotManager, node, ref remappedSymbols);
         }
 
-        private static (SnapshotManager?, ImmutableDictionary<BoundExpression, (NullabilityInfo, TypeSymbol?)>) AnalyzeWithSemanticInfo(
+        private static (SnapshotManager?, ImmutableDictionary<BoundNode, (NullabilityInfo, TypeSymbol?)>) AnalyzeWithSemanticInfo(
             CSharpCompilation compilation,
             Symbol? symbol,
             BoundNode node,
@@ -1676,7 +1683,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             bool createSnapshots,
             bool requiresAnalysis)
         {
-            var analyzedNullabilities = ImmutableDictionary.CreateBuilder<BoundExpression, (NullabilityInfo, TypeSymbol?)>(EqualityComparer<BoundExpression>.Default, NullabilityInfoTypeComparer.Instance);
+            var analyzedNullabilities = ImmutableDictionary.CreateBuilder<BoundNode, (NullabilityInfo, TypeSymbol?)>(EqualityComparer<BoundNode>.Default, NullabilityInfoTypeComparer.Instance);
 
             // Attributes don't have a symbol, which is what SnapshotBuilder uses as an index for maintaining global state.
             // Until we have a workaround for this, disable snapshots for null symbols.
@@ -1734,7 +1741,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             out SnapshotManager newSnapshots,
             ref ImmutableDictionary<Symbol, Symbol>? remappedSymbols)
         {
-            var analyzedNullabilities = ImmutableDictionary.CreateBuilder<BoundExpression, (NullabilityInfo, TypeSymbol?)>(EqualityComparer<BoundExpression>.Default, NullabilityInfoTypeComparer.Instance);
+            var analyzedNullabilities = ImmutableDictionary.CreateBuilder<BoundNode, (NullabilityInfo, TypeSymbol?)>(EqualityComparer<BoundNode>.Default, NullabilityInfoTypeComparer.Instance);
             var newSnapshotBuilder = new SnapshotManager.Builder();
             var (variables, localState) = originalSnapshots.GetSnapshot(position);
             var symbol = variables.Symbol;
@@ -1774,7 +1781,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return Rewrite(analyzedNullabilitiesMap, newSnapshots, node, ref remappedSymbols);
         }
 
-        private static BoundNode Rewrite(ImmutableDictionary<BoundExpression, (NullabilityInfo, TypeSymbol?)> updatedNullabilities, SnapshotManager? snapshotManager, BoundNode node, ref ImmutableDictionary<Symbol, Symbol>? remappedSymbols)
+        private static BoundNode Rewrite(ImmutableDictionary<BoundNode, (NullabilityInfo, TypeSymbol?)> updatedNullabilities, SnapshotManager? snapshotManager, BoundNode node, ref ImmutableDictionary<Symbol, Symbol>? remappedSymbols)
         {
             var remappedSymbolsBuilder = ImmutableDictionary.CreateBuilder<Symbol, Symbol>(Symbols.SymbolEqualityComparer.ConsiderEverything, Symbols.SymbolEqualityComparer.ConsiderEverything);
             if (remappedSymbols is object)
@@ -1901,7 +1908,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             MethodSymbol? delegateInvokeMethodOpt,
             VariableState? initialState,
             MethodSymbol? baseOrThisInitializer,
-            ImmutableDictionary<BoundExpression, (NullabilityInfo, TypeSymbol?)>.Builder? analyzedNullabilityMapOpt,
+            ImmutableDictionary<BoundNode, (NullabilityInfo, TypeSymbol?)>.Builder? analyzedNullabilityMapOpt,
             SnapshotManager.Builder? snapshotBuilderOpt,
             ArrayBuilder<(BoundReturnStatement, TypeWithAnnotations)>? returnTypesOpt,
             bool getFinalNullableState,
@@ -13409,13 +13416,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             VisitWithoutDiagnostics(node.Value);
             SetNotNullResult(node); // https://github.com/dotnet/roslyn/issues/29863 Need to review this
             return null;
-        }
-
-        public override BoundNode? VisitLabel(BoundLabel node)
-        {
-            var result = base.VisitLabel(node);
-            SetUnknownResultNullability(node);
-            return result;
         }
 
         public override BoundNode? VisitDynamicMemberAccess(BoundDynamicMemberAccess node)

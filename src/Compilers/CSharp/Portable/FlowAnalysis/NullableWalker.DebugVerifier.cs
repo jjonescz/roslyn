@@ -15,16 +15,16 @@ namespace Microsoft.CodeAnalysis.CSharp
     {
 #if DEBUG
         /// <summary>
-        /// Verifies that all BoundExpressions in a tree have been visited by the nullable walker and have recorded updated types and nullabilities for rewriting purposes.
+        /// Verifies that expressions and anonymous-property declarations have recorded updated types and nullabilities for rewriting purposes.
         /// </summary>
         private sealed class DebugVerifier : BoundTreeWalker
         {
-            private readonly ImmutableDictionary<BoundExpression, (NullabilityInfo Info, TypeSymbol? Type)> _analyzedNullabilityMap;
+            private readonly ImmutableDictionary<BoundNode, (NullabilityInfo Info, TypeSymbol? Type)> _analyzedNullabilityMap;
             private readonly SnapshotManager? _snapshotManager;
-            private readonly HashSet<BoundExpression> _visitedExpressions = new HashSet<BoundExpression>();
+            private readonly HashSet<BoundNode> _visitedNodes = new HashSet<BoundNode>();
             private int _recursionDepth;
 
-            private DebugVerifier(ImmutableDictionary<BoundExpression, (NullabilityInfo Info, TypeSymbol? Type)> analyzedNullabilityMap, SnapshotManager? snapshotManager)
+            private DebugVerifier(ImmutableDictionary<BoundNode, (NullabilityInfo Info, TypeSymbol? Type)> analyzedNullabilityMap, SnapshotManager? snapshotManager)
             {
                 _analyzedNullabilityMap = analyzedNullabilityMap;
                 _snapshotManager = snapshotManager;
@@ -35,38 +35,38 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return false; // Same behavior as NullableWalker
             }
 
-            public static void Verify(ImmutableDictionary<BoundExpression, (NullabilityInfo Info, TypeSymbol? Type)> analyzedNullabilityMap, SnapshotManager? snapshotManagerOpt, BoundNode node)
+            public static void Verify(ImmutableDictionary<BoundNode, (NullabilityInfo Info, TypeSymbol? Type)> analyzedNullabilityMap, SnapshotManager? snapshotManagerOpt, BoundNode node)
             {
                 var verifier = new DebugVerifier(analyzedNullabilityMap, snapshotManagerOpt);
                 verifier.Visit(node);
                 snapshotManagerOpt?.VerifyUpdatedSymbols();
 
                 // Can't just remove nodes from _analyzedNullabilityMap and verify no nodes remaining because nodes can be reused.
-                if (verifier._analyzedNullabilityMap.Count > verifier._visitedExpressions.Count)
+                if (verifier._analyzedNullabilityMap.Count > verifier._visitedNodes.Count)
                 {
                     foreach (var analyzedNode in verifier._analyzedNullabilityMap.Keys)
                     {
-                        if (!verifier._visitedExpressions.Contains(analyzedNode))
+                        if (!verifier._visitedNodes.Contains(analyzedNode))
                         {
-                            RoslynDebug.Assert(false, $"Analyzed {verifier._analyzedNullabilityMap.Count} nodes in NullableWalker, but DebugVerifier expects {verifier._visitedExpressions.Count}. Example of unverified node: {analyzedNode.GetDebuggerDisplay()}");
+                            RoslynDebug.Assert(false, $"Analyzed {verifier._analyzedNullabilityMap.Count} nodes in NullableWalker, but DebugVerifier expects {verifier._visitedNodes.Count}. Example of unverified node: {analyzedNode.GetDebuggerDisplay()}");
                         }
                     }
                 }
-                else if (verifier._analyzedNullabilityMap.Count < verifier._visitedExpressions.Count)
+                else if (verifier._analyzedNullabilityMap.Count < verifier._visitedNodes.Count)
                 {
-                    foreach (var verifiedNode in verifier._visitedExpressions)
+                    foreach (var verifiedNode in verifier._visitedNodes)
                     {
                         if (!verifier._analyzedNullabilityMap.ContainsKey(verifiedNode))
                         {
-                            RoslynDebug.Assert(false, $"Analyzed {verifier._analyzedNullabilityMap.Count} nodes in NullableWalker, but DebugVerifier expects {verifier._visitedExpressions.Count}. Example of unanalyzed node: {verifiedNode.GetDebuggerDisplay()}");
+                            RoslynDebug.Assert(false, $"Analyzed {verifier._analyzedNullabilityMap.Count} nodes in NullableWalker, but DebugVerifier expects {verifier._visitedNodes.Count}. Example of unanalyzed node: {verifiedNode.GetDebuggerDisplay()}");
                         }
                     }
                 }
             }
 
-            private void VerifyExpression(BoundExpression expression, bool overrideSkippedExpression = false)
+            private void VerifyNode(BoundNode expression, bool overrideSkippedExpression = false)
             {
-                if (expression.IsParamsArrayOrCollection)
+                if (expression is BoundExpression { IsParamsArrayOrCollection: true })
                 {
                     // Params collections are processed element wise. 
                     RoslynDebug.Assert(!_analyzedNullabilityMap.ContainsKey(expression), $"Found unexpected {expression} `{expression.Syntax}` in the map.");
@@ -74,7 +74,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 else if (overrideSkippedExpression || !s_skippedExpressions.Contains(expression.Kind))
                 {
                     RoslynDebug.Assert(_analyzedNullabilityMap.ContainsKey(expression), $"Did not find {expression} `{expression.Syntax}` in the map.");
-                    _visitedExpressions.Add(expression);
+                    _visitedNodes.Add(expression);
                 }
             }
 
@@ -82,9 +82,15 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (node is BoundExpression expr)
                 {
-                    VerifyExpression(expr);
+                    VerifyNode(expr);
                 }
                 return base.Visit(node);
+            }
+
+            public override BoundNode? VisitAnonymousPropertyDeclaration(BoundAnonymousPropertyDeclaration node)
+            {
+                VerifyNode(node);
+                return base.VisitAnonymousPropertyDeclaration(node);
             }
 
             public override BoundNode? Visit(BoundNode? node)
@@ -180,7 +186,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
                     else
                     {
-                        VerifyExpression(child, overrideSkippedExpression: true);
+                        VerifyNode(child, overrideSkippedExpression: true);
                     }
                 }
 
@@ -280,7 +286,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             public override BoundNode? VisitDynamicCollectionElementInitializer(BoundDynamicCollectionElementInitializer node)
             {
                 // https://github.com/dotnet/roslyn/issues/33441 dynamic collection initializers aren't being handled correctly
-                VerifyExpression(node, overrideSkippedExpression: true);
+                VerifyNode(node, overrideSkippedExpression: true);
                 return null;
             }
 
@@ -291,7 +297,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // https://github.com/dotnet/roslyn/issues/45088
                 if (node.Left is BoundObjectInitializerMember { MemberSymbol: null })
                 {
-                    VerifyExpression(node);
+                    VerifyNode(node);
                     Visit(node.Left);
                     return null;
                 }
@@ -304,7 +310,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (node.LeftConversion is BoundConversion leftConversion &&
                     !(node.Operator.Method is { IsStatic: false } method && method.IsExtensionBlockMember()))
                 {
-                    VerifyExpression(leftConversion);
+                    VerifyNode(leftConversion);
                 }
 
                 Visit(node.Left);
@@ -329,7 +335,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // There can be deep recursion on the left side, so verify iteratively to avoid blowing the stack
                 while (true)
                 {
-                    VerifyExpression(node);
+                    VerifyNode(node);
 
                     Visit(node.Right);
 
@@ -369,7 +375,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             public override BoundNode? VisitTypeExpression(BoundTypeExpression node)
             {
                 // Ignore any dimensions
-                VerifyExpression(node);
+                VerifyNode(node);
                 Visit(node.BoundContainingTypeOpt);
                 return null;
             }

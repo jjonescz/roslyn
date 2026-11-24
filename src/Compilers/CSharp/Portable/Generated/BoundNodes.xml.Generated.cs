@@ -4809,10 +4809,10 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
     }
 
-    internal sealed partial class BoundLabel : BoundExpression
+    internal sealed partial class BoundLabel : BoundNode
     {
-        public BoundLabel(SyntaxNode syntax, bool isInUnsafeRegion, LabelSymbol label, TypeSymbol? type, bool hasErrors)
-            : base(BoundKind.Label, syntax, isInUnsafeRegion, type, hasErrors)
+        public BoundLabel(SyntaxNode syntax, LabelSymbol label, bool hasErrors)
+            : base(BoundKind.Label, syntax, hasErrors)
         {
 
             RoslynDebug.Assert(label is object, "Field 'label' cannot be null (make the type nullable in BoundNodes.xml to remove this check)");
@@ -4820,8 +4820,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             this.Label = label;
         }
 
-        public BoundLabel(SyntaxNode syntax, bool isInUnsafeRegion, LabelSymbol label, TypeSymbol? type)
-            : base(BoundKind.Label, syntax, isInUnsafeRegion, type)
+        public BoundLabel(SyntaxNode syntax, LabelSymbol label)
+            : base(BoundKind.Label, syntax)
         {
 
             RoslynDebug.Assert(label is object, "Field 'label' cannot be null (make the type nullable in BoundNodes.xml to remove this check)");
@@ -4834,11 +4834,11 @@ namespace Microsoft.CodeAnalysis.CSharp
         [DebuggerStepThrough]
         public override BoundNode? Accept(BoundTreeVisitor visitor) => visitor.VisitLabel(this);
 
-        public BoundLabel Update(LabelSymbol label, TypeSymbol? type)
+        public BoundLabel Update(LabelSymbol label)
         {
-            if (!Symbols.SymbolEqualityComparer.ConsiderEverything.Equals(label, this.Label) || !TypeSymbol.Equals(type, this.Type, TypeCompareKind.ConsiderEverything))
+            if (!Symbols.SymbolEqualityComparer.ConsiderEverything.Equals(label, this.Label))
             {
-                var result = new BoundLabel(this.Syntax, this.IsInUnsafeRegion, label, type, this.HasErrors);
+                var result = new BoundLabel(this.Syntax, label, this.HasErrors);
                 result.CopyAttributes(this);
                 return result;
             }
@@ -7128,39 +7128,41 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
     }
 
-    internal sealed partial class BoundAnonymousPropertyDeclaration : BoundExpression
+    internal sealed partial class BoundAnonymousPropertyDeclaration : BoundNode
     {
-        public BoundAnonymousPropertyDeclaration(SyntaxNode syntax, bool isInUnsafeRegion, PropertySymbol property, TypeSymbol type, bool hasErrors)
-            : base(BoundKind.AnonymousPropertyDeclaration, syntax, isInUnsafeRegion, type, hasErrors)
+        public BoundAnonymousPropertyDeclaration(SyntaxNode syntax, TypeSymbol type, PropertySymbol property, bool hasErrors)
+            : base(BoundKind.AnonymousPropertyDeclaration, syntax, hasErrors)
         {
 
-            RoslynDebug.Assert(property is object, "Field 'property' cannot be null (make the type nullable in BoundNodes.xml to remove this check)");
             RoslynDebug.Assert(type is object, "Field 'type' cannot be null (make the type nullable in BoundNodes.xml to remove this check)");
+            RoslynDebug.Assert(property is object, "Field 'property' cannot be null (make the type nullable in BoundNodes.xml to remove this check)");
 
+            this.Type = type;
             this.Property = property;
         }
 
-        public BoundAnonymousPropertyDeclaration(SyntaxNode syntax, bool isInUnsafeRegion, PropertySymbol property, TypeSymbol type)
-            : base(BoundKind.AnonymousPropertyDeclaration, syntax, isInUnsafeRegion, type)
+        public BoundAnonymousPropertyDeclaration(SyntaxNode syntax, TypeSymbol type, PropertySymbol property)
+            : base(BoundKind.AnonymousPropertyDeclaration, syntax)
         {
 
-            RoslynDebug.Assert(property is object, "Field 'property' cannot be null (make the type nullable in BoundNodes.xml to remove this check)");
             RoslynDebug.Assert(type is object, "Field 'type' cannot be null (make the type nullable in BoundNodes.xml to remove this check)");
+            RoslynDebug.Assert(property is object, "Field 'property' cannot be null (make the type nullable in BoundNodes.xml to remove this check)");
 
+            this.Type = type;
             this.Property = property;
         }
 
-        public new TypeSymbol Type => base.Type!;
+        public TypeSymbol Type { get; }
         public PropertySymbol Property { get; }
 
         [DebuggerStepThrough]
         public override BoundNode? Accept(BoundTreeVisitor visitor) => visitor.VisitAnonymousPropertyDeclaration(this);
 
-        public BoundAnonymousPropertyDeclaration Update(PropertySymbol property, TypeSymbol type)
+        public BoundAnonymousPropertyDeclaration Update(TypeSymbol type, PropertySymbol property)
         {
-            if (!Symbols.SymbolEqualityComparer.ConsiderEverything.Equals(property, this.Property) || !TypeSymbol.Equals(type, this.Type, TypeCompareKind.ConsiderEverything))
+            if (!TypeSymbol.Equals(type, this.Type, TypeCompareKind.ConsiderEverything) || !Symbols.SymbolEqualityComparer.ConsiderEverything.Equals(property, this.Property))
             {
-                var result = new BoundAnonymousPropertyDeclaration(this.Syntax, this.IsInUnsafeRegion, property, type, this.HasErrors);
+                var result = new BoundAnonymousPropertyDeclaration(this.Syntax, type, property, this.HasErrors);
                 result.CopyAttributes(this);
                 return result;
             }
@@ -11905,8 +11907,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override BoundNode? VisitLabel(BoundLabel node)
         {
             LabelSymbol label = this.VisitLabelSymbol(node.Label);
-            TypeSymbol? type = this.VisitType(node.Type);
-            return node.Update(label, type);
+            return node.Update(label);
         }
         public override BoundNode? VisitStatementList(BoundStatementList node)
         {
@@ -12330,7 +12331,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             PropertySymbol property = this.VisitPropertySymbol(node.Property);
             TypeSymbol? type = this.VisitType(node.Type);
-            return node.Update(property, type);
+            return node.Update(type, property);
         }
         public override BoundNode? VisitNewT(BoundNewT node)
         {
@@ -12704,11 +12705,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
     internal sealed partial class NullabilityRewriter : BoundTreeRewriter
     {
-        private readonly ImmutableDictionary<BoundExpression, (NullabilityInfo Info, TypeSymbol? Type)> _updatedNullabilities;
+        private readonly ImmutableDictionary<BoundNode, (NullabilityInfo Info, TypeSymbol? Type)> _updatedNullabilities;
         private readonly NullableWalker.SnapshotManager? _snapshotManager;
         private readonly ImmutableDictionary<Symbol, Symbol>.Builder _remappedSymbols;
 
-        public NullabilityRewriter(ImmutableDictionary<BoundExpression, (NullabilityInfo Info, TypeSymbol? Type)> updatedNullabilities, NullableWalker.SnapshotManager? snapshotManager, ImmutableDictionary<Symbol, Symbol>.Builder remappedSymbols)
+        public NullabilityRewriter(ImmutableDictionary<BoundNode, (NullabilityInfo Info, TypeSymbol? Type)> updatedNullabilities, NullableWalker.SnapshotManager? snapshotManager, ImmutableDictionary<Symbol, Symbol>.Builder remappedSymbols)
         {
             _updatedNullabilities = updatedNullabilities;
             _snapshotManager = snapshotManager;
@@ -14107,18 +14108,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             return updatedNode;
         }
 
-        public override BoundNode? VisitLabel(BoundLabel node)
-        {
-            if (!_updatedNullabilities.TryGetValue(node, out (NullabilityInfo Info, TypeSymbol? Type) infoAndType))
-            {
-                return node;
-            }
-
-            BoundLabel updatedNode = node.Update(node.Label, infoAndType.Type);
-            updatedNode.TopLevelNullability = infoAndType.Info;
-            return updatedNode;
-        }
-
         public override BoundNode? VisitSwitchExpressionArm(BoundSwitchExpressionArm node)
         {
             ImmutableArray<LocalSymbol> locals = GetUpdatedArray(node, node.Locals);
@@ -14788,12 +14777,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (_updatedNullabilities.TryGetValue(node, out (NullabilityInfo Info, TypeSymbol? Type) infoAndType))
             {
-                updatedNode = node.Update(property, infoAndType.Type!);
+                updatedNode = node.Update(infoAndType.Type!, property);
                 updatedNode.TopLevelNullability = infoAndType.Info;
             }
             else
             {
-                updatedNode = node.Update(property, node.Type);
+                updatedNode = node.Update(node.Type, property);
             }
             return updatedNode;
         }
@@ -16574,8 +16563,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override TreeDumperNode VisitLabel(BoundLabel node, object? arg) => new TreeDumperNode("label", null, new TreeDumperNode[]
         {
             new TreeDumperNode("label", node.Label, null),
-            new TreeDumperNode("type", node.Type, null),
-            new TreeDumperNode("isSuppressed", node.IsSuppressed, null),
             new TreeDumperNode("hasErrors", node.HasErrors, null)
         }
         );
@@ -17182,9 +17169,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         );
         public override TreeDumperNode VisitAnonymousPropertyDeclaration(BoundAnonymousPropertyDeclaration node, object? arg) => new TreeDumperNode("anonymousPropertyDeclaration", null, new TreeDumperNode[]
         {
-            new TreeDumperNode("property", node.Property, null),
             new TreeDumperNode("type", node.Type, null),
-            new TreeDumperNode("isSuppressed", node.IsSuppressed, null),
+            new TreeDumperNode("property", node.Property, null),
             new TreeDumperNode("hasErrors", node.HasErrors, null)
         }
         );

@@ -2517,7 +2517,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return this.BindExpression(node, diagnostics, SyntaxFacts.IsInvoked(node), SyntaxFacts.IsIndexed(node));
         }
 
-        public BoundExpression BindLabel(ExpressionSyntax node, BindingDiagnosticBag diagnostics)
+        public BoundNode BindLabel(ExpressionSyntax node, BindingDiagnosticBag diagnostics)
         {
             var name = node as IdentifierNameSyntax;
             if (name == null)
@@ -2542,7 +2542,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(result.IsSingleViable, "If this happens, we need to deal with multiple label definitions.");
             var symbol = (LabelSymbol)result.Symbols.First();
             result.Free();
-            return new BoundLabel(node, isInUnsafeRegion: InUnsafeRegion, symbol, null);
+            return new BoundLabel(node, symbol);
         }
 
         public BoundExpression BindNamespaceOrType(ExpressionSyntax node, BindingDiagnosticBag diagnostics)

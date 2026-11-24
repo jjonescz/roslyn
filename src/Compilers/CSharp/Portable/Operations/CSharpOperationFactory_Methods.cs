@@ -456,7 +456,7 @@ namespace Microsoft.CodeAnalysis.Operations
                                                             instance,
                                                             _semanticModel,
                                                             anonymousProperty.Syntax,
-                                                            anonymousProperty.GetPublicTypeSymbol(),
+                                                            anonymousProperty.Type.GetITypeSymbol(anonymousProperty.TopLevelNullability.FlowState.ToAnnotation()),
                                                             anonymousProperty.WasCompilerGenerated);
                     isImplicitAssignment = isImplicit;
                 }

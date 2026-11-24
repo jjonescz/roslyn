@@ -234,7 +234,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// Top level nullability for the node. This should not be used by flow analysis.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        protected NullabilityInfo TopLevelNullability
+        internal NullabilityInfo TopLevelNullability
         {
             get
             {
