@@ -42,6 +42,11 @@
         <target state="translated">请使用语言版本 {0} 或更高版本，以在行继续符后使用注释。</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_DataSectionStringLiteralHashCollision">
+        <source>Cannot emit this string literal into the data section because it has XXHash128 collision with another string literal: {0}</source>
+        <target state="new">Cannot emit this string literal into the data section because it has XXHash128 collision with another string literal: {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_DefaultInterfaceImplementationInNoPIAType">
         <source>Type '{0}' cannot be embedded because it has a non-abstract member. Consider setting the 'Embed Interop Types' property to false.</source>
         <target state="translated">无法嵌入类型“{0}”，因为它有非抽象成员。请考虑将“嵌入互操作类型”属性设置为 false。</target>
@@ -9205,8 +9210,8 @@
         <note />
       </trans-unit>
       <trans-unit id="ERR_TooManyUserStrings">
-        <source>Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string or XML literals.</source>
-        <target state="translated">该程序所使用的用户字符串的合并后长度超出所允许的限制。请尝试减少字符串文本或 XML 文本的使用。</target>
+        <source>Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string or XML literals or try the EXPERIMENTAL feature flag 'experimental-data-section-string-literals'.</source>
+        <target state="needs-review-translation">该程序所使用的用户字符串的合并后长度超出所允许的限制。请尝试减少字符串文本或 XML 文本的使用。</target>
         <note />
       </trans-unit>
       <trans-unit id="ERR_PeWritingFailure">

@@ -7832,6 +7832,375 @@ End Class
             End Using
         End Sub
 
+        <Theory>
+        <InlineData(False)>
+        <InlineData(True)>
+        <WorkItem("https://github.com/dotnet/roslyn/issues/69480")>
+        Public Sub PrivateImplDetails_DataSectionStringLiterals_FieldRvaSupported(heapOverflow As Boolean)
+            Dim originalText = If(heapOverflow, New String("x"c, (1 << 23) - 3), "0123456789")
+            Dim updatedText = If(heapOverflow, "0123456789", "0123456789X")
+            Dim hash = If(heapOverflow,
+                "84D89877F0D4041EFB6BF91A16F0248F2FD573E6AF05C19F96BEDB9F882F7882",
+                "ACE59E7D984CCEB2D860A056A3386344236CE5C42C978E26ECE3F35956DAC3AD")
+            Dim stringType = If(heapOverflow, "<S>E353667619EC664B49655FC9692165FB", "<S>6D2201523542AEFFB91657B2AEBDC84B")
+            Dim parseOptions = If(heapOverflow, TestOptions.Regular, TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, "0"))
+            Using New EditAndContinueTest(targetFramework:=TargetFramework.Net90, verification:=Verification.Skipped, parseOptions:=parseOptions).
+                AddBaseline(
+                    source:=$"
+Class C
+    Function F() As String
+        Return ""{originalText}""
+    End Function
+End Class",
+                    validator:=
+                        Sub(g)
+                            If heapOverflow Then
+                                g.VerifyTypeDefNames("<Module>", "C")
+                                g.VerifyFieldDefNames()
+                                g.VerifyMethodDefNames(".ctor", "F")
+                            Else
+                                g.VerifyTypeDefNames("<Module>", "C", "<PrivateImplementationDetails>", "__StaticArrayInitTypeSize=10", "<S>E353667619EC664B49655FC9692165FB")
+                                g.VerifyFieldDefNames("84D89877F0D4041EFB6BF91A16F0248F2FD573E6AF05C19F96BEDB9F882F7882", "s")
+                                g.VerifyMethodDefNames(".ctor", "F", "BytesToString", ".cctor")
+                            End If
+                        End Sub).
+                AddGeneration(
+                    source:=$"
+Class C
+    Function F() As String
+        Return ""{updatedText}""
+    End Function
+End Class",
+                    edits:={Edit(SemanticEditKind.Update, symbolProvider:=Function(c) c.GetMember("C.F"))},
+                    validator:=
+                        Sub(g)
+                            g.VerifyTypeDefNames("<PrivateImplementationDetails>#1", $"__StaticArrayInitTypeSize={updatedText.Length}", stringType)
+                            g.VerifyFieldDefNames(hash, "s")
+                            g.VerifyMethodDefNames("F", "BytesToString", ".cctor")
+                            Dim typeRow = If(heapOverflow, 3, 6)
+                            Dim fieldRow = If(heapOverflow, 1, 3)
+                            Dim attributeRow = If(heapOverflow, 4, 5)
+                            g.VerifyEncLogDefinitions(
+                            {
+                                Row(2, TableIndex.StandAloneSig, EditAndContinueOperation.Default),
+                                Row(typeRow, TableIndex.TypeDef, EditAndContinueOperation.Default),
+                                Row(typeRow + 1, TableIndex.TypeDef, EditAndContinueOperation.Default),
+                                Row(typeRow + 2, TableIndex.TypeDef, EditAndContinueOperation.Default),
+                                Row(typeRow, TableIndex.TypeDef, EditAndContinueOperation.AddField),
+                                Row(fieldRow, TableIndex.Field, EditAndContinueOperation.Default),
+                                Row(typeRow + 2, TableIndex.TypeDef, EditAndContinueOperation.AddField),
+                                Row(fieldRow + 1, TableIndex.Field, EditAndContinueOperation.Default),
+                                Row(2, TableIndex.MethodDef, EditAndContinueOperation.Default),
+                                Row(typeRow, TableIndex.TypeDef, EditAndContinueOperation.AddMethod),
+                                Row(fieldRow + 2, TableIndex.MethodDef, EditAndContinueOperation.Default),
+                                Row(typeRow + 2, TableIndex.TypeDef, EditAndContinueOperation.AddMethod),
+                                Row(fieldRow + 3, TableIndex.MethodDef, EditAndContinueOperation.Default),
+                                Row(fieldRow + 2, TableIndex.MethodDef, EditAndContinueOperation.AddParameter),
+                                Row(fieldRow, TableIndex.Param, EditAndContinueOperation.Default),
+                                Row(fieldRow + 2, TableIndex.MethodDef, EditAndContinueOperation.AddParameter),
+                                Row(fieldRow + 1, TableIndex.Param, EditAndContinueOperation.Default),
+                                Row(attributeRow, TableIndex.CustomAttribute, EditAndContinueOperation.Default),
+                                Row(If(heapOverflow, 1, 2), TableIndex.ClassLayout, EditAndContinueOperation.Default),
+                                Row(If(heapOverflow, 1, 2), TableIndex.FieldRva, EditAndContinueOperation.Default),
+                                Row(fieldRow, TableIndex.NestedClass, EditAndContinueOperation.Default),
+                                Row(fieldRow + 1, TableIndex.NestedClass, EditAndContinueOperation.Default)
+                            })
+                            g.VerifyEncMapDefinitions(
+                            {
+                                Handle(typeRow, TableIndex.TypeDef),
+                                Handle(typeRow + 1, TableIndex.TypeDef),
+                                Handle(typeRow + 2, TableIndex.TypeDef),
+                                Handle(fieldRow, TableIndex.Field),
+                                Handle(fieldRow + 1, TableIndex.Field),
+                                Handle(2, TableIndex.MethodDef),
+                                Handle(fieldRow + 2, TableIndex.MethodDef),
+                                Handle(fieldRow + 3, TableIndex.MethodDef),
+                                Handle(fieldRow, TableIndex.Param),
+                                Handle(fieldRow + 1, TableIndex.Param),
+                                Handle(attributeRow, TableIndex.CustomAttribute),
+                                Handle(If(heapOverflow, 1, 2), TableIndex.ClassLayout),
+                                Handle(2, TableIndex.StandAloneSig),
+                                Handle(If(heapOverflow, 1, 2), TableIndex.FieldRva),
+                                Handle(fieldRow, TableIndex.NestedClass),
+                                Handle(fieldRow + 1, TableIndex.NestedClass)
+                            })
+                            g.VerifyIL("C.F", $"
+{{
+  // Code size       11 (0xb)
+  .maxstack  1
+  .locals init (String V_0) //F
+  IL_0000:  nop
+  IL_0001:  ldsfld     ""string <PrivateImplementationDetails>#1.{stringType}.s""
+  IL_0006:  stloc.0
+  IL_0007:  br.s       IL_0009
+  IL_0009:  ldloc.0
+  IL_000a:  ret
+}}")
+                            g.VerifyEncFieldRvaData($"{hash}: {BitConverter.ToString(System.Text.Encoding.UTF8.GetBytes(updatedText))}{If(heapOverflow, "-00-00", "-00")}")
+                        End Sub,
+                    options:=New EmitDifferenceOptions With {.EmitFieldRva = True}).
+                Verify()
+            End Using
+        End Sub
+
+        <Fact>
+        <WorkItem("https://github.com/dotnet/roslyn/issues/69480")>
+        Public Sub PrivateImplDetails_DataSectionStringLiterals_FieldRvaNotSupported()
+            Using New EditAndContinueTest(targetFramework:=TargetFramework.Net90, verification:=Verification.Skipped,
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, "0")).
+                AddBaseline(
+                    source:="
+Class C
+    Function F() As String
+        Return ""0123456789""
+    End Function
+End Class",
+                    validator:=
+                        Sub(g)
+                            g.VerifyTypeDefNames("<Module>", "C", "<PrivateImplementationDetails>", "__StaticArrayInitTypeSize=10", "<S>E353667619EC664B49655FC9692165FB")
+                            g.VerifyFieldDefNames("84D89877F0D4041EFB6BF91A16F0248F2FD573E6AF05C19F96BEDB9F882F7882", "s")
+                            g.VerifyMethodDefNames(".ctor", "F", "BytesToString", ".cctor")
+                        End Sub).
+                AddGeneration(
+                    source:="
+Class C
+    Function F() As String
+        Return ""0123456789X""
+    End Function
+End Class",
+                    edits:={Edit(SemanticEditKind.Update, symbolProvider:=Function(c) c.GetMember("C.F"))},
+                    validator:=
+                        Sub(g)
+                            g.VerifyTypeDefNames()
+                            g.VerifyFieldDefNames()
+                            g.VerifyMethodDefNames("F")
+                            g.VerifyEncLogDefinitions(
+                                {Row(2, TableIndex.StandAloneSig, EditAndContinueOperation.Default),
+                                 Row(2, TableIndex.MethodDef, EditAndContinueOperation.Default)})
+                            g.VerifyEncMapDefinitions(
+                                {Handle(2, TableIndex.MethodDef), Handle(2, TableIndex.StandAloneSig)})
+                            g.VerifyIL("C.F", "
+{
+  // Code size       11 (0xb)
+  .maxstack  1
+  .locals init (String V_0) //F
+  IL_0000:  nop
+  IL_0001:  ldstr      ""0123456789X""
+  IL_0006:  stloc.0
+  IL_0007:  br.s       IL_0009
+  IL_0009:  ldloc.0
+  IL_000a:  ret
+}")
+                        End Sub).
+                Verify()
+            End Using
+        End Sub
+
+        <Fact>
+        Public Sub PrivateImplDetails_DataSectionStringLiterals_StringReuse_FieldRvaSupported()
+            Dim baseString = New String("x"c, (1 << 23) - 100)
+            Dim newString1 = New String("1"c, 40)
+            Dim newString2 = New String("2"c, 80)
+            Using New EditAndContinueTest(targetFramework:=TargetFramework.Net90, verification:=Verification.Skipped).
+                AddBaseline(
+                    source:=$"
+Class C
+    Sub G(a As String, b As String, c As String)
+    End Sub
+
+    Sub F()
+        G(""{baseString}"", ""{newString1}"", """")
+    End Sub
+End Class",
+                    validator:=
+                        Sub(g)
+                            g.VerifyTypeDefNames("<Module>", "C")
+                            g.VerifyFieldDefNames()
+                            g.VerifyMethodDefNames(".ctor", "G", "F")
+                        End Sub).
+                AddGeneration(
+                    source:=$"
+Class C
+    Sub G(a As String, b As String, c As String)
+    End Sub
+
+    Sub F()
+        G(""{newString2}"", ""{newString2}"", ""{newString1}"")
+    End Sub
+End Class",
+                    edits:={Edit(SemanticEditKind.Update, symbolProvider:=Function(c) c.GetMember("C.F"))},
+                    validator:=
+                        Sub(g)
+                            g.VerifyTypeDefNames("<PrivateImplementationDetails>#1", "__StaticArrayInitTypeSize=40", "<S>62CF64E173E5BF9EF5312BB6D57CC26C")
+                            g.VerifyFieldDefNames("468D019EA81224AECA7EE270B11959D8A187F6F0B6A3FEBFF1C34DC1D66C8D85", "s")
+                            g.VerifyMethodDefNames("F", "BytesToString", ".cctor")
+                            g.VerifyEncLogDefinitions(
+                            {
+                                Row(3, TableIndex.TypeDef, EditAndContinueOperation.Default),
+                                Row(4, TableIndex.TypeDef, EditAndContinueOperation.Default),
+                                Row(5, TableIndex.TypeDef, EditAndContinueOperation.Default),
+                                Row(3, TableIndex.TypeDef, EditAndContinueOperation.AddField),
+                                Row(1, TableIndex.Field, EditAndContinueOperation.Default),
+                                Row(5, TableIndex.TypeDef, EditAndContinueOperation.AddField),
+                                Row(2, TableIndex.Field, EditAndContinueOperation.Default),
+                                Row(3, TableIndex.MethodDef, EditAndContinueOperation.Default),
+                                Row(3, TableIndex.TypeDef, EditAndContinueOperation.AddMethod),
+                                Row(4, TableIndex.MethodDef, EditAndContinueOperation.Default),
+                                Row(5, TableIndex.TypeDef, EditAndContinueOperation.AddMethod),
+                                Row(5, TableIndex.MethodDef, EditAndContinueOperation.Default),
+                                Row(4, TableIndex.MethodDef, EditAndContinueOperation.AddParameter),
+                                Row(4, TableIndex.Param, EditAndContinueOperation.Default),
+                                Row(4, TableIndex.MethodDef, EditAndContinueOperation.AddParameter),
+                                Row(5, TableIndex.Param, EditAndContinueOperation.Default),
+                                Row(4, TableIndex.CustomAttribute, EditAndContinueOperation.Default),
+                                Row(1, TableIndex.ClassLayout, EditAndContinueOperation.Default),
+                                Row(1, TableIndex.FieldRva, EditAndContinueOperation.Default),
+                                Row(1, TableIndex.NestedClass, EditAndContinueOperation.Default),
+                                Row(2, TableIndex.NestedClass, EditAndContinueOperation.Default)
+                            })
+                            g.VerifyEncMapDefinitions(
+                            {
+                                Handle(3, TableIndex.TypeDef),
+                                Handle(4, TableIndex.TypeDef),
+                                Handle(5, TableIndex.TypeDef),
+                                Handle(1, TableIndex.Field),
+                                Handle(2, TableIndex.Field),
+                                Handle(3, TableIndex.MethodDef),
+                                Handle(4, TableIndex.MethodDef),
+                                Handle(5, TableIndex.MethodDef),
+                                Handle(4, TableIndex.Param),
+                                Handle(5, TableIndex.Param),
+                                Handle(4, TableIndex.CustomAttribute),
+                                Handle(1, TableIndex.ClassLayout),
+                                Handle(1, TableIndex.FieldRva),
+                                Handle(1, TableIndex.NestedClass),
+                                Handle(2, TableIndex.NestedClass)
+                            })
+                            g.VerifyIL("C.F", $"
+{{
+  // Code size       24 (0x18)
+  .maxstack  4
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldstr      ""{newString2}""
+  IL_0007:  ldstr      ""{newString2}""
+  IL_000c:  ldsfld     ""string <PrivateImplementationDetails>#1.<S>62CF64E173E5BF9EF5312BB6D57CC26C.s""
+  IL_0011:  call       ""Sub C.G(String, String, String)""
+  IL_0016:  nop
+  IL_0017:  ret
+}}")
+                            g.VerifyEncFieldRvaData($"468D019EA81224AECA7EE270B11959D8A187F6F0B6A3FEBFF1C34DC1D66C8D85: {BitConverter.ToString(System.Text.Encoding.UTF8.GetBytes(newString1))}-00-00-00-00-00-00")
+                        End Sub,
+                    options:=New EmitDifferenceOptions With {.EmitFieldRva = True}).
+                Verify()
+            End Using
+        End Sub
+
+        <Fact>
+        Public Sub PrivateImplDetails_DataSectionStringLiterals_HeapOverflow_FieldRvaNotSupported()
+            Dim baseString = New String("x"c, 1 << 23)
+            Using New EditAndContinueTest(targetFramework:=TargetFramework.Net90, verification:=Verification.Skipped).
+                AddBaseline(
+                    source:=$"
+Class C
+    Function F() As String
+        Return ""{baseString}""
+    End Function
+End Class",
+                    validator:=
+                        Sub(g)
+                            g.VerifyTypeDefNames("<Module>", "C")
+                            g.VerifyFieldDefNames()
+                            g.VerifyMethodDefNames(".ctor", "F")
+                        End Sub).
+                AddGeneration(
+                    source:="
+Class C
+    Function F() As String
+        Return ""new string that doesn't fit""
+    End Function
+End Class",
+                    edits:={Edit(SemanticEditKind.Update, symbolProvider:=Function(c) c.GetMember("C.F"))},
+                    expectedErrors:=
+                    {
+                        Diagnostic(ERRID.ERR_TooManyUserStrings_RestartRequired, """new string that doesn't fit""").WithLocation(4, 16)
+                    }).
+                Verify()
+            End Using
+        End Sub
+
+        <Fact>
+        Public Sub Method_Delete_PredefinedHotReloadException_DataSectionLiterals()
+            Dim byteCount = System.Text.Encoding.UTF8.GetByteCount(HotReloadExceptionCode.DeletedMethodInvoked.GetExceptionMessage())
+            Dim exceptionSource = "
+Namespace System.Runtime.CompilerServices
+    Public Class HotReloadException
+        Inherits Exception
+
+        Public Sub New(message As String, code As Integer)
+            MyBase.New(message)
+        End Sub
+    End Class
+End Namespace
+"
+            Using New EditAndContinueTest(targetFramework:=TargetFramework.Net90, verification:=Verification.Skipped,
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, "0")).
+                AddBaseline(
+                    source:=exceptionSource & "
+Class C
+    Sub F1()
+    End Sub
+    Sub F2()
+    End Sub
+End Class").
+                AddGeneration(
+                    source:=exceptionSource & "
+Class C
+    Sub F2()
+    End Sub
+End Class",
+                    edits:={Edit(SemanticEditKind.Delete, symbolProvider:=Function(c) c.GetMember("C.F1"), newSymbolProvider:=Function(c) c.GetMember("C"))},
+                    validator:=
+                        Sub(g)
+                            g.VerifySynthesizedMembers()
+                            g.VerifyTypeRefNames("Object", "CompilerGeneratedAttribute", "ValueType", "Encoding")
+                            g.VerifyMethodDefNames("F1", "BytesToString", ".cctor")
+                            g.VerifyIL("
+F1
+{
+  // Code size       13 (0xd)
+  .maxstack  8
+  IL_0000:  ldsfld     0x04000002
+  IL_0005:  ldc.i4.s   -2
+  IL_0007:  newobj     0x06000001
+  IL_000c:  throw
+}
+BytesToString
+{
+  // Code size       13 (0xd)
+  .maxstack  8
+  IL_0000:  call       0x0A000007
+  IL_0005:  ldarg.0
+  IL_0006:  ldarg.1
+  IL_0007:  callvirt   0x0A000008
+  IL_000c:  ret
+}
+.cctor
+{
+  // Code size       21 (0x15)
+  .maxstack  8
+  IL_0000:  ldsflda    0x04000001
+  IL_0005:  ldc.i4     0xa3
+  IL_000a:  call       0x06000005
+  IL_000f:  stsfld     0x04000002
+  IL_0014:  ret
+}".Replace("0xa3", $"0x{byteCount:x}"))
+                        End Sub,
+                    options:=New EmitDifferenceOptions With {.EmitFieldRva = True}).
+                Verify()
+            End Using
+        End Sub
+
         <ConditionalFact(GetType(NotOnMonoCore))>
         Public Sub PrivateImplDetails_ComputeStringHash()
             Using New EditAndContinueTest().

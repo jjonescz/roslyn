@@ -1,12 +1,12 @@
 # String literals in data section
 
-This opt-in **experimental** Roslyn feature allows changing how string literals in C# programs are emitted into PE files (`.dll`/`.exe`).
+This opt-in **experimental** Roslyn feature allows changing how string literals in C# and Visual Basic programs are emitted into PE files (`.dll`/`.exe`).
 By default, string literals are emitted to the UserString heap which is limited to [2^24 bytes](https://github.com/dotnet/roslyn/issues/9852).
 When the limit is reached, one of the following compiler errors is reported by Roslyn:
 
 ```
-error CS8103: Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string literals.
-error BC37255: Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string or XML literals.
+error CS8103: Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string literals or try the EXPERIMENTAL feature flag 'experimental-data-section-string-literals'.
+error BC37255: Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string or XML literals or try the EXPERIMENTAL feature flag 'experimental-data-section-string-literals'.
 ```
 
 By turning on [the feature flag](#configuration), string literals ([where possible](#eligible-string-literals)) are instead emitted as UTF-8 data into a different section of the PE file
@@ -74,7 +74,8 @@ string d = "Hello."; // assuming this string literal is eligible for the `ldsfld
 The initialization calls `<PrivateImplementationDetails>.BytesToString` helper which in turn calls `Encoding.UTF8.GetString`.
 This is an optimization so each of the generated static constructors is slightly smaller in IL size.
 These size savings can add up since one class is generated per one eligible string literal.
-A compile-time error is reported if the `Encoding.UTF8.GetString` API is not available and needs to be used
+A compile-time error is reported if either `Encoding.UTF8` or `Encoding.GetString(byte*, int)` is unavailable while the feature is enabled,
+even if no string literals exceed the configured threshold
 (the user can then either ensure the API is available or turn off the feature flag).
 
 The following example demonstrates the code generated for string literal `"Hello."`.

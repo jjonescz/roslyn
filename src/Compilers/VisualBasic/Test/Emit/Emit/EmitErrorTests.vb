@@ -569,9 +569,9 @@ BC35000: Requested operation is not available because the runtime library functi
         End Sub
 
         <Fact, WorkItem(8287, "https://github.com/dotnet/roslyn/issues/8287")>
-        Public Sub ToManyUserStrings()
-
+        Public Sub TooManyUserStrings()
             Dim source As New System.Text.StringBuilder()
+            Dim expectedOutput As New System.Text.StringBuilder()
             source.Append("
 Module C
     Sub Main()
@@ -581,6 +581,8 @@ Module C
                 source.Append(
 "       System.Console.WriteLine(""")
                 source.Append(ChrW(AscW("A"c) + i), 1000000)
+                expectedOutput.Append(ChrW(AscW("A"c) + i), 1000000)
+                expectedOutput.AppendLine()
                 source.Append(""")
 ")
             Next
@@ -589,15 +591,30 @@ Module C
     End Sub
 End Module")
 
-            Dim compilation = CreateEmptyCompilationWithReferences(VisualBasicSyntaxTree.ParseText(source.ToString()), {MscorlibRef, SystemRef, MsvbRef})
+            Dim sourceText = source.ToString()
 
+            Assert.Contains(Feature.ExperimentalDataSectionStringLiterals, MessageProvider.Instance.GetMessageFormat(CInt(ERRID.ERR_TooManyUserStrings)).ToString())
             Dim expectedDiagnostics =
             {
                 Diagnostic(ERRID.ERR_TooManyUserStrings, """" & New String("K"c, 1000000) & """").WithLocation(13, 33),
                 Diagnostic(ERRID.ERR_TooManyUserStrings, """" & New String("L"c, 1000000) & """").WithLocation(14, 33)
             }
 
-            CreateCompilation(source.ToString()).VerifyEmitDiagnostics(expectedDiagnostics)
+            CreateCompilation(sourceText).VerifyEmitDiagnostics(expectedDiagnostics)
+
+            CreateCompilation(sourceText,
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, "1000000")).
+                VerifyEmitDiagnostics(expectedDiagnostics)
+
+            CompileAndVerifyEx(sourceText,
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals),
+                verify:=Verification.Fails,
+                expectedOutput:=expectedOutput.ToString()).VerifyDiagnostics()
+
+            CompileAndVerifyEx(sourceText,
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, "0"),
+                verify:=Verification.Fails,
+                expectedOutput:=expectedOutput.ToString()).VerifyDiagnostics()
         End Sub
 
 #End Region

@@ -1795,7 +1795,9 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         ERR_AttributeCannotBeAppliedManually = 37338
         ERR_EncUpdateRequiresEmittingExplicitInterfaceImplementationNotSupportedByTheRuntime = 37339
 
-        ERR_NextAvailable = 37340
+        ERR_DataSectionStringLiteralHashCollision = 37340
+
+        ERR_NextAvailable = 37341
 
         '// WARNINGS BEGIN HERE
         WRN_UseOfObsoleteSymbol2 = 40000

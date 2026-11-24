@@ -1116,6 +1116,486 @@ End Module
             End Using
         End Sub
 
+        <Theory>
+        <InlineData("0", True, False)>
+        <InlineData("0", False, True)>
+        <InlineData("0", True, True)>
+        <InlineData("1", True, True)>
+        <InlineData("3", True, True)>
+        Public Sub DataSectionStringLiterals_MissingMembers(threshold As String, missingUtf8 As Boolean, missingGetString As Boolean)
+            Dim source = "
+Class C
+    Shared Sub Main()
+        System.Console.Write(""a"")
+        System.Console.Write(""bb"")
+        System.Console.Write(""ccc"")
+    End Sub
+End Class"
+            Dim comp = CreateCompilation(source, parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, threshold))
+            Dim expected As New List(Of DiagnosticDescription)
+            If missingUtf8 Then
+                comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__get_UTF8)
+                expected.Add(Diagnostic(ERRID.ERR_MissingRuntimeHelper).WithArguments("System.Text.Encoding.get_UTF8"))
+            End If
+
+            If missingGetString Then
+                comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__GetString)
+                expected.Add(Diagnostic(ERRID.ERR_MissingRuntimeHelper).WithArguments("System.Text.Encoding.GetString"))
+            End If
+
+            comp.VerifyDiagnostics(expected.ToArray())
+        End Sub
+
+        <Fact>
+        Public Sub DataSectionStringLiterals_MissingMembers_NoStringLiterals()
+            Dim comp = CreateCompilation("Class C : End Class",
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, "0"))
+            comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__get_UTF8)
+            comp.MakeMemberMissing(WellKnownMember.System_Text_Encoding__GetString)
+            comp.VerifyDiagnostics(
+                Diagnostic(ERRID.ERR_MissingRuntimeHelper).WithArguments("System.Text.Encoding.get_UTF8"),
+                Diagnostic(ERRID.ERR_MissingRuntimeHelper).WithArguments("System.Text.Encoding.GetString"))
+        End Sub
+
+        <Fact>
+        Public Sub DataSectionStringLiterals_Threshold()
+            Dim source = "
+Class C
+    Shared Sub Main()
+        System.Console.Write(""a"")
+        System.Console.Write(""bb"")
+        System.Console.Write(""ccc"")
+    End Sub
+End Class"
+            Dim expectedIl = "
+{
+  // Code size       31 (0x1f)
+  .maxstack  1
+  IL_0000:  ldstr      ""a""
+  IL_0005:  call       ""Sub System.Console.Write(String)""
+  IL_000a:  ldstr      ""bb""
+  IL_000f:  call       ""Sub System.Console.Write(String)""
+  IL_0014:  ldstr      ""ccc""
+  IL_0019:  call       ""Sub System.Console.Write(String)""
+  IL_001e:  ret
+}"
+            Dim verifier = CompileAndVerifyEx(source, expectedOutput:="abbccc").VerifyDiagnostics().VerifyIL("C.Main", expectedIl)
+            Assert.Null(verifier.Compilation.DataSectionStringLiteralThreshold)
+
+            For Each featureValue In {"off", Nothing}
+                verifier = CompileAndVerifyEx(source,
+                    parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, featureValue),
+                    expectedOutput:="abbccc").VerifyDiagnostics().VerifyIL("C.Main", expectedIl)
+                Assert.Null(verifier.Compilation.DataSectionStringLiteralThreshold)
+            Next
+
+            For Each featureValue In {"true", "false", "", "-1", Long.MaxValue.ToString()}
+                verifier = CompileAndVerifyEx(source,
+                    parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, featureValue),
+                    expectedOutput:="abbccc").VerifyDiagnostics().VerifyIL("C.Main", expectedIl)
+                Assert.Equal(100, verifier.Compilation.DataSectionStringLiteralThreshold)
+            Next
+
+            For Each threshold In {1000, 3, 2, 1, 0}
+                Dim il = expectedIl
+                If threshold < 3 Then
+                    il = il.Replace("ldstr      ""ccc""", "ldsfld     ""string <PrivateImplementationDetails>.<S>BE20CA004CC2993A396345E0D52DF013.s""")
+                End If
+                If threshold < 2 Then
+                    il = il.Replace("ldstr      ""bb""", "ldsfld     ""string <PrivateImplementationDetails>.<S>DB1DE4B3DA6C7871B776D5CB968AA5A4.s""")
+                End If
+                If threshold < 1 Then
+                    il = il.Replace("ldstr      ""a""", "ldsfld     ""string <PrivateImplementationDetails>.<S>A96FAF705AF16834E6C632B61E964E1F.s""")
+                End If
+
+                verifier = CompileAndVerifyEx(source,
+                    parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, threshold.ToString()),
+                    verify:=If(threshold < 3, Verification.Fails, Verification.Passes),
+                    expectedOutput:="abbccc").VerifyDiagnostics().VerifyIL("C.Main", il)
+                Assert.Equal(threshold, verifier.Compilation.DataSectionStringLiteralThreshold)
+            Next
+        End Sub
+
+        <Fact>
+        Public Sub DataSectionStringLiterals_SelectCase()
+            Dim source = "
+Class C
+    Shared Function F(s As String) As Integer
+        Select Case s
+            Case ""a""
+                Return 1
+            Case ""bb""
+                Return 2
+            Case ""ccc""
+                Return 3
+            Case Else
+                Return 4
+        End Select
+    End Function
+
+    Shared Sub Main()
+        System.Console.Write(F(""a""))
+        System.Console.Write(F(""bb""))
+        System.Console.Write(F(""ccc""))
+        System.Console.Write(F(""d""))
+    End Sub
+End Class"
+            CompileAndVerifyEx(source,
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, "0"),
+                verify:=Verification.Fails,
+                expectedOutput:="1234").VerifyDiagnostics().VerifyIL("C.F", "
+{
+  // Code size       62 (0x3e)
+  .maxstack  3
+  .locals init (Integer V_0, //F
+                String V_1)
+  IL_0000:  ldarg.0
+  IL_0001:  stloc.1
+  IL_0002:  ldloc.1
+  IL_0003:  ldsfld     ""string <PrivateImplementationDetails>.<S>A96FAF705AF16834E6C632B61E964E1F.s""
+  IL_0008:  ldc.i4.0
+  IL_0009:  call       ""Function Microsoft.VisualBasic.CompilerServices.Operators.CompareString(String, String, Boolean) As Integer""
+  IL_000e:  brfalse.s  IL_002e
+  IL_0010:  ldloc.1
+  IL_0011:  ldsfld     ""string <PrivateImplementationDetails>.<S>DB1DE4B3DA6C7871B776D5CB968AA5A4.s""
+  IL_0016:  ldc.i4.0
+  IL_0017:  call       ""Function Microsoft.VisualBasic.CompilerServices.Operators.CompareString(String, String, Boolean) As Integer""
+  IL_001c:  brfalse.s  IL_0032
+  IL_001e:  ldloc.1
+  IL_001f:  ldsfld     ""string <PrivateImplementationDetails>.<S>BE20CA004CC2993A396345E0D52DF013.s""
+  IL_0024:  ldc.i4.0
+  IL_0025:  call       ""Function Microsoft.VisualBasic.CompilerServices.Operators.CompareString(String, String, Boolean) As Integer""
+  IL_002a:  brfalse.s  IL_0036
+  IL_002c:  br.s       IL_003a
+  IL_002e:  ldc.i4.1
+  IL_002f:  stloc.0
+  IL_0030:  br.s       IL_003c
+  IL_0032:  ldc.i4.2
+  IL_0033:  stloc.0
+  IL_0034:  br.s       IL_003c
+  IL_0036:  ldc.i4.3
+  IL_0037:  stloc.0
+  IL_0038:  br.s       IL_003c
+  IL_003a:  ldc.i4.4
+  IL_003b:  stloc.0
+  IL_003c:  ldloc.0
+  IL_003d:  ret
+}")
+        End Sub
+
+        <Theory>
+        <InlineData("Return ""abc""")>
+        <InlineData("Select Case s : Case ""abc"" : End Select : Return s")>
+        Public Sub DataSectionStringLiterals_UsedAssemblyReferences(body As String)
+            Dim coreSource = "
+namespace System
+{
+    public class Object {}
+    public class String
+    {
+        [System.Runtime.CompilerServices.IndexerName(""Chars"")]
+        public char this[int index] => default(char);
+        public int Length => 0;
+    }
+    public class ValueType {}
+    public struct Void {}
+    public struct Byte {}
+    public struct Int16 {}
+    public struct Int32 {}
+    public struct Int64 {}
+    public struct Boolean {}
+    public struct Char {}
+    public struct UInt32 {}
+    public class Attribute {}
+    public class Enum {}
+    public enum AttributeTargets {}
+    public class AttributeUsageAttribute
+    {
+        public AttributeUsageAttribute(AttributeTargets validOn) {}
+        public bool AllowMultiple { get; set; }
+        public bool Inherited { get; set; }
+    }
+}
+namespace System.Reflection
+{
+    public class DefaultMemberAttribute : System.Attribute
+    {
+        public DefaultMemberAttribute(string name) {}
+    }
+}
+namespace System.Runtime.CompilerServices
+{
+    public class IndexerNameAttribute : System.Attribute
+    {
+        public IndexerNameAttribute(string name) {}
+    }
+}
+namespace Microsoft.VisualBasic.CompilerServices
+{
+    public class Operators
+    {
+        public static int CompareString(string a, string b, bool textCompare) => 0;
+    }
+}"
+            Dim ref1 = CreateCSharpCompilation(coreSource, referencedAssemblies:=Array.Empty(Of MetadataReference)(), assemblyName:="MinimalCoreLib").EmitToImageReference()
+            Dim encodingSource = "
+namespace System.Text
+{
+    public class Encoding
+    {
+        public static Encoding UTF8 => null;
+        public unsafe string GetString(byte* bytes, int byteCount) => null;
+    }
+}"
+            Dim ref2 = CreateCSharpCompilation(encodingSource, referencedAssemblies:={ref1}, compilationOptions:=New CSharp.CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe:=True), assemblyName:="Encoding").EmitToImageReference()
+            Dim source = $"
+Public Class C
+    Public Shared Function M(s As String) As String
+        {body}
+    End Function
+End Class"
+            Dim options = TestOptions.ReleaseDll.WithRootNamespace("").WithGlobalImports(ImmutableArray(Of GlobalImport).Empty)
+            Dim comp = CreateEmptyCompilation(source, {ref1, ref2}, options:=options, assemblyName:="Lib1")
+            comp.VerifyEmitDiagnostics()
+            AssertEx.SetEqual({ref1}, comp.GetUsedAssemblyReferences())
+
+            comp = CreateEmptyCompilation(source, {ref1, ref2}, options:=options, assemblyName:="Lib2",
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, "0"))
+            AssertEx.SetEqual({ref1, ref2}, comp.GetUsedAssemblyReferences())
+            comp.VerifyEmitDiagnostics()
+        End Sub
+
+        <Fact>
+        Public Sub DataSectionStringLiterals_InvalidUtf8()
+            Dim text = "Hello " & ChrW(&HD801) & ChrW(&HD802)
+            Dim source = $"
+Class C
+    Shared Sub Main()
+        System.Console.WriteLine(""{text}"")
+    End Sub
+End Class"
+            CompileAndVerifyEx(source,
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, "0"),
+                expectedOutput:=text,
+                symbolValidator:=Sub(m) AssertEx.Equal({"<Module>", "C"}, m.TypeNames)).
+                VerifyDiagnostics().VerifyIL("C.Main", $"
+{{
+  // Code size       11 (0xb)
+  .maxstack  1
+  IL_0000:  ldstr      ""{text}""
+  IL_0005:  call       ""Sub System.Console.WriteLine(String)""
+  IL_000a:  ret
+}}")
+        End Sub
+
+        <Fact>
+        Public Sub DataSectionStringLiterals_HashCollision()
+            Dim emitOptions = New EmitOptions With
+            {
+                .TestOnly_DataToHexViaXxHash128 = Function(data) data(0).ToString()
+            }
+            Dim source = "
+Class C
+    Shared Sub Main()
+        System.Console.Write(""a"")
+        System.Console.Write(""b"")
+        System.Console.Write(""aa"")
+    End Sub
+End Class"
+            CreateCompilation(source,
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, "0")).
+                VerifyEmitDiagnostics(emitOptions,
+                    Diagnostic(ERRID.ERR_DataSectionStringLiteralHashCollision, """aa""").WithArguments("a").WithLocation(6, 30))
+        End Sub
+
+        <Fact>
+        Public Sub DataSectionStringLiterals_SynthesizedTypes()
+            Dim source = "
+Class C
+    Shared Sub Main()
+        System.Console.WriteLine(""Hello"")
+    End Sub
+End Class"
+            Dim verifier = CompileAndVerifyEx(source,
+                targetFramework:=TargetFramework.Mscorlib46,
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, "0"),
+                verify:=Verification.Fails,
+                expectedOutput:="Hello",
+                symbolValidator:=Sub(m) AssertEx.Equal(
+                    {"<Module>", "C", "<PrivateImplementationDetails>", "__StaticArrayInitTypeSize=5", "<S>1BFD09D1A433FB78117B4C7B1583D16D"},
+                    m.TypeNames)).VerifyDiagnostics()
+            verifier.VerifyIL("C.Main", "
+{
+  // Code size       11 (0xb)
+  .maxstack  1
+  IL_0000:  ldsfld     ""string <PrivateImplementationDetails>.<S>1BFD09D1A433FB78117B4C7B1583D16D.s""
+  IL_0005:  call       ""Sub System.Console.WriteLine(String)""
+  IL_000a:  ret
+}")
+            Using peReader As New PEReader(New MemoryStream(verifier.EmittedAssemblyData.ToArray()))
+                Dim reader = peReader.GetMetadataReader()
+                Dim stringType = reader.TypeDefinitions.Select(Function(h) reader.GetTypeDefinition(h)).
+                    Single(Function(t) reader.GetString(t.Name) = "<S>1BFD09D1A433FB78117B4C7B1583D16D")
+                Assert.Equal(TypeAttributes.NestedAssembly Or TypeAttributes.Sealed Or TypeAttributes.BeforeFieldInit, stringType.Attributes)
+                Dim stringField = reader.GetFieldDefinition(stringType.GetFields().Single())
+                Assert.Equal("s", reader.GetString(stringField.Name))
+                Assert.Equal(FieldAttributes.Assembly Or FieldAttributes.Static Or FieldAttributes.InitOnly, stringField.Attributes)
+                AssertEx.Equal({CByte(&H6), CByte(&HE)}, reader.GetBlobBytes(stringField.Signature))
+                Dim dataType = reader.TypeDefinitions.Select(Function(h) reader.GetTypeDefinition(h)).
+                    Single(Function(t) reader.GetString(t.Name) = "__StaticArrayInitTypeSize=5")
+                Assert.Equal(TypeAttributes.NestedAssembly Or TypeAttributes.Sealed Or TypeAttributes.ExplicitLayout, dataType.Attributes)
+                Assert.Equal(1, dataType.GetLayout().PackingSize)
+                Assert.Equal(5, dataType.GetLayout().Size)
+                Dim helper = reader.MethodDefinitions.Select(Function(h) reader.GetMethodDefinition(h)).
+                    Single(Function(m) reader.GetString(m.Name) = "BytesToString")
+                Assert.Equal(MethodAttributes.Private Or MethodAttributes.Static Or MethodAttributes.HideBySig, helper.Attributes)
+                AssertEx.Equal(
+                    {CByte(&H0), CByte(&H2), CByte(&HE), CByte(&HF), CByte(&H5), CByte(&H8)},
+                    reader.GetBlobBytes(helper.Signature))
+                Dim il = peReader.GetMethodBody(helper.RelativeVirtualAddress).GetILBytes()
+                Assert.Equal(13, il.Length)
+                AssertEx.Equal(
+                    {CByte(&H28), CByte(&H2), CByte(&H3), CByte(&H6F), CByte(&H2A)},
+                    {il(0), il(5), il(6), il(7), il(12)})
+                Dim utf8 = reader.GetMemberReference(MetadataTokens.MemberReferenceHandle(BitConverter.ToInt32(il, 1) And &HFFFFFF))
+                Dim getString = reader.GetMemberReference(MetadataTokens.MemberReferenceHandle(BitConverter.ToInt32(il, 8) And &HFFFFFF))
+                Assert.Equal("get_UTF8", reader.GetString(utf8.Name))
+                Assert.Equal("GetString", reader.GetString(getString.Name))
+                Assert.Equal(utf8.Parent, getString.Parent)
+                Dim encoding = reader.GetTypeReference(CType(getString.Parent, TypeReferenceHandle))
+                Assert.Equal("Encoding", reader.GetString(encoding.Name))
+                Assert.Equal("System.Text", reader.GetString(encoding.Namespace))
+                AssertEx.Equal(
+                    {CByte(&H20), CByte(&H2), CByte(&HE), CByte(&HF), CByte(&H5), CByte(&H8)},
+                    reader.GetBlobBytes(getString.Signature))
+                Dim initializer = reader.MethodDefinitions.Select(Function(h) reader.GetMethodDefinition(h)).
+                    Single(Function(m) reader.GetString(m.Name) = ".cctor")
+                Assert.Equal(MethodAttributes.Private Or MethodAttributes.Static Or MethodAttributes.HideBySig Or MethodAttributes.SpecialName Or MethodAttributes.RTSpecialName, initializer.Attributes)
+                Dim initializerIl = peReader.GetMethodBody(initializer.RelativeVirtualAddress).GetILBytes()
+                Assert.Equal(17, initializerIl.Length)
+                AssertEx.Equal(
+                    {CByte(&H7F), CByte(&H1B), CByte(&H28), CByte(&H80), CByte(&H2A)},
+                    {initializerIl(0), initializerIl(5), initializerIl(6), initializerIl(11), initializerIl(16)})
+                Dim data = reader.FieldDefinitions.Select(Function(h) reader.GetFieldDefinition(h)).
+                    Single(Function(f) reader.GetString(f.Name) = "185F8DB32271FE25F561A6FC938B2E264306EC304EDA518007D1764826381969")
+                Assert.Equal(FieldAttributes.Assembly Or FieldAttributes.Static Or FieldAttributes.InitOnly Or FieldAttributes.HasFieldRVA, data.Attributes)
+                AssertEx.Equal(System.Text.Encoding.UTF8.GetBytes("Hello"), peReader.GetSectionData(data.GetRelativeVirtualAddress()).GetContent(0, 5))
+            End Using
+        End Sub
+
+        <Theory>
+        <InlineData("0")>
+        <InlineData("off")>
+        Public Sub DataSectionStringLiterals_MetadataOnly(featureValue As String)
+            Dim source = "
+Class C
+    Sub M()
+        System.Console.WriteLine(""Hello"")
+    End Sub
+End Class"
+            CompileAndVerifyEx(source,
+                emitOptions:=EmitOptions.Default.WithEmitMetadataOnly(True),
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, featureValue),
+                symbolValidator:=Sub(m) AssertEx.Equal({"<Module>", "C"}, m.TypeNames)).
+                VerifyDiagnostics()
+        End Sub
+
+        <Fact>
+        Public Sub DataSectionStringLiterals_SharedType()
+            Dim source = "
+Class C
+    Shared Sub Main()
+        System.Console.Write(""a"")
+        System.Console.Write(""b"")
+        System.Console.Write(""ccc"")
+        System.Console.Write(""ddd"")
+    End Sub
+End Class"
+            CompileAndVerifyEx(source,
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, "0"),
+                options:=TestOptions.ReleaseExe.WithMetadataImportOptions(MetadataImportOptions.All),
+                verify:=Verification.Fails,
+                expectedOutput:="abcccddd",
+                symbolValidator:=
+                    Sub(m)
+                        Dim details = m.GlobalNamespace.GetTypeMember("<PrivateImplementationDetails>")
+                        Dim fields = details.GetMembers().OfType(Of FieldSymbol)().ToArray()
+                        AssertEx.SetEqual(
+                            {"64DAA44AD493FF28A96EFFAB6E77F1732A3D97D83241581B37DBD70A7A4900FE",
+                             "730F75DAFD73E047B86ACB2DBD74E75DCB93272FA084A9082848F2341AA1ABB6",
+                             "3E23E8160039594A33894F6564E1B1348BBD7A0088D42C4ACB73EEAED59C009D",
+                             "CA978112CA1BBDCAFAC231B39A23DC4DA786EFF8147C4E72B9807785AFEE48BB"},
+                            fields.Select(Function(f) f.Name))
+                        Assert.Equal(2, fields.Count(Function(f) f.Type.SpecialType = SpecialType.System_Byte))
+                        Dim arrayType = details.GetTypeMember("__StaticArrayInitTypeSize=3")
+                        Assert.Equal(2, fields.Count(Function(f) f.Type Is arrayType))
+                        AssertEx.SetEqual(
+                            {"__StaticArrayInitTypeSize=3", "<S>A96FAF705AF16834E6C632B61E964E1F", "<S>4B2212E31AC97FD4575A0B1C44D8843F",
+                             "<S>BE20CA004CC2993A396345E0D52DF013", "<S>1F6CEF082E150274999DD6657C23A29E"},
+                            details.GetTypeMembers().Select(Function(t) t.Name))
+                    End Sub).VerifyDiagnostics()
+        End Sub
+
+        <Fact>
+        Public Sub DataSectionStringLiterals_SharedValue()
+            Dim source = "
+Class C
+    Shared Sub Main()
+        System.Console.Write(""a"")
+        System.Console.Write(""a"")
+        System.Console.Write(""bbb"")
+        System.Console.Write(""bbb"")
+    End Sub
+End Class"
+            CompileAndVerifyEx(source,
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, "0"),
+                options:=TestOptions.ReleaseExe.WithMetadataImportOptions(MetadataImportOptions.All),
+                verify:=Verification.Fails,
+                expectedOutput:="aabbbbbb",
+                symbolValidator:=
+                    Sub(m)
+                        Dim details = m.GlobalNamespace.GetTypeMember("<PrivateImplementationDetails>")
+                        AssertEx.SetEqual(
+                            {"3E744B9DC39389BAF0C5A0660589B8402F3DBB49B89B3E75F2C9355852A3C677",
+                             "CA978112CA1BBDCAFAC231B39A23DC4DA786EFF8147C4E72B9807785AFEE48BB"},
+                            details.GetMembers().OfType(Of FieldSymbol)().Select(Function(f) f.Name))
+                        AssertEx.SetEqual(
+                            {"__StaticArrayInitTypeSize=3", "<S>A96FAF705AF16834E6C632B61E964E1F", "<S>A6DC9C19EFE4ABBCBE168A8B4D34D73A"},
+                            details.GetTypeMembers().Select(Function(t) t.Name))
+                    End Sub).VerifyDiagnostics()
+        End Sub
+
+        <Theory>
+        <InlineData(False)>
+        <InlineData(True)>
+        Public Sub DataSectionStringLiterals_SharedType_ArrayInitializer(sharedValue As Boolean)
+            Dim bytes = If(sharedValue, "97, 98, 99", "1, 2, 3")
+            Dim source = $"
+Class C
+    Shared Sub Main()
+        System.Console.Write(""abc"")
+        For Each b In New Byte() {{{bytes}}}
+            System.Console.Write(Microsoft.VisualBasic.Strings.ChrW(b))
+        Next
+    End Sub
+End Class"
+            Dim stringHash = "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD"
+            CompileAndVerifyEx(source,
+                parseOptions:=TestOptions.Regular.WithFeature(Feature.ExperimentalDataSectionStringLiterals, "0"),
+                options:=TestOptions.ReleaseExe.WithMetadataImportOptions(MetadataImportOptions.All),
+                verify:=Verification.Fails,
+                expectedOutput:=If(sharedValue, "abcabc", "abc" & ChrW(1) & ChrW(2) & ChrW(3)),
+                symbolValidator:=
+                    Sub(m)
+                        Dim details = m.GlobalNamespace.GetTypeMember("<PrivateImplementationDetails>")
+                        AssertEx.SetEqual(
+                            If(sharedValue, {stringHash}, {stringHash, "039058C6F2C0CB492C533B0A4D14EF77CC0F78ABCCCED5287D84A1A2011CFB81"}),
+                            details.GetMembers().OfType(Of FieldSymbol)().Select(Function(f) f.Name))
+                        Assert.All(details.GetMembers().OfType(Of FieldSymbol)(),
+                            Sub(f) Assert.Same(details.GetTypeMember("__StaticArrayInitTypeSize=3"), f.Type))
+                    End Sub).VerifyDiagnostics()
+        End Sub
+
         Private Shared Sub Verify(stream As Stream)
             stream.Position = 0
             Assert.NotEqual(0, New PEHeaders(stream).CorHeader.EntryPointTokenOrRelativeVirtualAddress)

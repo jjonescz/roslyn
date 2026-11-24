@@ -42,6 +42,11 @@
         <target state="translated">줄 연속 문자 뒤에 주석을 사용하려면 언어 버전 {0} 이상을 사용하세요.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_DataSectionStringLiteralHashCollision">
+        <source>Cannot emit this string literal into the data section because it has XXHash128 collision with another string literal: {0}</source>
+        <target state="new">Cannot emit this string literal into the data section because it has XXHash128 collision with another string literal: {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_DefaultInterfaceImplementationInNoPIAType">
         <source>Type '{0}' cannot be embedded because it has a non-abstract member. Consider setting the 'Embed Interop Types' property to false.</source>
         <target state="translated">'{0}' 형식에는 비추상 멤버가 있으므로 해당 형식을 포함할 수 없습니다. 'Interop 형식 포함' 속성을 false로 설정해보세요.</target>
@@ -9205,8 +9210,8 @@
         <note />
       </trans-unit>
       <trans-unit id="ERR_TooManyUserStrings">
-        <source>Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string or XML literals.</source>
-        <target state="translated">프로그램에서 사용하는 사용자 문자열의 결합된 길이가 허용 한도를 초과합니다. 문자열이나 XML 리터럴의 사용을 줄여 보세요.</target>
+        <source>Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string or XML literals or try the EXPERIMENTAL feature flag 'experimental-data-section-string-literals'.</source>
+        <target state="needs-review-translation">프로그램에서 사용하는 사용자 문자열의 결합된 길이가 허용 한도를 초과합니다. 문자열이나 XML 리터럴의 사용을 줄여 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ERR_PeWritingFailure">

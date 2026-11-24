@@ -339,7 +339,7 @@ public class A
             var source = builder.ToString();
             var expectedOutput = expectedOutputBuilder.ToString();
 
-            Assert.Equal("experimental-data-section-string-literals", Feature.ExperimentalDataSectionStringLiterals);
+            Assert.Contains(Feature.ExperimentalDataSectionStringLiterals, MessageProvider.Instance.GetMessageFormat((int)ErrorCode.ERR_TooManyUserStrings).ToString());
             var expectedDiagnostics = new[]
             {
                 // (15,26): error CS8103: Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string literals or try the EXPERIMENTAL feature flag 'experimental-data-section-string-literals'.

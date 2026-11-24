@@ -5429,10 +5429,13 @@
     <value>Syntax tree should be created from a submission.</value>
   </data>
   <data name="ERR_TooManyUserStrings" xml:space="preserve">
-    <value>Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string or XML literals.</value>
+    <value>Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string or XML literals or try the EXPERIMENTAL feature flag 'experimental-data-section-string-literals'.</value>
   </data>
   <data name="ERR_TooManyUserStrings_RestartRequired" xml:space="preserve">
     <value>Combined length of user strings used by the program exceeds allowed limit. Adding a string or XML literal requires restarting the application.</value>
+  </data>
+  <data name="ERR_DataSectionStringLiteralHashCollision" xml:space="preserve">
+    <value>Cannot emit this string literal into the data section because it has XXHash128 collision with another string literal: {0}</value>
   </data>
   <data name="ERR_PeWritingFailure" xml:space="preserve">
     <value>An error occurred while writing the output file: {0}</value>

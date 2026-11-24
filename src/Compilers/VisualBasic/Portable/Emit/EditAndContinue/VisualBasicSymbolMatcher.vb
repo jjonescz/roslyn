@@ -56,12 +56,18 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Emit
 
             ' For simplicity, PID helpers and no-PIA embedded definitions are not reused across generations, so we don't map them here.
             ' Instead, new ones are regenerated as needed.
-            Debug.Assert(TypeOf definition Is PrivateImplementationDetails OrElse
-                         TypeOf definition Is Cci.IEmbeddedDefinition OrElse
-                         TypeOf definition Is MappedField OrElse
-                         TypeOf definition Is ExplicitSizeStruct)
+            Debug.Assert(TypeOf definition Is Cci.IEmbeddedDefinition OrElse IsPrivateImplementationDetail(definition))
 
             Return Nothing
+        End Function
+
+        Private Shared Function IsPrivateImplementationDetail(definition As Cci.IDefinition) As Boolean
+            If TypeOf definition Is PrivateImplementationDetails Then
+                Return True
+            End If
+
+            Dim member = TryCast(definition, Cci.ITypeDefinitionMember)
+            Return member IsNot Nothing AndAlso IsPrivateImplementationDetail(member.ContainingTypeDefinition)
         End Function
 
         Public Overrides Function MapNamespace([namespace] As Cci.INamespace) As Cci.INamespace

@@ -682,6 +682,22 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
 
             EnsureLinkedAssembliesAreValidated(cancellationToken)
 
+            Dim compilation = ContainingSourceAssembly.DeclaringCompilation
+            If compilation.DataSectionStringLiteralThreshold.HasValue Then
+                Dim utf8 = compilation.GetWellKnownTypeMember(WellKnownMember.System_Text_Encoding__get_UTF8)
+                Binder.ReportUseSite(diagnostics, NoLocation.Singleton,
+                    Binder.GetUseSiteInfoForWellKnownTypeMember(utf8, WellKnownMember.System_Text_Encoding__get_UTF8, compilation.Options.EmbedVbCoreRuntime))
+
+                Dim getString = compilation.GetWellKnownTypeMember(WellKnownMember.System_Text_Encoding__GetString)
+                If getString Is Nothing Then
+                    Binder.ReportUseSite(diagnostics, NoLocation.Singleton,
+                        Binder.GetUseSiteInfoForWellKnownTypeMember(Nothing, WellKnownMember.System_Text_Encoding__GetString, compilation.Options.EmbedVbCoreRuntime))
+                Else
+                    ' The helper's pointer signature is supported for emission, not for VB binding.
+                    Binder.ReportUseSite(diagnostics, NoLocation.Singleton, getString.ContainingType.GetUseSiteInfo())
+                End If
+            End If
+
             ' Force all types to generate errors.
             Dim tasks As ConcurrentStack(Of Task) = If(ContainingSourceAssembly.DeclaringCompilation.Options.ConcurrentBuild,
                                                        New ConcurrentStack(Of Task)(), Nothing)

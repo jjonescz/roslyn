@@ -608,7 +608,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
 
         Public Overrides ReadOnly Property ERR_DataSectionStringLiteralHashCollision As Integer
             Get
-                Throw ExceptionUtilities.Unreachable
+                Return ERRID.ERR_DataSectionStringLiteralHashCollision
             End Get
         End Property
 
