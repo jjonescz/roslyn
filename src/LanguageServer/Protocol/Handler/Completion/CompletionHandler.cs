@@ -140,6 +140,11 @@ internal sealed partial class CompletionHandler : ILspServiceDocumentRequestHand
         }
 
         var (completionList, resultId) = result.Value;
+        var useFullReplacementSpan = completionList.ItemsList.All(item =>
+            item.TryGetProperty("UseFullReplacementSpan", out var value) && value == "true");
+        var filterSpan = useFullReplacementSpan
+            ? TextSpan.FromBounds(completionList.Span.Start, Math.Clamp(position, completionList.Span.Start, completionList.Span.End))
+            : completionList.Span;
 
         // By default, Roslyn would treat continuous alphabetical text as a single word for completion purpose.
         // e.g. when user triggers completion at the location of {$} in "pub{$}class", the span would cover "pubclass",
@@ -148,13 +153,14 @@ internal sealed partial class CompletionHandler : ILspServiceDocumentRequestHand
         // However, the insert mode in VSCode (i.e. the mode our LSP server supports) expects us to return TextEdit that only
         // covers the span ends at the cursor location, e.g. "pub" in the example above. Here we detect when that occurs and
         // adjust the span accordingly.
-        if (!capabilityHelper.SupportVSInternalClientCapabilities && position < completionList.Span.End)
+        if (!capabilityHelper.SupportVSInternalClientCapabilities && position < completionList.Span.End && !useFullReplacementSpan)
         {
             var defaultSpan = new TextSpan(completionList.Span.Start, length: position - completionList.Span.Start);
             completionList = completionList.WithSpan(defaultSpan);
+            filterSpan = defaultSpan;
         }
 
-        var (filteredCompletionList, isIncomplete, isHardSelection) = FilterCompletionList(completionList, completionListMaxSize, completionTrigger, sourceText, capabilityHelper);
+        var (filteredCompletionList, isIncomplete, isHardSelection) = FilterCompletionList(completionList, filterSpan, completionListMaxSize, completionTrigger, sourceText, capabilityHelper);
 
         return (filteredCompletionList, isIncomplete, isHardSelection, resultId);
     }
@@ -183,12 +189,13 @@ internal sealed partial class CompletionHandler : ILspServiceDocumentRequestHand
 
     private static (CompletionList CompletionList, bool IsIncomplete, bool isHardSelection) FilterCompletionList(
         CompletionList completionList,
+        TextSpan filterSpan,
         int completionListMaxSize,
         CompletionTrigger completionTrigger,
         SourceText sourceText,
         CompletionCapabilityHelper completionCapabilityHelper)
     {
-        var filterText = sourceText.GetSubText(completionList.Span).ToString();
+        var filterText = sourceText.GetSubText(filterSpan).ToString();
         var filterReason = GetFilterReason(completionTrigger);
 
         // Determine if the list should be hard selected or soft selected.
@@ -204,7 +211,9 @@ internal sealed partial class CompletionHandler : ILspServiceDocumentRequestHand
         // This isn't perfect - ideally we would make this determination every time a filter character is typed, but we do not get called back
         // for typing filter characters in LSP (unless we always set isIncomplete, which is expensive).
         var isHardSelection = completionList.SuggestionModeItem is null && !isFilterTextAllPunctuation;
-        var isIncomplete = isFilterTextAllPunctuation;
+        // Providers backed by prefix-dependent remote searches cannot supply a static full list.
+        var isIncomplete = isFilterTextAllPunctuation
+            || completionList.ItemsList.Any(item => item.TryGetProperty("RequiresRefreshOnTyping", out var value) && value == "true");
 
         // If our completion list hasn't hit the max size, we don't need to do anything filtering
         if (completionListMaxSize < 0 || completionListMaxSize >= completionList.ItemsList.Count)

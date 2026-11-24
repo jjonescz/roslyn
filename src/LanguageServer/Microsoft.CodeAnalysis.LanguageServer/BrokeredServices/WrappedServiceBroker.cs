@@ -33,13 +33,13 @@ internal sealed class WrappedServiceBroker : IServiceBroker
 
     public async ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
     {
-        var serviceBroker = await _serviceBrokerTask;
+        var serviceBroker = await _serviceBrokerTask.WaitAsync(cancellationToken).ConfigureAwait(false);
         return await serviceBroker.GetPipeAsync(serviceMoniker, options, cancellationToken);
     }
 
     public async ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default) where T : class
     {
-        var serviceBroker = await _serviceBrokerTask;
+        var serviceBroker = await _serviceBrokerTask.WaitAsync(cancellationToken).ConfigureAwait(false);
 #pragma warning disable ISB001 // Dispose of proxies - caller is responsible for disposing the proxy.
         return await serviceBroker.GetProxyAsync<T>(serviceDescriptor, options, cancellationToken);
 #pragma warning restore ISB001 // Dispose of proxies

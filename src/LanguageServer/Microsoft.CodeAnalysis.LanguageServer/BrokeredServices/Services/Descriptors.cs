@@ -41,6 +41,7 @@ internal sealed class Descriptors
     {
         { RemoteModelService.Moniker, new ServiceRegistration(ServiceAudience.Local, null, allowGuestClients: false) },
         { RemoteProjectInitializationStatusService.Moniker, new ServiceRegistration(ServiceAudience.Local, null, allowGuestClients: false) },
+        { new("Microsoft.VisualStudio.CSharpDevKit.NuGetCompletionService", new(0, 1)), new ServiceRegistration(ServiceAudience.Local, null, allowGuestClients: false) },
         { BrokeredServiceDescriptors.SolutionSnapshotProvider.Moniker, new ServiceRegistration(ServiceAudience.Local, null, allowGuestClients: false) },
         { BrokeredServiceDescriptors.DebuggerManagedHotReloadServiceLegacy.Moniker, new ServiceRegistration(ServiceAudience.Local, null, allowGuestClients: false) },
 

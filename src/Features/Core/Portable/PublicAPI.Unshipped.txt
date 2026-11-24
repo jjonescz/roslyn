@@ -1,0 +1,2 @@
+Microsoft.CodeAnalysis.Completion.ExportCompletionProviderAttribute.TriggerCharacters.get -> char[]
+Microsoft.CodeAnalysis.Completion.ExportCompletionProviderAttribute.TriggerCharacters.set -> void

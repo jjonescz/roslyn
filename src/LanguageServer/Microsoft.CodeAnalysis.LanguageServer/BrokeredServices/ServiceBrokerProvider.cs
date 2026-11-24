@@ -13,7 +13,7 @@ namespace Microsoft.CodeAnalysis.BrokeredServices;
 /// <summary>
 /// Workspace service that can be used to fetch a service broker instance from a workspace.
 /// </summary>
-[ExportWorkspaceService(typeof(IServiceBrokerProvider), ServiceLayer.Host), Shared]
+[Export, ExportWorkspaceService(typeof(IServiceBrokerProvider), ServiceLayer.Host), Shared]
 [method: ImportingConstructor]
 [method: Obsolete(MefConstruction.ImportingConstructorMessage, error: true)]
 internal sealed class ServiceBrokerProvider() : IServiceBrokerProvider

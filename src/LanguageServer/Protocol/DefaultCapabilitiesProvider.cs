@@ -51,7 +51,7 @@ internal sealed class DefaultCapabilitiesProvider : ICapabilitiesProvider
 
         var commitCharacters = CompletionResultFactory.DefaultCommitCharactersArray;
         var triggerCharacters = _completionProviders.SelectMany(
-            lz => CommonCompletionUtilities.GetTriggerCharacters(lz.Value)).Distinct().Select(c => c.ToString()).ToArray();
+            lz => CommonCompletionUtilities.GetTriggerCharacters(lz.Value).Concat(lz.Metadata.TriggerCharacters)).Distinct().Select(c => c.ToString()).ToArray();
 
         capabilities.DefinitionProvider = true;
         capabilities.TypeDefinitionProvider = true;

@@ -39,6 +39,21 @@ public sealed class ServiceBrokerFactoryTests(ITestOutputHelper testOutputHelper
     private static readonly TimeSpan s_timeout = TimeSpan.FromSeconds(30);
 
     [Fact]
+    public async Task WrappedServiceBroker_CancelsBeforeConnectionAsync()
+    {
+        var container = new TaskCompletionSource<IBrokeredServiceContainer>();
+        var broker = new WrappedServiceBroker(container.Task);
+        using var cancellation = new CancellationTokenSource();
+        var request = broker.GetPipeAsync(new ServiceMoniker("missing"), cancellationToken: cancellation.Token).AsTask();
+        cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => request.WaitAsync(s_timeout));
+    }
+
+    [Fact]
+    public void PackageCompletionService_IsRegisteredForRemoteConsumption()
+        => Assert.Contains(new ServiceMoniker("Microsoft.VisualStudio.CSharpDevKit.NuGetCompletionService", new Version(0, 1)), Descriptors.RemoteServicesToRegister.Keys);
+
+    [Fact]
     public async Task ServiceBrokerFactoryAndTelemetryAreManagedPerServerAsync()
     {
         var serverTelemetry1 = new RoslynTelemetry();

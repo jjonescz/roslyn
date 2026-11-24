@@ -18,4 +18,10 @@ public sealed class ExportCompletionProviderAttribute(string name, string langua
     public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
     public string Language { get; } = language ?? throw new ArgumentNullException(nameof(language));
     public string[]? Roles { get; set; }
+
+    /// <summary>
+    /// Characters that the language server should advertise as completion triggers for this provider.
+    /// The provider must also implement its textual trigger check.
+    /// </summary>
+    public char[]? TriggerCharacters { get; set; }
 }
