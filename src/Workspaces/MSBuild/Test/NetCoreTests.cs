@@ -144,6 +144,32 @@ public sealed class NetCoreTests : MSBuildWorkspaceTestBase, IClassFixture<Proje
         Assert.Equal(Path.Combine(projectDir, "bin", "Debug", "netcoreapp3.1", "Project.dll"), projectFileInfo.OutputFilePath);
     }
 
+    [ConditionalFact(typeof(DotNetSdkMSBuildInstalled), typeof(WindowsOnly))]
+    [Trait(Traits.Feature, Traits.Features.MSBuildWorkspace)]
+    [Trait(Traits.Feature, Traits.Features.NetCore)]
+    public async Task TestOpenInMemoryProject_NormalizesUncFileGlobs()
+    {
+        const string projectFilePath = @"\\server\share\project\Project.csproj";
+        const string content = """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>netstandard2.0</TargetFramework>
+              </PropertyGroup>
+              <ItemGroup>
+                <Compile Include="\\server\share\project\obj\..\..\**\*.cs" />
+              </ItemGroup>
+            </Project>
+            """;
+
+        await using var buildHostProcessManager = new BuildHostProcessManager([LanguageNames.CSharp], ImmutableDictionary<string, string>.Empty);
+
+        var buildHost = await buildHostProcessManager.GetBuildHostAsync(BuildHostProcessKind.NetCore, CancellationToken.None);
+        var projectFile = await buildHost.LoadProjectAsync(projectFilePath, physicalFilePath: null, content, LanguageNames.CSharp, globalProperties: null, CancellationToken.None);
+        var projectFileInfo = (await projectFile.GetProjectFileInfosAsync(CancellationToken.None)).Single();
+
+        Assert.Contains("//server/share/**/*.cs", projectFileInfo.FileGlobs.SelectMany(static glob => glob.Includes));
+    }
+
     [ConditionalTheory(typeof(DotNetSdkMSBuildInstalled))]
     [CombinatorialData]
     [Trait(Traits.Feature, Traits.Features.MSBuildWorkspace)]

@@ -15922,6 +15922,34 @@ public class Generator : ISourceGenerator
             CleanupAllGeneratedFiles(srcDirectory.Path);
         }
 
+        [ConditionalFact(typeof(WindowsOnly))]
+        public void TestDuplicateAdditionalFiles_Unc()
+        {
+            var srcDirectory = Temp.CreateDirectory();
+            var srcFile = srcDirectory.CreateFile("a.cs").WriteAllText("class C { }");
+
+            int count = 0;
+            var generator = new PipelineCallbackGenerator(ctx =>
+            {
+                ctx.RegisterSourceOutput(ctx.AdditionalTextsProvider, (spc, t) =>
+                {
+                    count++;
+                });
+            });
+
+            var output = VerifyOutput(srcDirectory, srcFile, includeCurrentAssemblyAsAnalyzerReference: false,
+                additionalFlags: new[]
+                {
+                    @"/additionalfile:\\server\share\file.txt",
+                    @"/additionalfile:\\server\share\project\..\..\file.txt",
+                },
+                generators: new[] { generator.AsSourceGenerator() });
+
+            Assert.Equal(1, count);
+
+            CleanupAllGeneratedFiles(srcDirectory.Path);
+        }
+
         [ConditionalTheory(typeof(WindowsOnly))]
         [InlineData("abc/a.txt", "abc\\a.txt", 1)]
         [InlineData("abc\\a.txt", "abc\\a.txt", 1)]

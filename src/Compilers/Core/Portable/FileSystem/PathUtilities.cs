@@ -861,13 +861,17 @@ namespace Roslyn.Utilities
         /// </summary>
         /// <returns>An equivalent path that does not contain any '..' or '.' path parts, or the original path.</returns>
         /// <remarks>
-        /// This method handles unix and windows drive rooted absolute paths only (i.e /a/b or x:\a\b). Passing any other kind of path
-        /// including relative, drive relative, unc, or windows device paths will simply return the original input. 
+        /// This method handles unix, windows drive rooted, and UNC absolute paths (i.e. /a/b, x:\a\b, or \\server\share\a).
+        /// Passing any other kind of path, including relative, drive relative, incomplete UNC, or windows device paths, returns the original input.
         /// </remarks>
         public static string ExpandAbsolutePathWithRelativeParts(string p)
         {
             bool isDriveRooted = !IsUnixLikePlatform && IsDriveRootedAbsolutePath(p);
-            if (!isDriveRooted && !(p.Length > 1 && p[0] == AltDirectorySeparatorChar))
+            bool isUncPath = !IsUnixLikePlatform &&
+                p.Length > 1 &&
+                IsDirectorySeparator(p[0]) &&
+                IsDirectorySeparator(p[1]);
+            if (!isDriveRooted && !isUncPath && !(p.Length > 1 && p[0] == AltDirectorySeparatorChar))
             {
                 // if this isn't a regular absolute path we can't expand it correctly
                 return p;
@@ -876,12 +880,41 @@ namespace Roslyn.Utilities
             // GetPathParts also removes any instances of '.'
             var parts = GetPathParts(p);
 
-            // For drive rooted paths we need to skip the volume specifier, but remember it for re-joining later
-            var volumeSpecifier = isDriveRooted ? p.Substring(0, 2) : string.Empty;
+            string root;
+            int toSkip;
+            if (isDriveRooted)
+            {
+                root = p.Substring(0, 2);
+                toSkip = 2;
+            }
+            else if (isUncPath)
+            {
+                var normalizedPath = CollapseWithForwardSlash(p.AsSpan());
+                root = GetWindowsRoot(normalizedPath);
+                var rootParts = GetPathParts(root);
+                if (rootParts.Length != 4 ||
+                    rootParts[2] is "" or "." or ".." or "?" ||
+                    rootParts[3] is "" or "." or ".." or "?")
+                {
+                    return p;
+                }
 
-            // Skip the root directory
-            var toSkip = isDriveRooted ? 2 : 1;
-            Debug.Assert(parts[toSkip - 1] == string.Empty);
+                toSkip = 4;
+                var relativeParts = normalizedPath.Substring(root.Length).Split(s_pathChars);
+                if (!relativeParts.Contains(ThisDirectory) && !relativeParts.Contains(ParentRelativeDirectory))
+                {
+                    return p;
+                }
+
+                parts = GetPathParts(normalizedPath);
+            }
+            else
+            {
+                root = string.Empty;
+                toSkip = 1;
+            }
+
+            Debug.Assert(isUncPath || parts[toSkip - 1] == string.Empty);
 
 #if MSBUILDWORKSPACE_BUILDHOST
             var resolvedParts = new List<string>();
@@ -906,7 +939,7 @@ namespace Roslyn.Utilities
                 }
             }
 
-            var expandedPath = volumeSpecifier + '/' + string.Join("/", resolvedParts);
+            var expandedPath = root + '/' + string.Join("/", resolvedParts);
 #if !MSBUILDWORKSPACE_BUILDHOST
             resolvedParts.Free();
 #endif

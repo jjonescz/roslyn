@@ -2026,6 +2026,24 @@ option1 = value1
                 options);
         }
 
+        [ConditionalFact(typeof(WindowsOnly))]
+        public void GlobalConfigUncSourcePathsMustBeNormalized()
+        {
+            var configs = ArrayBuilder<AnalyzerConfig>.GetInstance();
+            configs.Add(Parse(@"
+is_global = true
+[//server/share/file.cs]
+option1 = value1
+", @"/.globalconfig1"));
+
+            var options = GetAnalyzerConfigOptions(
+                new[] { @"\\server\share\project\..\..\file.cs" },
+                configs);
+            configs.Free();
+
+            Assert.Equal("value1", options[0].AnalyzerOptions["option1"]);
+        }
+
         [Fact]
         public void GlobalConfigCanSetSeverity()
         {
